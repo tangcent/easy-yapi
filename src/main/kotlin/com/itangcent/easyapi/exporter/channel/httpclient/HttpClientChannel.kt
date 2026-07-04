@@ -7,25 +7,25 @@ import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.cache.http.DefaultHttpContextCacheHelper
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.core.threading.write
-import com.itangcent.easyapi.exporter.channel.ApiChannel
+import com.itangcent.easyapi.exporter.channel.Channel
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
 import com.itangcent.easyapi.exporter.formatter.HttpClientFileFormatter
-import com.itangcent.easyapi.exporter.httpclient.HttpClientExportMetadata
+import com.itangcent.easyapi.exporter.channel.httpclient.HttpClientExportMetadata
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.logging.IdeaLog
 
 /**
- * [ApiChannel] that exports API endpoints as IntelliJ HTTP Client files.
+ * [Channel] that exports API endpoints as IntelliJ HTTP Client files.
  *
  * Creates `.http` scratch files that can be executed directly in the IDE.
  * Supports both HTTP and gRPC endpoints. No configuration panel needed.
  *
- * @see ApiChannel
+ * @see Channel
  * @see HttpClientFileFormatter
  */
-class HttpClientChannel : ApiChannel, IdeaLog {
+class HttpClientChannel : Channel, IdeaLog {
 
     override val id: String = "http-client"
     override val displayName: String = "HTTP Client"

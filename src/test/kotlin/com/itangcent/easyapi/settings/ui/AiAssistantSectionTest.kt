@@ -1,11 +1,11 @@
 package com.itangcent.easyapi.settings.ui
 
 import com.itangcent.easyapi.ai.AiProvider
-import com.itangcent.easyapi.ai.AiSettings
+import com.itangcent.easyapi.ai.AiRuntimeConfig
 import com.itangcent.easyapi.ai.AIService
 import com.itangcent.easyapi.ai.AiChatRequest
 import com.itangcent.easyapi.ai.AiChatResponse
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.AiSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -14,7 +14,7 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testRoundTripDefaults() {
         val section = AiAssistantSection()
-        val settings = Settings()
+        val settings = AiSettings()
         section.resetFrom(settings)
         assertFalse("fresh settings should not be modified", section.isModified(settings))
         section.applyTo(settings)
@@ -27,7 +27,7 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testProviderSwitchPreFillsDefaults() {
         val section = AiAssistantSection()
-        val settings = Settings()
+        val settings = AiSettings()
         section.resetFrom(settings)
 
         // Simulate selecting OLLAMA (no API key required, has default base URL + model)
@@ -48,7 +48,7 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
      */
     fun testProviderSwitchTwiceKeepsPreFilling() {
         val section = AiAssistantSection()
-        val settings = Settings()
+        val settings = AiSettings()
         section.resetFrom(settings)
 
         // First switch: OLLAMA defaults appear.
@@ -68,7 +68,7 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
      */
     fun testManualEditSticksAcrossProviderSwitch() {
         val section = AiAssistantSection()
-        val settings = Settings()
+        val settings = AiSettings()
         section.resetFrom(settings)
 
         section.selectProvider(AiProvider.CUSTOM)
@@ -84,7 +84,7 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testCustomFieldsRoundTrip() {
         val section = AiAssistantSection()
-        val settings = Settings()
+        val settings = AiSettings()
         section.resetFrom(settings)
 
         section.selectProvider(AiProvider.CUSTOM)
@@ -95,7 +95,7 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         assertTrue("custom values should mark modified", section.isModified(settings))
 
-        val roundTripped = Settings()
+        val roundTripped = AiSettings()
         section.applyTo(roundTripped)
         section.resetFrom(roundTripped)
         assertFalse("after round-trip nothing modified", section.isModified(roundTripped))
@@ -108,7 +108,7 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testContextWindowRoundTrip() {
         val section = AiAssistantSection()
-        val settings = Settings()
+        val settings = AiSettings()
         section.resetFrom(settings)
 
         section.setContextWindow(200_000)
@@ -116,7 +116,7 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue("a non-default context window should mark modified",
             section.isModified(settings))
 
-        val roundTripped = Settings()
+        val roundTripped = AiSettings()
         section.applyTo(roundTripped)
         section.resetFrom(roundTripped)
         assertFalse("after round-trip nothing modified", section.isModified(roundTripped))
@@ -131,7 +131,7 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
      */
     fun testProviderSwitchClearsApiKey() {
         val section = AiAssistantSection()
-        val settings = Settings()
+        val settings = AiSettings()
         section.resetFrom(settings)
 
         section.setApiKey("sk-original")
@@ -147,7 +147,7 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
      */
     fun testProviderSwitchClearDoesNotLatchEditedFlag() {
         val section = AiAssistantSection()
-        val settings = Settings()
+        val settings = AiSettings()
         section.resetFrom(settings)
 
         section.selectProvider(AiProvider.OLLAMA) // clears (empty) key, must not latch
@@ -159,13 +159,13 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testApiKeyMaskedByDefault() {
         val section = AiAssistantSection()
-        section.resetFrom(Settings())
+        section.resetFrom(AiSettings())
         assertFalse("API key must be masked by default", section.isApiKeyRevealedForTest())
     }
 
     fun testRevealToggleShowsThenHidesApiKey() {
         val section = AiAssistantSection()
-        section.resetFrom(Settings())
+        section.resetFrom(AiSettings())
         section.setApiKey("sk-secret")
 
         section.toggleRevealApiKeyForTest()

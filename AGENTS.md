@@ -123,7 +123,7 @@ suspend fun createClassFile(packageName: String, className: String): PsiClass
 
 ## Logging
 
-The plugin has three output channels. **Pick one** by the first-match-wins rule below. `IdeaConsole.warn/error` and `NotificationUtils.notifyWarning/notifyError` mirror to `idea.log` automatically — so **never** pair `console.error` with `LOG.error`, nor `notifyError` with `LOG.error`. One call per event.
+The plugin has three output channels. **Pick one** by the first-match-wins rule below. `IdeaConsole.warn/error` and `NotificationUtils.notifyWarning/notifyError` mirror to `idea.log` automatically — so **never** pair `console.error` with `LOG.error`, nor `notifyError` with `LOG.error`. One call per event. The console is **off by default** (`logLevel=SILENT`); `console.warn`/`console.error` still mirror to `idea.log`, the rest are no-ops until the user lowers the log level.
 
 ### Channel selection (first match wins)
 
@@ -133,15 +133,16 @@ The plugin has three output channels. **Pick one** by the first-match-wins rule 
 
 ### Placement rules (where logs MUST exist)
 
-- **Entry points** (Actions): `console.debug` on entry (action + selection); `console.error` + `NotificationUtils.notifyError` on failure; `console.info` + balloon on exit.
+- **Entry points** (Actions): `console.info` on entry (action + selection); `console.error` + `NotificationUtils.notifyError` on failure; `console.info` + balloon on exit.
 - **External I/O** (network/file): log target + throwable on failure before returning a failure result. Never swallow.
-- **Error handling**: no silent `runCatching{}.getOrNull()` on a meaningful operation — add `.onFailure { …log with throwable… }`. No empty `catch` blocks — at minimum `LOG.debug` the suppressed throwable.
+- **Error handling**: no silent `runCatching{}.getOrNull()` on a meaningful operation — add `.onFailure { …log with throwable… }`. No empty `catch` blocks — at minimum `LOG.info` the suppressed throwable.
 - **Config & rules**: log load attempts (source + outcome), rule evaluation results, parse errors with location.
-- **Decisions**: log endpoint/field skips at `debug` (or `info` for whole-endpoint skips) with the reason.
+- **Decisions**: log endpoint/field skips at `info` with the reason.
 
 ### Anti-patterns (forbidden in production code)
 
 - `LOG.error(...)` — IntelliJ treats `Logger.error` as a test failure and pops an error dialog to the user. Use `LOG.warn(msg, t)` (or `LOG.info(msg, t)` for the console/notification mirror, which already does this) instead.
+- `LOG.debug(...)` / `LOG.trace(...)` — IntelliJ filters `debug`/`trace` out of `idea.log` by default; they are invisible unless a user manually enables debug logging for the `com.itangcent.easyapi` category. **`LOG.info` is the floor** for diagnostics that should be visible; use `LOG.warn` for recoverable failures. Prefer `console.info` over `console.debug`/`console.trace` (reserved for opt-in high-volume trace). A CI gate (`AntiPatternGateTest.noDebugTraceOnLogChannel`) enforces this.
 - `println(...)` / `printStackTrace()`.
 - Direct `Notifications.Bus.notify` / `NotificationGroupManager` outside `NotificationUtils`.
 - `runCatching{}.getOrNull()` / empty `catch` without a log on a meaningful operation.

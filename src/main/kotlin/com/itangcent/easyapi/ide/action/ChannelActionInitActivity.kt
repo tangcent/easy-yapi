@@ -10,7 +10,7 @@ import com.itangcent.easyapi.ide.fieldformat.FieldFormatActionGroup
  */
 class ChannelActionInitActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
-        ChannelQuickActionGroup.ensureActionsRegistered()
+        ChannelQuickActionGroup.ensureActionsRegistered(project)
         FieldFormatActionGroup.ensureActionsRegistered()
     }
 }

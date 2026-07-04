@@ -11,15 +11,15 @@ import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
-import com.itangcent.easyapi.exporter.channel.ApiChannel
+import com.itangcent.easyapi.exporter.channel.Channel
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
-import com.itangcent.easyapi.exporter.postman.*
-import com.itangcent.easyapi.exporter.postman.model.PostmanCollection
-import com.itangcent.easyapi.exporter.postman.model.PostmanGson
-import com.itangcent.easyapi.exporter.postman.model.PostmanItem
+import com.itangcent.easyapi.exporter.channel.postman.*
+import com.itangcent.easyapi.exporter.channel.postman.model.PostmanCollection
+import com.itangcent.easyapi.exporter.channel.postman.model.PostmanGson
+import com.itangcent.easyapi.exporter.channel.postman.model.PostmanItem
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.PostmanExportMode
@@ -31,35 +31,43 @@ import java.awt.BorderLayout
 import java.awt.event.ItemEvent
 import java.io.File
 import javax.swing.*
+import kotlin.reflect.KClass
 
 /**
- * [ApiChannel] that exports API endpoints to Postman collections.
+ * [Channel] that exports API endpoints to Postman collections.
  *
  * Supports HTTP endpoints only (not gRPC). Provides a configuration panel
  * for selecting workspace/collection, and exposes a top-level IDE action.
  *
- * @see ApiChannel
+ * @see Channel
  * @see PostmanFormatter
  * @see PostmanOptionsPanel
  */
-class PostmanChannel : ApiChannel, IdeaLog {
+class PostmanChannel : Channel, IdeaLog {
 
     override val id: String = "postman"
     override val displayName: String = "Postman"
     override val supportsGrpc: Boolean = false
     override val exposeAsAction: Boolean = true
     override val actionText: String = "Export to Postman"
+    override val settingsTabOrder: Int = 20
+    override val settingsType: KClass<out com.itangcent.easyapi.settings.Settings> = PostmanSettings::class
 
     override fun createOptionsPanel(project: Project): ChannelOptionsPanel {
         return PostmanOptionsPanel(project)
     }
 
+    override fun createSettingsPanel(project: Project): com.itangcent.easyapi.settings.ui.SettingsPanel<*>? =
+        PostmanSettingsPanel()
+
+    override fun configFiles(): List<String> = emptyList()
+
     override suspend fun export(context: ExportContext): ExportResult {
         LOG.info("PostmanChannel.export: endpoints=${context.endpointsToExport.size}")
         val project = context.project
-        val settings = project.settings
-        val token = settings.postmanToken
-        val postmanConfig = context.channelConfig as? ChannelConfig.PostmanConfig
+        val postmanSettings = project.settings<PostmanSettings>()
+        val token = postmanSettings.postmanToken
+        val postmanConfig = context.channelConfig as? PostmanConfig
 
         val collectionName = postmanConfig?.collectionName ?: project.name
         val hasExplicitName = postmanConfig?.collectionName != null
@@ -67,10 +75,10 @@ class PostmanChannel : ApiChannel, IdeaLog {
         val formatter = PostmanFormatter(
             project = project,
             options = PostmanFormatOptions(
-                buildExample = settings.postmanBuildExample,
-                autoMergeScript = settings.autoMergeScript,
-                wrapCollection = settings.wrapCollection,
-                json5FormatType = runCatching { com.itangcent.easyapi.settings.PostmanJson5FormatType.valueOf(settings.postmanJson5FormatType) }.getOrDefault(
+                buildExample = postmanSettings.postmanBuildExample,
+                autoMergeScript = postmanSettings.autoMergeScript,
+                wrapCollection = postmanSettings.wrapCollection,
+                json5FormatType = runCatching { com.itangcent.easyapi.settings.PostmanJson5FormatType.valueOf(postmanSettings.postmanJson5FormatType) }.getOrDefault(
                     com.itangcent.easyapi.settings.PostmanJson5FormatType.EXAMPLE_ONLY
                 ),
                 appendTimestamp = !hasExplicitName
@@ -92,12 +100,12 @@ class PostmanChannel : ApiChannel, IdeaLog {
             val hasDialogSelection = postmanConfig?.collectionId != null
                     || postmanConfig?.collectionName != null
             if (hasDialogSelection) {
-                uploadToPostmanWithDialogSelection(context, token, collection, settings, postmanConfig!!)
+                uploadToPostmanWithDialogSelection(context, token, collection, postmanSettings, postmanConfig!!)
             } else {
-                val exportMode = settings.postmanExportMode?.let {
+                val exportMode = postmanSettings.postmanExportMode?.let {
                     runCatching { PostmanExportMode.valueOf(it) }.getOrNull()
                 } ?: PostmanExportMode.CREATE_NEW
-                uploadToPostmanWithMode(context, token, collection, settings, exportMode)
+                uploadToPostmanWithMode(context, token, collection, postmanSettings, exportMode)
             }
         }
     }
@@ -106,8 +114,8 @@ class PostmanChannel : ApiChannel, IdeaLog {
         context: ExportContext,
         token: String,
         collection: PostmanCollection,
-        settings: com.itangcent.easyapi.settings.Settings,
-        postmanConfig: ChannelConfig.PostmanConfig
+        settings: PostmanSettings,
+        postmanConfig: PostmanConfig
     ): ExportResult {
         val workspaceId = postmanConfig.workspaceId ?: settings.postmanWorkspace
         val collectionId = postmanConfig.collectionId
@@ -140,7 +148,7 @@ class PostmanChannel : ApiChannel, IdeaLog {
         context: ExportContext,
         token: String,
         collection: PostmanCollection,
-        settings: com.itangcent.easyapi.settings.Settings,
+        settings: PostmanSettings,
         exportMode: PostmanExportMode
     ): ExportResult {
         val workspaceId = settings.postmanWorkspace
@@ -177,7 +185,7 @@ class PostmanChannel : ApiChannel, IdeaLog {
     private suspend fun uploadToPostmanUpdateMode(
         context: ExportContext,
         collection: PostmanCollection,
-        settings: com.itangcent.easyapi.settings.Settings,
+        settings: PostmanSettings,
         postmanClient: CachedPostmanApiClient,
         workspaceName: String?,
         workspaceId: String?
@@ -292,7 +300,7 @@ class PostmanChannel : ApiChannel, IdeaLog {
         endpoints: List<com.itangcent.easyapi.exporter.model.ApiEndpoint>,
         baseName: String,
         context: ExportContext,
-        settings: com.itangcent.easyapi.settings.Settings
+        settings: PostmanSettings
     ): PostmanCollection {
         val project = context.project
         val formatter = PostmanFormatter(
@@ -465,7 +473,7 @@ class PostmanOptionsPanel(private val project: Project) : ChannelOptionsPanel, I
         }
     }
 
-    override fun buildConfig(): ChannelConfig.PostmanConfig {
+    override fun buildConfig(): PostmanConfig {
         val wsIdx = postmanWorkspaceComboBox.selectedIndex
         val ws = if (wsIdx >= 0 && wsIdx < postmanWorkspaces.size) postmanWorkspaces[wsIdx] else null
 
@@ -476,7 +484,7 @@ class PostmanOptionsPanel(private val project: Project) : ChannelOptionsPanel, I
         val remembered = selectedPostmanCollection
         val isUpdate = remembered != null && collectionText == remembered.name
 
-        return ChannelConfig.PostmanConfig(
+        return PostmanConfig(
             workspaceId = ws?.id,
             workspaceName = ws?.name,
             collectionId = if (isUpdate) (remembered.uid ?: remembered.id) else null,
@@ -492,8 +500,8 @@ class PostmanOptionsPanel(private val project: Project) : ChannelOptionsPanel, I
     }
 
     private fun loadPostmanDataFromApi() {
-        val settings = project.settings
-        val token = settings.postmanToken
+        val postmanSettings = project.settings<PostmanSettings>()
+        val token = postmanSettings.postmanToken
 
         if (token.isNullOrBlank()) {
             postmanWorkspaceComboBox.model = DefaultComboBoxModel(arrayOf("No token configured"))

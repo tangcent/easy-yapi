@@ -17,30 +17,30 @@ data class Folder(
 /**
  * Protocol-agnostic API endpoint model.
  * Contains only fields shared across all API protocols (HTTP, gRPC, etc.).
- * Protocol-specific fields are held in the [metadata] field.
+ * Protocol-specific fields are held in the [metadata] field; channel/feature-
+ * specific attributes are held in [extensions] and accessed via Kotlin
+ * extension properties defined in per-feature files.
  *
  * @param name The endpoint name/description
  * @param folder The folder/group for organizing endpoints
  * @param description The endpoint description
- * @param tags Tags for categorization
  * @param sourceClass The source PSI class
  * @param sourceMethod The source PSI method
  * @param className The source class name
  * @param classDescription The source class description
  * @param metadata Protocol-specific metadata (HTTP or gRPC)
+ * @param extensions Pluggable carrier for feature/channel-specific attributes
  */
 data class ApiEndpoint(
     val name: String? = null,
     val folder: String? = null,
     var description: String? = null,
-    val tags: List<String> = emptyList(),
-    val status: String? = null,
-    val open: Boolean = false,
     val sourceClass: com.intellij.psi.PsiClass? = null,
     val sourceMethod: com.intellij.psi.PsiMethod? = null,
     val className: String? = null,
     val classDescription: String? = null,
-    val metadata: ApiMetadata
+    val metadata: ApiMetadata,
+    val extensions: Extension = Extension.EMPTY
 ) {
     fun setParam(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
         val meta = metadata as? HttpMetadata ?: return
@@ -182,6 +182,7 @@ enum class ParameterType {
  * @param description The parameter description
  * @param example An example value
  * @param enumValues Possible enum values
+ * @param extensions Pluggable carrier for feature/channel-specific attributes
  */
 data class ApiParameter(
     val name: String,
@@ -192,7 +193,7 @@ data class ApiParameter(
     val description: String? = null,
     val example: String? = null,
     val enumValues: List<String>? = null,
-    val jsonType: String? = null
+    val extensions: Extension = Extension.EMPTY
 )
 
 /**

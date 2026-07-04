@@ -8,11 +8,12 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
-import com.itangcent.easyapi.exporter.postman.Workspace
-import com.itangcent.easyapi.exporter.postman.model.PostmanEnvironmentInfo
+import com.itangcent.easyapi.exporter.channel.postman.Workspace
+import com.itangcent.easyapi.exporter.channel.postman.model.PostmanEnvironmentInfo
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.script.env.EnvironmentService
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.exporter.channel.postman.PostmanSettings
+import com.itangcent.easyapi.settings.settings
 import kotlinx.coroutines.runBlocking
 import java.awt.BorderLayout
 import java.awt.FlowLayout
@@ -209,8 +210,8 @@ class EnvironmentSyncDialog(
     fun isIncludeDisabled(): Boolean = includeDisabledCheckBox.isSelected
 
     private fun loadWorkspaces(listPanel: JPanel) {
-        val settings = SettingBinder.getInstance(project).read()
-        val defaultWorkspaceId = settings.postmanWorkspace
+        val postmanSettings = project.settings<PostmanSettings>()
+        val defaultWorkspaceId = postmanSettings.postmanWorkspace
 
         if (!syncService.hasPostmanToken()) {
             workspaceCombo.addItem(WorkspaceItem("No workspaces — API token not configured", null))

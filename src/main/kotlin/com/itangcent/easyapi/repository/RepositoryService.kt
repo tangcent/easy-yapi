@@ -3,8 +3,8 @@ package com.itangcent.easyapi.repository
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.settings.DefaultSettingBinder
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.module.GrpcSettings
+import com.itangcent.easyapi.settings.settings
 
 @Service(Service.Level.PROJECT)
 class RepositoryService(private val project: Project) {
@@ -13,12 +13,8 @@ class RepositoryService(private val project: Project) {
         fun getInstance(project: Project): RepositoryService = project.service()
     }
 
-    private val settingBinder: SettingBinder by lazy {
-        DefaultSettingBinder.getInstance(project)
-    }
-
     fun getRepositories(): List<RepositoryConfig> {
-        val settings = settingBinder.read()
+        val settings = project.settings<GrpcSettings>()
         val userRepos = settings.grpcRepositories
             .mapNotNull { RepositoryConfig.parse(it) }
             .filter { it.enabled }
@@ -29,7 +25,7 @@ class RepositoryService(private val project: Project) {
     }
 
     fun getAllRepositories(): List<RepositoryConfig> {
-        val settings = settingBinder.read()
+        val settings = project.settings<GrpcSettings>()
         val userRepos = settings.grpcRepositories
             .mapNotNull { RepositoryConfig.parse(it) }
 

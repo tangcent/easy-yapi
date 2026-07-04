@@ -290,7 +290,7 @@ class AiChatPanelTest : EasyApiLightCodeInsightFixtureTestCase() {
         val ctx = com.itangcent.easyapi.ai.tools.ToolContext(
             project = project,
             configReader = com.itangcent.easyapi.config.ConfigReader.getInstance(project),
-            aiSettings = com.itangcent.easyapi.ai.AiSettings(
+            aiSettings = com.itangcent.easyapi.ai.AiRuntimeConfig(
                 provider = com.itangcent.easyapi.ai.AiProvider.OLLAMA,
                 baseUrl = "", apiKey = "", model = "",
                 requestTimeoutSec = 30, maxRequests = 8

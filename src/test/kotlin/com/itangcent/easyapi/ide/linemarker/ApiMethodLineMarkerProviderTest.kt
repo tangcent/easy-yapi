@@ -3,6 +3,7 @@ package com.itangcent.easyapi.ide.linemarker
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.util.PsiTreeUtil
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
@@ -104,7 +105,7 @@ class ApiMethodLineMarkerProviderTest : EasyApiLightCodeInsightFixtureTestCase()
     }
 
     fun testNoLineMarkerWhenGutterIconDisabled() = runTest {
-        settingBinder.update {
+        settingBinder.update(GeneralSettings::class) {
             gutterIconEnabled = false
         }
 
@@ -128,7 +129,7 @@ class ApiMethodLineMarkerProviderTest : EasyApiLightCodeInsightFixtureTestCase()
     }
 
     fun testLineMarkerWhenGutterIconEnabled() = runTest {
-        settingBinder.update {
+        settingBinder.update(GeneralSettings::class) {
             gutterIconEnabled = true
         }
 

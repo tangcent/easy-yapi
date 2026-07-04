@@ -16,6 +16,7 @@ import com.itangcent.easyapi.exporter.model.PathSelector
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.settings.module.IntelligentSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.util.text.appendWithDedup
@@ -97,7 +98,7 @@ class DocMetadataResolver internal constructor(
 ) : com.itangcent.easyapi.logging.IdeaLog {
     private val engine: RuleEngine get() = RuleEngine.getInstance(project)
     private val docHelper: DocHelper get() = UnifiedDocHelper.getInstance(project)
-    private val settings get() = project.settings
+    private val settings get() = project.settings<IntelligentSettings>()
 
     companion object {
         fun getInstance(project: Project): DocMetadataResolver = project.service()
@@ -254,26 +255,6 @@ class DocMetadataResolver internal constructor(
 
     suspend fun resolveParamMock(parameter: PsiParameter): String? {
         return engine.evaluate(RuleKeys.PARAM_MOCK, parameter)
-    }
-
-    suspend fun resolveApiTag(method: PsiMethod): String? {
-        return engine.evaluate(RuleKeys.API_TAG, method)
-    }
-
-    suspend fun resolveApiStatus(method: PsiMethod): String? {
-        return engine.evaluate(RuleKeys.API_STATUS, method)
-    }
-
-    suspend fun isApiOpen(method: PsiMethod): Boolean {
-        return engine.evaluate(RuleKeys.API_OPEN, method)
-    }
-    
-    suspend fun resolveYapiProject(method: PsiMethod): String? {
-        return engine.evaluate(RuleKeys.YAPI_PROJECT, method)
-    }
-
-    suspend fun resolveYapiProject(psiClass: PsiClass): String? {
-        return engine.evaluate(RuleKeys.YAPI_PROJECT, psiClass)
     }
 
     suspend fun isIgnored(element: PsiElement): Boolean {

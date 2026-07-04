@@ -3,9 +3,9 @@ package com.itangcent.easyapi.config.source
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
+import com.itangcent.easyapi.exporter.channel.yapi.YapiProjectResolver
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
-import com.itangcent.easyapi.psi.helper.DocMetadataResolver
-import com.itangcent.easyapi.rule.RuleKeys
+import com.itangcent.easyapi.exporter.channel.yapi.YapiRuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
@@ -13,7 +13,7 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
 /**
  * Integration test for the `yapi.project` extension.
  *
- * The extension defines rules for [RuleKeys.YAPI_PROJECT]:
+ * The extension defines rules for [YapiRuleKeys.YAPI_PROJECT]:
  *   - `yapi.project=#project`
  *   - `yapi.project=#module` (fallback for legacy `@module` doc tag)
  *
@@ -60,7 +60,7 @@ class YapiProjectConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase(
 
     /**
      * The core rule: a method with `@project user-service` doc tag should
-     * resolve [RuleKeys.YAPI_PROJECT] to `"user-service"`.
+     * resolve [YapiRuleKeys.YAPI_PROJECT] to `"user-service"`.
      */
     fun testYapiProjectRuleForMethodWithProjectTag() = runTest {
         val psiClass = findClass("com.itangcent.yapiproject.ProjectController")
@@ -70,7 +70,7 @@ class YapiProjectConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase(
         assertNotNull("Should find getUser method", method)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val project = ruleEngine.evaluate(RuleKeys.YAPI_PROJECT, method!!)
+        val project = ruleEngine.evaluate(YapiRuleKeys.YAPI_PROJECT, method!!)
         assertEquals(
             "YAPI_PROJECT should be 'user-service' for method with @project user-service doc tag",
             "user-service",
@@ -80,7 +80,7 @@ class YapiProjectConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase(
 
     /**
      * The core rule: a method with `@module order-service` doc tag (legacy
-     * fallback) should resolve [RuleKeys.YAPI_PROJECT] to `"order-service"`.
+     * fallback) should resolve [YapiRuleKeys.YAPI_PROJECT] to `"order-service"`.
      */
     fun testYapiProjectRuleForMethodWithModuleTag() = runTest {
         val psiClass = findClass("com.itangcent.yapiproject.ProjectController")
@@ -90,7 +90,7 @@ class YapiProjectConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase(
         assertNotNull("Should find createOrder method", method)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val project = ruleEngine.evaluate(RuleKeys.YAPI_PROJECT, method!!)
+        val project = ruleEngine.evaluate(YapiRuleKeys.YAPI_PROJECT, method!!)
         assertEquals(
             "YAPI_PROJECT should be 'order-service' for method with @module order-service doc tag",
             "order-service",
@@ -100,7 +100,7 @@ class YapiProjectConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase(
 
     /**
      * The core rule: a method without `@project` or `@module` doc tag should
-     * resolve [RuleKeys.YAPI_PROJECT] to `null`.
+     * resolve [YapiRuleKeys.YAPI_PROJECT] to `null`.
      */
     fun testYapiProjectRuleForMethodWithoutProjectTag() = runTest {
         val psiClass = findClass("com.itangcent.yapiproject.ProjectController")
@@ -110,7 +110,7 @@ class YapiProjectConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase(
         assertNotNull("Should find noProject method", method)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val project = ruleEngine.evaluate(RuleKeys.YAPI_PROJECT, method!!)
+        val project = ruleEngine.evaluate(YapiRuleKeys.YAPI_PROJECT, method!!)
         assertNull(
             "YAPI_PROJECT should be null for method without @project or @module doc tag",
             project
@@ -124,8 +124,8 @@ class YapiProjectConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase(
         val method = findMethod(psiClass!!, "getUser")
         assertNotNull("Should find getUser method", method)
 
-        val resolver = DocMetadataResolver.getInstance(project)
-        val project = resolver.resolveYapiProject(method!!)
+        val ruleEngine = RuleEngine.getInstance(project)
+        val project = YapiProjectResolver.resolveYapiProject(ruleEngine, method!!)
         assertEquals("user-service", project)
     }
 
@@ -136,8 +136,8 @@ class YapiProjectConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase(
         val method = findMethod(psiClass!!, "createOrder")
         assertNotNull("Should find createOrder method", method)
 
-        val resolver = DocMetadataResolver.getInstance(project)
-        val project = resolver.resolveYapiProject(method!!)
+        val ruleEngine = RuleEngine.getInstance(project)
+        val project = YapiProjectResolver.resolveYapiProject(ruleEngine, method!!)
         assertEquals("order-service", project)
     }
 
@@ -148,8 +148,8 @@ class YapiProjectConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase(
         val method = findMethod(psiClass!!, "noProject")
         assertNotNull("Should find noProject method", method)
 
-        val resolver = DocMetadataResolver.getInstance(project)
-        val project = resolver.resolveYapiProject(method!!)
+        val ruleEngine = RuleEngine.getInstance(project)
+        val project = YapiProjectResolver.resolveYapiProject(ruleEngine, method!!)
         assertNull("Method without @project or @module should return null", project)
     }
 

@@ -2,6 +2,7 @@ package com.itangcent.easyapi.ai
 
 import com.itangcent.easyapi.ai.agent.AgentEvent
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.module.AiSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -15,7 +16,7 @@ import kotlinx.coroutines.yield
  * - [session] lazily builds a session when settings ARE configured.
  * - [resetConversation] clears the session (next [session] rebuilds).
  * - [AgentMemory] persists across [resetConversation] (the OLD session's
- * memory is discarded; a new session starts fresh).
+ *memory is discarded; a new session starts fresh).
  */
 class AiAssistantServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -24,11 +25,7 @@ class AiAssistantServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun tearDown() {
         // Restore default settings so tests stay isolated.
         runCatching {
-            val s = binder.read()
-            s.aiProvider = AiProvider.OPENAI.name
-            s.aiBaseUrl = ""
-            s.aiModel = ""
-            binder.save(s)
+            binder.save(AiSettings())
         }
         super.tearDown()
     }
@@ -38,7 +35,7 @@ class AiAssistantServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
      * `null` — no provider / base URL / model resolved.
      */
     fun testSessionIsNullWhenNotConfigured() {
-        // Default settings: blank base URL + model → AiSettings.load returns null.
+        // Default settings: blank base URL + model → AiRuntimeConfig.load returns null.
         val service = AiAssistantService.getInstance(project)
         assertNull("session should be null when AI is not configured", service.session())
         assertFalse("isConfigured should be false", service.isConfigured())
@@ -108,10 +105,10 @@ class AiAssistantServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     private fun configureOllama() {
-        val s = binder.read()
-        s.aiProvider = AiProvider.OLLAMA.name
-        s.aiBaseUrl = AiProvider.OLLAMA.defaultBaseUrl!!
-        s.aiModel = AiProvider.OLLAMA.defaultModel!!
-        binder.save(s)
+        binder.save(AiSettings(
+            aiProvider = AiProvider.OLLAMA.name,
+            aiBaseUrl = AiProvider.OLLAMA.defaultBaseUrl!!,
+            aiModel = AiProvider.OLLAMA.defaultModel!!
+        ))
     }
 }

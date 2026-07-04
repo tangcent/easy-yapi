@@ -12,6 +12,8 @@ import com.itangcent.easyapi.psi.DefaultPsiClassHelper.Companion.DEFAULT_MAX_ELE
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
+import com.itangcent.easyapi.exporter.model.Extension
+import com.itangcent.easyapi.exporter.model.MutableExtension
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.FieldOption
 import com.itangcent.easyapi.psi.model.ObjectModel
@@ -383,17 +385,14 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
             // Increment element counter and check if we've exceeded the limit
             if (elementCounter.incrementAndCheckExceeded()) {
-                LOG.info(
-                    "Element limit exceeded while parsing ${qualifiedName}. " +
-                            "Processed ${elementCounter.count()} elements. Stopping field expansion."
-                )
+                LOG.info("Element limit exceeded while parsing ${qualifiedName}. " +
+                        "Processed ${elementCounter.count()} elements. Stopping field expansion.")
                 break
             }
 
             val fieldDefaultValue =
                 engine.evaluate(RuleKeys.FIELD_DEFAULT_VALUE, accessibleField.psi, fieldContext = fieldPath)
             val fieldRequired = engine.evaluate(RuleKeys.FIELD_REQUIRED, accessibleField.psi, fieldContext = fieldPath)
-            val fieldMock = engine.evaluate(RuleKeys.FIELD_MOCK, accessibleField.psi, fieldContext = fieldPath)
             val fieldDemo = engine.evaluate(RuleKeys.FIELD_DEMO, accessibleField.psi, fieldContext = fieldPath)
             val fieldAdvancedStr =
                 engine.evaluate(RuleKeys.FIELD_ADVANCED, accessibleField.psi, fieldContext = fieldPath)
@@ -434,7 +433,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             val fieldModel = buildFieldModel(
                 fieldType, engine, docHelper, cache,
                 option, maxDepth, depth + 1, visited,
-                fieldComment, fieldRequired, fieldDefaultValue, fieldMock, fieldDemo, fieldAdvanced,
+                fieldComment, fieldRequired, fieldDefaultValue, fieldDemo, fieldAdvanced,
                 psiElement = accessibleField.psi,
                 generic = isGenericField,
                 elementCounter = elementCounter
@@ -559,14 +558,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                         if (fieldNames.add(propertyName)) {
                             val returnType = method.returnType ?: continue
                             val methodContext = resolveContextForMember(method, psiClass, genericContext)
-                            fields.add(
-                                AccessibleField(
-                                    name = propertyName,
-                                    type = returnType,
-                                    psi = method,
-                                    declaringContext = methodContext
-                                )
-                            )
+                            fields.add(AccessibleField(name = propertyName, type = returnType, psi = method, declaringContext = methodContext))
                         }
                     }
                 }
@@ -585,14 +577,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                         if (fieldNames.add(propertyName)) {
                             val paramType = method.parameterList.parameters.firstOrNull()?.type ?: continue
                             val methodContext = resolveContextForMember(method, psiClass, genericContext)
-                            fields.add(
-                                AccessibleField(
-                                    name = propertyName,
-                                    type = paramType,
-                                    psi = method,
-                                    declaringContext = methodContext
-                                )
-                            )
+                            fields.add(AccessibleField(name = propertyName, type = paramType, psi = method, declaringContext = methodContext))
                         }
                     }
                 }
@@ -634,14 +619,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 val name = field.name
                 if (fieldNames.add(name)) {
                     val fieldContext = buildOwnContext(superClass, superContext)
-                    fields.add(
-                        AccessibleField(
-                            name = name,
-                            type = field.type,
-                            psi = field,
-                            declaringContext = fieldContext
-                        )
-                    )
+                    fields.add(AccessibleField(name = name, type = field.type, psi = field, declaringContext = fieldContext))
                 }
             }
         }
@@ -785,7 +763,6 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         comment: String?,
         required: Boolean,
         defaultValue: String?,
-        mock: String? = null,
         demo: String? = null,
         advanced: Map<String, Any?>? = null,
         psiElement: PsiElement? = null,
@@ -816,16 +793,28 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 }
             }
         }
+
+        // Resolve field-level mock (e.g. `field.mock=#mock` in the yapi extension).
+        // Populated onto the extension carrier so channel-specific accessors
+        // (e.g. `FieldModel.mock`) can read it without coupling the shared model.
+        var fieldExtensions: Extension = Extension.EMPTY
+        if (psiElement != null) {
+            val mockValue = engine.evaluate(RuleKeys.FIELD_MOCK, psiElement)
+            if (!mockValue.isNullOrBlank()) {
+                fieldExtensions = MutableExtension().apply { this["mock"] = mockValue }
+            }
+        }
+
         return FieldModel(
             model = reconciledModel,
             comment = comment,
             required = required,
             defaultValue = defaultValue,
             options = options,
-            mock = mock,
             demo = demo,
             advanced = advanced,
-            generic = generic
+            generic = generic,
+            extensions = fieldExtensions
         )
     }
 
@@ -976,8 +965,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
     private fun isMap(psiClass: PsiClass): Boolean = InheritanceHelper.isMap(psiClass)
 
-    private fun isEnum(psiClass: PsiClass): Boolean = readSync {
-        psiClass.isEnum || psiClass.supers.any { it.qualifiedName == ClassNameConstants.JAVA_LANG_ENUM }
+    private fun isEnum(psiClass: PsiClass): Boolean {
+        return psiClass.isEnum || psiClass.supers.any { it.qualifiedName == ClassNameConstants.JAVA_LANG_ENUM }
     }
 
     private fun isSimpleType(psiClass: PsiClass): Boolean {

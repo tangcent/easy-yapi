@@ -10,7 +10,11 @@ import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.SourceHelper
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.rule.RuleKey
-import com.itangcent.easyapi.rule.context.*
+import com.itangcent.easyapi.rule.context.RuleContext
+import com.itangcent.easyapi.rule.context.ScriptPsiClassContext
+import com.itangcent.easyapi.rule.context.ScriptPsiFieldContext
+import com.itangcent.easyapi.rule.context.ScriptPsiMethodContext
+import com.itangcent.easyapi.rule.context.asScriptIt
 import com.itangcent.easyapi.util.text.RegexUtils
 import com.itangcent.easyapi.util.RuleToolUtils
 import com.itangcent.easyapi.util.ide.ModuleHelper
@@ -162,7 +166,7 @@ class ScriptHelper(private val context: RuleContext) {
     }
 
     /**
-     * Converts a JSON type string to a YAPI data type string.
+     * Converts a JSON type string to a JSON Schema data type string.
      *
      * Mapping:
      * - string/date/datetime/file → "string"
@@ -175,12 +179,12 @@ class ScriptHelper(private val context: RuleContext) {
      *
      * ## Usage in Scripts
      * ```
-     * helper.jsonTypeToYapiType("int")    // "integer"
-     * helper.jsonTypeToYapiType("string") // "string"
-     * H.jsonTypeToYapiType("long")        // "integer"
+     * helper.jsonTypeToSchemaType("int")    // "integer"
+     * helper.jsonTypeToSchemaType("string") // "string"
+     * H.jsonTypeToSchemaType("long")        // "integer"
      * ```
      */
-    fun jsonTypeToYapiType(jsonType: String?): String {
+    fun jsonTypeToSchemaType(jsonType: String?): String {
         if (jsonType.isNullOrBlank()) return "string"
         return JsonType.toSchemaType(jsonType)
     }

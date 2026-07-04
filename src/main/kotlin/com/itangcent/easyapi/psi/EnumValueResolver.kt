@@ -12,6 +12,7 @@ import com.itangcent.easyapi.psi.model.FieldOption
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.settings
 
 /**
@@ -120,7 +121,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
      */
     private fun readAutoInferEnabled(): Boolean =
         runCatching {
-            project.settings.enumFieldAutoInferEnabled
+            project.settings<GeneralSettings>().enumFieldAutoInferEnabled
         }.getOrNull() ?: false
 
     /**

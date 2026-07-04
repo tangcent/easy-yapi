@@ -205,23 +205,6 @@ class JacksonConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     // =====================================================================
-    // @JsonFormat - date format pattern produces mock value
-    // =====================================================================
-
-    fun testJsonFormatSetsMockValue() = runTest {
-        val fields = exportPostBodyFields("/user/create")
-
-        val createTimeField = fields["createTime"]
-        assertNotNull("Field 'createTime' should exist", createTimeField)
-        val mock = createTimeField!!.mock
-        assertNotNull("@JsonFormat should produce a mock value for createTime", mock)
-        assertTrue(
-            "Mock value should contain @datetime with pattern, was: $mock",
-            mock!!.contains("@datetime") && mock.contains("yyyy-MM-dd HH:mm:ss")
-        )
-    }
-
-    // =====================================================================
     // @JsonPropertyOrder - field ordering
     // =====================================================================
 

@@ -41,17 +41,17 @@ jobs:
             
             if (isReleaseBranch) {
               console.log('This is a release branch');
-              
+            
               // Get current labels
               const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
                 owner,
                 repo,
                 issue_number: issueNumber
               });
-              
+            
               // Check if 'release' label is already applied
               const hasReleaseLabel = currentLabels.some(label => label.name === 'release');
-              
+            
               if (!hasReleaseLabel) {
                 console.log('Adding release label');
                 await github.rest.issues.addLabels({
@@ -63,7 +63,7 @@ jobs:
               } else {
                 console.log('Release label already exists');
               }
-              
+            
               return true;
             } else {
               console.log('Not a release branch');

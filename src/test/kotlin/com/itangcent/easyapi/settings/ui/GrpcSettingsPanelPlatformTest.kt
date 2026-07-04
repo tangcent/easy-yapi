@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.settings.ui
 
+import com.itangcent.easyapi.settings.module.GrpcSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class GrpcSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -12,10 +13,10 @@ class GrpcSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testResetFromAndApplyToDefaultSettings() {
-        val settings = com.itangcent.easyapi.settings.Settings()
+        val settings = GrpcSettings()
         panel.resetFrom(settings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = GrpcSettings()
         panel.applyTo(target)
 
         assertTrue(target.grpcEnable)
@@ -23,13 +24,13 @@ class GrpcSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testResetFromCustomSettingsAndApplyTo() {
-        val settings = com.itangcent.easyapi.settings.Settings().apply {
+        val settings = GrpcSettings().apply {
             grpcEnable = false
             grpcCallEnabled = true
         }
         panel.resetFrom(settings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = GrpcSettings()
         panel.applyTo(target)
 
         assertFalse(target.grpcEnable)
@@ -45,7 +46,7 @@ class GrpcSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testResetFromWithArtifactConfigs() {
-        val settings = com.itangcent.easyapi.settings.Settings().apply {
+        val settings = GrpcSettings().apply {
             grpcCallEnabled = true
             grpcArtifactConfigs = arrayOf(
                 "io.grpc:grpc-stub:latest:true",
@@ -54,7 +55,7 @@ class GrpcSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase() {
         }
         panel.resetFrom(settings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = GrpcSettings()
         panel.applyTo(target)
 
         assertTrue(target.grpcCallEnabled)
@@ -62,13 +63,13 @@ class GrpcSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testResetFromWithAdditionalJars() {
-        val settings = com.itangcent.easyapi.settings.Settings().apply {
+        val settings = GrpcSettings().apply {
             grpcCallEnabled = true
             grpcAdditionalJars = arrayOf("/path/to/jar1.jar", "/path/to/jar2.jar")
         }
         panel.resetFrom(settings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = GrpcSettings()
         panel.applyTo(target)
 
         assertTrue(target.grpcAdditionalJars.isNotEmpty())
@@ -82,7 +83,7 @@ class GrpcSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testResetFromNullAndApplyTo() {
         panel.resetFrom(null)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = GrpcSettings()
         panel.applyTo(target)
         // Should not throw
         assertTrue(target.grpcEnable)

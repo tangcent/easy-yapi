@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.settings.ui
 
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.EnvironmentSettings
+import com.itangcent.easyapi.settings.module.RuleFileSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import java.io.File
 import java.nio.file.Files
@@ -10,7 +11,7 @@ import java.nio.file.Files
  *
  * The sub-tab now shows a single table of `.easyapi/` folder files. Legacy
  * `.easy.api.config*` files are no longer displayed, but a previously-disabled
- * legacy path is preserved in `Settings.disabledAutoRuleFiles` across a
+ * legacy path is preserved in `EnvironmentSettings.disabledAutoRuleFiles` across a
  * reset/apply round-trip.
  */
 class ProjectRulesSubTabTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -28,7 +29,7 @@ class ProjectRulesSubTabTest : EasyApiLightCodeInsightFixtureTestCase() {
         val ruleFile = File(easyapiDir, "rule.properties").apply { writeText("name=folder") }
 
         val panel = ProjectRulesSubTab(project, projectDir.absolutePath)
-        val settings = Settings()
+        val settings = RuleFileSettings()
         panel.resetFrom(settings)
 
         val easyapiPaths = easyapiRowPaths(panel)
@@ -39,21 +40,24 @@ class ProjectRulesSubTabTest : EasyApiLightCodeInsightFixtureTestCase() {
         val easyapiDir = File(projectDir, ".easyapi").apply { mkdirs() }
         val ruleFile = File(easyapiDir, "rule.properties").apply { writeText("name=folder") }
         val panel = ProjectRulesSubTab(project, projectDir.absolutePath)
-        val settings = Settings()
-        panel.resetFrom(settings)
+        val ruleFileSettings = RuleFileSettings()
+        val envSettings = EnvironmentSettings()
+        panel.resetFrom(ruleFileSettings)
+        panel.resetAutoRuleFilesFrom(envSettings)
 
         // Toggle the `.easyapi/` row's enabled state via reflection (no UI).
         setRowEnabled(panel, "easyapiRows", ruleFile.absolutePath, enabled = false)
-        assertTrue("disabling should mark modified", panel.isModified(settings))
+        assertTrue("disabling should mark modified", panel.isAutoRuleFilesModified(envSettings))
 
-        panel.applyTo(settings)
+        panel.applyAutoRuleFilesTo(envSettings)
         assertEquals(
             listOf(ruleFile.absolutePath),
-            settings.disabledAutoRuleFiles.toList()
+            envSettings.disabledAutoRuleFiles.toList()
         )
 
-        panel.resetFrom(settings)
-        assertFalse("round-trip should be clean", panel.isModified(settings))
+        panel.resetFrom(ruleFileSettings)
+        panel.resetAutoRuleFilesFrom(envSettings)
+        assertFalse("round-trip should be clean", panel.isAutoRuleFilesModified(envSettings))
     }
 
     /**
@@ -64,20 +68,18 @@ class ProjectRulesSubTabTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testDisabledLegacyPathPreserved() {
         val rootConfig = File(projectDir, ".easy.api.config").apply { writeText("name=root") }
         val panel = ProjectRulesSubTab(project, projectDir.absolutePath)
-        val settings = Settings().apply {
-            disabledAutoRuleFiles = arrayOf(rootConfig.absolutePath)
-        }
+        val envSettings = EnvironmentSettings(disabledAutoRuleFiles = arrayOf(rootConfig.absolutePath))
 
-        panel.resetFrom(settings)
+        panel.resetAutoRuleFilesFrom(envSettings)
         // The legacy file is not shown in the (empty) `.easyapi/` table.
         assertTrue("no.easyapi/ rows expected", easyapiRowPaths(panel).isEmpty())
         // But it is not "modified" — the disabled legacy path is preserved.
-        assertFalse("preserved legacy disable should not be a modification", panel.isModified(settings))
+        assertFalse("preserved legacy disable should not be a modification", panel.isAutoRuleFilesModified(envSettings))
 
-        panel.applyTo(settings)
+        panel.applyAutoRuleFilesTo(envSettings)
         assertTrue(
             "disabled legacy path must be preserved",
-            rootConfig.absolutePath in settings.disabledAutoRuleFiles
+            rootConfig.absolutePath in envSettings.disabledAutoRuleFiles
         )
     }
 
@@ -86,7 +88,7 @@ class ProjectRulesSubTabTest : EasyApiLightCodeInsightFixtureTestCase() {
         val empty = Files.createTempDirectory("proj-empty-").toFile()
         empty.deleteOnExit()
         val panel = ProjectRulesSubTab(project, empty.absolutePath)
-        val settings = Settings()
+        val settings = RuleFileSettings()
         panel.resetFrom(settings)
         assertEquals(emptyList<String>(), easyapiRowPaths(panel))
         assertFalse(panel.isModified(settings))

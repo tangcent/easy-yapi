@@ -14,7 +14,7 @@ import org.junit.Test
  * Integration tests for [TagExpressionParser] verifying that `#tag` expressions
  * correctly collect all `@tag` values when used with [StringRuleMode.MERGE_DISTINCT].
  *
- * See: https://github.com/tangcent/easy-yapi/issues/1360
+ * See: https://github.com/tangcent/easy-api/issues/1360
  */
 class TagExpressionParserIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 

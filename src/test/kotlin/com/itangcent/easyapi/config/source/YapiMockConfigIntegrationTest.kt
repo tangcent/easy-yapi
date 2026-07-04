@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.config.source
 
-import com.itangcent.easyapi.exporter.yapi.MockRuleLoader
+import com.itangcent.easyapi.exporter.channel.yapi.MockRuleLoader
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader

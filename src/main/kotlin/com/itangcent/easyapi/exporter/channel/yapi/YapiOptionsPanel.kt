@@ -4,8 +4,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
-import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.ide.dialog.ExportDialogPreferences
+import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.ide.dialog.ExportDialogPreferencesPersistence
 import java.awt.BorderLayout
 import java.awt.event.ItemEvent
@@ -55,28 +55,28 @@ class YapiOptionsPanel(private val project: Project) : ChannelOptionsPanel {
 
     override fun onShown() {}
 
-    override fun buildConfig(): ChannelConfig.YapiConfig {
+    override fun buildConfig(): YapiConfig {
         val isNew = yapiModeComboBox.selectedItem == YAPI_MODE_NEW_TOKEN
         return if (isNew) {
             val token = yapiNewTokenField.text.trim()
             if (token.isNotBlank()) {
-                ChannelConfig.YapiConfig(selectedToken = token, useCustomProject = true)
+                YapiConfig(selectedToken = token, useCustomProject = true)
             } else {
-                ChannelConfig.YapiConfig()
+                YapiConfig()
             }
         } else {
             val idx = yapiProjectComboBox.selectedIndex
             if (idx >= 0 && idx < yapiProjects.size) {
                 val proj = yapiProjects[idx]
-                ChannelConfig.YapiConfig(selectedToken = proj.token, useCustomProject = false)
+                YapiConfig(selectedToken = proj.token, useCustomProject = false)
             } else {
-                ChannelConfig.YapiConfig()
+                YapiConfig()
             }
         }
     }
 
     private fun loadYapiProjects() {
-        val settings = project.settings
+        val settings = project.settings<YapiSettings>()
         val yapiTokens = settings.yapiTokens
         if (!yapiTokens.isNullOrBlank()) {
             yapiTokens.lines()

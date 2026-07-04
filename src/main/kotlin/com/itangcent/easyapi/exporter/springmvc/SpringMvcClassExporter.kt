@@ -18,13 +18,13 @@ import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.InheritanceHelper
-import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.psi.type.ResolvedMethod
 import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.psi.type.SpecialTypeHandler
 import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.settings.module.IntelligentSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.text.PathVariablePattern
 import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
@@ -59,7 +59,6 @@ class SpringMvcClassExporter(
     override val frameworkName: String = "SpringMVC"
 
     override suspend fun isEnabled(): Boolean {
-        val settings = project.settings
         val availabilityService = ProjectClassAvailabilityService.getInstance(project)
         return availabilityService.hasAnyClassInProject(SpringControllerRecognizer.CONTROLLER_ANNOTATIONS)
     }
@@ -127,9 +126,6 @@ class SpringMvcClassExporter(
                 val classFolder = metadataResolver.resolveFolder(psiClass)
                 val methodFolderName = metadataResolver.resolveFolderName(method)
                 val folder = methodFolderName.takeIf { it.isNotBlank() } ?: classFolder.name
-                val tags = metadataResolver.resolveApiTag(method)
-                    ?.split(",", "\n")?.map { it.trim() }?.distinct()?.filter { it.isNotBlank() }
-                    ?: emptyList()
 
                 val resolvedBindings = resolveParameterBindings(resolvedMethod)
                 val params = buildParameters(resolvedBindings, resolvedMethod)
@@ -141,8 +137,6 @@ class SpringMvcClassExporter(
                 val additionalHeaders = metadataResolver.resolveAdditionalHeaders(method)
                 val additionalParams = metadataResolver.resolveAdditionalParams(method)
                 val additionalResponseHeaders = metadataResolver.resolveAdditionalResponseHeaders(method)
-                val apiOpen = metadataResolver.isApiOpen(method)
-                val apiStatus = metadataResolver.resolveApiStatus(method)
 
                 val defaultHttpMethod = metadataResolver.resolveDefaultHttpMethod(method)
                     ?.let { HttpMethod.fromSpring(it) }
@@ -179,9 +173,6 @@ class SpringMvcClassExporter(
                         name = apiName,
                         folder = folder,
                         description = description,
-                        tags = tags,
-                        status = apiStatus,
-                        open = apiOpen,
                         sourceClass = psiClass,
                         sourceMethod = method,
                         className = psiClass.qualifiedName ?: psiClass.name,
@@ -352,15 +343,14 @@ class SpringMvcClassExporter(
             binding = binding,
             defaultValue = defaultValue,
             description = doc,
-            example = demo ?: mock,
-            jsonType = rawType
+            example = demo ?: mock
         )
     }
 
     private suspend fun expandFormParameter(
         resolvedParamType: ResolvedType
     ): List<ApiParameter> {
-        val formExpanded = project.settings.formExpanded
+        val formExpanded = project.settings<IntelligentSettings>().formExpanded
         if (!formExpanded) {
             return emptyList()
         }
@@ -370,7 +360,7 @@ class SpringMvcClassExporter(
     private suspend fun expandQueryParameter(
         resolvedParamType: ResolvedType
     ): List<ApiParameter> {
-        val queryExpanded = project.settings.queryExpanded
+        val queryExpanded = project.settings<IntelligentSettings>().queryExpanded
         if (!queryExpanded) {
             return emptyList()
         }
@@ -409,8 +399,7 @@ class SpringMvcClassExporter(
                     required = fieldRequired,
                     binding = binding,
                     defaultValue = fieldDefault,
-                    description = fieldDoc,
-                    jsonType = resolveFieldJsonType(fieldModel)
+                    description = fieldDoc
                 )
             )
         }
@@ -425,20 +414,6 @@ class SpringMvcClassExporter(
         return when {
             isFileType(model) || isFileArrayType(model) -> ParameterType.FILE
             else -> ParameterType.TEXT
-        }
-    }
-
-    private fun resolveFieldJsonType(fieldModel: FieldModel): String {
-        return when (val model = fieldModel.model) {
-            is ObjectModel.Single -> model.type
-            is ObjectModel.Array -> {
-                when {
-                    isFileArrayType(model) -> "file[]"
-                    else -> JsonType.ARRAY
-                }
-            }
-            is ObjectModel.Object,
-            is ObjectModel.MapModel -> JsonType.OBJECT
         }
     }
 

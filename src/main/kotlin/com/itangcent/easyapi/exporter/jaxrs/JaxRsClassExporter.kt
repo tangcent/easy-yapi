@@ -17,6 +17,7 @@ import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.psi.type.searchAnnotation
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
 import kotlinx.coroutines.withContext
@@ -53,9 +54,8 @@ class JaxRsClassExporter(
     override val frameworkName: String = "JAX-RS"
 
     override suspend fun isEnabled(): Boolean {
-        val settings = project.settings
         val availabilityService = ProjectClassAvailabilityService.getInstance(project)
-        return settings.jaxrsEnable &&
+        return project.settings<GeneralSettings>().jaxrsEnable &&
                 availabilityService.hasAnyClassInProject(JaxRsResourceRecognizer.PATH_ANNOTATIONS)
     }
 

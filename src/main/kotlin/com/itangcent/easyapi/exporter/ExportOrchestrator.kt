@@ -6,21 +6,20 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiScanner
-import com.itangcent.easyapi.exporter.channel.ApiChannelRegistry
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
+import com.itangcent.easyapi.exporter.channel.ChannelRegistry
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.ide.support.SelectionScope
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.settings.settings
 
 @Service(Service.Level.PROJECT)
 class ExportOrchestrator(private val project: Project) : IdeaLog {
 
     private val apiScanner: ApiScanner = ApiScanner.getInstance(project)
-    private val channelRegistry: ApiChannelRegistry = ApiChannelRegistry.getInstance(project)
+    private val channelRegistry: ChannelRegistry = ChannelRegistry.getInstance(project)
 
     companion object {
         fun getInstance(project: Project): ExportOrchestrator {
@@ -52,11 +51,9 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         indicator?.isIndeterminate = false
         indicator?.fraction = 0.0
 
-        val settings = project.settings
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            settings = settings,
             channelId = channelId,
             channelConfig = channelConfig,
             indicator = indicator
@@ -94,11 +91,9 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         indicator?.isIndeterminate = false
         indicator?.fraction = 0.0
 
-        val settings = project.settings
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            settings = settings,
             channelId = channelId,
             channelConfig = channelConfig,
             indicator = indicator

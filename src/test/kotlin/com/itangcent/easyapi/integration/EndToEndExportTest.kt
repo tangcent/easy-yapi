@@ -1,10 +1,10 @@
 package com.itangcent.easyapi.integration
 
-import com.itangcent.easyapi.exporter.postman.PostmanFormatOptions
-import com.itangcent.easyapi.exporter.postman.PostmanFormatter
+import com.itangcent.easyapi.exporter.channel.postman.PostmanFormatOptions
+import com.itangcent.easyapi.exporter.channel.postman.PostmanFormatter
 import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
-import com.itangcent.easyapi.exporter.curl.CurlFormatter
-import com.itangcent.easyapi.exporter.markdown.DefaultMarkdownFormatter
+import com.itangcent.easyapi.exporter.channel.curl.CurlFormatter
+import com.itangcent.easyapi.exporter.channel.markdown.DefaultMarkdownFormatter
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper

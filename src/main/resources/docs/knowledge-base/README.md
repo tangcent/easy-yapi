@@ -22,7 +22,7 @@ the **request or response contract invisibly** — for example:
 - A `HandlerMethodArgumentResolver` that injects a parameter the source code
   does not declare (e.g., the current user).
 - A custom annotation like `@RequirePermission("admin")` that should become a
-  Postman header or an `api.tag`.
+  Postman header or an `method.doc`.
 
 The [Custom-Pattern Catalog](rule-guide.md#custom-pattern-catalog) in the Rule
 Authoring Guide lists the patterns to look for and the rule recipe to use for

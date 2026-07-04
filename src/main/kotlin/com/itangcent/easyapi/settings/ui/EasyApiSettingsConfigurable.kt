@@ -1,31 +1,52 @@
 package com.itangcent.easyapi.settings.ui
 
 import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.itangcent.easyapi.exporter.channel.ChannelRegistry
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.AiSettings
+import com.itangcent.easyapi.settings.module.EnvironmentSettings
+import com.itangcent.easyapi.settings.module.GeneralSettings
+import com.itangcent.easyapi.settings.module.GrpcSettings
+import com.itangcent.easyapi.settings.module.HttpSettings
+import com.itangcent.easyapi.settings.module.IntelligentSettings
+import com.itangcent.easyapi.settings.module.RuleFileSettings
 import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
+import kotlin.reflect.KClass
 
 class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.project.Project) : Configurable {
     private var panel: JPanel? = null
     private var tabs: JTabbedPane? = null
 
-    private val settingBinder: SettingBinder by lazy {
-        SettingBinder.getInstance(project)
-    }
-
     private val generalPanel = GeneralSettingsPanel(project)
-    private val postmanPanel = PostmanSettingsPanel()
-    private val yapiPanel = YapiSettingsPanel()
     private val httpPanel = HttpSettingsPanel()
     private val intelligentPanel = IntelligentSettingsPanel()
     private val extensionPanel = ExtensionConfigPanel()
     private val aiPanel = AiSettingsPanel()
-    private val otherPanel = OtherSettingsPanel()
+    private val otherPanel = OtherSettingsPanel(project)
     private val grpcPanel = GrpcSettingsPanel(project)
     private val environmentPanel = EnvironmentSettingsPanel(project)
+
+    // Channel panels (including Postman) are dynamically contributed via the
+    // Channel EP. Each panel is paired with the [Channel.settingsType] it owns
+    // so apply/reset/isModified can read and persist the correct module via
+    // [SettingBinder]. Panels whose channel declares no settingsType are treated
+    // as self-contained (their applyTo/resetFrom are no-ops).
+    private val channelPanels = mutableListOf<ChannelPanelEntry>()
+
+    /** No-op module for self-contained panels whose applyTo is a no-op. */
+    private val noopModule = object : Settings {}
+
+    /** A channel settings panel paired with its owning [Channel.settingsType]. */
+    private data class ChannelPanelEntry(
+        val panel: SettingsPanel<Settings>,
+        val settingsType: KClass<out Settings>?
+    )
 
     companion object {
         private var initialTab: String? = null
@@ -57,10 +78,9 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
     override fun createComponent(): JComponent {
         if (panel == null) {
             panel = JPanel(BorderLayout())
+            channelPanels.clear()
             tabs = JTabbedPane().also { t ->
                 t.addTab(TAB_GENERAL, wrapNorth(generalPanel.component))
-                t.addTab(TAB_POSTMAN, wrapNorth(postmanPanel.component))
-                t.addTab("Yapi", wrapNorth(yapiPanel.component))
                 t.addTab(TAB_HTTP, wrapNorth(httpPanel.component))
                 t.addTab(TAB_INTELLIGENT, wrapNorth(intelligentPanel.component))
                 t.addTab(TAB_EXTENSIONS, extensionPanel.component)
@@ -68,6 +88,19 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
                 t.addTab(TAB_OTHER, wrapNorth(otherPanel.component))
                 t.addTab(TAB_GRPC, wrapNorth(grpcPanel.component))
                 t.addTab(TAB_ENVIRONMENT, environmentPanel.component)
+
+                // Dynamically add a tab for each registered channel (sorted by settingsTabOrder).
+                // Postman (settingsTabOrder=20) appears before the default (100).
+                ChannelRegistry.getInstance(project).channelsForSettings().forEach { channel ->
+                    channel.createSettingsPanel(project)?.let { pnl ->
+                        val name = channel.id.replaceFirstChar { it.uppercase() }
+                        t.addTab(name, wrapNorth(pnl.component))
+                        @Suppress("UNCHECKED_CAST")
+                        channelPanels.add(
+                            ChannelPanelEntry(pnl as SettingsPanel<Settings>, channel.settingsType)
+                        )
+                    }
+                }
             }
             panel!!.add(tabs, BorderLayout.CENTER)
         }
@@ -106,49 +139,147 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
 
     /**
      * Checks if any settings have been modified.
+     *
+     * Each module-typed panel is checked against its own module via
+     * [SettingBinder]. Mixed-scope panels also check their
+     * cross-module fields.
      */
     override fun isModified(): Boolean {
-        val settings = settingBinder.read()
-        return listOf(
-            generalPanel, postmanPanel, yapiPanel, httpPanel,
-            intelligentPanel, extensionPanel, aiPanel,
-            otherPanel, grpcPanel, environmentPanel
-        ).any { it.isModified(settings) }
+        val binder = SettingBinder.getInstance(project)
+        val general = binder.read(GeneralSettings::class)
+        val grpc = binder.read(GrpcSettings::class)
+        val intelligent = binder.read(IntelligentSettings::class)
+        val environment = binder.read(EnvironmentSettings::class)
+
+        return generalPanel.isModified(general) ||
+            generalPanel.isRepositoriesModified(grpc) ||
+            httpPanel.isModified(binder.read(HttpSettings::class)) ||
+            intelligentPanel.isModified(intelligent) ||
+            intelligentPanel.isEnumFieldModified(general) ||
+            extensionPanel.isModified(binder.read(RuleFileSettings::class)) ||
+            aiPanel.isModified(binder.read(AiSettings::class)) ||
+            otherPanel.isModified(null) ||
+            grpcPanel.isModified(grpc) ||
+            environmentPanel.isModified(environment) ||
+            environmentPanel.isGlobalEnvsModified(intelligent) ||
+            channelPanels.any { entry -> isChannelModified(binder, entry) }
     }
 
     /**
      * Applies all changes from the UI panels to settings.
+     *
+     * Each module-typed panel applies to its own module via
+     * [SettingBinder]. Mixed-scope panels also apply their
+     * cross-module fields. All modified modules are then persisted.
      */
     override fun apply() {
-        val settings = settingBinder.read()
-        generalPanel.applyTo(settings)
-        postmanPanel.applyTo(settings)
-        yapiPanel.applyTo(settings)
-        httpPanel.applyTo(settings)
-        intelligentPanel.applyTo(settings)
-        extensionPanel.applyTo(settings)
-        aiPanel.applyTo(settings)
-        otherPanel.applyTo(settings)
-        grpcPanel.applyTo(settings)
-        environmentPanel.applyTo(settings)
-        settingBinder.save(settings)
+        val binder = SettingBinder.getInstance(project)
+
+        val general = binder.read(GeneralSettings::class)
+        generalPanel.applyTo(general)
+
+        val grpc = binder.read(GrpcSettings::class)
+        generalPanel.applyRepositoriesTo(grpc)
+        grpcPanel.applyTo(grpc)
+
+        val intelligent = binder.read(IntelligentSettings::class)
+        intelligentPanel.applyTo(intelligent)
+        environmentPanel.applyGlobalEnvsTo(intelligent)
+
+        val environment = binder.read(EnvironmentSettings::class)
+        environmentPanel.applyTo(environment)
+
+        intelligentPanel.applyEnumFieldTo(general)
+
+        val http = binder.read(HttpSettings::class)
+        httpPanel.applyTo(http)
+
+        val ruleFile = binder.read(RuleFileSettings::class)
+        extensionPanel.applyTo(ruleFile)
+
+        val ai = binder.read(AiSettings::class)
+        aiPanel.applyTo(ai)
+
+        // self-contained panels (no-op applyTo)
+        otherPanel.applyTo(noopModule)
+        // Channel panels: read their own typed module, apply, then persist.
+        channelPanels.forEach { entry -> applyChannel(binder, entry) }
+
+        // persist all modules
+        binder.save(general)
+        binder.save(grpc)
+        binder.save(intelligent)
+        binder.save(environment)
+        binder.save(http)
+        binder.save(ruleFile)
+        binder.save(ai)
+    }
+
+    /**
+     * Reads the channel's typed module, applies the panel's UI state to it,
+     * and persists it. Channels without a [Channel.settingsType] are treated
+     * as self-contained (their applyTo is a no-op) and receive [noopModule].
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun applyChannel(binder: SettingBinder, entry: ChannelPanelEntry) {
+        val type = entry.settingsType
+        if (type == null) {
+            entry.panel.applyTo(noopModule)
+        } else {
+            val module = binder.read(type as KClass<Settings>)
+            entry.panel.applyTo(module)
+            binder.save(module)
+        }
+    }
+
+    /**
+     * Checks whether a channel panel's UI state differs from its persisted module.
+     * Channels without a [Channel.settingsType] are self-contained (no state).
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun isChannelModified(binder: SettingBinder, entry: ChannelPanelEntry): Boolean {
+        val type = entry.settingsType ?: return entry.panel.isModified(null)
+        return entry.panel.isModified(binder.read(type as KClass<Settings>))
     }
 
     /**
      * Resets all UI panels to the current settings values.
+     *
+     * Each module-typed panel resets from its own module via
+     * [SettingBinder]. Mixed-scope panels also reset their
+     * cross-module fields.
      */
     override fun reset() {
-        val settings = settingBinder.read()
-        generalPanel.resetFrom(settings)
-        postmanPanel.resetFrom(settings)
-        yapiPanel.resetFrom(settings)
-        httpPanel.resetFrom(settings)
-        intelligentPanel.resetFrom(settings)
-        extensionPanel.resetFrom(settings)
-        aiPanel.resetFrom(settings)
-        otherPanel.resetFrom(settings)
-        grpcPanel.resetFrom(settings)
-        environmentPanel.resetFrom(settings)
+        val binder = SettingBinder.getInstance(project)
+
+        val general = binder.read(GeneralSettings::class)
+        generalPanel.resetFrom(general)
+        generalPanel.resetRepositoriesFrom(binder.read(GrpcSettings::class))
+
+        val intelligent = binder.read(IntelligentSettings::class)
+        intelligentPanel.resetFrom(intelligent)
+        intelligentPanel.resetEnumFieldFrom(general)
+
+        val environment = binder.read(EnvironmentSettings::class)
+        environmentPanel.resetFrom(environment)
+        environmentPanel.resetGlobalEnvsFrom(intelligent)
+
+        httpPanel.resetFrom(binder.read(HttpSettings::class))
+        extensionPanel.resetFrom(binder.read(RuleFileSettings::class))
+        aiPanel.resetFrom(binder.read(AiSettings::class))
+        grpcPanel.resetFrom(binder.read(GrpcSettings::class))
+
+        // self-contained panels (no-op resetFrom)
+        otherPanel.resetFrom(null)
+        @Suppress("UNCHECKED_CAST")
+        channelPanels.forEach { entry ->
+            val type = entry.settingsType
+            if (type == null) {
+                entry.panel.resetFrom(null)
+            } else {
+                entry.panel.resetFrom(binder.read(type as KClass<Settings>))
+            }
+        }
     }
 
     override fun disposeUIResources() {
@@ -163,19 +294,25 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
     }
 }
 
-abstract class BaseEasyApiChildConfigurable(
+abstract class BaseEasyApiChildConfigurable<T : Settings>(
     private val displayName: String,
-    private val panelFactory: () -> SettingsPanel
+    private val panelFactory: () -> SettingsPanel<T>
 ) : Configurable {
     private var panelContainer: JPanel? = null
-    private val panel: SettingsPanel by lazy { panelFactory() }
+    protected val panel: SettingsPanel<T> by lazy { panelFactory() }
 
     protected var project: com.intellij.openapi.project.Project? = null
 
-    protected val settingBinder: SettingBinder? by lazy {
+    protected val modularBinder: SettingBinder? by lazy {
         project?.let { SettingBinder.getInstance(it) }
             ?: ProjectManager.getInstance().openProjects.firstOrNull()?.let { SettingBinder.getInstance(it) }
     }
+
+    /** Reads the current settings for the panel's module type, or null if unavailable. */
+    protected abstract fun readSettings(): T?
+
+    /** Persists the given settings for the panel's module type. */
+    protected abstract fun saveSettings(settings: T)
 
     override fun getDisplayName(): String = displayName
 
@@ -189,19 +326,18 @@ abstract class BaseEasyApiChildConfigurable(
     }
 
     override fun isModified(): Boolean {
-        val settings = settingBinder?.read() ?: return false
+        val settings = readSettings() ?: return false
         return panel.isModified(settings)
     }
 
     override fun apply() {
-        val binder = settingBinder ?: return
-        val settings = binder.read()
+        val settings = readSettings() ?: return
         panel.applyTo(settings)
-        binder.save(settings)
+        saveSettings(settings)
     }
 
     override fun reset() {
-        panel.resetFrom(settingBinder?.read())
+        panel.resetFrom(readSettings())
     }
 
     override fun disposeUIResources() {
@@ -209,8 +345,43 @@ abstract class BaseEasyApiChildConfigurable(
     }
 }
 
-class EasyApiExtensionConfigurable(project: com.intellij.openapi.project.Project) : BaseEasyApiChildConfigurable("Extensions", { ExtensionConfigPanel() }) { init { this.project = project } }
+class EasyApiExtensionConfigurable(project: com.intellij.openapi.project.Project) :
+    BaseEasyApiChildConfigurable<RuleFileSettings>("Extensions", { ExtensionConfigPanel() }) {
+    init { this.project = project }
+    override fun readSettings(): RuleFileSettings? = modularBinder?.read(RuleFileSettings::class)
+    override fun saveSettings(settings: RuleFileSettings) { modularBinder?.save(settings) }
+}
 
-class EasyApiRulesConfigurable(project: com.intellij.openapi.project.Project) : BaseEasyApiChildConfigurable("Rules", { RulesTabPanel(project) }) { init { this.project = project } }
+class EasyApiRulesConfigurable(project: com.intellij.openapi.project.Project) :
+    BaseEasyApiChildConfigurable<RuleFileSettings>("Rules", { RulesTabPanel(project) }) {
+    init { this.project = project }
 
-class EasyApiOtherConfigurable(project: com.intellij.openapi.project.Project) : BaseEasyApiChildConfigurable("Other", { OtherSettingsPanel() }) { init { this.project = project } }
+    private val rulesTabPanel: RulesTabPanel get() = panel as RulesTabPanel
+
+    override fun readSettings(): RuleFileSettings? = modularBinder?.read(RuleFileSettings::class)
+    override fun saveSettings(settings: RuleFileSettings) { modularBinder?.save(settings) }
+
+    override fun reset() {
+        super.reset()
+        rulesTabPanel.resetAutoRuleFilesFrom(modularBinder?.read(EnvironmentSettings::class))
+    }
+
+    override fun apply() {
+        super.apply()
+        val envSettings = modularBinder?.read(EnvironmentSettings::class) ?: return
+        rulesTabPanel.applyAutoRuleFilesTo(envSettings)
+        modularBinder?.save(envSettings)
+    }
+
+    override fun isModified(): Boolean {
+        if (super.isModified()) return true
+        return rulesTabPanel.isAutoRuleFilesModified(modularBinder?.read(EnvironmentSettings::class))
+    }
+}
+
+class EasyApiOtherConfigurable(project: com.intellij.openapi.project.Project) :
+    BaseEasyApiChildConfigurable<Settings>("Other", { OtherSettingsPanel(project) }) {
+    init { this.project = project }
+    override fun readSettings(): Settings? = object : Settings {}
+    override fun saveSettings(settings: Settings) { /* no-op: self-contained panel */ }
+}

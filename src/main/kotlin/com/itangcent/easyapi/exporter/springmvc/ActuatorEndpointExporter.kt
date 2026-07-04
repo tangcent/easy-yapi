@@ -9,6 +9,7 @@ import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
 
@@ -30,9 +31,8 @@ class ActuatorEndpointExporter(
     override val frameworkName: String = "SpringActuator"
 
     override suspend fun isEnabled(): Boolean {
-        val settings = project.settings
         val availabilityService = ProjectClassAvailabilityService.getInstance(project)
-        return settings.actuatorEnable &&
+        return project.settings<GeneralSettings>().actuatorEnable &&
                 availabilityService.hasAnyClassInProject(SpringActuatorConstants.ENDPOINT_ANNOTATIONS)
     }
 

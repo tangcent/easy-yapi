@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.ai.tools
 
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.ai.AiSettings
+import com.itangcent.easyapi.ai.AiRuntimeConfig
 import com.itangcent.easyapi.ai.agent.AgentMemory
 import com.itangcent.easyapi.ai.agent.ApprovalGate
 import com.itangcent.easyapi.ai.agent.ClarificationGate
@@ -59,7 +59,7 @@ interface AiTool {
 data class ToolContext(
     val project: Project,
     val configReader: ConfigReader,
-    val aiSettings: AiSettings,
+    val aiSettings: AiRuntimeConfig,
     val ruleFileResolver: RuleFileResolver,
     val workingMemory: AgentMemory,
     val approvals: ApprovalGate,

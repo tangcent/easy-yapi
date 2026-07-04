@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.ai.tools
 
 import com.itangcent.easyapi.ai.AiProvider
-import com.itangcent.easyapi.ai.AiSettings
+import com.itangcent.easyapi.ai.AiRuntimeConfig
 import com.itangcent.easyapi.ai.agent.AgentMemory
 import com.itangcent.easyapi.ai.agent.ClarificationAnswers
 import com.itangcent.easyapi.ai.agent.ClarificationGate
@@ -23,7 +23,7 @@ class AskClarificationToolTest : EasyApiLightCodeInsightFixtureTestCase() {
     private fun ctx(gate: ClarificationGate): ToolContext = ToolContext(
         project = project,
         configReader = ConfigReader.getInstance(project),
-        aiSettings = AiSettings(
+        aiSettings = AiRuntimeConfig(
             provider = AiProvider.OLLAMA,
             baseUrl = "", apiKey = "", model = "llama3",
             requestTimeoutSec = 30, maxRequests = 8

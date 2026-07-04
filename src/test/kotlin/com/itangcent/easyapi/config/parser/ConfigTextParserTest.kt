@@ -3,8 +3,9 @@ package com.itangcent.easyapi.config.parser
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.resource.ConfigResourceLoader
 import com.itangcent.easyapi.config.resource.LoadedConfigResource
+import com.itangcent.easyapi.settings.HttpClientType
 import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.testFramework.ConstantSettingBinder
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
@@ -14,12 +15,10 @@ import org.mockito.kotlin.whenever
 class ConfigTextParserTest {
 
     private fun newParser(
-        settings: Settings = Settings(),
         loader: ConfigResourceLoader? = null
     ): ConfigTextParser {
         val project = mock<Project>()
-        val settingBinder = mock<SettingBinder>()
-        whenever(settingBinder.read()).thenReturn(settings)
+        val settingBinder = ConstantSettingBinder()
         whenever(project.getService(SettingBinder::class.java)).thenReturn(settingBinder)
         if (loader != null) {
             whenever(project.getService(ConfigResourceLoader::class.java)).thenReturn(loader)
@@ -90,10 +89,9 @@ class ConfigTextParserTest {
 
     @Test
     fun testParseConditionalWithTrueCondition() {
-        val settings = Settings(httpClient = "APACHE")
-        val parser = newParser(settings)
+        val parser = newParser()
         val text = """
-            ###if httpClient==APACHE
+            ###if httpClient==${HttpClientType.APACHE.value}
             api.name=conditional-api
             ###endif
         """.trimIndent()
@@ -104,10 +102,9 @@ class ConfigTextParserTest {
 
     @Test
     fun testParseConditionalWithFalseCondition() {
-        val settings = Settings(httpClient = "APACHE")
-        val parser = newParser(settings)
+        val parser = newParser()
         val text = """
-            ###if httpClient==URL_CONNECTION
+            ###if httpClient==${HttpClientType.DEFAULT.value}
             api.name=conditional-api
             ###endif
         """.trimIndent()
@@ -363,5 +360,153 @@ class ConfigTextParserTest {
         assertEquals(1, entries.size)
         assertEquals("api.name", entries[0].key)
         assertTrue(entries[0].directives.ignoreUnresolved)
+    }
+
+    // ── Multi-line value with prefix (value ends with ``` but isn't just ```) ──
+
+    @Test
+    fun testParseMultilineValueWithPrefix() {
+        val parser = newParser()
+        val text = """
+            api.description=prefix```
+            Line 1
+            Line 2
+            ```
+        """.trimIndent()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
+        assertEquals(1, entries.size)
+        assertTrue("Should contain prefix", entries[0].value.contains("prefix"))
+        assertTrue("Should contain Line 1", entries[0].value.contains("Line 1"))
+        assertTrue("Should contain Line 2", entries[0].value.contains("Line 2"))
+        assertFalse("Should not contain raw backticks", entries[0].value.contains("```"))
+    }
+
+    @Test
+    fun testParseMultilineValueWithPrefixNoClosingBackticks() {
+        // Multi-line value that reaches EOF without a closing ``` — the
+        // while loop should exhaust lines gracefully.
+        val parser = newParser()
+        val text = "api.description=prefix```\nLine 1\nLine 2"
+        val entries = runBlocking { parser.parse(text, "test").toList() }
+        assertEquals(1, entries.size)
+        assertTrue("Should contain prefix", entries[0].value.contains("prefix"))
+        assertTrue("Should contain Line 1", entries[0].value.contains("Line 1"))
+        assertTrue("Should contain Line 2", entries[0].value.contains("Line 2"))
+    }
+
+    @Test
+    fun testParseMultilineValueNoClosingBackticks() {
+        // Multi-line value with just ``` (no prefix) that reaches EOF
+        // without a closing ```.
+        val parser = newParser()
+        val text = "api.description=```\nLine 1\nLine 2"
+        val entries = runBlocking { parser.parse(text, "test").toList() }
+        assertEquals(1, entries.size)
+        assertTrue("Should contain Line 1", entries[0].value.contains("Line 1"))
+        assertTrue("Should contain Line 2", entries[0].value.contains("Line 2"))
+    }
+
+    // ── Setting resolver keys (###if with various settings) ──
+
+    @Test
+    fun testParseConditionalLogLevel() {
+        val parser = newParser()
+        val text = """
+            ###if logLevel==100
+            api.name=log-level-match
+            ###endif
+        """.trimIndent()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
+        assertEquals(1, entries.size)
+        assertEquals("log-level-match", entries[0].value)
+    }
+
+    @Test
+    fun testParseConditionalLogLevelFalse() {
+        val parser = newParser()
+        val text = """
+            ###if logLevel==50
+            api.name=log-level-match
+            ###endif
+        """.trimIndent()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
+        assertTrue(entries.isEmpty())
+    }
+
+    @Test
+    fun testParseConditionalHttpTimeOut() {
+        val parser = newParser()
+        val text = """
+            ###if httpTimeOut==30
+            api.name=timeout-match
+            ###endif
+        """.trimIndent()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
+        assertEquals(1, entries.size)
+        assertEquals("timeout-match", entries[0].value)
+    }
+
+    @Test
+    fun testParseConditionalUnsafeSsl() {
+        val parser = newParser()
+        val text = """
+            ###if unsafeSsl==false
+            api.name=ssl-match
+            ###endif
+        """.trimIndent()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
+        assertEquals(1, entries.size)
+        assertEquals("ssl-match", entries[0].value)
+    }
+
+    @Test
+    fun testParseConditionalFeignEnable() {
+        val parser = newParser()
+        val text = """
+            ###if feignEnable==false
+            api.name=feign-match
+            ###endif
+        """.trimIndent()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
+        assertEquals(1, entries.size)
+        assertEquals("feign-match", entries[0].value)
+    }
+
+    @Test
+    fun testParseConditionalJaxrsEnable() {
+        val parser = newParser()
+        val text = """
+            ###if jaxrsEnable==true
+            api.name=jaxrs-match
+            ###endif
+        """.trimIndent()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
+        assertEquals(1, entries.size)
+        assertEquals("jaxrs-match", entries[0].value)
+    }
+
+    @Test
+    fun testParseConditionalActuatorEnable() {
+        val parser = newParser()
+        val text = """
+            ###if actuatorEnable==false
+            api.name=actuator-match
+            ###endif
+        """.trimIndent()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
+        assertEquals(1, entries.size)
+        assertEquals("actuator-match", entries[0].value)
+    }
+
+    @Test
+    fun testParseConditionalUnknownKeyEvaluatesFalse() {
+        val parser = newParser()
+        val text = """
+            ###if unknownKey==value
+            api.name=should-not-appear
+            ###endif
+        """.trimIndent()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
+        assertTrue(entries.isEmpty())
     }
 }

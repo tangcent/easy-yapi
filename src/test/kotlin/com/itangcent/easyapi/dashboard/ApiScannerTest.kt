@@ -5,6 +5,8 @@ import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.ide.support.SelectionScope
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
+import com.itangcent.easyapi.settings.module.GeneralSettings
+import com.itangcent.easyapi.settings.module.GrpcSettings
 import com.itangcent.easyapi.settings.update
 
 class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -64,7 +66,7 @@ class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testConcurrentScanReturnsEndpoints() = runTest {
-        settingBinder.update {
+        settingBinder.update(GeneralSettings::class) {
             concurrentScanEnabled = true
         }
         val endpoints = apiScanner.scanAll()
@@ -72,14 +74,14 @@ class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testConcurrentScanProducesSameResultsAsSequential() = runTest {
-        settingBinder.update {
+        settingBinder.update(GeneralSettings::class) {
             concurrentScanEnabled = false
         }
         val sequentialEndpoints = apiScanner.scanAll()
             .filter { it.metadata is HttpMetadata }
             .sortedBy { (it.metadata as HttpMetadata).path }
 
-        settingBinder.update {
+        settingBinder.update(GeneralSettings::class) {
             concurrentScanEnabled = true
         }
         val concurrentEndpoints = apiScanner.scanAll()
@@ -101,10 +103,12 @@ class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testOnlyExportsSpringMvcWhenAvailable() = runTest {
-        settingBinder.update {
+        settingBinder.update(GeneralSettings::class) {
             feignEnable = true
             jaxrsEnable = true
             actuatorEnable = true
+        }
+        settingBinder.update(GrpcSettings::class) {
             grpcEnable = true
         }
         
@@ -125,8 +129,7 @@ class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
         }
     }
 
-    // Regression for https://github.com/tangcent/easy-yapi/issues/1407
-    // Selecting specific controller methods must export only those methods,
+    // Regression: selecting specific controller methods must export only those methods,
     // not every endpoint in the containing class.
     fun testScanSelectionWithSingleMethodReturnsOnlyThatEndpoint() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl")

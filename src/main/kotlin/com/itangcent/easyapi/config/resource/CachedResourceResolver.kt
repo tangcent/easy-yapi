@@ -8,7 +8,8 @@ import com.itangcent.easyapi.http.HttpRequest
 import com.itangcent.easyapi.http.UrlConnectionHttpClient
 import com.itangcent.easyapi.logging.IdeaConsole
 import com.itangcent.easyapi.logging.console
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.module.HttpSettings
+import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.storage.LocalStorage
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
@@ -30,7 +31,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * - Cache group: `remote-cache`
  * - Timestamp group: `remote-cache-ts`
  * - TTL: 2 hours (constant)
- * - Fetch timeout: read from [Settings.httpTimeOut] (seconds → ms)
+ * - Fetch timeout: read from [HttpSettings.httpTimeOut] (seconds → ms)
  *
  * This is a project-level service scoped to a specific IntelliJ project.
  */
@@ -42,7 +43,7 @@ class CachedResourceResolver(
     private val console: IdeaConsole get() = project.console
 
     private fun fetchTimeoutMs(): Long =
-        SettingBinder.getInstance(project).read().httpTimeOut.toLong() * 1000L
+        project.settings<HttpSettings>().httpTimeOut.toLong() * 1000L
 
     suspend fun get(url: String): String? {
         val cached = localStorage.get(CACHE_GROUP, url)?.toString()

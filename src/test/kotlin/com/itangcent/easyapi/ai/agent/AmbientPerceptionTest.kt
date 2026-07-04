@@ -25,8 +25,6 @@ import java.util.Locale
  * The capture is pure-ish: no PSI reads, no network, no config access — it
  * reads only `Locale.getDefault()` (JVM-global). Tests set/restore the default
  * locale in `tearDown` to avoid cross-test contamination.
- *
- * _Requirements: 8.1_
  */
 class AmbientPerceptionTest : EasyApiLightCodeInsightFixtureTestCase() {
 

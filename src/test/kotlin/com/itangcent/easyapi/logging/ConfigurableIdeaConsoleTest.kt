@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.logging
 
-import com.itangcent.easyapi.settings.Settings
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -9,89 +8,88 @@ import org.mockito.kotlin.*
 class ConfigurableIdeaConsoleTest {
 
     private lateinit var delegate: IdeaConsole
-    private lateinit var settings: Settings
-    private lateinit var console: ConfigurableIdeaConsole
 
     @Before
     fun setUp() {
         delegate = mock()
-        settings = Settings()
-        console = ConfigurableIdeaConsole(delegate, settings)
     }
+
+    private fun consoleAt(level: Int): ConfigurableIdeaConsole =
+        ConfigurableIdeaConsole(delegate, level)
 
     @Test
     fun testInfoAtDefaultLevel() {
-        settings.logLevel = LogLevel.INFO.threshold
+        val console = consoleAt(LogLevel.INFO.threshold)
         console.info("test info")
         verify(delegate).info("test info")
     }
 
     @Test
     fun testInfoSuppressedAtWarnLevel() {
-        settings.logLevel = LogLevel.WARN.threshold
+        val console = consoleAt(LogLevel.WARN.threshold)
         console.info("should be suppressed")
         verify(delegate, never()).info(any())
     }
 
     @Test
     fun testWarnAtWarnLevel() {
-        settings.logLevel = LogLevel.WARN.threshold
+        val console = consoleAt(LogLevel.WARN.threshold)
         console.warn("test warning")
         verify(delegate).warn(eq("test warning"), isNull())
     }
 
     @Test
     fun testWarnSuppressedAtErrorLevel() {
-        settings.logLevel = LogLevel.ERROR.threshold
+        val console = consoleAt(LogLevel.ERROR.threshold)
         console.warn("should be suppressed")
         verify(delegate, never()).warn(any(), any())
     }
 
     @Test
     fun testErrorAtErrorLevel() {
-        settings.logLevel = LogLevel.ERROR.threshold
+        val console = consoleAt(LogLevel.ERROR.threshold)
         console.error("test error")
         verify(delegate).error(eq("test error"), isNull())
     }
 
     @Test
     fun testErrorNotSuppressedAtErrorLevel() {
-        settings.logLevel = LogLevel.ERROR.threshold
+        val console = consoleAt(LogLevel.ERROR.threshold)
         console.error("test error")
         verify(delegate).error(eq("test error"), isNull())
     }
 
     @Test
     fun testTraceAtTraceLevel() {
-        settings.logLevel = LogLevel.TRACE.threshold
+        val console = consoleAt(LogLevel.TRACE.threshold)
         console.trace("test trace")
         verify(delegate).trace("test trace")
     }
 
     @Test
     fun testTraceSuppressedAtInfoLevel() {
-        settings.logLevel = LogLevel.INFO.threshold
+        val console = consoleAt(LogLevel.INFO.threshold)
         console.trace("should be suppressed")
         verify(delegate, never()).trace(any())
     }
 
     @Test
     fun testDebugAtDebugLevel() {
-        settings.logLevel = LogLevel.DEBUG.threshold
+        val console = consoleAt(LogLevel.DEBUG.threshold)
         console.debug("test debug")
         verify(delegate).debug("test debug")
     }
 
     @Test
     fun testDebugSuppressedAtInfoLevel() {
-        settings.logLevel = LogLevel.INFO.threshold
+        val console = consoleAt(LogLevel.INFO.threshold)
         console.debug("should be suppressed")
         verify(delegate, never()).debug(any())
     }
 
     @Test
     fun testAllSuppressedAtLevel100() {
-        settings.logLevel = 100
+        val console = consoleAt(100)
         console.trace("t")
         console.debug("d")
         console.info("i")
@@ -102,7 +100,7 @@ class ConfigurableIdeaConsoleTest {
 
     @Test
     fun testWarnWithThrowable() {
-        settings.logLevel = LogLevel.WARN.threshold
+        val console = consoleAt(LogLevel.WARN.threshold)
         val ex = RuntimeException("test")
         console.warn("warning", ex)
         verify(delegate).warn("warning", ex)
@@ -110,7 +108,7 @@ class ConfigurableIdeaConsoleTest {
 
     @Test
     fun testErrorWithThrowable() {
-        settings.logLevel = LogLevel.ERROR.threshold
+        val console = consoleAt(LogLevel.ERROR.threshold)
         val ex = RuntimeException("test")
         console.error("error", ex)
         verify(delegate).error("error", ex)

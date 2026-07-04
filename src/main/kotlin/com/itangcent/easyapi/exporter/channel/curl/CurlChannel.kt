@@ -8,11 +8,11 @@ import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.itangcent.easyapi.cache.http.DefaultHttpContextCacheHelper
 import com.itangcent.easyapi.core.threading.background
 import com.itangcent.easyapi.core.threading.swing
-import com.itangcent.easyapi.exporter.channel.ApiChannel
+import com.itangcent.easyapi.exporter.channel.Channel
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
-import com.itangcent.easyapi.exporter.curl.CurlExportMetadata
-import com.itangcent.easyapi.exporter.curl.CurlFormatter
+import com.itangcent.easyapi.exporter.channel.curl.CurlExportMetadata
+import com.itangcent.easyapi.exporter.channel.curl.CurlFormatter
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.logging.IdeaLog
@@ -20,14 +20,14 @@ import kotlinx.coroutines.CancellationException
 import java.io.File
 
 /**
- * [ApiChannel] that exports API endpoints as cURL commands.
+ * [Channel] that exports API endpoints as cURL commands.
  *
  * Supports both HTTP and gRPC endpoints. No configuration panel needed.
  *
- * @see ApiChannel
+ * @see Channel
  * @see CurlFormatter
  */
-class CurlChannel : ApiChannel, IdeaLog {
+class CurlChannel : Channel, IdeaLog {
 
     override val id: String = "curl"
     override val displayName: String = "cURL"

@@ -210,7 +210,6 @@ class Swagger3ConfigTest {
                 "api.name",
                 "method.doc",
                 "method.default.http.method",
-                "api.tag",
                 "param.required",
                 "param.doc",
                 "field.required",
@@ -253,22 +252,6 @@ class Swagger3ConfigTest {
         assertNotNull("method.default.http.method should have values", methodHttpValues)
         assertTrue("method.default.http.method should have Operation#method",
                 methodHttpValues?.any { it.contains("@io.swagger.v3.oas.annotations.Operation#method") } == true)
-
-        val apiTagValues = config["api.tag"]
-        assertNotNull("api.tag should have values", apiTagValues)
-        assertTrue("api.tag should have Operation#tags",
-                apiTagValues?.any { it.contains("@io.swagger.v3.oas.annotations.Operation#tags") } == true)
-    }
-
-    @Test
-    fun testSwagger3TagMappings() {
-        val config = loadSwagger3ConfigAsMap()
-
-        val tagsKey = "api.tag[@io.swagger.v3.oas.annotations.tags.Tags]"
-        val tagsValues = config[tagsKey]
-        assertNotNull("Should have Tags annotation mapping", tagsValues)
-        assertTrue("Should use groovy collect",
-                tagsValues?.any { it.contains("collect") } == true)
     }
 
     @Test
@@ -410,8 +393,6 @@ class Swagger3ConfigTest {
         val swagger3Annotations = listOf(
                 "io.swagger.v3.oas.annotations.Hidden",
                 "io.swagger.v3.oas.annotations.Operation",
-                "io.swagger.v3.oas.annotations.tags.Tag",
-                "io.swagger.v3.oas.annotations.tags.Tags",
                 "io.swagger.v3.oas.annotations.media.Schema",
                 "io.swagger.v3.oas.annotations.Parameter",
                 "io.swagger.v3.oas.annotations.Parameters",

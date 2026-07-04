@@ -219,43 +219,6 @@ class DocMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     // ============================================================
-    // resolveApiTag / resolveApiStatus / isApiOpen
-    // ============================================================
-
-    fun testResolveApiTagReturnsNullWhenNoRule() = runTest {
-        val psiClass = findClass("com.itangcent.api.TitleTestCtrl")!!
-        val method = findMethod(psiClass, "getUser")!!
-        assertNull(metadataResolver.resolveApiTag(method))
-    }
-
-    fun testResolveApiStatusReturnsNullWhenNoRule() = runTest {
-        val psiClass = findClass("com.itangcent.api.TitleTestCtrl")!!
-        val method = findMethod(psiClass, "getUser")!!
-        assertNull(metadataResolver.resolveApiStatus(method))
-    }
-
-    fun testIsApiOpenReturnsFalseWhenNoRule() = runTest {
-        val psiClass = findClass("com.itangcent.api.TitleTestCtrl")!!
-        val method = findMethod(psiClass, "getUser")!!
-        assertFalse(metadataResolver.isApiOpen(method))
-    }
-
-    // ============================================================
-    // resolveYapiProject
-    // ============================================================
-
-    fun testResolveYapiProjectMethodReturnsNullWhenNoRule() = runTest {
-        val psiClass = findClass("com.itangcent.api.TitleTestCtrl")!!
-        val method = findMethod(psiClass, "getUser")!!
-        assertNull(metadataResolver.resolveYapiProject(method))
-    }
-
-    fun testResolveYapiProjectClassReturnsNullWhenNoRule() = runTest {
-        val psiClass = findClass("com.itangcent.api.TitleTestCtrl")!!
-        assertNull(metadataResolver.resolveYapiProject(psiClass))
-    }
-
-    // ============================================================
     // isIgnored
     // ============================================================
 

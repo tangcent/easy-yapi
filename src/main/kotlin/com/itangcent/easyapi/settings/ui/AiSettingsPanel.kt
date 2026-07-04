@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.settings.ui
 
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.AiSettings
 import java.awt.BorderLayout
 import javax.swing.BorderFactory
 import javax.swing.JComponent
@@ -17,7 +17,7 @@ import javax.swing.JPanel
  * The panel is a thin wrapper around [AiAssistantSection] — the form
  * logic, test-connection flow, and auto-detect flow all live there.
  */
-class AiSettingsPanel : SettingsPanel {
+class AiSettingsPanel : SettingsPanel<AiSettings> {
 
     private val section = AiAssistantSection()
 
@@ -26,15 +26,15 @@ class AiSettingsPanel : SettingsPanel {
         add(section.component, BorderLayout.NORTH)
     }
 
-    override fun resetFrom(settings: Settings?) {
+    override fun resetFrom(settings: AiSettings?) {
         section.resetFrom(settings)
     }
 
-    override fun applyTo(settings: Settings) {
+    override fun applyTo(settings: AiSettings) {
         section.applyTo(settings)
     }
 
-    override fun isModified(settings: Settings?): Boolean {
+    override fun isModified(settings: AiSettings?): Boolean {
         return section.isModified(settings)
     }
 }

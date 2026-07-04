@@ -325,7 +325,7 @@ When a rule value is prefixed with `groovy:`, it runs as a Groovy script via the
 | `regex` | `RE` | RegexUtils | Regex utilities. `regex.match(input, pattern)`, `regex.findGroup(input, pattern, group)`. |
 | `files` | `F` | ScriptFilesWrapper | File operations. `files.save(path, content)`, `files.saveWithUI(content)`. |
 | `config` | `C` | ScriptConfigWrapper | Config reader access. `config.get(key)`, `config.getValues(key)`, `config.resolveProperty(text)`. |
-| `helper` | `H` | ScriptHelper | Class lookup utilities. `helper.findClass("com.example.User")`, `helper.resolveLink(...)`, `helper.jsonTypeToYapiType("int")`. |
+| `helper` | `H` | ScriptHelper | Class lookup utilities. `helper.findClass("com.example.User")`, `helper.resolveLink(...)`, `helper.jsonTypeToSchemaType("int")`. |
 | `runtime` | `R` | ScriptRuntime | Project/module metadata. `runtime.projectName()`, `runtime.module()`, `runtime.filePath()`. |
 | `httpClient` | — | HttpClient | HTTP client for outbound calls (may be `null` if initialization failed). |
 | `localStorage` | — | ScriptStorageWrapper | Persistent key-value store (SQLite-backed). Same API as `session`. |

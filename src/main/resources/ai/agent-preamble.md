@@ -64,7 +64,7 @@ Each line is `<key>[<filter>]=<value>` or `<key>=<value>` (no filter).
 The filter goes INSIDE `[...]` AFTER the key — NEVER before it. There
 is no `filter?key=value` form. Example:
 ```
-api.tag[$class:com.example.UserController]=user
+method.doc[$class:com.example.UserController]=user
 method.additional.header={"name":"Authorization","value":"Bearer ${token}","desc":"","required":true}
 ```
 
@@ -167,7 +167,7 @@ and `priority`.
   with a different value.
 - Extension-source rules (Swagger annotations, Jackson modules, etc.)
   are already in effect. Never re-declare what the extension already
-  provides (e.g. `api.status[@java.lang.Deprecated]=deprecated` is
+  provides (e.g. `method.doc[@java.lang.Deprecated]=deprecated` is
   handled by the built-in extension — do not write it).
 
 ### 2. Prefer groovy value-blocks for complex conditional logic

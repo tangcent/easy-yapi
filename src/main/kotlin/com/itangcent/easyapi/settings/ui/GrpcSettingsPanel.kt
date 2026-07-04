@@ -10,7 +10,7 @@ import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.ListTableModel
 import com.itangcent.easyapi.grpc.*
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.GrpcSettings
 import com.itangcent.easyapi.settings.settings
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -18,7 +18,7 @@ import java.awt.GridLayout
 import javax.swing.*
 import javax.swing.border.TitledBorder
 
-class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel {
+class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel<GrpcSettings> {
 
     private val grpcEnableCheckbox = JCheckBox("Enable gRPC support", true).apply {
         toolTipText = "Enable parsing of gRPC/protobuf service definitions as API endpoints"
@@ -336,7 +336,7 @@ class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Projec
         }
     }
 
-    override fun resetFrom(settings: Settings?) {
+    override fun resetFrom(settings: GrpcSettings?) {
         isLoadingSettings = true
         try {
             grpcEnableCheckbox.isSelected = settings?.grpcEnable ?: true
@@ -378,7 +378,7 @@ class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Projec
         })
     }
 
-    override fun applyTo(settings: Settings) {
+    override fun applyTo(settings: GrpcSettings) {
         settings.grpcEnable = grpcEnableCheckbox.isSelected
         settings.grpcCallEnabled = grpcCallEnabledCheckbox.isSelected
 
@@ -397,7 +397,7 @@ class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Projec
         settings.grpcAdditionalJars = jars.toTypedArray()
     }
 
-    override fun isModified(settings: Settings?): Boolean {
+    override fun isModified(settings: GrpcSettings?): Boolean {
         val s = settings ?: return false
         if (grpcEnableCheckbox.isSelected != s.grpcEnable) return true
         if (grpcCallEnabledCheckbox.isSelected != s.grpcCallEnabled) return true
@@ -421,7 +421,7 @@ class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Projec
 
     companion object {
         fun selectUnavailableArtifact(project: com.intellij.openapi.project.Project, artifact: Artifact) {
-            val settings = project.settings
+            val settings = project.settings<GrpcSettings>()
             val configs = settings.grpcArtifactConfigs.mapNotNull { GrpcArtifactConfig.parse(it) }
             val index = configs.indexOfFirst { it.artifact == artifact }
             if (index >= 0) {

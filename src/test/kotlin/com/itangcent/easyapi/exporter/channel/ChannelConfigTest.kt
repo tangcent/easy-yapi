@@ -1,5 +1,8 @@
 package com.itangcent.easyapi.exporter.channel
 
+import com.itangcent.easyapi.exporter.channel.markdown.MarkdownConfig
+import com.itangcent.easyapi.exporter.channel.postman.PostmanConfig
+import com.itangcent.easyapi.exporter.channel.yapi.YapiConfig
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -60,7 +63,7 @@ class ChannelConfigTest {
 
     @Test
     fun testPostmanConfigDefaults() {
-        val config = ChannelConfig.PostmanConfig()
+        val config = PostmanConfig()
         assertNull(config.workspaceId)
         assertNull(config.workspaceName)
         assertNull(config.collectionId)
@@ -70,7 +73,7 @@ class ChannelConfigTest {
 
     @Test
     fun testPostmanConfigWithValues() {
-        val config = ChannelConfig.PostmanConfig(
+        val config = PostmanConfig(
             workspaceId = "ws-123",
             workspaceName = "My Workspace",
             collectionId = "col-456",
@@ -86,7 +89,7 @@ class ChannelConfigTest {
 
     @Test
     fun testPostmanConfigCopy() {
-        val original = ChannelConfig.PostmanConfig(collectionName = "V1")
+        val original = PostmanConfig(collectionName = "V1")
         val modified = original.copy(collectionName = "V2", isUpdate = true)
         assertEquals("V1", original.collectionName)
         assertFalse(original.isUpdate)
@@ -96,22 +99,58 @@ class ChannelConfigTest {
 
     @Test
     fun testPostmanConfigEquality() {
-        val config1 = ChannelConfig.PostmanConfig(collectionName = "Test", isUpdate = true)
-        val config2 = ChannelConfig.PostmanConfig(collectionName = "Test", isUpdate = true)
+        val config1 = PostmanConfig(collectionName = "Test", isUpdate = true)
+        val config2 = PostmanConfig(collectionName = "Test", isUpdate = true)
         assertEquals(config1, config2)
     }
 
     @Test
-    fun testSealedClassHierarchy() {
+    fun testConfigHierarchy() {
         val configs: List<ChannelConfig> = listOf(
             ChannelConfig.Empty,
             ChannelConfig.FileConfig(outputDir = "/tmp"),
-            ChannelConfig.PostmanConfig(collectionName = "Test")
+            PostmanConfig(collectionName = "Test"),
+            YapiConfig(selectedToken = "tok")
         )
-        assertEquals(3, configs.size)
+        assertEquals(4, configs.size)
         assertTrue(configs[0] is ChannelConfig.Empty)
         assertTrue(configs[1] is ChannelConfig.FileConfig)
-        assertTrue(configs[2] is ChannelConfig.PostmanConfig)
+        assertTrue(configs[2] is PostmanConfig)
+        assertTrue(configs[3] is YapiConfig)
+    }
+
+    @Test
+    fun testYapiConfigDefaults() {
+        val config = YapiConfig()
+        assertNull(config.selectedToken)
+        assertFalse(config.useCustomProject)
+    }
+
+    @Test
+    fun testYapiConfigWithValues() {
+        val config = YapiConfig(
+            selectedToken = "tok-123",
+            useCustomProject = true
+        )
+        assertEquals("tok-123", config.selectedToken)
+        assertTrue(config.useCustomProject)
+    }
+
+    @Test
+    fun testYapiConfigCopy() {
+        val original = YapiConfig(selectedToken = "V1")
+        val modified = original.copy(selectedToken = "V2", useCustomProject = true)
+        assertEquals("V1", original.selectedToken)
+        assertFalse(original.useCustomProject)
+        assertEquals("V2", modified.selectedToken)
+        assertTrue(modified.useCustomProject)
+    }
+
+    @Test
+    fun testYapiConfigEquality() {
+        val config1 = YapiConfig(selectedToken = "Test", useCustomProject = true)
+        val config2 = YapiConfig(selectedToken = "Test", useCustomProject = true)
+        assertEquals(config1, config2)
     }
 
     @Test
@@ -119,15 +158,16 @@ class ChannelConfigTest {
         fun describe(config: ChannelConfig): String = when (config) {
             is ChannelConfig.Empty -> "empty"
             is ChannelConfig.FileConfig -> "file:${config.fileName}"
-            is ChannelConfig.PostmanConfig -> "postman:${config.collectionName}"
-            is ChannelConfig.YapiConfig -> "yapi:${config.selectedToken}"
-            is ChannelConfig.MarkdownConfig -> "markdown:${config.fileName}"
+            is PostmanConfig -> "postman:${config.collectionName}"
+            is YapiConfig -> "yapi:${config.selectedToken}"
+            is MarkdownConfig -> "markdown:${config.fileName}"
+            else -> "other"
         }
 
         assertEquals("empty", describe(ChannelConfig.Empty))
         assertEquals("file:api.md", describe(ChannelConfig.FileConfig(fileName = "api.md")))
-        assertEquals("postman:MyAPI", describe(ChannelConfig.PostmanConfig(collectionName = "MyAPI")))
-        assertEquals("yapi:token123", describe(ChannelConfig.YapiConfig(selectedToken = "token123")))
-        assertEquals("markdown:api.md", describe(ChannelConfig.MarkdownConfig(fileName = "api.md")))
+        assertEquals("postman:MyAPI", describe(PostmanConfig(collectionName = "MyAPI")))
+        assertEquals("yapi:tok-1", describe(YapiConfig(selectedToken = "tok-1")))
+        assertEquals("markdown:api.md", describe(MarkdownConfig(fileName = "api.md")))
     }
 }

@@ -6,7 +6,7 @@ class AIServiceFactoryTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testCreateOpenAI() {
         val service = AIServiceFactory.create(
-            AiSettings(
+            AiRuntimeConfig(
                 provider = AiProvider.OPENAI,
                 baseUrl = "https://api.openai.com/v1",
                 apiKey = "test-key",
@@ -21,7 +21,7 @@ class AIServiceFactoryTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testCreateAnthropic() {
         val service = AIServiceFactory.create(
-            AiSettings(
+            AiRuntimeConfig(
                 provider = AiProvider.ANTHROPIC,
                 baseUrl = "",
                 apiKey = "test-key",
@@ -36,7 +36,7 @@ class AIServiceFactoryTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testCreateGemini() {
         val service = AIServiceFactory.create(
-            AiSettings(
+            AiRuntimeConfig(
                 provider = AiProvider.GEMINI,
                 baseUrl = "",
                 apiKey = "test-key",
@@ -51,7 +51,7 @@ class AIServiceFactoryTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testCreateOllama() {
         val service = AIServiceFactory.create(
-            AiSettings(
+            AiRuntimeConfig(
                 provider = AiProvider.OLLAMA,
                 baseUrl = "http://localhost:11434/v1",
                 apiKey = "",
@@ -66,7 +66,7 @@ class AIServiceFactoryTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testCreateAzureOpenAI() {
         val service = AIServiceFactory.create(
-            AiSettings(
+            AiRuntimeConfig(
                 provider = AiProvider.AZURE_OPENAI,
                 baseUrl = "https://my-resource.openai.azure.com",
                 apiKey = "test-key",
@@ -81,7 +81,7 @@ class AIServiceFactoryTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testCreateCustomUsesDummyKey() {
         val service = AIServiceFactory.create(
-            AiSettings(
+            AiRuntimeConfig(
                 provider = AiProvider.CUSTOM,
                 baseUrl = "http://localhost:4000/v1",
                 apiKey = "",

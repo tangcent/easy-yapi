@@ -1,8 +1,8 @@
 package com.itangcent.easyapi.rule
 
+import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.util.text.KeyValueLineParser
-import kotlin.reflect.full.memberProperties
 
 /**
  * Deterministic, PSI-free reviewer for AI-authored rule proposals (the
@@ -20,6 +20,16 @@ import kotlin.reflect.full.memberProperties
  * - **Soft warnings** (never block): deprecated-but-valid filter forms such
  *   as the bare `class:` prefix. Reported back to the drafter / surfaced on
  *   the proposal card, but the proposal still proceeds.
+ *
+ * ## Key catalog
+ *
+ * The set of "known rule keys" is supplied by [RuleKeyRegistry] when a
+ * [Project] is available — that registry combines the shared [RuleKeys],
+ * every registered channel's [com.itangcent.easyapi.exporter.channel.Channel.ruleKeys],
+ * and the implicit keys read by name via `configReader.getFirst(…)`. When
+ * [validate] is called without a project (e.g. in lightweight unit tests),
+ * the validator falls back to reflecting [RuleKeys] alone — channel-specific
+ * and implicit keys are NOT recognized in that mode.
  *
  * Full duplicate-of-existing-rule detection needs live
  * `get_existing_rules_for_key` data and is out of scope for this v1 pass.
@@ -45,8 +55,8 @@ object RuleProposalValidator {
         "\$class:", "@", "#regex:", "#", "!", "groovy:"
     )
 
-    /** The set of every known rule key name (primary + aliases), for O(1) lookup. */
-    private val knownKeyNames: Set<String> by lazy { collectKnownKeyNames() }
+    /** Fallback known-key set used when no [Project] is supplied. */
+    private val generalKeyNames: Set<String> by lazy { collectGeneralKeyNames() }
 
     /**
      * Validate [content] as a rule file.
@@ -54,8 +64,17 @@ object RuleProposalValidator {
      * Comments (`#`), blank lines, and multi-line groovy value-blocks (delimited
      * by ```` ``` ````) are tolerated; every non-comment `key[filter]=value`
      * line is checked.
+     *
+     * @param project the current IntelliJ project. When non-null, the known-key
+     *     set is taken from [RuleKeyRegistry] (general + channel + implicit
+     *     keys). When null, only the shared [RuleKeys] are recognized — use
+     *     the project form in production code so channel-specific keys
+     *     (e.g. `hopp.prerequest`, `yapi.project`) are accepted.
      */
-    fun validate(content: String): RuleValidation {
+    fun validate(content: String, project: Project? = null): RuleValidation {
+        val knownKeyNames = project
+            ?.let { RuleKeyRegistry.getInstance(it).allKeyNames() }
+            ?: generalKeyNames
         val errors = mutableListOf<String>()
         val warnings = mutableListOf<String>()
         var inBlock = false
@@ -123,13 +142,8 @@ object RuleProposalValidator {
         true
     }.getOrDefault(false)
 
-    private fun collectKnownKeyNames(): Set<String> =
-        RuleKeys::class.memberProperties
-            .mapNotNull { prop ->
-                runCatching { prop.get(RuleKeys) as? RuleKey<*> }.getOrNull()
-            }
-            .flatMap { it.allNames }
-            .toSet()
+    private fun collectGeneralKeyNames(): Set<String> =
+        RuleKey.collectFrom(RuleKeys).flatMap { it.allNames }.toSet()
 
     private sealed class FilterIssue {
         object Invalid : FilterIssue()

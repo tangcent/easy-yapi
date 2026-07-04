@@ -1,7 +1,6 @@
 package com.itangcent.easyapi.config.parser
 
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.settings.Settings
 
 /**
  * Parses and processes directive lines in configuration files.
@@ -25,12 +24,20 @@ import com.itangcent.easyapi.settings.Settings
  * ###if httpClient!=curl
  * ```
  *
+ * Unknown directive keys are resolved via [resolveSetting], supplied by the
+ * caller. The caller (e.g. [ConfigTextParser]) builds the resolver from module
+ * settings + the channel carrier, so each channel can expose its own settings
+ * without modifying this shared parser.
+ *
  * @param state The directive state to modify
- * @param settings Settings for evaluating conditions
+ * @param resolveSetting Lookup function for evaluating `###if` conditions;
+ *   returns the current value for a setting key, or `null` when unknown.
+ *   Defaults to `{ null }` (all unknown keys resolve to `null`) — used in
+ *   unit tests where no settings context is available.
  */
 class DirectiveParser(
     private val state: DirectiveState,
-    private val settings: Settings?
+    private val resolveSetting: (String) -> String? = { null }
 ) : IdeaLog {
 
     fun handle(line: String): Boolean {
@@ -74,30 +81,10 @@ class DirectiveParser(
         if (parts.size != 2) return false
         val key = parts[0]
         val expected = parts[1].trim('"', '\'')
-        val actual = getSettingValue(key)
+        val actual = resolveSetting(key)
         return when (op) {
             "!=" -> actual != expected
             else -> actual == expected
-        }
-    }
-
-    private fun getSettingValue(key: String): String? {
-        val s = settings ?: return null
-        return when (key) {
-            "builtInConfig" -> s.builtInConfig
-            "remoteConfig" -> s.remoteConfig.joinToString("\n")
-            "extensionConfig" -> s.extensionConfigs
-            "logLevel" -> s.logLevel.toString()
-            "httpTimeOut" -> s.httpTimeOut.toString()
-            "unsafeSsl" -> s.unsafeSsl.toString()
-            "httpClient" -> s.httpClient
-            "yapiServer" -> s.yapiServer
-            "yapiToken" -> s.yapiTokens
-            "postmanToken" -> s.postmanToken
-            "feignEnable" -> s.feignEnable.toString()
-            "jaxrsEnable" -> s.jaxrsEnable.toString()
-            "actuatorEnable" -> s.actuatorEnable.toString()
-            else -> null
         }
     }
 

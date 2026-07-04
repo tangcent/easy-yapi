@@ -1,6 +1,10 @@
 package com.itangcent.easyapi.rule
 
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.mapNotNull
 
 /**
  * Defines how multiple rule values are aggregated into a single result.

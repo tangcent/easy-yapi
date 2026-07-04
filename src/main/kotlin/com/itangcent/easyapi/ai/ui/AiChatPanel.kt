@@ -262,7 +262,7 @@ class AiChatPanel(
      * enables/disables the input + Send button (issue 1).
      */
     fun refreshConfiguredState() {
-        val configured = com.itangcent.easyapi.ai.AiSettings.load(project) != null
+        val configured = com.itangcent.easyapi.ai.AiRuntimeConfig.load(project) != null
         notConfiguredBanner.isVisible = !configured
         inputArea.isEnabled = configured
         sendButton.isEnabled = configured && (turnJob?.isActive != true)
@@ -294,7 +294,7 @@ class AiChatPanel(
      * `finally`/cancel paths.
      */
     private fun setRunning(running: Boolean) {
-        val configured = com.itangcent.easyapi.ai.AiSettings.load(project) != null
+        val configured = com.itangcent.easyapi.ai.AiRuntimeConfig.load(project) != null
         sendButton.isEnabled = !running && configured
         inputArea.isEnabled = !running && configured
         stopButton.isEnabled = running

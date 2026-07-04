@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.settings.ui
 
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.GeneralSettings
+import com.itangcent.easyapi.settings.module.GrpcSettings
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -86,7 +87,7 @@ class GeneralSettingsPanelLogicTest {
 
     @Test
     fun testSettingsDefaultValues() {
-        val settings = Settings()
+        val settings = GeneralSettings()
         assertFalse(settings.feignEnable)
         assertTrue(settings.jaxrsEnable)
         assertFalse(settings.actuatorEnable)
@@ -101,7 +102,7 @@ class GeneralSettingsPanelLogicTest {
 
     @Test
     fun testSettingsCustomValues() {
-        val settings = Settings(
+        val settings = GeneralSettings(
             feignEnable = true,
             jaxrsEnable = false,
             actuatorEnable = true,
@@ -127,22 +128,22 @@ class GeneralSettingsPanelLogicTest {
 
     @Test
     fun testSettingsEquality() {
-        val s1 = Settings()
-        val s2 = Settings()
+        val s1 = GeneralSettings()
+        val s2 = GeneralSettings()
         assertEquals(s1, s2)
         assertEquals(s1.hashCode(), s2.hashCode())
     }
 
     @Test
     fun testSettingsInequality() {
-        val s1 = Settings()
-        val s2 = Settings(feignEnable = true)
+        val s1 = GeneralSettings()
+        val s2 = GeneralSettings(feignEnable = true)
         assertNotEquals(s1, s2)
     }
 
     @Test
     fun testSettingsCopy() {
-        val s1 = Settings(feignEnable = true, logLevel = 40)
+        val s1 = GeneralSettings(feignEnable = true, logLevel = 40)
         val s2 = s1.copy(logLevel = 20)
         assertTrue(s2.feignEnable)
         assertEquals(20, s2.logLevel)
@@ -160,28 +161,28 @@ class GeneralSettingsPanelLogicTest {
 
     @Test
     fun testSettingsOutputCharsetValues() {
-        val settings = Settings(outputCharset = "ISO-8859-1")
+        val settings = GeneralSettings(outputCharset = "ISO-8859-1")
         assertEquals("ISO-8859-1", settings.outputCharset)
     }
 
     @Test
     fun testSettingsRepositoriesArray() {
-        val settings = Settings(grpcRepositories = arrayOf("maven:latest:true", "custom:/path:latest:false"))
+        val settings = GrpcSettings(grpcRepositories = arrayOf("maven:latest:true", "custom:/path:latest:false"))
         assertEquals(2, settings.grpcRepositories.size)
         assertEquals("maven:latest:true", settings.grpcRepositories[0])
     }
 
     @Test
     fun testSettingsRepositoriesEquality() {
-        val s1 = Settings(grpcRepositories = arrayOf("a", "b"))
-        val s2 = Settings(grpcRepositories = arrayOf("a", "b"))
+        val s1 = GrpcSettings(grpcRepositories = arrayOf("a", "b"))
+        val s2 = GrpcSettings(grpcRepositories = arrayOf("a", "b"))
         assertEquals(s1, s2)
     }
 
     @Test
     fun testSettingsRepositoriesInequality() {
-        val s1 = Settings(grpcRepositories = arrayOf("a", "b"))
-        val s2 = Settings(grpcRepositories = arrayOf("a", "c"))
+        val s1 = GrpcSettings(grpcRepositories = arrayOf("a", "b"))
+        val s2 = GrpcSettings(grpcRepositories = arrayOf("a", "c"))
         assertNotEquals(s1, s2)
     }
 }

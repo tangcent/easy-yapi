@@ -17,7 +17,7 @@ import java.time.Duration
  */
 object AIServiceFactory {
 
-    fun create(settings: AiSettings): AIService {
+    fun create(settings: AiRuntimeConfig): AIService {
         val timeout = Duration.ofSeconds(settings.requestTimeoutSec.toLong())
         val model = when (settings.provider) {
             AiProvider.ANTHROPIC -> AnthropicChatModel.builder()
@@ -65,7 +65,7 @@ object AIServiceFactory {
      * missing, etc.).
      */
     fun createForProject(project: com.intellij.openapi.project.Project): AIService? {
-        val settings = AiSettings.load(project) ?: return null
+        val settings = AiRuntimeConfig.load(project) ?: return null
         return create(settings)
     }
 }

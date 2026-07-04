@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.ai.tools
 
-import com.itangcent.easyapi.ai.AiSettings
+import com.itangcent.easyapi.ai.AiRuntimeConfig
 import com.itangcent.easyapi.ai.agent.AgentMemory
 import com.itangcent.easyapi.ai.agent.ApprovalGate
 import com.itangcent.easyapi.config.ConfigReader
@@ -29,7 +29,7 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
     ): ToolContext = ToolContext(
         project = project,
         configReader = configReader,
-        aiSettings = AiSettings(
+        aiSettings = AiRuntimeConfig(
             provider = com.itangcent.easyapi.ai.AiProvider.OPENAI,
             baseUrl = "", apiKey = "", model = "",
             requestTimeoutSec = 30, maxRequests = 8
@@ -337,7 +337,7 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testProposeRuleContentAttachesReviewerNotesForWarnings() {
         val memory = AgentMemory()
-        val content = "api.tag[class:com.example.UserController]=user"
+        val content = "method.doc[class:com.example.UserController]=user"
         val result = runBlocking {
             ProposeRuleContentTool().execute(
                 mapOf("content" to content, "suggestedFileName" to "custom.rules"),
@@ -353,7 +353,7 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
         Assert.assertTrue(staged.content.contains("deprecated"))
         // Original content must still be present below the notes.
-        Assert.assertTrue(staged.content.contains("api.tag["))
+        Assert.assertTrue(staged.content.contains("method.doc["))
     }
 
     // --- WriteRuleFileTool (reserved stub) ---

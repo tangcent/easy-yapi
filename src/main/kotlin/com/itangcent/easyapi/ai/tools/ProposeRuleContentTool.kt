@@ -59,7 +59,7 @@ class ProposeRuleContentTool : AiTool {
         }
 
         // Deterministic review pass (v1 review agent).
-        val review = RuleProposalValidator.validate(content)
+        val review = RuleProposalValidator.validate(content, ctx.project)
         if (!review.ok) {
             return ToolResult.Error(
                 "Proposal rejected by review — fix these and retry:\n" +

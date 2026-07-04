@@ -6,31 +6,42 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.intellij.ide.BrowserUtil
 import com.itangcent.easyapi.core.threading.swing
-import com.itangcent.easyapi.exporter.channel.ApiChannel
+import com.itangcent.easyapi.exporter.channel.Channel
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
-import com.itangcent.easyapi.exporter.yapi.YapiExporter
-import com.itangcent.easyapi.exporter.yapi.YapiExportMetadata
+import com.itangcent.easyapi.exporter.channel.yapi.YapiExporter
+import com.itangcent.easyapi.exporter.channel.yapi.YapiExportMetadata
 import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.rule.RuleKey
+import kotlin.reflect.KClass
 
-class YapiChannel : ApiChannel, IdeaLog {
+class YapiChannel : Channel, IdeaLog {
 
     override val id: String = "yapi"
     override val displayName: String = "Yapi"
     override val supportsGrpc: Boolean = false
     override val exposeAsAction: Boolean = true
     override val actionText: String = "Export to YAPI"
+    override val settingsType: KClass<out com.itangcent.easyapi.settings.Settings> = YapiSettings::class
 
     override fun createOptionsPanel(project: Project): ChannelOptionsPanel {
         return YapiOptionsPanel(project)
     }
 
+    override fun createSettingsPanel(project: Project): com.itangcent.easyapi.settings.ui.SettingsPanel<*>? =
+        YapiSettingsPanel(project)
+
+    override fun configFiles(): List<String> = listOf("yapi", "yapi-mock", "yapi.project", "yapi-swagger")
+
+    override fun ruleKeys(): List<RuleKey<*>> =
+        RuleKey.collectFrom(YapiRuleKeys) + RuleKey.collectFrom(YapiMetaRuleKeys)
+
     override suspend fun export(context: ExportContext): ExportResult {
         LOG.info("YapiChannel.export: endpoints=${context.endpointsToExport.size}")
-        val yapiConfig = context.channelConfig as? ChannelConfig.YapiConfig
+        val yapiConfig = context.channelConfig as? YapiConfig
         val exporter = YapiExporter.getInstance(context.project)
         return exporter.export(context, yapiConfig?.selectedToken)
     }

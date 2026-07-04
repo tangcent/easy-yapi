@@ -15,7 +15,7 @@ jobs:
     steps:
       - id: check-labels
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const labels = await github.rest.issues.listLabelsOnIssue({
@@ -42,7 +42,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
-        java-version: [ 17 ]
+        java-version: [17, 21]
 
     steps:
       - uses: actions/checkout@v4
@@ -50,15 +50,17 @@ jobs:
       - name: Set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v4
         with:
-          java-version: ${{ matrix.java-version }}
+          java-version: |
+            17
+            ${{ matrix.java-version }}
           distribution: 'zulu'
           cache: gradle
 
-      - name: Run tests
+      - name: test
         run: ./gradlew test --stacktrace
 
-      - name: Build plugin
-        run: ./gradlew buildPlugin
+      - name: package plugin
+        run: ./gradlew buildPlugin --stacktrace
 
       - name: Cleanup Gradle Cache
         if: runner.os == 'Linux' || runner.os == 'macOS'

@@ -74,7 +74,7 @@ class EasyApiSettingsConfigurableTest : EasyApiLightCodeInsightFixtureTestCase()
     }
 
     /**
-     * Task 5.4: the Rules tab must be present and the legacy Built-in tab
+     * The Rules tab must be present and the legacy Built-in tab
      * must be absent (replaced by Rules in 3.0).
      */
     fun testRulesTabAbsentFromMainTabsAndBuiltinTabAbsent() {

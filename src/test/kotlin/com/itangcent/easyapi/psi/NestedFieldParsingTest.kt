@@ -15,7 +15,7 @@ import kotlinx.coroutines.runBlocking
  * Verifies that circular references and deeply nested structures
  * are handled correctly without causing OOM or infinite recursion.
  *
- * Related: https://github.com/tangcent/easy-yapi/issues/1325
+ * Related: https://github.com/tangcent/easy-api/issues/1325
  */
 class NestedFieldParsingTest : EasyApiLightCodeInsightFixtureTestCase() {
 

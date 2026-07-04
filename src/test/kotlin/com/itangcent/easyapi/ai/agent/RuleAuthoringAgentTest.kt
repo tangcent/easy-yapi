@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.ai.agent
 
-import com.itangcent.easyapi.ai.AiSettings
+import com.itangcent.easyapi.ai.AiRuntimeConfig
 import com.itangcent.easyapi.ai.AiMessage
 import com.itangcent.easyapi.ai.AiToolCall
 import com.itangcent.easyapi.ai.AiProvider
@@ -41,7 +41,7 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
         ctx = ToolContext(
             project = project,
             configReader = com.itangcent.easyapi.config.ConfigReader.getInstance(project),
-            aiSettings = AiSettings(
+            aiSettings = AiRuntimeConfig(
                 provider = AiProvider.OPENAI,
                 baseUrl = "", apiKey = "", model = "",
                 requestTimeoutSec = 30,

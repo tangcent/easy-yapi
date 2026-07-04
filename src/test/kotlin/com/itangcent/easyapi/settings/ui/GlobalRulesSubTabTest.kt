@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.settings.ui
 
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.RuleFileSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import java.nio.file.Files
 import java.nio.file.Path
@@ -27,7 +27,7 @@ class GlobalRulesSubTabTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testEmptyDirRoundTripsClean() {
         val panel = newPanel()
-        val settings = Settings()
+        val settings = RuleFileSettings()
         panel.resetFrom(settings)
         assertFalse("empty dir should not be modified", panel.isModified(settings))
         panel.applyTo(settings)
@@ -37,7 +37,7 @@ class GlobalRulesSubTabTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testFilesInDirDetected() {
         val a = globalDir.resolve("a.rules").apply { Files.writeString(this, "a=1") }
         val panel = newPanel()
-        val settings = Settings()
+        val settings = RuleFileSettings()
         panel.resetFrom(settings)
 
         val listed = panel.listedFiles()
@@ -48,7 +48,7 @@ class GlobalRulesSubTabTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testDisablingRoundTripsToDisabledGlobalSet() {
         val ruleFile = globalDir.resolve("rule.properties").apply { Files.writeString(this, "x=1") }
         val panel = newPanel()
-        val settings = Settings()
+        val settings = RuleFileSettings()
         panel.resetFrom(settings)
 
         // Toggle the row's enabled state via reflection (no UI).

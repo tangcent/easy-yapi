@@ -4,6 +4,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.testFramework.registerServiceInstance
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.SettingsChangeListener
+import com.itangcent.easyapi.settings.module.EnvironmentSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -90,12 +91,10 @@ class ConfigSyncServiceTest : EasyApiLightCodeInsightFixtureTestCase(), Disposab
 
         try {
             val binder = SettingBinder.getInstance(project)
-            val originalDisabled = binder.read().disabledAutoRuleFiles
+            val originalDisabled = binder.read(EnvironmentSettings::class).disabledAutoRuleFiles
             try {
                 // Touch settings to fire the listener.
-                val s = binder.read()
-                s.disabledAutoRuleFiles = emptyArray()
-                binder.save(s)
+                binder.save(EnvironmentSettings(disabledAutoRuleFiles = emptyArray()))
 
                 assertTrue(
                     "binder.save() should fire SettingsChangeListener",
@@ -113,9 +112,7 @@ class ConfigSyncServiceTest : EasyApiLightCodeInsightFixtureTestCase(), Disposab
                     "from-folder", first
                 )
             } finally {
-                val s = binder.read()
-                s.disabledAutoRuleFiles = originalDisabled
-                binder.save(s)
+                binder.save(EnvironmentSettings(disabledAutoRuleFiles = originalDisabled))
             }
         } finally {
             ruleFile.delete()

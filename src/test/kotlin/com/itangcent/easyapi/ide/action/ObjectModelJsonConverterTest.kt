@@ -548,7 +548,7 @@ class Json5HandlerTest {
     }
 
     @Test
-    fun testArrayOfSingleWithEndlineComment() {
+    fun testArrayOfSingleWithBlockComment() {
         val model = ObjectModel.Object(
             mapOf(
                 "tags" to FieldModel(
@@ -558,9 +558,10 @@ class Json5HandlerTest {
             )
         )
         val expected = "{\n" +
+            "  /* List of tags */\n" +
             "  \"tags\": [\n" +
             "    \"\"\n" +
-            "  ] // List of tags\n" +
+            "  ]\n" +
             "}"
         assertEquals(expected, builder.build(model))
     }
@@ -663,9 +664,10 @@ class Json5HandlerTest {
             "    \"city\": \"\",\n" +
             "    \"country\": \"\"\n" +
             "  },\n" +
+            "  /* List of tags */\n" +
             "  \"tags\": [\n" +
             "    \"\"\n" +
-            "  ] // List of tags\n" +
+            "  ]\n" +
             "}"
         assertEquals(expected, builder.build(model))
     }
@@ -846,9 +848,10 @@ class Json5HandlerTest {
             "  \"users\": {\n" +
             "    0: {\n" +
             "      \"name\": \"\", // User name\n" +
+            "      /* User tags */\n" +
             "      \"tags\": [\n" +
             "        \"\"\n" +
-            "      ] // User tags\n" +
+            "      ]\n" +
             "    }\n" +
             "  }\n" +
             "}"

@@ -1,19 +1,25 @@
 package com.itangcent.easyapi.ai.tools
 
-import com.itangcent.easyapi.rule.RuleKey
-import com.itangcent.easyapi.rule.RuleKeys
+import com.itangcent.easyapi.rule.RuleKeyRegistry
 import com.itangcent.easyapi.util.json.GsonUtils
-import kotlin.reflect.full.memberProperties
 
 /**
  * Perception tool that lists all known rule keys.
  *
- * Reflects over [RuleKeys] via Kotlin reflection and returns a JSON array of
- * `{name, type}` objects. No PSI / project context needed.
+ * Delegates to [RuleKeyRegistry] so the catalog reflects the general/shared
+ * [com.itangcent.easyapi.rule.RuleKeys] plus every registered channel's
+ * channel-specific keys plus the implicit keys read by name via
+ * `configReader.getFirst(…)`. Returns a JSON array of `{name, type, source}`
+ * objects:
+ * - `source` is `"general"`, `"implicit"`, or the channel id (e.g.
+ *   `"hoppscotch"`, `"yapi"`).
+ *
+ * Keys are de-duplicated by name by [RuleKeyRegistry] — general keys take
+ * precedence over channel/implicit keys with the same name.
  *
  * The `RuleKeys.kt` source file groups keys by Kotlin comment sections; those
- * comments aren't visible to reflection, so this tool returns a flat list. A
- * later revision can annotate the fields to preserve grouping.
+ * comments aren't visible to reflection, so this tool returns a flat list
+ * (the `source` field is the closest thing to grouping).
  */
 class ListRuleKeysTool : AiTool {
 
@@ -21,19 +27,20 @@ class ListRuleKeysTool : AiTool {
 
     override val description: String =
         "List all known EasyAPI rule keys. Returns a JSON array of " +
-            "{name, type}. Use this to discover what can be configured."
+            "{name, type, source}. Use this to discover what can be configured."
 
     override val kind: ToolKind = ToolKind.PERCEPTION
 
     override val parametersSchema: Map<String, Any?> = emptyMap()
 
     override suspend fun execute(args: Map<String, Any?>, ctx: ToolContext): ToolResult {
-        val keys = RuleKeys::class.memberProperties
-.mapNotNull { prop ->
-                runCatching { prop.get(RuleKeys) as? RuleKey<*> }
-.getOrNull()
-                    ?.let { mapOf("name" to it.name, "type" to it::class.simpleName) }
-            }
+        val keys = RuleKeyRegistry.getInstance(ctx.project).allKeys().map { info ->
+            mapOf(
+                "name" to info.key.name,
+                "type" to info.key::class.simpleName,
+                "source" to info.source
+            )
+        }
         return ToolResult.Text(GsonUtils.toJson(keys))
     }
 }

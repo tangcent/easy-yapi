@@ -97,8 +97,8 @@ class AiApiKeyStoreTest {
     fun testServiceNameMatchesLegacyRequesterClassName() {
         // Legacy overload built CredentialAttributes(requesterClass.getName(), key, requesterClass).
         assertEquals(
-            "serviceName must equal AiSettings FQCN for backward compat",
-            AiSettings::class.java.name,
+            "serviceName must equal AiRuntimeConfig FQCN for backward compat",
+            AiRuntimeConfig::class.java.name,
             AiApiKeyStore.attributes.serviceName
         )
     }
@@ -121,7 +121,7 @@ class AiApiKeyStoreTest {
         val store = newStore()
         // Mimic the legacy write path: new CredentialAttributes(FQCN, key) + Credentials(userName, password).
         val legacyAttrs = CredentialAttributes(
-            serviceName = AiSettings::class.java.name,
+            serviceName = AiRuntimeConfig::class.java.name,
             userName = "ai-api-key"
         )
         store.set(legacyAttrs, Credentials(user = "ai-api-key", password = "sk-legacy"))

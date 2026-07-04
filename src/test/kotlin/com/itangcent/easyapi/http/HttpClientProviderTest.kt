@@ -1,8 +1,6 @@
 package com.itangcent.easyapi.http
 
 import com.itangcent.easyapi.settings.HttpClientType
-import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.settings.Settings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class HttpClientProviderTest : EasyApiLightCodeInsightFixtureTestCase() {

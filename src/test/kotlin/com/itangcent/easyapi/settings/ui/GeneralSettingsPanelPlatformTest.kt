@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.settings.ui
 
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -12,10 +13,10 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
     }
 
     fun testResetFromAndApplyToDefaultSettings() {
-        val settings = com.itangcent.easyapi.settings.Settings()
+        val settings = GeneralSettings()
         panel.resetFrom(settings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = GeneralSettings()
         panel.applyTo(target)
 
         // After resetFrom + applyTo, the target should have the same values as what was displayed
@@ -23,7 +24,7 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
     }
 
     fun testResetFromCustomSettingsAndApplyTo() {
-        val settings = com.itangcent.easyapi.settings.Settings().apply {
+        val settings = GeneralSettings().apply {
             feignEnable = true
             jaxrsEnable = false
             actuatorEnable = true
@@ -33,7 +34,7 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
         }
         panel.resetFrom(settings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = GeneralSettings()
         panel.applyTo(target)
 
         assertTrue(target.feignEnable)
@@ -53,7 +54,7 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
     }
 
     fun testRoundTripWithAllFieldsModified() {
-        val modified = com.itangcent.easyapi.settings.Settings().apply {
+        val modified = GeneralSettings().apply {
             feignEnable = true
             jaxrsEnable = false
             actuatorEnable = true
@@ -67,7 +68,7 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
         }
         panel.resetFrom(modified)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = GeneralSettings()
         panel.applyTo(target)
 
         assertTrue(target.feignEnable)
@@ -90,7 +91,7 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
     fun testResetFromNullAndApplyTo() {
         panel.resetFrom(null)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = GeneralSettings()
         panel.applyTo(target)
         // Should not throw, target should have default values
         assertFalse(target.feignEnable)
@@ -98,13 +99,13 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
     }
 
     fun testIsModifiedAfterResetFromAndApplyTo() {
-        val settings = com.itangcent.easyapi.settings.Settings().apply {
+        val settings = GeneralSettings().apply {
             feignEnable = true
             logLevel = 40
         }
         panel.resetFrom(settings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = GeneralSettings()
         panel.applyTo(target)
 
         // After applyTo, the target should reflect the panel state

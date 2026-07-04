@@ -1,9 +1,9 @@
 package com.itangcent.easyapi.integration
 
-import com.itangcent.easyapi.exporter.curl.CurlFormatter
+import com.itangcent.easyapi.exporter.channel.curl.CurlFormatter
 import com.itangcent.easyapi.exporter.model.*
-import com.itangcent.easyapi.exporter.postman.PostmanFormatOptions
-import com.itangcent.easyapi.exporter.postman.PostmanFormatter
+import com.itangcent.easyapi.exporter.channel.postman.PostmanFormatOptions
+import com.itangcent.easyapi.exporter.channel.postman.PostmanFormatter
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.runBlocking

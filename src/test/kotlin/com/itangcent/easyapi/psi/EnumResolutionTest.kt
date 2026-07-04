@@ -2,6 +2,7 @@ package com.itangcent.easyapi.psi
 
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
@@ -534,7 +535,7 @@ class EnumResolutionTest {
         override fun setUp() {
             super.setUp()
             // Auto-match by type is only performed in INTELLIGENT mode (issue #1383).
-            settingBinder.update {
+            settingBinder.update(GeneralSettings::class) {
                 enumFieldAutoInferEnabled = true
             }
         }
@@ -783,7 +784,7 @@ class EnumResolutionTest {
 
         override fun setUp() {
             super.setUp()
-            settingBinder.update {
+            settingBinder.update(GeneralSettings::class) {
                 enumFieldAutoInferEnabled = true
             }
         }
@@ -851,7 +852,7 @@ class EnumResolutionTest {
 
         override fun setUp() {
             super.setUp()
-            settingBinder.update {
+            settingBinder.update(GeneralSettings::class) {
                 enumFieldAutoInferEnabled = false
             }
         }
@@ -897,7 +898,7 @@ class EnumResolutionTest {
 
         override fun setUp() {
             super.setUp()
-            settingBinder.update {
+            settingBinder.update(GeneralSettings::class) {
                 enumFieldAutoInferEnabled = false
             }
         }
@@ -937,7 +938,7 @@ class EnumResolutionTest {
 
         override fun setUp() {
             super.setUp()
-            settingBinder.update {
+            settingBinder.update(GeneralSettings::class) {
                 enumFieldAutoInferEnabled = true
             }
         }
@@ -1003,7 +1004,7 @@ class EnumResolutionTest {
         }
 
         fun testSimpleEnumUsesConstantNamesInIntelligentMode() = runBlocking {
-            settingBinder.update {
+            settingBinder.update(GeneralSettings::class) {
                 enumFieldAutoInferEnabled = true
             }
             myFixture.addFileToProject("constant/SimpleStatus.java", SIMPLE_STATUS_ENUM.trimIndent())

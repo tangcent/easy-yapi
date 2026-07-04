@@ -6,7 +6,7 @@ import com.itangcent.easyapi.exporter.model.ApiEndpoint
 /**
  * Extension point interface for discovering API endpoints from source code.
  *
- * Implementations are registered via the `com.itangcent.idea.plugin.easy-yapi.classExporter`
+ * Implementations are registered via the `com.itangcent.idea.plugin.easy-api.classExporter`
  * extension point in `plugin.xml` with `area="IDEA_PROJECT"`, so IntelliJ creates
  * a separate instance per project and injects the [Project] constructor parameter.
  *
