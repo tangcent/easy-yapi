@@ -14,7 +14,7 @@ import java.time.ZoneId
 /**
  * Focused unit tests for [TemplateHelpers] — one helper per group.
  *
- * Pattern A (pure JUnit, no Project/PSI). The engine integration (path resolution → helper
+ * Pure JUnit, no Project/PSI. The engine integration (path resolution → helper
  * arg evaluation → result stringify) is covered by [TemplateEngineTest]; here we pin each
  * helper's contract directly.
  *

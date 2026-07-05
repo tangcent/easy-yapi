@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap
  * (`zh-CN`) when no `zh-TW` or `zh` template is bundled — same script family, far
  * better than falling through to English.
  *
- * ## Adding a locale (NFR-6)
+ * ## Adding a locale
  *
  * Adding a bundled language template requires **only**:
  * 1. Dropping a `<locale>.md.tpl` resource under `src/main/resources/markdown/templates/`.
@@ -35,8 +35,6 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * No renderer or resolver code change is needed — [templateFor] and [availableLocales]
  * are pure lookups over the map.
- *
- * _Requirements: 6.1, 6.2, 6.3, 6.6; NFR-6_
  *
  * @see DefaultMarkdownTemplate
  * @see MarkdownTemplateResolver
@@ -50,7 +48,7 @@ object BundledLanguageTemplates : IdeaLog {
      *
      * The bundled set covers the languages IntelliJ IDEA is localized into
      * (minus `en`, which uses the default template). Adding a new locale
-     * requires only a new `.md.tpl` resource + one entry here (NFR-6).
+     * requires only a new `.md.tpl` resource + one entry here.
      */
     private val LOCALE_TO_RESOURCE: MutableMap<String, String> = mutableMapOf(
         "zh-CN" to "/markdown/templates/zh-CN.md.tpl",
@@ -93,7 +91,7 @@ object BundledLanguageTemplates : IdeaLog {
      * - `en` and blank → `null` (the default template handles English; the resolver's
      *   default tier is the floor).
      * - Unsupported locale (no match at any tier) → `null` (caller logs `warn` +
-     *   `notifyWarning` per Req 6.3, then falls through to the default tier).
+     *   `notifyWarning`, then falls through to the default tier).
      *
      * @param locale A BCP-47 tag (e.g. `"zh-CN"`, `"ja"`, `"en"`).
      * @return The template text, or `null`.
@@ -147,13 +145,13 @@ object BundledLanguageTemplates : IdeaLog {
         return (listOf("en") + LOCALE_TO_RESOURCE.keys).distinct().sorted()
     }
 
-    // ── Test-only: NFR-6 additivity proof ─────────────────────────────
+    // ── Test-only: additivity proof ─────────────────────────────
     // Adding a locale = one resource + one map entry. These methods let tests verify
     // that no renderer/resolver code change is needed.
 
     /**
      * @suppress Test-only — registers a locale pointing to an existing classpath resource
-     * to prove additivity (NFR-6).
+     * to prove additivity.
      */
     internal fun registerForTesting(locale: String, resourcePath: String) {
         LOCALE_TO_RESOURCE[locale] = resourcePath

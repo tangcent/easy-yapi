@@ -6,8 +6,6 @@ import org.junit.Test
 
 /**
  * Tests for [BundledLanguageTemplates] — the registry of locale→classpath-resource templates.
- *
- * _Requirements: 6.1, 6.2, 6.3, 6.6; NFR-6_
  */
 class BundledLanguageTemplatesTest {
 
@@ -160,13 +158,13 @@ class BundledLanguageTemplatesTest {
         assertEquals("pt-PT fallback should equal pt template", pt, ptPT)
     }
 
-    // ── NFR-6 additivity test ──────────────────────────────────────────
+    // ── additivity test ──────────────────────────────────────────
     // Adding a locale requires only a resource + one map entry — no renderer/resolver code change.
 
     @Test
     fun testAdditivityNewLocaleLoadableViaResourceAndMapEntry() {
         // Register a test locale pointing to the default template resource (which exists on classpath).
-        // This proves adding a locale = one resource + one map entry (NFR-6).
+        // This proves adding a locale = one resource + one map entry.
         BundledLanguageTemplates.registerForTesting("test-locale", "/markdown/templates/default.md.tpl")
 
         val template = BundledLanguageTemplates.templateFor("test-locale")

@@ -4,8 +4,7 @@ import com.itangcent.easyapi.exporter.channel.markdown.MarkdownEscapeUtils
 import com.itangcent.easyapi.logging.IdeaLog
 
 /**
- * Hand-rolled, dependency-free interpreter for the `{{ }}` templating language
- * (CONTRACT § Templating language; design.md § Templating Language — Implementation Spec).
+ * Hand-rolled, dependency-free interpreter for the `{{ }}` templating language.
  *
  * Pipeline: **lex** → preprocess standalone-line trimming + trim markers → **parse** to AST →
  * **evaluate** against a [TemplateModel] + [RenderContext] with a loop-scope stack.
@@ -13,8 +12,7 @@ import com.itangcent.easyapi.logging.IdeaLog
  * ## Semantics
  *
  * - `{{x}}` interpolates [x] with [MarkdownEscapeUtils.escape]; `{{{x}}}` interpolates raw.
- * - `{{#if expr}}…{{else}}…{{/if}}` truthiness (CONTRACT § Truthiness: null/""/empty-list/
- *   `false`/`0` falsy).
+ * - `{{#if expr}}…{{else}}…{{/if}}` truthiness: null/""/empty-list/`false`/`0` are falsy.
  * - `{{#each list as item}}…{{/each}}` iterates; inside, `{{@index}}`/`{{@first}}`/`{{@last}}`
  *   are loop-scoped specials. Without an `as` clause, the current item is the implicit
  *   context (its fields are reachable as bare paths).
@@ -27,7 +25,7 @@ import com.itangcent.easyapi.logging.IdeaLog
  *   + trailing newline removed (standalone-line trimming). `{{-` / `-}}` trim
  *   whitespace/newlines immediately before/after a tag.
  *
- * **Pure**: no PSI/VFS access (NFR-4). The only side effect is `IdeaLog.info`/`warn` on
+ * **Pure**: no PSI/VFS access. The only side effect is `IdeaLog.info`/`warn` on
  * unresolved paths and built-in failures .
  */
 object TemplateEngine : IdeaLog {
@@ -36,8 +34,8 @@ object TemplateEngine : IdeaLog {
      * Renders [template] against [model] + [ctx].
      *
      * On parse failure: throws [TemplateParseException] (the orchestrator catches it and
-     * falls back to the default template — Req 5.1).
-     * On execution failure: throws [TemplateRenderException] (same fallback — Req 5.2).
+     * falls back to the default template).
+     * On execution failure: throws [TemplateRenderException] (same fallback).
      * Missing variable/helper: empty + `info` log, no throw .
      */
     fun render(template: String, model: TemplateModel, ctx: RenderContext): String {
@@ -416,7 +414,7 @@ object TemplateEngine : IdeaLog {
                 }
             }
 
-            // meta.* — always a built-in (CONTRACT § Reserved root)
+            // meta.* — always a built-in
             if (first == "meta" && segments.size >= 2) {
                 return TemplateBuiltins.resolve(segments[1], ctx, arg = null)
             }
@@ -554,7 +552,7 @@ object TemplateEngine : IdeaLog {
             else -> null
         }
 
-        /** CONTRACT § Truthiness — null/""/empty-list/`false`/`0` falsy, else truthy. */
+        /** Truthiness — null/""/empty-list/`false`/`0` falsy, else truthy. */
         private fun isTruthy(value: Any?): Boolean = when (value) {
             null -> false
             is Boolean -> value
@@ -583,8 +581,8 @@ object TemplateEngine : IdeaLog {
     }
 }
 
-/** Raised when the template cannot be parsed (unclosed block, bad syntax). Req 5.1. */
+/** Raised when the template cannot be parsed (unclosed block, bad syntax). */
 class TemplateParseException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
-/** Raised when the template fails at execution time (type error mid-render). Req 5.2. */
+/** Raised when the template fails at execution time (type error mid-render). */
 class TemplateRenderException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)

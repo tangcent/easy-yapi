@@ -4,8 +4,7 @@ import com.itangcent.easyapi.logging.IdeaLog
 import java.time.format.DateTimeFormatter
 
 /**
- * Registry of built-in template variables surfaced under the reserved `meta.*` root
- * (CONTRACT § Built-in variables; Req 9).
+ * Registry of built-in template variables surfaced under the reserved `meta.*` root.
  *
  * Each entry is a pure `(RenderContext, arg: String?) -> String` function — the engine
  * passes the literal text between the parentheses (e.g. `"yyyyMM"` in `{{meta.date(yyyyMM)}}`)
@@ -18,18 +17,18 @@ import java.time.format.DateTimeFormatter
  *    naming the bad pattern ; the engine never throws.
  *  - Unknown built-in names resolve to the empty string + an `IdeaLog.debug`  — no
  *    fallback, no throw.
- *  - Adding a built-in is a single map entry (mirrors NFR-6's additivity spirit).
+ *  - Adding a built-in is a single map entry.
  *
  * The registry is namespaced under `meta.*` so it never collides with a model/loop variable
  * named `date` / `username` / etc. — `{{meta.x}}` is always a built-in, `{{x}}` is always
- * model/loop data (CONTRACT § Reserved root).
+ * model/loop data.
  *
- * **Pure**: touches no PSI/VFS (NFR-4). The [IdeaLog] warn/info are the only side effect,
+ * **Pure**: touches no PSI/VFS. The [IdeaLog] warn/info are the only side effect,
  * and they go to `idea.log` without requiring a `Project` instance.
  */
 object TemplateBuiltins : IdeaLog {
 
-    /** Default patterns per CONTRACT § Built-in variables. */
+    /** Default patterns. */
     private val defaultPatterns: Map<String, String> = mapOf(
         "date" to "yyyy-MM-dd",
         "time" to "HH:mm:ss",

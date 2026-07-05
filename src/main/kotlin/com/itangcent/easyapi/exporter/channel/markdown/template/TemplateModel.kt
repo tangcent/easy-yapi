@@ -2,12 +2,12 @@ package com.itangcent.easyapi.exporter.channel.markdown.template
 
 /**
  * The Template Model — the versioned data contract between the plugin and user-authored
- * Markdown templates. Plain data classes with no behavior and no PSI/VFS access (NFR-4).
+ * Markdown templates. Plain data classes with no behavior and no PSI/VFS access.
  *
  * Built by [TemplateModelBuilder] from already-resolved [com.itangcent.easyapi.exporter.model.ApiEndpoint]s
  * and exposed to the template engine as the top-level variables.
  *
- * Contract stability (NFR-3): changes SHALL be additive. Field removals or renames require
+ * Contract stability: changes SHALL be additive. Field removals or renames require
  * a major-version note.
  */
 data class TemplateModel(
@@ -101,7 +101,7 @@ data class Header(
  * - [rows] is the **flat**, cycle-safe list of table rows (the indent prefix is already
  *   applied to [Row.name]); the recursive [com.itangcent.easyapi.psi.model.ObjectModel] tree
  *   is flattened by [TemplateModelBuilder] using [com.itangcent.easyapi.psi.model.ObjectModelVisitTracker]
- *   (cycle-safe by object identity, not depth-capped — Req 1.5).
+ *   (cycle-safe by object identity, not depth-capped).
  * - [demo] is the pre-rendered JSON demo text **without** the code fence, or `null` when
  *   the body is null **or** when demos are disabled
  *   (`DefaultMarkdownFormatter(outputDemo = false)`). The `outputDemo` flag is an input to

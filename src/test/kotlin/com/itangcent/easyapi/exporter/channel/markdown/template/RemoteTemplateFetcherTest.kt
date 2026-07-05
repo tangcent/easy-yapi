@@ -14,24 +14,22 @@ import org.junit.Test
 
 /**
  * Pins the contract of [RemoteTemplateFetcher] before the implementation exists
- * (test-first, design.md § Test Strategy + AGENTS.md `write-test-case` skill).
+ * (test-first).
  *
- * Pure JUnit (Pattern A) — no `Project`, no PSI (NFR-4). The fetcher is a pure object
+ * Pure JUnit — no `Project`, no PSI. The fetcher is a pure object
  * that takes an injected [HttpClient]; production wraps `HttpClientProvider.getClient(...)`
  * around it, tests pass a fake.
  *
- * Covers Req 7 (Remote Template Source) + NFR-5 (SSRF hardening):
- *  - 2xx → `FetchResult.Ok(body)` 
- *  - non-2xx → `Failed` 
- *  - `Content-Length` > cap → `Failed` (reject before reading body) 
- *  - body length > cap → `Failed` (post-read check) 
- *  - 3xx redirect → `Failed` (redirects disabled, NFR-5 / review M1)
- *  - `file:`/`ftp:`/`data:` schemes → `Failed` (rejected before connect) 
- *  - TTL cache hit on second fetch within TTL 
- *  - `Failed` results **not** cached (re-attempted next export, Req 7.3 refined)
- *  - fetch runs on the provided dispatcher (off-EDT, NFR-5 / design § Security)
- *
- * _Requirements: 7.1, 7.3, 7.4, 7.5, 7.6; NFR-5_
+ * Covers:
+ *  - 2xx → `FetchResult.Ok(body)`
+ *  - non-2xx → `Failed`
+ *  - `Content-Length` > cap → `Failed` (reject before reading body)
+ *  - body length > cap → `Failed` (post-read check)
+ *  - 3xx redirect → `Failed` (redirects disabled)
+ *  - `file:`/`ftp:`/`data:` schemes → `Failed` (rejected before connect)
+ *  - TTL cache hit on second fetch within TTL
+ *  - `Failed` results **not** cached (re-attempted next export)
+ *  - fetch runs on the provided dispatcher (off-EDT)
  */
 class RemoteTemplateFetcherTest {
 
@@ -215,7 +213,7 @@ class RemoteTemplateFetcherTest {
 
     @Test
     fun test301RedirectReturnsFailed() = runBlocking {
-        // Redirects are disabled (NFR-5 / review M1): any 3xx is a failure, not followed.
+        // Redirects are disabled: any 3xx is a failure, not followed.
         val client = FakeHttpClient().apply {
             enqueue(HttpResponse(
                 code = 301,
@@ -322,7 +320,7 @@ class RemoteTemplateFetcherTest {
 
     @Test
     fun testSuccessfulFetchCachedWithinTtl() = runBlocking {
-        // Req 7.3: repeated exports in the same session do not re-download.
+        // repeated exports in the same session do not re-download.
         val client = FakeHttpClient().apply { enqueue(okResponse()) }
 
         val url = "https://example.com/cached.md"
@@ -340,7 +338,7 @@ class RemoteTemplateFetcherTest {
 
     @Test
     fun testFailedFetchNotCachedReattemptedNextExport() = runBlocking {
-        // Req 7.3 refined: cache Ok only; Failed is re-attempted next export so a
+        // cache Ok only; Failed is re-attempted next export so a
         // transient network blip doesn't block the next export for the full TTL window.
         val client = FakeHttpClient().apply {
             enqueue(HttpResponse(code = 500, body = "transient"))

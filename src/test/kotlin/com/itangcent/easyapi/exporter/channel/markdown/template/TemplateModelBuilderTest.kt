@@ -19,7 +19,7 @@ import org.junit.Test
 /**
  * Pins the [TemplateModelBuilder] contract — the data transformation from
  * [ApiEndpoint] / [ObjectModel] into the pure-data [TemplateModel] that templates
- * consume. Pure JUnit (Pattern A): no `Project`, no PSI/VFS (NFR-4). Built test-first
+ * consume. Pure JUnit: no `Project`, no PSI/VFS. Built test-first
  * (red); the builder is implemented in [TemplateModelBuilder] only after this test
  * exists.
  *

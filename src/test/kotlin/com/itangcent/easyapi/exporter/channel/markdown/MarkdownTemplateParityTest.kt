@@ -36,7 +36,7 @@ import java.time.ZoneId
  * to the legacy formatter), so the [RenderContext] values are irrelevant to the output — fixed
  * values are used for determinism only.
  *
- * Pure JUnit (Pattern A): no `Project`, no PSI/VFS (NFR-4).
+ * Pure JUnit: no `Project`, no PSI/VFS.
  */
 class MarkdownTemplateParityTest {
 

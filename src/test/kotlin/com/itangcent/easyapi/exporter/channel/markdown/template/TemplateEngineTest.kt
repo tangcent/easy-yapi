@@ -7,10 +7,10 @@ import java.time.Instant
 import java.time.ZoneId
 
 /**
- * Pins the templating language contract before the engine exists (test-first, design.md §
- * Test Strategy point 2). One focused test per construct.
+ * Pins the templating language contract before the engine exists (test-first).
+ * One focused test per construct.
  *
- * Pure JUnit (Pattern A, write-test-case SKILL.md) — no `Project`, no PSI (NFR-4).
+ * Pure JUnit — no `Project`, no PSI.
  *
  * Reference instant for built-in tests: `2026-03-15T10:30:45Z` (UTC), shared with
  * [TemplateBuiltinsTest].
@@ -163,7 +163,7 @@ class TemplateEngineTest {
 
     @Test
     fun testIfFalseWhenPathResolvesToNull() {
-        // endpointCount is 0 (truthy=0 is falsy per CONTRACT § Truthiness)
+        // endpointCount is 0 (truthy=0 is falsy)
         val model = TemplateModel(moduleName = "M", groups = emptyList(), endpointCount = 0)
         assertEquals("no", TemplateEngine.render("{{#if endpointCount}}yes{{else}}no{{/if}}", model, ctx))
     }

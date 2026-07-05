@@ -10,11 +10,11 @@ import java.time.ZoneId
 
 /**
  * Pins the contract of [TemplateBuiltins] + [RenderContext] before the engine exists
- * (test-first, design.md § Test Strategy point 2).
+ * (test-first).
  *
- * Pure JUnit (Pattern A, write-test-case SKILL.md) — no `Project`, no PSI (NFR-4).
+ * Pure JUnit — no `Project`, no PSI.
  * The fixed [Clock] + fixed username make every built-in output assertable with
- * `assertEquals` (Decision 9).
+ * `assertEquals`.
  *
  * Reference instant: `2026-03-15T10:30:45Z` (UTC).
  *  - date     = "2026-03-15"
@@ -76,7 +76,7 @@ class TemplateBuiltinsTest {
 
     @Test
     fun testDateCustomPatternWithSpaces() {
-        // Spaces inside the parentheses are part of the pattern (CONTRACT § Built-in variables).
+        // Spaces inside the parentheses are part of the pattern (Built-in variables).
         assertEquals("2026 03", TemplateBuiltins.resolve("date", ctx, arg = "yyyy MM"))
     }
 
@@ -135,7 +135,7 @@ class TemplateBuiltinsTest {
 
     @Test
     fun testEmptyPatternTreatedAsDefault() {
-        // An empty pattern string is treated as default-pattern (CONTRACT: empty arg → default).
+        // An empty pattern string is treated as default-pattern (empty arg → default).
         assertEquals("2026-03-15", TemplateBuiltins.resolve("date", ctx, arg = ""))
     }
 

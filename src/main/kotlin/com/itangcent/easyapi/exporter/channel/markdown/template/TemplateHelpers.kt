@@ -6,15 +6,14 @@ import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
 
 /**
- * Built-in helper functions exposed to templates as `{{helperName arg1 arg2}}`
- * (CONTRACT § Templating language — Helpers required by the example templates).
+ * Built-in helper functions exposed to templates as `{{helperName arg1 arg2}}`.
  *
  * The engine calls [resolve] for every helper invocation; an unknown name returns `null`
- * (the engine emits empty + `debug` log — Req 3.5). Returned values are stringified by the
+ * (the engine emits empty + `debug` log). Returned values are stringified by the
  * engine before interpolation; Booleans are preserved as-is so `{{#if eq a b}}` truthiness
  * works (a string `"false"` would be truthy).
  *
- * **Pure**: no PSI/VFS access (NFR-4). The only side effect is `IdeaLog.info` on unknown
+ * **Pure**: no PSI/VFS access. The only side effect is `IdeaLog.info` on unknown
  * helpers and `IdeaLog.warn` on invalid arguments.
  *
  * Helpers:

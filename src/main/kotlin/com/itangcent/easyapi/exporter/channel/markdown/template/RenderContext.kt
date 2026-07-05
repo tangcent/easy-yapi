@@ -12,9 +12,9 @@ import java.time.ZoneId
  * IntelliJ [projectName], and the [pluginVersion] resolved from plugin metadata.
  *
  * **Test** usage: construct directly with a fixed [Clock] (`Clock.fixed(instant, zone)`) and
- * fixed strings so every built-in output is assertable with `assertEquals` (Decision 9).
+ * fixed strings so every built-in output is assertable with `assertEquals`.
  *
- * Keeping the engine pure (NFR-4): the engine reads ambient values *only* through this holder
+ * Keeping the engine pure: the engine reads ambient values *only* through this holder
  * — it never reads PSI/VFS to obtain them. The orchestrator (`MarkdownTemplateRenderer`) builds
  * the [RenderContext] from the `Project` (name) + plugin metadata once per export.
  *

@@ -29,7 +29,7 @@ data class TemplateConfig(
  * `IdeaConsole.warn` + `NotificationUtils.notifyWarning` calls .
  *
  * The resolver itself is pure — it does not call `IdeaConsole` or `NotificationUtils` directly,
- * so it is testable as pure JUnit (NFR-4).
+ * so it is testable as pure JUnit.
  *
  * @property tier The precedence tier that failed: `"ui-path"`, `"config"`, `"project-file"`,
  *   etc.
@@ -87,7 +87,7 @@ data class ResolveResult(
  * service. Per-tier failures are collected as [ResolveWarning]s in the result. The caller
  * (`MarkdownChannel`) iterates [ResolveResult.warnings] and calls `IdeaConsole.warn` +
  * `NotificationUtils.notifyWarning` for each . This keeps the resolver testable
- * as pure JUnit (NFR-4) — no `Project` needed.
+ * as pure JUnit — no `Project` needed.
  *
  * The URL tiers (3 + 4) require async I/O, so [resolve] is `suspend`. Tests wrap it in
  * `runBlocking` (or use the `resolveSync` helper in `MarkdownTemplateResolverTest`).
@@ -301,7 +301,7 @@ object MarkdownTemplateResolver : IdeaLog {
     /**
      * Calls the [urlFetcher] for [url] and catches any unexpected exception (the fetcher itself
      * returns [FetchResult.Failed] rather than throwing, but a misbehaving fetcher could still
-     * throw — the resolver must never throw, Req 4.4/7.4).
+     * throw — the resolver must never throw).
      */
     private suspend fun fetchTemplate(
         url: String,

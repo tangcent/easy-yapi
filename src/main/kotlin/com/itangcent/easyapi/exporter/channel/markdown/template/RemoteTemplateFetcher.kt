@@ -12,10 +12,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Sealed result of [RemoteTemplateFetcher.fetch]. Never throws — failures are surfaced
- * as [Failed] so the resolver can log + fall through to the next tier (Req 7.4, design §
- * Remote Template Source / Resolution & failure behavior).
- *
- * _Requirements: 7.1, 7.4_
+ * as [Failed] so the resolver can log + fall through to the next tier.
  */
 sealed class FetchResult {
 
@@ -33,7 +30,7 @@ sealed class FetchResult {
  * Fetches Markdown template text from a remote `http(s)` URL with SSRF hardening and a
  * per-session TTL cache .
  *
- * ## SSRF hardening (NFR-5, design § Security Considerations)
+ * ## SSRF hardening
  *
  * - **Scheme allow-list**: only `http` and `https`; `file:`, `ftp:`, `data:`, `jar:`, etc.
  *   are rejected **before any connection is opened** .
@@ -46,7 +43,7 @@ sealed class FetchResult {
  *   (`ApacheHttpClient` / `IntelliJHttpClient` both read the whole entity), so this is not
  *   a true mid-stream abort — a hostile server can still force a full download up to its own
  *   limits before we discard it. True streaming protection would require extending
- *   `HttpClient`; deferred for v1 (NFR-5).
+ *   `HttpClient`; deferred for v1.
  * - **Timeout**: caller passes an [HttpClient] configured with a bounded timeout (production
  *   uses `HttpClientProvider.getClient(httpTimeOut = 10)`).
  * - **Off-EDT**: the fetch runs on the provided [dispatcher] (production passes
@@ -62,10 +59,8 @@ sealed class FetchResult {
  * ## Purity
  *
  * The fetcher is a pure object: it takes an injected [HttpClient] rather than reaching into
- * `HttpClientProvider` directly, so it is testable as pure JUnit (Pattern A — no `Project`,
- * no PSI, NFR-4). Production wiring is the resolver's responsibility (Task 3.3).
- *
- * _Requirements: 7.1, 7.3, 7.4, 7.5, 7.6; NFR-5_
+ * `HttpClientProvider` directly, so it is testable as pure JUnit (no `Project`,
+ * no PSI). Production wiring is the resolver's responsibility.
  */
 object RemoteTemplateFetcher : IdeaLog {
 
@@ -86,8 +81,8 @@ object RemoteTemplateFetcher : IdeaLog {
      * @param url The `http(s)` URL to fetch.
      * @param httpClient The HTTP client to use (production wraps
      *   `HttpClientProvider.getClient(httpTimeOut = 10)`; tests pass a fake).
-     * @param ttlSeconds Cache TTL in seconds (default 600s = 10 min, Req 7.3).
-     * @param maxBytes Response size cap in bytes (default 1 MiB, Req 7.6).
+     * @param ttlSeconds Cache TTL in seconds (default 600s = 10 min).
+     * @param maxBytes Response size cap in bytes (default 1 MiB).
      * @param dispatcher The dispatcher to run the fetch on (production passes
      *   `IdeDispatchers.Background`; tests inject a recorder).
      * @return [FetchResult.Ok] on a 2xx response within the size cap; [FetchResult.Failed]
@@ -100,7 +95,7 @@ object RemoteTemplateFetcher : IdeaLog {
         maxBytes: Long = DEFAULT_MAX_BYTES,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
     ): FetchResult {
-        // ── Scheme allow-list (SSRF guard — reject before connect, Req 7.5) ──
+        // ── Scheme allow-list (SSRF guard — reject before connect) ──
         val scheme = try {
             URI(url).scheme?.lowercase()
         } catch (t: Throwable) {
@@ -112,7 +107,7 @@ object RemoteTemplateFetcher : IdeaLog {
             )
         }
 
-        // ── TTL cache hit (Ok results only — Failed is never cached, Req 7.3 refined) ──
+        // ── TTL cache hit (Ok results only — Failed is never cached) ──
         val now = System.currentTimeMillis()
         cache[url]?.let { cached ->
             if (!cached.isExpired(now)) {
@@ -120,7 +115,7 @@ object RemoteTemplateFetcher : IdeaLog {
             }
         }
 
-        // ── Execute on the provided dispatcher (off-EDT, NFR-5) ──
+        // ── Execute on the provided dispatcher (off-EDT) ──
         val result = withContext(dispatcher) {
             executeAndValidate(url, httpClient, maxBytes)
         }
@@ -150,7 +145,7 @@ object RemoteTemplateFetcher : IdeaLog {
             return FetchResult.Failed("transport error fetching $url: ${t.message}", t)
         }
 
-        // ── 3xx → Failed (redirects disabled, NFR-5 / review M1) ──
+        // ── 3xx → Failed (redirects disabled) ──
         if (response.code in 300..399) {
             return FetchResult.Failed(
                 "redirect response ${response.code} not followed (redirects disabled)",
@@ -162,7 +157,7 @@ object RemoteTemplateFetcher : IdeaLog {
             return FetchResult.Failed("HTTP ${response.code} fetching $url")
         }
 
-        // ── Content-Length header check (reject before trusting the body, Req 7.6) ──
+        // ── Content-Length header check (reject before trusting the body) ──
         response.headers.entries
             .firstOrNull { it.key.equals("Content-Length", ignoreCase = true) }
             ?.value?.firstOrNull()

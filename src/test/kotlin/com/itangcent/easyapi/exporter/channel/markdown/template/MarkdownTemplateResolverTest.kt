@@ -39,7 +39,7 @@ import java.time.ZoneId
  * - **Missing var/helper** → empty + no fallback .
  *
  * The resolver itself is **pure**: it returns warnings as data ([ResolveWarning]) rather
- * than calling `IdeaConsole`/`NotificationUtils` directly (NFR-4).
+ * than calling `IdeaConsole`/`NotificationUtils` directly.
  */
 class MarkdownTemplateResolverTest {
 

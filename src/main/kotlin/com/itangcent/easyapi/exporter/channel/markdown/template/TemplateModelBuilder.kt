@@ -12,9 +12,9 @@ import com.itangcent.easyapi.psi.model.ObjectModelVisitTracker
 /**
  * Builds the pure-data [TemplateModel] from already-resolved [ApiEndpoint]s.
  *
- * Pure function: no PSI/VFS access (NFR-4), no side effects. Walks the recursive
+ * Pure function: no PSI/VFS access, no side effects. Walks the recursive
  * [ObjectModel] bodies into a flat, cycle-safe list of [Row]s using
- * [ObjectModelVisitTracker] (cycle-safe by object identity, not depth-capped — Req 1.5),
+ * [ObjectModelVisitTracker] (cycle-safe by object identity, not depth-capped),
  * and pre-renders the JSON `demo` via [ObjectModelJsonConverter.toJson].
  *
  * The body-flattening logic is ported from the legacy `DefaultMarkdownFormatter`
