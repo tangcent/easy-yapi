@@ -2,7 +2,7 @@ package com.itangcent.easyapi.psi
 
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
-import com.itangcent.easyapi.settings.module.GeneralSettings
+import com.itangcent.easyapi.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
@@ -200,7 +200,7 @@ enum.use.custom=groovy:```
         override fun setUp() {
             super.setUp()
             // Enable auto-infer so class-only @see can auto-match by type.
-            settingBinder.update(GeneralSettings::class) {
+            settingBinder.update(ParsingOutputSettings::class) {
                 enumFieldAutoInferEnabled = true
             }
             SUPPORTING_FILE_PATHS.forEach { loadFile(it) }
@@ -235,7 +235,7 @@ enum.use.custom=groovy:```
                 throw AssumptionViolatedException("Kotlin plugin not available")
             }
             // Enable auto-infer so class-only @see can auto-match by type.
-            settingBinder.update(GeneralSettings::class) {
+            settingBinder.update(ParsingOutputSettings::class) {
                 enumFieldAutoInferEnabled = true
             }
             SUPPORTING_FILE_PATHS.forEach { loadFile(it) }

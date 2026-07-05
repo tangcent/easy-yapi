@@ -3,7 +3,7 @@ package com.itangcent.easyapi.settings.ui
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.settings.module.GeneralSettings
-import com.itangcent.easyapi.settings.module.IntelligentSettings
+import com.itangcent.easyapi.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.settings.module.RuleFileSettings
 import org.junit.Assert.*
 import org.junit.Test
@@ -14,7 +14,7 @@ import org.mockito.kotlin.mock
  * tested without the IntelliJ Platform test framework.
  *
  * Tests use plain JUnit (no LightCodeInsightFixtureTestCase). The only
- * IntelliJ-specific seam is a Mockito-mocked [Project] for [OtherSettingsPanel],
+ * IntelliJ-specific seam is a Mockito-mocked [Project] for [BackupSettingsPanel],
  * whose no-op methods never touch the project.
  *
  * Existing coverage in SettingsPanelsLogicTest / SettingsPanelsParityTest /
@@ -23,64 +23,70 @@ import org.mockito.kotlin.mock
 class SettingsPanelsCoverageTest {
 
     // =====================================================================
-    // IntelligentSettingsPanel — enum field null handling + round-trip
+    // ParsingOutputSettingsPanel — enum field null handling + round-trip
     // =====================================================================
 
     @Test
-    fun testIntelligentSettingsPanel_resetEnumFieldFrom_nullSettings() {
-        val panel = IntelligentSettingsPanel()
-        panel.resetEnumFieldFrom(null)
-        // null → checkbox defaults to false; default GeneralSettings also has false
-        assertFalse(panel.isEnumFieldModified(GeneralSettings()))
+    fun testParsingOutputSettingsPanel_resetFromNull_enumFieldDefault() {
+        val panel = ParsingOutputSettingsPanel()
+        panel.resetFrom(null)
+        // null → enum checkbox defaults to false; default ParsingOutputSettings also has false
+        assertFalse(panel.isModified(ParsingOutputSettings()))
     }
 
     @Test
-    fun testIntelligentSettingsPanel_isEnumFieldModified_nullSettings() {
-        val panel = IntelligentSettingsPanel()
-        panel.resetEnumFieldFrom(GeneralSettings().apply { enumFieldAutoInferEnabled = true })
-        // checkbox is true; null settings treated as false → modified
-        assertTrue(panel.isEnumFieldModified(null))
-    }
+    fun testParsingOutputSettingsPanel_enumFieldRoundTrip_disabled() {
+        val source = ParsingOutputSettings().apply { enumFieldAutoInferEnabled = false }
+        val panel = ParsingOutputSettingsPanel()
+        panel.resetFrom(source)
+        assertFalse(panel.isModified(source))
 
-    @Test
-    fun testIntelligentSettingsPanel_enumFieldRoundTrip_disabled() {
-        val source = GeneralSettings().apply { enumFieldAutoInferEnabled = false }
-        val panel = IntelligentSettingsPanel()
-        panel.resetEnumFieldFrom(source)
-        assertFalse(panel.isEnumFieldModified(source))
-
-        val target = GeneralSettings().apply { enumFieldAutoInferEnabled = true }
-        panel.applyEnumFieldTo(target)
+        val target = ParsingOutputSettings().apply { enumFieldAutoInferEnabled = true }
+        panel.applyTo(target)
         assertFalse(target.enumFieldAutoInferEnabled)
     }
 
     @Test
-    fun testIntelligentSettingsPanel_resetFromNull_doesNotThrow() {
-        val panel = IntelligentSettingsPanel()
+    fun testParsingOutputSettingsPanel_enumFieldRoundTrip_enabled() {
+        val source = ParsingOutputSettings().apply { enumFieldAutoInferEnabled = true }
+        val panel = ParsingOutputSettingsPanel()
+        panel.resetFrom(source)
+        assertFalse(panel.isModified(source))
+
+        val target = ParsingOutputSettings().apply { enumFieldAutoInferEnabled = false }
+        panel.applyTo(target)
+        assertTrue(target.enumFieldAutoInferEnabled)
+    }
+
+    @Test
+    fun testParsingOutputSettingsPanel_resetFromNull_doesNotThrow() {
+        val panel = ParsingOutputSettingsPanel()
         panel.resetFrom(null)
         // After resetFrom(null), isModified(null) returns false
         assertFalse(panel.isModified(null))
     }
 
     @Test
-    fun testIntelligentSettingsPanel_fullRoundTrip_allFieldsNonDefault() {
-        val source = IntelligentSettings().apply {
+    fun testParsingOutputSettingsPanel_fullRoundTrip_allFieldsNonDefault() {
+        val source = ParsingOutputSettings().apply {
             queryExpanded = false
             formExpanded = false
             inferReturnMain = false
             enableUrlTemplating = false
             pathMulti = "LAST"
+            enumFieldAutoInferEnabled = true
         }
-        val panel = IntelligentSettingsPanel()
+        val panel = ParsingOutputSettingsPanel()
         panel.resetFrom(source)
         assertFalse(panel.isModified(source))
 
-        val target = IntelligentSettings().apply {
+        val target = ParsingOutputSettings().apply {
             queryExpanded = true
             formExpanded = true
             inferReturnMain = true
             enableUrlTemplating = true
             pathMulti = "ALL"
+            enumFieldAutoInferEnabled = false
         }
         panel.applyTo(target)
 
@@ -89,19 +95,21 @@ class SettingsPanelsCoverageTest {
         assertEquals(source.inferReturnMain, target.inferReturnMain)
         assertEquals(source.enableUrlTemplating, target.enableUrlTemplating)
         assertEquals(source.pathMulti, target.pathMulti)
+        assertEquals(source.enumFieldAutoInferEnabled, target.enumFieldAutoInferEnabled)
     }
 
     @Test
-    fun testIntelligentSettingsPanel_fullRoundTrip_defaultSettings() {
-        val source = IntelligentSettings()
-        val panel = IntelligentSettingsPanel()
+    fun testParsingOutputSettingsPanel_fullRoundTrip_defaultSettings() {
+        val source = ParsingOutputSettings()
+        val panel = ParsingOutputSettingsPanel()
         panel.resetFrom(source)
         assertFalse(panel.isModified(source))
 
-        val target = IntelligentSettings().apply {
+        val target = ParsingOutputSettings().apply {
             queryExpanded = false
             formExpanded = false
             pathMulti = "FIRST"
+            enumFieldAutoInferEnabled = true
         }
         panel.applyTo(target)
 
@@ -110,6 +118,7 @@ class SettingsPanelsCoverageTest {
         assertEquals(source.inferReturnMain, target.inferReturnMain)
         assertEquals(source.enableUrlTemplating, target.enableUrlTemplating)
         assertEquals(source.pathMulti, target.pathMulti)
+        assertEquals(source.enumFieldAutoInferEnabled, target.enumFieldAutoInferEnabled)
     }
 
     // =====================================================================
@@ -330,49 +339,49 @@ class SettingsPanelsCoverageTest {
     }
 
     // =====================================================================
-    // OtherSettingsPanel — no-op methods (requires Project, mocked)
+    // BackupSettingsPanel — no-op methods (requires Project, mocked)
     // =====================================================================
 
     @Test
-    fun testOtherSettingsPanel_componentNotNull() {
+    fun testBackupSettingsPanel_componentNotNull() {
         val project: Project = mock()
-        val panel = OtherSettingsPanel(project)
+        val panel = BackupSettingsPanel(project)
         assertNotNull(panel.component)
     }
 
     @Test
-    fun testOtherSettingsPanel_resetFrom_doesNotThrow() {
+    fun testBackupSettingsPanel_resetFrom_doesNotThrow() {
         val project: Project = mock()
-        val panel = OtherSettingsPanel(project)
+        val panel = BackupSettingsPanel(project)
         panel.resetFrom(GeneralSettings())
     }
 
     @Test
-    fun testOtherSettingsPanel_resetFromNull_doesNotThrow() {
+    fun testBackupSettingsPanel_resetFromNull_doesNotThrow() {
         val project: Project = mock()
-        val panel = OtherSettingsPanel(project)
+        val panel = BackupSettingsPanel(project)
         panel.resetFrom(null)
     }
 
     @Test
-    fun testOtherSettingsPanel_applyTo_doesNotThrow() {
+    fun testBackupSettingsPanel_applyTo_doesNotThrow() {
         val project: Project = mock()
-        val panel = OtherSettingsPanel(project)
+        val panel = BackupSettingsPanel(project)
         val settings = GeneralSettings()
         panel.applyTo(settings)
     }
 
     @Test
-    fun testOtherSettingsPanel_isModified_nullSettings_returnsFalse() {
+    fun testBackupSettingsPanel_isModified_nullSettings_returnsFalse() {
         val project: Project = mock()
-        val panel = OtherSettingsPanel(project)
+        val panel = BackupSettingsPanel(project)
         assertFalse(panel.isModified(null))
     }
 
     @Test
-    fun testOtherSettingsPanel_isModified_returnsFalse() {
+    fun testBackupSettingsPanel_isModified_returnsFalse() {
         val project: Project = mock()
-        val panel = OtherSettingsPanel(project)
+        val panel = BackupSettingsPanel(project)
         assertFalse(panel.isModified(GeneralSettings()))
     }
 

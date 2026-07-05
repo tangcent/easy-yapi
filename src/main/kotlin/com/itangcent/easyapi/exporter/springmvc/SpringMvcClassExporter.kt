@@ -24,7 +24,7 @@ import com.itangcent.easyapi.psi.type.SpecialTypeHandler
 import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
-import com.itangcent.easyapi.settings.module.IntelligentSettings
+import com.itangcent.easyapi.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.text.PathVariablePattern
 import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
@@ -350,7 +350,7 @@ class SpringMvcClassExporter(
     private suspend fun expandFormParameter(
         resolvedParamType: ResolvedType
     ): List<ApiParameter> {
-        val formExpanded = project.settings<IntelligentSettings>().formExpanded
+        val formExpanded = project.settings<ParsingOutputSettings>().formExpanded
         if (!formExpanded) {
             return emptyList()
         }
@@ -360,7 +360,7 @@ class SpringMvcClassExporter(
     private suspend fun expandQueryParameter(
         resolvedParamType: ResolvedType
     ): List<ApiParameter> {
-        val queryExpanded = project.settings<IntelligentSettings>().queryExpanded
+        val queryExpanded = project.settings<ParsingOutputSettings>().queryExpanded
         if (!queryExpanded) {
             return emptyList()
         }

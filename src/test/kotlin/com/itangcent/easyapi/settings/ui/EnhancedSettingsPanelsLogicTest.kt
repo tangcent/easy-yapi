@@ -1,7 +1,6 @@
 package com.itangcent.easyapi.settings.ui
 
 import com.itangcent.easyapi.settings.module.EnvironmentSettings
-import com.itangcent.easyapi.settings.module.IntelligentSettings
 import com.itangcent.easyapi.util.json.GsonUtils
 import org.junit.Assert.*
 import org.junit.Test
@@ -88,9 +87,8 @@ class EnvironmentSettingsPanelLogicTest {
     @Test
     fun testSettings_environmentDefaults() {
         val envSettings = EnvironmentSettings()
-        val intelSettings = IntelligentSettings()
         assertEquals("", envSettings.projectEnvironments)
-        assertEquals("", intelSettings.globalEnvironments)
+        assertEquals("", envSettings.globalEnvironments)
     }
 
     @Test
@@ -101,10 +99,12 @@ class EnvironmentSettingsPanelLogicTest {
         val globalEnvJson = GsonUtils.toJson(
             mapOf("environments" to listOf(mapOf("name" to "prod", "variables" to mapOf("URL" to "https://prod.example.com"))))
         )
-        val envSettings = EnvironmentSettings(projectEnvironments = projectEnvJson)
-        val intelSettings = IntelligentSettings(globalEnvironments = globalEnvJson)
+        val envSettings = EnvironmentSettings(
+            projectEnvironments = projectEnvJson,
+            globalEnvironments = globalEnvJson
+        )
         assertTrue(envSettings.projectEnvironments.isNotBlank())
-        assertTrue(intelSettings.globalEnvironments.isNotBlank())
+        assertTrue(envSettings.globalEnvironments.isNotBlank())
     }
 
     @Test

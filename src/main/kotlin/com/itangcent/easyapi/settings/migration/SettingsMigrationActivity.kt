@@ -24,6 +24,8 @@ import com.itangcent.easyapi.util.json.GsonUtils
  * Version history:
  * - v1: migrated legacy state to per-module `*SettingsState` components (now deleted).
  * - v2: re-migrates legacy state into the unified map-backed state components.
+ * - v3: `enumFieldAutoInferEnabled` moved GeneralSettings -> ParsingOutputSettings;
+ *   `globalEnvironments` moved ParsingOutputSettings -> EnvironmentSettings (APP scope).
  *
  * Special handling:
  * - `postmanToken` duplication: prefer the non-empty value between APP/PROJ copies; write to APP only.
@@ -33,7 +35,7 @@ import com.itangcent.easyapi.util.json.GsonUtils
 class SettingsMigrationActivity : StartupActivity {
 
     companion object {
-        private const val MIGRATION_VERSION = 2
+        private const val MIGRATION_VERSION = 3
     }
 
     override fun runActivity(project: Project) {
@@ -79,7 +81,6 @@ class SettingsMigrationActivity : StartupActivity {
         appState.setValue(generalKey, "concurrentScanEnabled", legacy.concurrentScanEnabled.toString())
         appState.setValue(generalKey, "gutterIconEnabled", legacy.gutterIconEnabled.toString())
         appState.setValue(generalKey, "switchNotice", legacy.switchNotice.toString())
-        appState.setValue(generalKey, "enumFieldAutoInferEnabled", legacy.enumFieldAutoInferEnabled.toString())
         appState.setValue(generalKey, "logLevel", legacy.logLevel.toString())
         appState.setValue(generalKey, "outputDemo", legacy.outputDemo.toString())
         appState.setValue(generalKey, "outputCharset", legacy.outputCharset)
@@ -90,14 +91,18 @@ class SettingsMigrationActivity : StartupActivity {
         appState.setValue(httpKey, "unsafeSsl", legacy.unsafeSsl.toString())
         appState.setValue(httpKey, "httpClient", legacy.httpClient)
 
-        // IntelligentSettings
-        val intelligentKey = IntelligentSettings::class.qualifiedName!!
-        appState.setValue(intelligentKey, "inferReturnMain", legacy.inferReturnMain.toString())
-        appState.setValue(intelligentKey, "enableUrlTemplating", legacy.enableUrlTemplating.toString())
-        appState.setValue(intelligentKey, "queryExpanded", legacy.queryExpanded.toString())
-        appState.setValue(intelligentKey, "formExpanded", legacy.formExpanded.toString())
-        appState.setValue(intelligentKey, "pathMulti", legacy.pathMulti)
-        appState.setValue(intelligentKey, "globalEnvironments", legacy.globalEnvironments)
+        // ParsingOutputSettings (includes enumFieldAutoInferEnabled moved from GeneralSettings in v3)
+        val parsingOutputKey = ParsingOutputSettings::class.qualifiedName!!
+        appState.setValue(parsingOutputKey, "inferReturnMain", legacy.inferReturnMain.toString())
+        appState.setValue(parsingOutputKey, "enableUrlTemplating", legacy.enableUrlTemplating.toString())
+        appState.setValue(parsingOutputKey, "queryExpanded", legacy.queryExpanded.toString())
+        appState.setValue(parsingOutputKey, "formExpanded", legacy.formExpanded.toString())
+        appState.setValue(parsingOutputKey, "pathMulti", legacy.pathMulti)
+        appState.setValue(parsingOutputKey, "enumFieldAutoInferEnabled", legacy.enumFieldAutoInferEnabled.toString())
+
+        // EnvironmentSettings (APP field — globalEnvironments moved here from ParsingOutputSettings in v3)
+        val envAppKey = EnvironmentSettings::class.qualifiedName!!
+        appState.setValue(envAppKey, "globalEnvironments", legacy.globalEnvironments)
 
         // GrpcSettings
         val grpcKey = GrpcSettings::class.qualifiedName!!
@@ -148,7 +153,7 @@ class SettingsMigrationActivity : StartupActivity {
         projState.setValue(ruleFileKey, "projectRemoteConfig", legacy.remoteConfig)
         projState.setValue(ruleFileKey, "recommendConfig", legacy.recommendConfig)
 
-        // EnvironmentSettings
+        // EnvironmentSettings (PROJ fields — same module key as APP, scope-routed by the binder)
         val envKey = EnvironmentSettings::class.qualifiedName!!
         projState.setValue(envKey, "projectEnvironments", legacy.projectEnvironments)
         projState.setValue(envKey, "disabledAutoRuleFiles", GsonUtils.toJson(legacy.disabledAutoRuleFiles))

@@ -63,7 +63,7 @@ import java.io.InputStreamReader
  * ```kotlin
  * override fun setUp() {
  *     super.setUp()
- *     SettingBinder.getInstance(project).update(IntelligentSettings::class) {
+ *     SettingBinder.getInstance(project).update(ParsingOutputSettings::class) {
  *         enableUrlTemplating = false
  *     }
  * }
@@ -72,7 +72,7 @@ import java.io.InputStreamReader
  * **2. Update settings in test method (applies only to that specific test):**
  * ```kotlin
  * fun testSomething() {
- *     SettingBinder.getInstance(project).update(IntelligentSettings::class) {
+ *     SettingBinder.getInstance(project).update(ParsingOutputSettings::class) {
  *         enableUrlTemplating = false
  *     }
  *     // test code

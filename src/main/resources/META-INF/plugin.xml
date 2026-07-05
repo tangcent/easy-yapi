@@ -96,9 +96,9 @@
                              instance="com.itangcent.easyapi.settings.ui.EasyApiRulesConfigurable"
                              weight="10"/>
         <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
-                             displayName="Other"
-                             id="easyapi.settings.EasyApiConfigurable.Other"
-                             instance="com.itangcent.easyapi.settings.ui.EasyApiOtherConfigurable"/>
+                             displayName="Backup"
+                             id="easyapi.settings.EasyApiConfigurable.Backup"
+                             instance="com.itangcent.easyapi.settings.ui.EasyApiBackupConfigurable"/>
         <toolWindow
                 id="API Dashboard"
                 icon="AllIcons.Toolwindows.WebToolWindow"

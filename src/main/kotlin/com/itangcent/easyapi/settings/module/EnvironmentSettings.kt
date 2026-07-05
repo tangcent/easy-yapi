@@ -5,11 +5,22 @@ import com.itangcent.easyapi.settings.Settings
 import com.itangcent.easyapi.settings.StorageScope
 
 /**
- * Environment settings: project environments, disabled auto rule files.
+ * Environment settings: project environments, disabled auto rule files,
+ * and global (cross-project) environments.
  *
- * Persisted at PROJECT scope via the unified [com.itangcent.easyapi.settings.state.UnifiedProjectSettingsState].
+ * Mixed-scope module:
+ * - APP field: `globalEnvironments`
+ * - PROJ fields: `projectEnvironments`, `disabledAutoRuleFiles`
+ *
+ * Persisted via the unified state components
+ * ([com.itangcent.easyapi.settings.state.UnifiedAppSettingsState] /
+ * [com.itangcent.easyapi.settings.state.UnifiedProjectSettingsState]).
  */
 data class EnvironmentSettings(
+    // ---- APPLICATION scope ----
+    @StorageScope(Scope.APPLICATION) var globalEnvironments: String = "",
+
+    // ---- PROJECT scope ----
     @StorageScope(Scope.PROJECT) var projectEnvironments: String = "",
     @StorageScope(Scope.PROJECT) var disabledAutoRuleFiles: Array<String> = emptyArray()
 ) : Settings {
@@ -17,13 +28,15 @@ data class EnvironmentSettings(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         other as EnvironmentSettings
+        if (globalEnvironments != other.globalEnvironments) return false
         if (projectEnvironments != other.projectEnvironments) return false
         if (!disabledAutoRuleFiles.contentEquals(other.disabledAutoRuleFiles)) return false
         return true
     }
 
     override fun hashCode(): Int {
-        var result = projectEnvironments.hashCode()
+        var result = globalEnvironments.hashCode()
+        result = 31 * result + projectEnvironments.hashCode()
         result = 31 * result + disabledAutoRuleFiles.contentHashCode()
         return result
     }

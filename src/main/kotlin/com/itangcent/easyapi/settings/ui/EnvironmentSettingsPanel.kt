@@ -11,7 +11,6 @@ import com.itangcent.easyapi.script.env.Environment
 import com.itangcent.easyapi.script.env.EnvironmentData
 import com.itangcent.easyapi.script.env.EnvironmentScope
 import com.itangcent.easyapi.settings.module.EnvironmentSettings
-import com.itangcent.easyapi.settings.module.IntelligentSettings
 import com.itangcent.easyapi.util.json.GsonUtils
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -70,14 +69,9 @@ class EnvironmentSettingsPanel(private val project: Project) : SettingsPanel<Env
         val scopeColumn = envTable.columnModel.getColumn(1)
         scopeColumn.cellEditor = DefaultCellEditor(JComboBox(arrayOf("Project", "Global")))
 
-        val envPanel = JPanel(BorderLayout()).apply {
-            border = BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(),
-                "Environments",
-                TitledBorder.LEFT,
-                TitledBorder.TOP
-            )
-            val toolbarDecorator = ToolbarDecorator.createDecorator(envTable)
+        val envPanel = SettingsUiKit.titledPanel(
+            "Environments",
+            ToolbarDecorator.createDecorator(envTable)
                 .setAddAction {
                     showAddEnvironmentDialog()
                 }
@@ -95,8 +89,8 @@ class EnvironmentSettingsPanel(private val project: Project) : SettingsPanel<Env
                     }
                 }
                 .disableUpDownActions()
-            add(toolbarDecorator.createPanel(), BorderLayout.CENTER)
-        }
+                .createPanel()
+        )
 
         component = FormBuilder.createFormBuilder()
             .addComponentFillVertically(envPanel, 0)
@@ -229,15 +223,8 @@ class EnvironmentSettingsPanel(private val project: Project) : SettingsPanel<Env
                 ))
             }
         }
-    }
 
-    /**
-     * Resets the global environments table from [IntelligentSettings.globalEnvironments].
-     * Called separately by the configurable because `globalEnvironments` belongs
-     * to [IntelligentSettings], not [EnvironmentSettings].
-     */
-    fun resetGlobalEnvsFrom(intelligentSettings: IntelligentSettings?) {
-        val globalEnvJson = intelligentSettings?.globalEnvironments
+        val globalEnvJson = settings?.globalEnvironments
         if (!globalEnvJson.isNullOrBlank()) {
             val data = runCatching { GsonUtils.fromJson<EnvironmentData>(globalEnvJson) }
                 .onFailure { LOG.warn("EnvironmentSettingsPanel: failed to parse global environments JSON", it) }
@@ -254,23 +241,15 @@ class EnvironmentSettingsPanel(private val project: Project) : SettingsPanel<Env
 
     override fun applyTo(settings: EnvironmentSettings) {
         val projectEnvs = envTableModel.items.filter { it.scope == EnvironmentScope.PROJECT }
+        val globalEnvs = envTableModel.items.filter { it.scope == EnvironmentScope.GLOBAL }
 
         settings.projectEnvironments = if (projectEnvs.isNotEmpty()) {
             GsonUtils.toJson(EnvironmentData(
                 environments = projectEnvs.map { Environment(it.name, it.scope, it.variables) }
             ))
         } else ""
-    }
 
-    /**
-     * Applies the global environments to [IntelligentSettings.globalEnvironments].
-     * Called separately by the configurable because `globalEnvironments` belongs
-     * to [IntelligentSettings], not [EnvironmentSettings].
-     */
-    fun applyGlobalEnvsTo(intelligentSettings: IntelligentSettings) {
-        val globalEnvs = envTableModel.items.filter { it.scope == EnvironmentScope.GLOBAL }
-
-        intelligentSettings.globalEnvironments = if (globalEnvs.isNotEmpty()) {
+        settings.globalEnvironments = if (globalEnvs.isNotEmpty()) {
             GsonUtils.toJson(EnvironmentData(
                 environments = globalEnvs.map { Environment(it.name, it.scope, it.variables) }
             ))
@@ -280,6 +259,7 @@ class EnvironmentSettingsPanel(private val project: Project) : SettingsPanel<Env
     override fun isModified(settings: EnvironmentSettings?): Boolean {
         val s = settings ?: return false
         val currentProjectEnvs = envTableModel.items.filter { it.scope == EnvironmentScope.PROJECT }
+        val currentGlobalEnvs = envTableModel.items.filter { it.scope == EnvironmentScope.GLOBAL }
 
         val currentProjectJson = if (currentProjectEnvs.isNotEmpty()) {
             GsonUtils.toJson(EnvironmentData(
@@ -287,25 +267,14 @@ class EnvironmentSettingsPanel(private val project: Project) : SettingsPanel<Env
             ))
         } else ""
 
-        return currentProjectJson != s.projectEnvironments
-    }
-
-    /**
-     * Checks if the global environments have been modified relative to
-     * [IntelligentSettings.globalEnvironments].
-     * Called separately by the configurable because `globalEnvironments` belongs
-     * to [IntelligentSettings], not [EnvironmentSettings].
-     */
-    fun isGlobalEnvsModified(intelligentSettings: IntelligentSettings?): Boolean {
-        val currentGlobalEnvs = envTableModel.items.filter { it.scope == EnvironmentScope.GLOBAL }
-
         val currentGlobalJson = if (currentGlobalEnvs.isNotEmpty()) {
             GsonUtils.toJson(EnvironmentData(
                 environments = currentGlobalEnvs.map { Environment(it.name, it.scope, it.variables) }
             ))
         } else ""
 
-        return currentGlobalJson != (intelligentSettings?.globalEnvironments ?: "")
+        return currentProjectJson != s.projectEnvironments ||
+            currentGlobalJson != (s.globalEnvironments ?: "")
     }
 
     private data class EnvironmentRow(

@@ -5,18 +5,18 @@ import com.itangcent.easyapi.settings.Settings
 import com.itangcent.easyapi.settings.StorageScope
 
 /**
- * Intelligent inference settings: return-type inference, URL templating,
- * expanded query/form panels, path multi, global environments.
+ * Parsing & output settings: return-type inference, enum-field inference,
+ * URL templating, expanded query/form panels, path multi.
  *
- * Tab-aligned with the "Intelligent" settings tab.
+ * Tab-aligned with the "Parsing & Output" settings tab.
  *
  * Persisted at APPLICATION scope via the unified [com.itangcent.easyapi.settings.state.UnifiedAppSettingsState].
  */
-data class IntelligentSettings(
+data class ParsingOutputSettings(
     @StorageScope(Scope.APPLICATION) var inferReturnMain: Boolean = true,
     @StorageScope(Scope.APPLICATION) var enableUrlTemplating: Boolean = true,
     @StorageScope(Scope.APPLICATION) var queryExpanded: Boolean = true,
     @StorageScope(Scope.APPLICATION) var formExpanded: Boolean = true,
     @StorageScope(Scope.APPLICATION) var pathMulti: String = "ALL",
-    @StorageScope(Scope.APPLICATION) var globalEnvironments: String = ""
+    @StorageScope(Scope.APPLICATION) var enumFieldAutoInferEnabled: Boolean = false
 ) : Settings

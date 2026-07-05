@@ -1,7 +1,9 @@
 package com.itangcent.easyapi.settings
 
+import com.itangcent.easyapi.settings.module.EnvironmentSettings
 import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.module.HttpSettings
+import com.itangcent.easyapi.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.settings.state.ApplicationSettingsState
 import org.junit.Assert.*
 import org.junit.Test
@@ -75,8 +77,8 @@ class SettingsDefaultsTest {
     }
 
     @Test
-    fun `test GeneralSettings default enumFieldAutoInferEnabled is false`() {
-        val settings = GeneralSettings()
+    fun `test ParsingOutputSettings default enumFieldAutoInferEnabled is false`() {
+        val settings = ParsingOutputSettings()
         assertFalse(
             "Default enumFieldAutoInferEnabled should be false",
             settings.enumFieldAutoInferEnabled
@@ -93,13 +95,34 @@ class SettingsDefaultsTest {
     }
 
     @Test
-    fun `test GeneralSettings and ApplicationSettingsState have matching enumFieldAutoInferEnabled defaults`() {
-        val settings = GeneralSettings()
+    fun `test ParsingOutputSettings and ApplicationSettingsState have matching enumFieldAutoInferEnabled defaults`() {
+        val settings = ParsingOutputSettings()
         val appState = ApplicationSettingsState.State()
         assertEquals(
-            "enumFieldAutoInferEnabled defaults should match between GeneralSettings and ApplicationSettingsState",
+            "enumFieldAutoInferEnabled defaults should match between ParsingOutputSettings and ApplicationSettingsState",
             settings.enumFieldAutoInferEnabled,
             appState.enumFieldAutoInferEnabled
+        )
+    }
+
+    @Test
+    fun `test EnvironmentSettings default globalEnvironments is empty`() {
+        val settings = EnvironmentSettings()
+        assertEquals(
+            "Default globalEnvironments should be empty",
+            "",
+            settings.globalEnvironments
+        )
+    }
+
+    @Test
+    fun `test EnvironmentSettings and ApplicationSettingsState have matching globalEnvironments defaults`() {
+        val settings = EnvironmentSettings()
+        val appState = ApplicationSettingsState.State()
+        assertEquals(
+            "globalEnvironments defaults should match between EnvironmentSettings and ApplicationSettingsState",
+            settings.globalEnvironments,
+            appState.globalEnvironments
         )
     }
 }

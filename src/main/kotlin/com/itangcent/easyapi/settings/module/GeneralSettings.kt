@@ -19,7 +19,6 @@ data class GeneralSettings(
     @StorageScope(Scope.APPLICATION) var concurrentScanEnabled: Boolean = false,
     @StorageScope(Scope.APPLICATION) var gutterIconEnabled: Boolean = true,
     @StorageScope(Scope.APPLICATION) var switchNotice: Boolean = true,
-    @StorageScope(Scope.APPLICATION) var enumFieldAutoInferEnabled: Boolean = false,
     @StorageScope(Scope.APPLICATION) var logLevel: Int = 100,
     @StorageScope(Scope.APPLICATION) var outputDemo: Boolean = true,
     @StorageScope(Scope.APPLICATION) var outputCharset: String = "UTF-8"

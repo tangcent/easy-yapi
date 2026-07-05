@@ -15,7 +15,7 @@ import com.itangcent.easyapi.psi.model.ObjectModelUtils
 import com.itangcent.easyapi.psi.type.PrimitiveKind
 import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.psi.type.TypeResolver
-import com.itangcent.easyapi.settings.module.IntelligentSettings
+import com.itangcent.easyapi.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.settings.settings
 
 /**
@@ -40,7 +40,7 @@ import com.itangcent.easyapi.settings.settings
  */
 class EndpointBuilder(private val project: Project) {
 
-    private val settings get() = project.settings<IntelligentSettings>()
+    private val settings get() = project.settings<ParsingOutputSettings>()
     private val docHelper: DocHelper by lazy { UnifiedDocHelper.getInstance(project) }
     private val metadataResolver: DocMetadataResolver get() = DocMetadataResolver.getInstance(project)
 

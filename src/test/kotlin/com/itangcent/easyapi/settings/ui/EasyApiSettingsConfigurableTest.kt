@@ -65,11 +65,10 @@ class EasyApiSettingsConfigurableTest : EasyApiLightCodeInsightFixtureTestCase()
         assertEquals("TAB_GENERAL should be 'General'", "General", EasyApiSettingsConfigurable.TAB_GENERAL)
         assertEquals("TAB_POSTMAN should be 'Postman'", "Postman", EasyApiSettingsConfigurable.TAB_POSTMAN)
         assertEquals("TAB_HTTP should be 'HTTP'", "HTTP", EasyApiSettingsConfigurable.TAB_HTTP)
-        assertEquals("TAB_INTELLIGENT should be 'Intelligent'", "Intelligent", EasyApiSettingsConfigurable.TAB_INTELLIGENT)
+        assertEquals("TAB_PARSING_OUTPUT should be 'Parsing & Output'", "Parsing & Output", EasyApiSettingsConfigurable.TAB_PARSING_OUTPUT)
         assertEquals("TAB_EXTENSIONS should be 'Extensions'", "Extensions", EasyApiSettingsConfigurable.TAB_EXTENSIONS)
         assertEquals("TAB_RULES should be 'Rules'", "Rules", EasyApiSettingsConfigurable.TAB_RULES)
         assertEquals("TAB_AI should be 'AI'", "AI", EasyApiSettingsConfigurable.TAB_AI)
-        assertEquals("TAB_OTHER should be 'Other'", "Other", EasyApiSettingsConfigurable.TAB_OTHER)
         assertEquals("TAB_GRPC should be 'gRPC'", "gRPC", EasyApiSettingsConfigurable.TAB_GRPC)
     }
 
@@ -81,7 +80,7 @@ class EasyApiSettingsConfigurableTest : EasyApiLightCodeInsightFixtureTestCase()
         configurable.createComponent()
         val tabs = configurable.tabsForTest()
         // Rules is no longer an inner tab of the main
-        // EasyApi page — it lives only as the child node beside "Other"
+        // EasyApi page — it lives only as the child node beside "Backup"
         // (EasyApiRulesConfigurable).
         assertFalse(
             "Rules tab must NOT be present in the main tabbed pane; got: $tabs",
@@ -91,6 +90,12 @@ class EasyApiSettingsConfigurableTest : EasyApiLightCodeInsightFixtureTestCase()
             "Built-in tab should be absent (replaced by Rules in 3.0); got: $tabs",
             tabs.any { it.equals("Built-in", ignoreCase = true) ||
                        it.equals("BuiltIn", ignoreCase = true) }
+        )
+        // Backup lives only as the child node (EasyApiBackupConfigurable),
+        // never as an inner tab — guards against re-duplication.
+        assertFalse(
+            "Backup tab must NOT be present in the main tabbed pane; got: $tabs",
+            tabs.any { it.equals("Backup", ignoreCase = true) }
         )
     }
 

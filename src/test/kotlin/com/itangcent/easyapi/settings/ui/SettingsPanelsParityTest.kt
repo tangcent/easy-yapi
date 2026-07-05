@@ -2,7 +2,7 @@ package com.itangcent.easyapi.settings.ui
 
 import com.itangcent.easyapi.settings.module.AiSettings
 import com.itangcent.easyapi.settings.module.EnvironmentSettings
-import com.itangcent.easyapi.settings.module.GeneralSettings
+import com.itangcent.easyapi.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.settings.module.RuleFileSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -40,27 +40,27 @@ class SettingsPanelsParityTest {
     // the IntelliJ Application).
 
     @Test
-    fun testIntelligentPanelEnumFieldAutoInferEnabledRoundTrip() {
-        val settings = GeneralSettings().apply {
+    fun testParsingOutputPanelEnumFieldAutoInferEnabledRoundTrip() {
+        val settings = ParsingOutputSettings().apply {
             enumFieldAutoInferEnabled = true
         }
-        val panel = IntelligentSettingsPanel()
-        panel.resetEnumFieldFrom(settings)
-        assertFalse(panel.isEnumFieldModified(settings))
-        panel.applyEnumFieldTo(settings)
+        val panel = ParsingOutputSettingsPanel()
+        panel.resetFrom(settings)
+        assertFalse(panel.isModified(settings))
+        panel.applyTo(settings)
         assertEquals(true, settings.enumFieldAutoInferEnabled)
     }
 
     @Test
-    fun testIntelligentPanelEnumFieldAutoInferEnabledChangeDetected() {
-        val settings = GeneralSettings().apply {
+    fun testParsingOutputPanelEnumFieldAutoInferEnabledChangeDetected() {
+        val settings = ParsingOutputSettings().apply {
             enumFieldAutoInferEnabled = false
         }
-        val panel = IntelligentSettingsPanel()
-        panel.resetEnumFieldFrom(settings)
-        assertFalse(panel.isEnumFieldModified(settings))
+        val panel = ParsingOutputSettingsPanel()
+        panel.resetFrom(settings)
+        assertFalse(panel.isModified(settings))
         settings.enumFieldAutoInferEnabled = true
-        assertTrue(panel.isEnumFieldModified(settings))
+        assertTrue(panel.isModified(settings))
     }
 
     /**

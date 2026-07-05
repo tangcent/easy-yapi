@@ -2,7 +2,7 @@ package com.itangcent.easyapi.settings.ui
 
 import com.itangcent.easyapi.settings.HttpClientType
 import com.itangcent.easyapi.settings.module.HttpSettings
-import com.itangcent.easyapi.settings.module.IntelligentSettings
+import com.itangcent.easyapi.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.settings.module.RuleFileSettings
 import org.junit.Assert.*
 import org.junit.Test
@@ -119,20 +119,20 @@ class HttpSettingsPanelLogicTest {
     }
 }
 
-class IntelligentSettingsPanelLogicTest {
+class ParsingOutputSettingsPanelLogicTest {
 
     @Test
-    fun testIntelligentSettingsPanel_resetFromDefault_notModified() {
-        val panel = IntelligentSettingsPanel()
-        val settings = IntelligentSettings()
+    fun testParsingOutputSettingsPanel_resetFromDefault_notModified() {
+        val panel = ParsingOutputSettingsPanel()
+        val settings = ParsingOutputSettings()
         panel.resetFrom(settings)
         assertFalse(panel.isModified(settings))
     }
 
     @Test
-    fun testIntelligentSettingsPanel_resetFromCustom_notModified() {
-        val panel = IntelligentSettingsPanel()
-        val settings = IntelligentSettings().apply {
+    fun testParsingOutputSettingsPanel_resetFromCustom_notModified() {
+        val panel = ParsingOutputSettingsPanel()
+        val settings = ParsingOutputSettings().apply {
             queryExpanded = false
             formExpanded = false
             inferReturnMain = false
@@ -144,12 +144,12 @@ class IntelligentSettingsPanelLogicTest {
     }
 
     @Test
-    fun testIntelligentSettingsPanel_applyTo_defaultSettings() {
-        val panel = IntelligentSettingsPanel()
-        val settings = IntelligentSettings()
+    fun testParsingOutputSettingsPanel_applyTo_defaultSettings() {
+        val panel = ParsingOutputSettingsPanel()
+        val settings = ParsingOutputSettings()
         panel.resetFrom(settings)
 
-        val target = IntelligentSettings()
+        val target = ParsingOutputSettings()
         panel.applyTo(target)
 
         assertTrue(target.queryExpanded)
@@ -160,9 +160,9 @@ class IntelligentSettingsPanelLogicTest {
     }
 
     @Test
-    fun testIntelligentSettingsPanel_applyTo_customSettings() {
-        val panel = IntelligentSettingsPanel()
-        val settings = IntelligentSettings().apply {
+    fun testParsingOutputSettingsPanel_applyTo_customSettings() {
+        val panel = ParsingOutputSettingsPanel()
+        val settings = ParsingOutputSettings().apply {
             queryExpanded = false
             formExpanded = false
             inferReturnMain = false
@@ -171,7 +171,7 @@ class IntelligentSettingsPanelLogicTest {
         }
         panel.resetFrom(settings)
 
-        val target = IntelligentSettings()
+        val target = ParsingOutputSettings()
         panel.applyTo(target)
 
         assertFalse(target.queryExpanded)
@@ -182,69 +182,69 @@ class IntelligentSettingsPanelLogicTest {
     }
 
     @Test
-    fun testIntelligentSettingsPanel_isModified_nullSettings() {
-        val panel = IntelligentSettingsPanel()
+    fun testParsingOutputSettingsPanel_isModified_nullSettings() {
+        val panel = ParsingOutputSettingsPanel()
         assertFalse(panel.isModified(null))
     }
 
     @Test
-    fun testIntelligentSettingsPanel_isModified_differentQueryExpanded() {
-        val panel = IntelligentSettingsPanel()
-        val settings = IntelligentSettings().apply { queryExpanded = true }
+    fun testParsingOutputSettingsPanel_isModified_differentQueryExpanded() {
+        val panel = ParsingOutputSettingsPanel()
+        val settings = ParsingOutputSettings().apply { queryExpanded = true }
         panel.resetFrom(settings)
 
-        val differentSettings = IntelligentSettings().apply { queryExpanded = false }
+        val differentSettings = ParsingOutputSettings().apply { queryExpanded = false }
         panel.resetFrom(differentSettings)
         assertTrue(panel.isModified(settings))
     }
 
     @Test
-    fun testIntelligentSettingsPanel_isModified_differentFormExpanded() {
-        val panel = IntelligentSettingsPanel()
-        val settings = IntelligentSettings().apply { formExpanded = true }
+    fun testParsingOutputSettingsPanel_isModified_differentFormExpanded() {
+        val panel = ParsingOutputSettingsPanel()
+        val settings = ParsingOutputSettings().apply { formExpanded = true }
         panel.resetFrom(settings)
 
-        val differentSettings = IntelligentSettings().apply { formExpanded = false }
+        val differentSettings = ParsingOutputSettings().apply { formExpanded = false }
         panel.resetFrom(differentSettings)
         assertTrue(panel.isModified(settings))
     }
 
     @Test
-    fun testIntelligentSettingsPanel_isModified_differentInferReturnMain() {
-        val panel = IntelligentSettingsPanel()
-        val settings = IntelligentSettings().apply { inferReturnMain = true }
+    fun testParsingOutputSettingsPanel_isModified_differentInferReturnMain() {
+        val panel = ParsingOutputSettingsPanel()
+        val settings = ParsingOutputSettings().apply { inferReturnMain = true }
         panel.resetFrom(settings)
 
-        val differentSettings = IntelligentSettings().apply { inferReturnMain = false }
+        val differentSettings = ParsingOutputSettings().apply { inferReturnMain = false }
         panel.resetFrom(differentSettings)
         assertTrue(panel.isModified(settings))
     }
 
     @Test
-    fun testIntelligentSettingsPanel_isModified_differentEnableUrlTemplating() {
-        val panel = IntelligentSettingsPanel()
-        val settings = IntelligentSettings().apply { enableUrlTemplating = true }
+    fun testParsingOutputSettingsPanel_isModified_differentEnableUrlTemplating() {
+        val panel = ParsingOutputSettingsPanel()
+        val settings = ParsingOutputSettings().apply { enableUrlTemplating = true }
         panel.resetFrom(settings)
 
-        val differentSettings = IntelligentSettings().apply { enableUrlTemplating = false }
+        val differentSettings = ParsingOutputSettings().apply { enableUrlTemplating = false }
         panel.resetFrom(differentSettings)
         assertTrue(panel.isModified(settings))
     }
 
     @Test
-    fun testIntelligentSettingsPanel_isModified_differentPathMulti() {
-        val panel = IntelligentSettingsPanel()
-        val settings = IntelligentSettings().apply { pathMulti = "ALL" }
+    fun testParsingOutputSettingsPanel_isModified_differentPathMulti() {
+        val panel = ParsingOutputSettingsPanel()
+        val settings = ParsingOutputSettings().apply { pathMulti = "ALL" }
         panel.resetFrom(settings)
 
-        val differentSettings = IntelligentSettings().apply { pathMulti = "FIRST" }
+        val differentSettings = ParsingOutputSettings().apply { pathMulti = "FIRST" }
         panel.resetFrom(differentSettings)
         assertTrue(panel.isModified(settings))
     }
 
     @Test
-    fun testIntelligentSettingsPanel_componentNotNull() {
-        val panel = IntelligentSettingsPanel()
+    fun testParsingOutputSettingsPanel_componentNotNull() {
+        val panel = ParsingOutputSettingsPanel()
         assertNotNull(panel.component)
     }
 }

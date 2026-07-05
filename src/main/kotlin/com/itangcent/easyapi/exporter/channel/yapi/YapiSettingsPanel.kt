@@ -10,7 +10,7 @@ import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
 import com.itangcent.easyapi.exporter.channel.yapi.YapiExportMode
 import com.itangcent.easyapi.settings.module.GeneralSettings
-import com.itangcent.easyapi.settings.module.IntelligentSettings
+import com.itangcent.easyapi.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.settings.ui.SettingsPanel
 import com.itangcent.easyapi.settings.update
@@ -23,7 +23,7 @@ import javax.swing.JScrollPane
  *
  * Self-contained panel: YApi-specific fields are read from / written to the
  * [YapiSettings] module; `enableUrlTemplating` is read/written via
- * [IntelligentSettings]; `switchNotice` is read/written via [GeneralSettings].
+ * [ParsingOutputSettings]; `switchNotice` is read/written via [GeneralSettings].
  * All reads/writes go through [SettingBinder], so the [SettingsPanel]
  * type parameter is [Settings] (the passed argument is ignored).
  */
@@ -51,7 +51,7 @@ class YapiSettingsPanel(private val project: Project) : SettingsPanel<Settings> 
         val ys = project.settings<YapiSettings>()
         yapiServer.text = ys.yapiServer ?: ""
         yapiTokens.text = ys.yapiTokens ?: ""
-        enableUrlTemplating.isSelected = project.settings<IntelligentSettings>().enableUrlTemplating
+        enableUrlTemplating.isSelected = project.settings<ParsingOutputSettings>().enableUrlTemplating
         switchNotice.isSelected = project.settings<GeneralSettings>().switchNotice
         yapiExportModeCombo.selectedItem = ys.yapiExportMode.let {
             runCatching { YapiExportMode.valueOf(it) }.getOrNull()
@@ -61,7 +61,7 @@ class YapiSettingsPanel(private val project: Project) : SettingsPanel<Settings> 
     }
 
     override fun applyTo(settings: Settings) {
-        SettingBinder.getInstance(project).update(IntelligentSettings::class) {
+        SettingBinder.getInstance(project).update(ParsingOutputSettings::class) {
             enableUrlTemplating = this@YapiSettingsPanel.enableUrlTemplating.isSelected
         }
         SettingBinder.getInstance(project).update(GeneralSettings::class) {
@@ -86,7 +86,7 @@ class YapiSettingsPanel(private val project: Project) : SettingsPanel<Settings> 
         val ys = project.settings<YapiSettings>()
         return yapiServer.text != (ys.yapiServer ?: "") ||
                 yapiTokens.text != (ys.yapiTokens ?: "") ||
-                enableUrlTemplating.isSelected != project.settings<IntelligentSettings>().enableUrlTemplating ||
+                enableUrlTemplating.isSelected != project.settings<ParsingOutputSettings>().enableUrlTemplating ||
                 switchNotice.isSelected != project.settings<GeneralSettings>().switchNotice ||
                 yapiExportModeCombo.selectedItem?.toString() != ys.yapiExportMode ||
                 yapiReqBodyJson5.isSelected != ys.yapiReqBodyJson5 ||

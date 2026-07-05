@@ -49,7 +49,7 @@ import com.itangcent.easyapi.settings.module.EnvironmentSettings
 import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.module.GrpcSettings
 import com.itangcent.easyapi.settings.module.HttpSettings
-import com.itangcent.easyapi.settings.module.IntelligentSettings
+import com.itangcent.easyapi.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.settings.module.RuleFileSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.settings.update
@@ -58,7 +58,6 @@ import com.google.gson.JsonParser
 import java.awt.*
 import java.io.File
 import javax.swing.*
-import javax.swing.border.TitledBorder
 import kotlin.concurrent.thread
 
 /**
@@ -234,33 +233,25 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
     }
 
     private fun createRepositoryPanel(): JPanel {
-        return JPanel(BorderLayout()).apply {
-            border = BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(),
-                "Repositories",
-                TitledBorder.LEFT,
-                TitledBorder.TOP
-            )
-            val toolbarDecorator = ToolbarDecorator.createDecorator(repositoryTable)
-                .setAddAction {
-                    showAddRepositoryDialog()
+        val toolbarDecorator = ToolbarDecorator.createDecorator(repositoryTable)
+            .setAddAction {
+                showAddRepositoryDialog()
+            }
+            .setRemoveAction {
+                val selected = repositoryTable.selectedRow
+                if (selected >= 0) {
+                    repositoryTableModel.removeRow(selected)
                 }
-                .setRemoveAction {
-                    val selected = repositoryTable.selectedRow
-                    if (selected >= 0) {
-                        repositoryTableModel.removeRow(selected)
-                    }
+            }
+            .setEditAction {
+                val selected = repositoryTable.selectedRow
+                if (selected >= 0) {
+                    val config = repositoryTableModel.getItem(selected)
+                    showEditRepositoryDialog(config)
                 }
-                .setEditAction {
-                    val selected = repositoryTable.selectedRow
-                    if (selected >= 0) {
-                        val config = repositoryTableModel.getItem(selected)
-                        showEditRepositoryDialog(config)
-                    }
-                }
-                .disableUpDownActions()
-            add(toolbarDecorator.createPanel(), BorderLayout.CENTER)
-        }
+            }
+            .disableUpDownActions()
+        return SettingsUiKit.titledPanel("Repositories", toolbarDecorator.createPanel())
     }
 
     private fun showAddRepositoryDialog() {
@@ -393,20 +384,42 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
 
     override val component: JComponent = FormBuilder.createFormBuilder()
         .addComponent(
-            createTitledPanel(
+            SettingsUiKit.titledPanel(
                 "Framework Support", listOf(
                     feignEnable, jaxrsEnable, actuatorEnable
                 )
             )
         )
-        .addComponent(autoScanEnabled)
-        .addComponent(concurrentScanEnabled)
-        .addComponent(gutterIconEnabled)
-        .addComponent(switchNotice)
-        .addLabeledComponent("Log Level:", logLevelCombo)
-        .addLabeledComponent("Output Charset:", outputCharsetCombo)
-        .addComponent(outputDemoCheckBox)
-        .addComponent(createTitledPanel("Cache Management", listOf(cachePanel)))
+        .addComponent(
+            SettingsUiKit.titledPanel(
+                "Scanning", listOf(
+                    autoScanEnabled, concurrentScanEnabled
+                )
+            )
+        )
+        .addComponent(
+            SettingsUiKit.titledPanel(
+                "Editor", listOf(
+                    gutterIconEnabled, switchNotice
+                )
+            )
+        )
+        .addComponent(
+            SettingsUiKit.titledPanel(
+                "Output", listOf(
+                    SettingsUiKit.labeledRow("Output Charset:", outputCharsetCombo),
+                    outputDemoCheckBox
+                )
+            )
+        )
+        .addComponent(
+            SettingsUiKit.titledPanel(
+                "Diagnostics", listOf(
+                    SettingsUiKit.labeledRow("Log Level:", logLevelCombo)
+                )
+            )
+        )
+        .addComponent(SettingsUiKit.titledPanel("Cache Management", cachePanel))
         .addComponent(createRepositoryPanel())
         .addComponentFillVertically(JPanel(), 0)
         .panel
@@ -543,7 +556,7 @@ class HttpSettingsPanel : SettingsPanel<HttpSettings> {
     }
 }
 
-class IntelligentSettingsPanel : SettingsPanel<IntelligentSettings> {
+class ParsingOutputSettingsPanel : SettingsPanel<ParsingOutputSettings> {
     private val queryExpanded = JBCheckBox("Query expanded", true).apply {
         toolTipText = "Expand query parameters into individual fields in the exported API documentation"
     }
@@ -567,66 +580,50 @@ class IntelligentSettingsPanel : SettingsPanel<IntelligentSettings> {
         }
 
     override val component: JComponent = FormBuilder.createFormBuilder()
-        .addComponent(queryExpanded)
-        .addComponent(formExpanded)
-        .addComponent(inferReturnMain)
-        .addComponent(enableUrlTemplating)
+        .addComponent(
+            SettingsUiKit.titledPanel(
+                "Inference", listOf(
+                    inferReturnMain, enumFieldAutoInferEnabled
+                )
+            )
+        )
+        .addComponent(
+            SettingsUiKit.titledPanel(
+                "Output Format", listOf(
+                    queryExpanded, formExpanded, enableUrlTemplating
+                )
+            )
+        )
         .addLabeledComponent("Path multi-select strategy:", pathMultiCombo)
-        .addComponent(enumFieldAutoInferEnabled)
         .addComponentFillVertically(JPanel(), 0)
         .panel
 
-    override fun resetFrom(settings: IntelligentSettings?) {
+    override fun resetFrom(settings: ParsingOutputSettings?) {
         queryExpanded.isSelected = settings?.queryExpanded ?: true
         formExpanded.isSelected = settings?.formExpanded ?: true
         inferReturnMain.isSelected = settings?.inferReturnMain ?: true
         enableUrlTemplating.isSelected = settings?.enableUrlTemplating ?: true
         pathMultiCombo.selectedItem = settings?.pathMulti ?: "ALL"
+        enumFieldAutoInferEnabled.isSelected = settings?.enumFieldAutoInferEnabled ?: false
     }
 
-    /**
-     * Resets the `enumFieldAutoInferEnabled` checkbox from [GeneralSettings].
-     * Called separately by the configurable because `enumFieldAutoInferEnabled`
-     * belongs to [GeneralSettings], not [IntelligentSettings].
-     */
-    fun resetEnumFieldFrom(generalSettings: GeneralSettings?) {
-        enumFieldAutoInferEnabled.isSelected = generalSettings?.enumFieldAutoInferEnabled ?: false
-    }
-
-    override fun applyTo(settings: IntelligentSettings) {
+    override fun applyTo(settings: ParsingOutputSettings) {
         settings.queryExpanded = queryExpanded.isSelected
         settings.formExpanded = formExpanded.isSelected
         settings.inferReturnMain = inferReturnMain.isSelected
         settings.enableUrlTemplating = enableUrlTemplating.isSelected
         settings.pathMulti = pathMultiCombo.selectedItem?.toString() ?: "ALL"
+        settings.enumFieldAutoInferEnabled = enumFieldAutoInferEnabled.isSelected
     }
 
-    /**
-     * Applies the `enumFieldAutoInferEnabled` checkbox to [GeneralSettings].
-     * Called separately by the configurable because `enumFieldAutoInferEnabled`
-     * belongs to [GeneralSettings], not [IntelligentSettings].
-     */
-    fun applyEnumFieldTo(generalSettings: GeneralSettings) {
-        generalSettings.enumFieldAutoInferEnabled = enumFieldAutoInferEnabled.isSelected
-    }
-
-    override fun isModified(settings: IntelligentSettings?): Boolean {
+    override fun isModified(settings: ParsingOutputSettings?): Boolean {
         val s = settings ?: return false
         return queryExpanded.isSelected != s.queryExpanded ||
                 formExpanded.isSelected != s.formExpanded ||
                 inferReturnMain.isSelected != s.inferReturnMain ||
                 enableUrlTemplating.isSelected != s.enableUrlTemplating ||
-                pathMultiCombo.selectedItem?.toString() != s.pathMulti
-    }
-
-    /**
-     * Checks if the `enumFieldAutoInferEnabled` checkbox has been modified
-     * relative to [GeneralSettings.enumFieldAutoInferEnabled].
-     * Called separately by the configurable because `enumFieldAutoInferEnabled`
-     * belongs to [GeneralSettings], not [IntelligentSettings].
-     */
-    fun isEnumFieldModified(generalSettings: GeneralSettings?): Boolean {
-        return enumFieldAutoInferEnabled.isSelected != (generalSettings?.enumFieldAutoInferEnabled ?: false)
+                pathMultiCombo.selectedItem?.toString() != s.pathMulti ||
+                enumFieldAutoInferEnabled.isSelected != s.enumFieldAutoInferEnabled
     }
 }
 
@@ -934,15 +931,15 @@ class AiAssistantSection : SettingsPanel<AiSettings> {
 
     override val component: JComponent = FormBuilder.createFormBuilder()
         .addComponent(
-            createTitledPanel(
+            SettingsUiKit.titledPanel(
                 "AI Assistant", listOf(
-            compactRow("Provider:", providerCombo),
-            compactRow("Base URL:", baseUrlField),
-            compactRow("API Key:", apiKeyField, revealApiKeyButton),
-            compactRow("Model:", modelField),
-            compactRow("Request Timeout (sec):", timeoutSpinner),
-            compactRow("Max Requests:", maxAgentStepsSpinner),
-            compactRow("Context Window:", contextWindowCombo),
+            SettingsUiKit.labeledRow("Provider:", providerCombo),
+            SettingsUiKit.labeledRow("Base URL:", baseUrlField),
+            SettingsUiKit.labeledRow("API Key:", apiKeyField, revealApiKeyButton),
+            SettingsUiKit.labeledRow("Model:", modelField),
+            SettingsUiKit.labeledRow("Request Timeout (sec):", timeoutSpinner),
+            SettingsUiKit.labeledRow("Max Requests:", maxAgentStepsSpinner),
+            SettingsUiKit.labeledRow("Context Window:", contextWindowCombo),
             JPanel(FlowLayout(FlowLayout.LEFT, 6, 2)).apply {
                 add(testConnectionButton)
                 add(autoDetectButton)
@@ -1288,18 +1285,6 @@ class AiAssistantSection : SettingsPanel<AiSettings> {
         return false
     }
 
-    private fun compactRow(label: String, field: JComponent, vararg extras: JComponent): JComponent {
-        val panel = JPanel(FlowLayout(FlowLayout.LEFT, 6, 2))
-        if (label.isNotEmpty()) {
-            val l = JLabel(label)
-            l.preferredSize = Dimension(150, l.preferredSize.height)
-            panel.add(l)
-        }
-        panel.add(field)
-        extras.forEach { panel.add(it) }
-        return panel
-    }
-
     /**
      * Updates the inline status label. [ok] = true → neutral/positive
      * colour; false → error colour.
@@ -1400,7 +1385,7 @@ class AiAssistantSection : SettingsPanel<AiSettings> {
     }
 }
 
-class OtherSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel<Settings> {
+class BackupSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel<Settings> {
     private val importButton = JButton("Import Settings")
     private val exportButton = JButton("Export Settings")
 
@@ -1489,7 +1474,6 @@ class OtherSettingsPanel(private val project: com.intellij.openapi.project.Proje
             obj.get("concurrentScanEnabled")?.asBoolean?.let { concurrentScanEnabled = it }
             obj.get("gutterIconEnabled")?.asBoolean?.let { gutterIconEnabled = it }
             obj.get("switchNotice")?.asBoolean?.let { switchNotice = it }
-            obj.get("enumFieldAutoInferEnabled")?.asBoolean?.let { enumFieldAutoInferEnabled = it }
             obj.get("logLevel")?.asInt?.let { logLevel = it }
             obj.get("outputDemo")?.asBoolean?.let { outputDemo = it }
             obj.get("outputCharset")?.asString?.let { outputCharset = it }
@@ -1501,12 +1485,16 @@ class OtherSettingsPanel(private val project: com.intellij.openapi.project.Proje
             obj.get("httpClient")?.asString?.let { httpClient = it }
         }
 
-        binder.update(com.itangcent.easyapi.settings.module.IntelligentSettings::class) {
+        binder.update(com.itangcent.easyapi.settings.module.ParsingOutputSettings::class) {
             obj.get("queryExpanded")?.asBoolean?.let { queryExpanded = it }
             obj.get("formExpanded")?.asBoolean?.let { formExpanded = it }
             obj.get("inferReturnMain")?.asBoolean?.let { inferReturnMain = it }
             obj.get("enableUrlTemplating")?.asBoolean?.let { enableUrlTemplating = it }
             obj.get("pathMulti")?.asString?.let { pathMulti = it }
+            obj.get("enumFieldAutoInferEnabled")?.asBoolean?.let { enumFieldAutoInferEnabled = it }
+        }
+
+        binder.update(com.itangcent.easyapi.settings.module.EnvironmentSettings::class) {
             obj.get("globalEnvironments")?.asString?.let { globalEnvironments = it }
         }
 
@@ -1547,7 +1535,6 @@ class OtherSettingsPanel(private val project: com.intellij.openapi.project.Proje
         obj.addProperty("concurrentScanEnabled", general.concurrentScanEnabled)
         obj.addProperty("gutterIconEnabled", general.gutterIconEnabled)
         obj.addProperty("switchNotice", general.switchNotice)
-        obj.addProperty("enumFieldAutoInferEnabled", general.enumFieldAutoInferEnabled)
         obj.addProperty("logLevel", general.logLevel)
         obj.addProperty("outputDemo", general.outputDemo)
         obj.addProperty("outputCharset", general.outputCharset)
@@ -1557,13 +1544,16 @@ class OtherSettingsPanel(private val project: com.intellij.openapi.project.Proje
         obj.addProperty("unsafeSsl", http.unsafeSsl)
         obj.addProperty("httpClient", http.httpClient)
 
-        val intelligent = binder.read(com.itangcent.easyapi.settings.module.IntelligentSettings::class)
-        obj.addProperty("queryExpanded", intelligent.queryExpanded)
-        obj.addProperty("formExpanded", intelligent.formExpanded)
-        obj.addProperty("inferReturnMain", intelligent.inferReturnMain)
-        obj.addProperty("enableUrlTemplating", intelligent.enableUrlTemplating)
-        obj.addProperty("pathMulti", intelligent.pathMulti)
-        obj.addProperty("globalEnvironments", intelligent.globalEnvironments)
+        val parsingOutput = binder.read(com.itangcent.easyapi.settings.module.ParsingOutputSettings::class)
+        obj.addProperty("queryExpanded", parsingOutput.queryExpanded)
+        obj.addProperty("formExpanded", parsingOutput.formExpanded)
+        obj.addProperty("inferReturnMain", parsingOutput.inferReturnMain)
+        obj.addProperty("enableUrlTemplating", parsingOutput.enableUrlTemplating)
+        obj.addProperty("pathMulti", parsingOutput.pathMulti)
+        obj.addProperty("enumFieldAutoInferEnabled", parsingOutput.enumFieldAutoInferEnabled)
+
+        val environment = binder.read(com.itangcent.easyapi.settings.module.EnvironmentSettings::class)
+        obj.addProperty("globalEnvironments", environment.globalEnvironments)
 
         val ruleFile = binder.read(com.itangcent.easyapi.settings.module.RuleFileSettings::class)
         obj.addProperty("extensionConfigs", ruleFile.extensionConfigs)
@@ -1582,19 +1572,5 @@ class OtherSettingsPanel(private val project: com.intellij.openapi.project.Proje
         obj.addProperty("postmanJson5FormatType", postman.postmanJson5FormatType)
 
         return GsonUtils.toJson(obj)
-    }
-}
-
-private fun createTitledPanel(title: String, components: List<JComponent>): JPanel {
-    return JPanel(BorderLayout()).apply {
-        border = BorderFactory.createTitledBorder(
-            BorderFactory.createEtchedBorder(),
-            title,
-            TitledBorder.LEFT,
-            TitledBorder.TOP
-        )
-        val inner = JPanel(GridLayout(0, 1, 0, 2))
-        components.forEach { inner.add(it) }
-        add(inner, BorderLayout.CENTER)
     }
 }

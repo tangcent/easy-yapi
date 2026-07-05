@@ -2,7 +2,7 @@ package com.itangcent.easyapi.script.env
 
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.module.EnvironmentSettings
-import com.itangcent.easyapi.settings.module.IntelligentSettings
+import com.itangcent.easyapi.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class EnvironmentServicePlatformTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -14,7 +14,7 @@ class EnvironmentServicePlatformTest : EasyApiLightCodeInsightFixtureTestCase() 
         // Initialize settings with empty environments
         val settingBinder = SettingBinder.getInstance(project)
         settingBinder.save(EnvironmentSettings())
-        settingBinder.save(IntelligentSettings())
+        settingBinder.save(ParsingOutputSettings())
         service = EnvironmentService(project)
     }
 

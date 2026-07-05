@@ -16,7 +16,6 @@ import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.GridLayout
 import javax.swing.*
-import javax.swing.border.TitledBorder
 
 class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel<GrpcSettings> {
 
@@ -90,14 +89,9 @@ class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Projec
         artifactTable.columnModel.getColumn(1).preferredWidth = 150
         artifactTable.columnModel.getColumn(2).preferredWidth = 60
 
-        val artifactPanel = JPanel(BorderLayout()).apply {
-            border = BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(),
-                "Runtime Packages",
-                TitledBorder.LEFT,
-                TitledBorder.TOP
-            )
-            val toolbarDecorator = ToolbarDecorator.createDecorator(artifactTable)
+        val artifactPanel = SettingsUiKit.titledPanel(
+            "Runtime Packages",
+            ToolbarDecorator.createDecorator(artifactTable)
                 .setAddAction {
                     showAddArtifactDialog()
                 }
@@ -115,17 +109,12 @@ class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Projec
                     }
                 }
                 .disableUpDownActions()
-            add(toolbarDecorator.createPanel(), BorderLayout.CENTER)
-        }
+                .createPanel()
+        )
 
-        val additionalJarsPanel = JPanel(BorderLayout()).apply {
-            border = BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(),
-                "Additional JARs",
-                TitledBorder.LEFT,
-                TitledBorder.TOP
-            )
-            val toolbarDecorator = ToolbarDecorator.createDecorator(additionalJarsList)
+        val additionalJarsPanel = SettingsUiKit.titledPanel(
+            "Additional JARs",
+            ToolbarDecorator.createDecorator(additionalJarsList)
                 .setAddAction {
                     showAddJarDialog()
                 }
@@ -136,28 +125,25 @@ class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Projec
                     }
                 }
                 .disableUpDownActions()
-            add(toolbarDecorator.createPanel(), BorderLayout.CENTER)
-        }
+                .createPanel()
+        )
 
         runtimePackagesPanel = JPanel(GridLayout(0, 1, 0, 8)).apply {
             add(artifactPanel)
             add(additionalJarsPanel)
         }
 
-        val grpcRuntimePanel = JPanel(BorderLayout()).apply {
-            border = BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(),
-                "gRPC Runtime",
-                TitledBorder.LEFT,
-                TitledBorder.TOP
-            )
-            val callRow = JPanel(GridLayout(1, 2, 8, 0)).apply {
-                add(grpcCallEnabledCheckbox)
-                add(autoDetectButton)
-            }
-            add(callRow, BorderLayout.NORTH)
-            add(runtimePackagesPanel, BorderLayout.CENTER)
+        val callRow = JPanel(GridLayout(1, 2, 8, 0)).apply {
+            add(grpcCallEnabledCheckbox)
+            add(autoDetectButton)
         }
+        val grpcRuntimePanel = SettingsUiKit.titledPanel(
+            "gRPC Runtime",
+            JPanel(BorderLayout()).apply {
+                add(callRow, BorderLayout.NORTH)
+                add(runtimePackagesPanel, BorderLayout.CENTER)
+            }
+        )
 
         component = FormBuilder.createFormBuilder()
             .addComponent(grpcEnableCheckbox)

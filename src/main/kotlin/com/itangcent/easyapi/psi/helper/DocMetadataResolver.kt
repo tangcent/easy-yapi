@@ -16,7 +16,7 @@ import com.itangcent.easyapi.exporter.model.PathSelector
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
-import com.itangcent.easyapi.settings.module.IntelligentSettings
+import com.itangcent.easyapi.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.util.text.appendWithDedup
@@ -98,7 +98,7 @@ class DocMetadataResolver internal constructor(
 ) : com.itangcent.easyapi.logging.IdeaLog {
     private val engine: RuleEngine get() = RuleEngine.getInstance(project)
     private val docHelper: DocHelper get() = UnifiedDocHelper.getInstance(project)
-    private val settings get() = project.settings<IntelligentSettings>()
+    private val settings get() = project.settings<ParsingOutputSettings>()
 
     companion object {
         fun getInstance(project: Project): DocMetadataResolver = project.service()

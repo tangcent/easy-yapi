@@ -5,7 +5,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.module.EnvironmentSettings
-import com.itangcent.easyapi.settings.module.IntelligentSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.json.GsonUtils
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -174,7 +173,6 @@ class EnvironmentService(private val project: Project) : com.itangcent.easyapi.l
      */
     private fun loadEnvironmentData(): EnvironmentData {
         val envSettings = project.settings<EnvironmentSettings>()
-        val intelSettings = project.settings<IntelligentSettings>()
         val projectEnvJson = envSettings.projectEnvironments
         val projectData = if (projectEnvJson.isNotBlank()) {
             runCatching { GsonUtils.fromJson<EnvironmentData>(projectEnvJson) }
@@ -182,7 +180,7 @@ class EnvironmentService(private val project: Project) : com.itangcent.easyapi.l
                 .getOrNull()
         } else null
 
-        val globalEnvJson = intelSettings.globalEnvironments
+        val globalEnvJson = envSettings.globalEnvironments
         val globalData = if (globalEnvJson.isNotBlank()) {
             runCatching { GsonUtils.fromJson<EnvironmentData>(globalEnvJson) }
                 .onFailure { LOG.warn("EnvironmentService: failed to parse global environments JSON", it) }
@@ -210,7 +208,6 @@ class EnvironmentService(private val project: Project) : com.itangcent.easyapi.l
      */
     private fun persistEnvironmentData(data: EnvironmentData) {
         val envSettings = project.settings<EnvironmentSettings>()
-        val intelSettings = project.settings<IntelligentSettings>()
         val projectEnvs = data.environments.filter { it.scope == EnvironmentScope.PROJECT }
         val globalEnvs = data.environments.filter { it.scope == EnvironmentScope.GLOBAL }
 
@@ -221,16 +218,14 @@ class EnvironmentService(private val project: Project) : com.itangcent.easyapi.l
             ))
         } else ""
 
-        intelSettings.globalEnvironments = if (globalEnvs.isNotEmpty()) {
+        envSettings.globalEnvironments = if (globalEnvs.isNotEmpty()) {
             GsonUtils.toJson(EnvironmentData(
                 environments = globalEnvs,
                 activeEnvironmentName = if (data.activeEnvironmentName in globalEnvs.map { it.name }) data.activeEnvironmentName else null
             ))
         } else ""
 
-        val modularBinder = SettingBinder.getInstance(project)
-        modularBinder.save(envSettings)
-        modularBinder.save(intelSettings)
+        SettingBinder.getInstance(project).save(envSettings)
     }
 
     companion object {
