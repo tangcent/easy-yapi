@@ -42,12 +42,72 @@ object YamlFormatter {
 
     private const val INDENT = "  "
 
-    /** YAML rendering of an [ObjectModel]. */
-    fun format(model: ObjectModel): String {
+    /**
+     * YAML rendering of an [ObjectModel].
+     *
+     * When [prefix] is non-empty (e.g. `"app.config"`), its dot-separated
+     * segments are rendered as nested keys wrapping the model — mirroring
+     * `@ConfigurationProperties(prefix = "app.config")` semantics for
+     * `application.yml`. Empty prefix segments are skipped.
+     *
+     * Examples:
+     * - `format(model, "")` → `id: 0\nname: ""`
+     * - `format(model, "app")` → `app:\n\n  id: 0\n  name: ""`
+     * - `format(model, "app.config")` → `app:\n\n  config:\n\n    id: 0\n    name: ""`
+     */
+    fun format(model: ObjectModel, prefix: String = ""): String {
         val sb = StringBuilder()
         val tracker = ObjectModelVisitTracker()
-        renderTop(model, sb, tracker)
+        val segments = prefix.split('.').filter { it.isNotEmpty() }
+        if (segments.isEmpty()) {
+            renderTop(model, sb, tracker)
+        } else {
+            renderPrefix(segments, 0, model, sb, tracker)
+        }
         return sb.toString().trimEnd()
+    }
+
+    /**
+     * Renders nested prefix keys down to [depth], then the [model] inline at
+     * the deepest level. Mirrors the indent/blank-line convention of
+     * [renderObjectFields] so prefixed output looks like hand-written YAML.
+     */
+    private fun renderPrefix(
+        segments: List<String>,
+        depth: Int,
+        model: ObjectModel,
+        sb: StringBuilder,
+        tracker: ObjectModelVisitTracker
+    ) {
+        sb.append(INDENT.repeat(depth)).append(segments[depth]).append(':')
+        if (depth == segments.lastIndex) {
+            // Deepest level — render the model relative to the prefix.
+            when (model) {
+                is ObjectModel.Object -> {
+                    if (model.fields.isEmpty()) {
+                        sb.append(" {}")
+                    } else {
+                        sb.appendLine()
+                        renderObjectFields(model, segments.size, sb, tracker, firstLine = false)
+                    }
+                }
+                is ObjectModel.Array -> {
+                    sb.appendLine()
+                    renderArray(model, segments.size, sb, tracker)
+                }
+                is ObjectModel.MapModel -> {
+                    sb.appendLine()
+                    renderMap(model, segments.size, sb, tracker)
+                }
+                is ObjectModel.Single -> sb.appendLine().append(INDENT.repeat(segments.size))
+                    .append("value: ").append(formatSingleValue(model, null))
+            }
+        } else {
+            // Blank line before the next indented prefix level, matching the
+            // nested-object convention (see renderFieldValue's Object branch).
+            sb.appendLine().appendLine()
+            renderPrefix(segments, depth + 1, model, sb, tracker)
+        }
     }
 
     private fun renderTop(

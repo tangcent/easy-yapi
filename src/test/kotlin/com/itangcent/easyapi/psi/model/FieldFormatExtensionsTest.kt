@@ -8,7 +8,7 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
 
 /**
  * Golden-file tests for the [ObjectModel] format extension functions
- * ([toJson], [toJson5], [toProperties]).
+ * ([toJson], [toJson5], [toProperties], [toYaml]).
  *
  * Locks the canonical rendering of `model/UserInfo.java` so any drift
  * introduced by refactoring is caught at CI time. The golden files were
@@ -19,6 +19,7 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
  * - [toJson] → [ObjectModelJsonConverter.toJson]
  * - [toJson5] → [ObjectModelJsonConverter.toJson5]
  * - [toProperties] → [PropertiesFormatter.format]
+ * - [toYaml] → [YamlFormatter.format]
  */
 class FieldFormatExtensionsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -54,6 +55,30 @@ class FieldFormatExtensionsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val actual = model.toProperties()
         val expected = ResourceLoader.read("/result/com.itangcent.easyapi.ide.FieldFormatServiceTest.toProperties.txt")
+        assertEquals(expected, actual)
+    }
+
+    fun testToYaml() = runTest {
+        loadFile("model/UserInfo.java")
+        val psiClass = findClass("com.itangcent.model.UserInfo")!!
+        val helper = DefaultPsiClassHelper.getInstance(project)
+        val model = helper.buildObjectModel(psiClass, option = JsonOption.ALL)!!
+
+        val actual = model.toYaml()
+        val expected = ResourceLoader.read("/result/com.itangcent.easyapi.exporter.formatter.YamlFormatterTest.txt")
+        assertEquals(expected, actual)
+    }
+
+    fun testToYamlWithPrefix() = runTest {
+        loadFile("model/UserInfo.java")
+        val psiClass = findClass("com.itangcent.model.UserInfo")!!
+        val helper = DefaultPsiClassHelper.getInstance(project)
+        val model = helper.buildObjectModel(psiClass, option = JsonOption.ALL)!!
+
+        val actual = model.toYaml("demo")
+        val expected = ResourceLoader.read(
+            "/result/com.itangcent.easyapi.psi.model.FieldFormatExtensionsTest.toYamlWithPrefix.txt"
+        )
         assertEquals(expected, actual)
     }
 }

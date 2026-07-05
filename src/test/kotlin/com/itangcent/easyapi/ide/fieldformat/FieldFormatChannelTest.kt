@@ -125,6 +125,14 @@ class FieldFormatChannelTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals(serviceResult, channelResult)
     }
 
+    fun testYamlChannelDelegatesToService() = runTest {
+        val channel = YamlFieldFormatChannel()
+        val channelResult = channel.format(project, userInfoClass)
+        val serviceResult = PropertiesService.getInstance(project).toYaml(userInfoClass)
+        // The channel should delegate to PropertiesService — outputs must match
+        assertEquals(serviceResult, channelResult)
+    }
+
     // ---------- All channels parity ----------
 
     fun testAllChannelsProduceNonEmptyOutput() = runTest {

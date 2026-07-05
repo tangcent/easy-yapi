@@ -2,17 +2,17 @@ package com.itangcent.easyapi.ide.fieldformat
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
-import com.itangcent.easyapi.psi.JsonOption
-import com.itangcent.easyapi.psi.PsiClassHelper
-import com.itangcent.easyapi.psi.model.toYaml
+import com.itangcent.easyapi.ide.PropertiesService
 
 /**
  * Field-format channel for YAML output.
  *
- * Uses `JsonOption.ALL` (same as JSON5 — includes comment metadata in the
- * model, though [YamlFormatter][com.itangcent.easyapi.exporter.formatter.YamlFormatter]
- * does not render comments). Delegates the pure rendering to
- * [ObjectModel.toYaml][com.itangcent.easyapi.psi.model.toYaml].
+ * Delegates to [PropertiesService] because YAML, like Properties, honors the
+ * `properties.prefix` rule (resolved from `@ConfigurationProperties(prefix=...)`
+ * via `RuleEngine`). The prefix is rendered as nested keys — mirroring Spring
+ * Boot's `application.yml` semantics. The pure rendering lives in
+ * [ObjectModel.toYaml][com.itangcent.easyapi.psi.model.toYaml], called by
+ * `PropertiesService.toYaml` after prefix resolution.
  */
 class YamlFieldFormatChannel : FieldFormatChannel {
     override val id: String = "yaml"
@@ -20,7 +20,5 @@ class YamlFieldFormatChannel : FieldFormatChannel {
     override val actionText: String = "ToYaml"
 
     override suspend fun format(project: Project, psiClass: PsiClass): String =
-        PsiClassHelper.getInstance(project)
-            .buildObjectModel(psiClass, option = JsonOption.ALL)
-            ?.toYaml() ?: ""
+        PropertiesService.getInstance(project).toYaml(psiClass)
 }

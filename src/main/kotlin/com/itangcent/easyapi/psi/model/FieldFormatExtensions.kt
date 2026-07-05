@@ -14,8 +14,8 @@ import com.itangcent.easyapi.exporter.formatter.YamlFormatter
  * These are top-level extensions (not service methods) because the conversions
  * are pure functions of the model — they need no `Project`, `RuleEngine`, or
  * PSI access. Project-scoped concerns (e.g. resolving `properties.prefix`)
- * belong in `PropertiesService`, which calls [toProperties] after resolving
- * the prefix.
+ * belong in `PropertiesService`, which calls [toProperties] and [toYaml]
+ * after resolving the prefix.
  *
  * ## Usage
  * ```kotlin
@@ -40,5 +40,12 @@ fun ObjectModel.toJson5(): String = ObjectModelJsonConverter.toJson5(this)
 fun ObjectModel.toProperties(prefix: String = ""): String =
     PropertiesFormatter().format(this, prefix)
 
-/** YAML rendering — delegates to [YamlFormatter.format]. */
-fun ObjectModel.toYaml(): String = YamlFormatter.format(this)
+/**
+ * YAML rendering with an optional dot-separated [prefix] rendered as nested
+ * keys (mirrors `@ConfigurationProperties(prefix = ...)` for `application.yml`).
+ *
+ * Delegates to [YamlFormatter.format]. The [prefix] is resolved by the caller
+ * (typically `PropertiesService.toYaml` via `RuleEngine`).
+ */
+fun ObjectModel.toYaml(prefix: String = ""): String =
+    YamlFormatter.format(this, prefix)

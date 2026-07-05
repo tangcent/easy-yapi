@@ -599,4 +599,111 @@ class YamlFormatterBranchTest {
         val result = YamlFormatter.format(ObjectModel.Single(JsonType.FLOAT))
         assertEquals("value: 0.0", result)
     }
+
+    // ---------- Prefix (@ConfigurationProperties) ----------
+
+    @Test
+    fun testFormatWithEmptyPrefixEqualsNoPrefix() {
+        val obj = ObjectModel.Object(
+            mapOf(
+                "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
+                "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+            )
+        )
+        val withoutPrefix = YamlFormatter.format(obj)
+        val withEmptyPrefix = YamlFormatter.format(obj, prefix = "")
+        assertEquals(withoutPrefix, withEmptyPrefix)
+    }
+
+    @Test
+    fun testFormatWithSingleSegmentPrefixForObject() {
+        val obj = ObjectModel.Object(
+            mapOf(
+                "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
+                "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+            )
+        )
+        val result = YamlFormatter.format(obj, prefix = "app")
+        assertEquals("app:\n\n  id: 0\n  name: \"\"", result)
+    }
+
+    @Test
+    fun testFormatWithMultiSegmentPrefixForObject() {
+        val obj = ObjectModel.Object(
+            mapOf(
+                "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
+                "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+            )
+        )
+        val result = YamlFormatter.format(obj, prefix = "app.config")
+        assertEquals("app:\n\n  config:\n\n    id: 0\n    name: \"\"", result)
+    }
+
+    @Test
+    fun testFormatWithPrefixCollapsesEmptySegments() {
+        val obj = ObjectModel.Object(
+            mapOf("id" to FieldModel(ObjectModel.Single(JsonType.INT)))
+        )
+        // Leading/trailing/repeated dots collapse to the single segment "app"
+        val result = YamlFormatter.format(obj, prefix = ".app.")
+        assertEquals("app:\n\n  id: 0", result)
+    }
+
+    @Test
+    fun testFormatWithPrefixAndNestedObject() {
+        val inner = ObjectModel.Object(
+            mapOf("id" to FieldModel(ObjectModel.Single(JsonType.INT)))
+        )
+        val obj = ObjectModel.Object(
+            mapOf("nested" to FieldModel(inner))
+        )
+        val result = YamlFormatter.format(obj, prefix = "app")
+        assertEquals("app:\n\n  nested:\n\n    id: 0", result)
+    }
+
+    @Test
+    fun testFormatWithPrefixAndArrayField() {
+        val array = ObjectModel.Array(ObjectModel.Single(JsonType.STRING))
+        val obj = ObjectModel.Object(
+            mapOf("tags" to FieldModel(array))
+        )
+        val result = YamlFormatter.format(obj, prefix = "app")
+        assertEquals("app:\n\n  tags:\n    - \"\"", result)
+    }
+
+    @Test
+    fun testFormatWithPrefixAndEmptyObject() {
+        val obj = ObjectModel.Object(emptyMap())
+        val result = YamlFormatter.format(obj, prefix = "app")
+        assertEquals("app: {}", result)
+    }
+
+    @Test
+    fun testFormatTopLevelArrayWithPrefix() {
+        val item = ObjectModel.Object(
+            mapOf("id" to FieldModel(ObjectModel.Single(JsonType.INT)))
+        )
+        val array = ObjectModel.Array(item)
+        val result = YamlFormatter.format(array, prefix = "app")
+        assertEquals("app:\n  - id: 0", result)
+    }
+
+    @Test
+    fun testFormatTopLevelMapWithPrefix() {
+        val map = ObjectModel.MapModel(
+            ObjectModel.Single(JsonType.STRING),
+            ObjectModel.Single(JsonType.INT)
+        )
+        val result = YamlFormatter.format(map, prefix = "app")
+        // Map follows the same convention as a map field value (no blank line
+        // between the key and its map body — see testFormatMapInObject).
+        assertEquals("app:\n  key: \"\"\n  value: 0", result)
+    }
+
+    @Test
+    fun testFormatTopLevelSingleWithPrefix() {
+        val single = ObjectModel.Single(JsonType.STRING)
+        val result = YamlFormatter.format(single, prefix = "app")
+        assertEquals("app:\n  value: \"\"", result)
+    }
 }
