@@ -53,17 +53,15 @@
 
 | ชื่อ | ประเภท | คำอธิบาย |
 | ------------ | ------------ | ------------ |
-{{#each api.http.body.rows as r}}| {{r.name}} | {{r.type}} | {{r.desc}} |
+{{#each api.http.body.fields as f}}| {{{f.indent}}}{{f.name}} | {{f.type}} | {{f.desc}} |
 {{/each}}
-
-{{#if api.http.body.demo}}
 
 **ตัวอย่างคำขอ:**
 
 ```json
-{{{api.http.body.demo}}}
+{{{api.http.body.asDemo()}}}
 ```
-{{/if}}{{/if}}{{#if api.http.hasRequestContent}}{{else}}
+{{/if}}{{#if api.http.hasRequestContent}}{{else}}
 
 {{/if}}
 {{#if api.http.response}}
@@ -74,17 +72,15 @@
 
 | ชื่อ | ประเภท | คำอธิบาย |
 | ------------ | ------------ | ------------ |
-{{#each api.http.response.rows as r}}| {{r.name}} | {{r.type}} | {{r.desc}} |
+{{#each api.http.response.fields as f}}| {{{f.indent}}}{{f.name}} | {{f.type}} | {{f.desc}} |
 {{/each}}
-
-{{#if api.http.response.demo}}
 
 **ตัวอย่างการตอบกลับ:**
 
 ```json
-{{{api.http.response.demo}}}
+{{{api.http.response.asDemo()}}}
 ```
-{{/if}}{{/if}}{{/if}}{{#if api.grpc}}
+{{/if}}{{/if}}{{#if api.grpc}}
 
 ---
 ### {{#if api.name}}{{{api.name}}}{{else}}{{{api.path}}}{{/if}}
@@ -113,17 +109,15 @@
 
 | ชื่อ | ประเภท | คำอธิบาย |
 | ------------ | ------------ | ------------ |
-{{#each api.grpc.body.rows as r}}| {{r.name}} | {{r.type}} | {{r.desc}} |
+{{#each api.grpc.body.fields as f}}| {{{f.indent}}}{{f.name}} | {{f.type}} | {{f.desc}} |
 {{/each}}
-
-{{#if api.grpc.body.demo}}
 
 **ตัวอย่างคำขอ:**
 
 ```json
-{{{api.grpc.body.demo}}}
+{{{api.grpc.body.asDemo()}}}
 ```
-{{/if}}{{/if}}{{#if api.grpc.response}}
+{{/if}}{{#if api.grpc.response}}
 
 > การตอบกลับ
 
@@ -131,14 +125,12 @@
 
 | ชื่อ | ประเภท | คำอธิบาย |
 | ------------ | ------------ | ------------ |
-{{#each api.grpc.response.rows as r}}| {{r.name}} | {{r.type}} | {{r.desc}} |
+{{#each api.grpc.response.fields as f}}| {{{f.indent}}}{{f.name}} | {{f.type}} | {{f.desc}} |
 {{/each}}
-
-{{#if api.grpc.response.demo}}
 
 **ตัวอย่างการตอบกลับ:**
 
 ```json
-{{{api.grpc.response.demo}}}
+{{{api.grpc.response.asDemo()}}}
 ```
-{{/if}}{{/if}}{{/if}}{{/each}}{{/each}}
+{{/if}}{{/if}}{{/each}}{{/each}}

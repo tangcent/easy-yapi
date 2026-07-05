@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.exporter.channel.markdown.template
 
+import com.itangcent.easyapi.psi.model.ObjectModel
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.Clock
@@ -100,8 +101,20 @@ class TemplateEngineTest {
 
     @Test
     fun testRawInterpolationPreservesHtmlEntities() {
-        // Used for the indent prefix `&ensp;&ensp;&#124;─` in body rows.
-        val row = Row(name = "&ensp;&ensp;&#124;─id", type = "string", desc = "")
+        // Used for the indent prefix `&ensp;&ensp;&#124;─` in body fields.
+        val field = FieldView(
+            name = "id",
+            type = "string",
+            desc = "",
+            required = false,
+            defaultValue = null,
+            depth = 1,
+            indent = "&ensp;&ensp;&#124;─",
+            hasChildren = false,
+            childrenCount = 0,
+            structuralKind = FieldStructuralKind.PRIMITIVE,
+        )
+        val bodyModel = ObjectModel.Object(mapOf("id" to com.itangcent.easyapi.psi.model.FieldModel(ObjectModel.single(com.itangcent.easyapi.psi.type.JsonType.STRING), comment = "user id")))
         val endpoint = Endpoint(
             name = "x",
             description = null,
@@ -113,7 +126,7 @@ class TemplateEngineTest {
                 queryParams = emptyList(),
                 formParams = emptyList(),
                 headers = emptyList(),
-                body = BodyView(rows = listOf(row), demo = null),
+                body = BodyView(model = bodyModel, fields = listOf(field)),
                 response = null,
                 hasRequestContent = true,
             ),
@@ -124,9 +137,9 @@ class TemplateEngineTest {
             groups = listOf(Group(folder = "", endpoints = listOf(endpoint))),
             endpointCount = 1,
         )
-        // Raw interpolation of the row name should preserve the entities verbatim.
-        // Path: groups[0].endpoints[0].http.body.rows[0].name — reached via loop aliases.
-        val template = "{{#each groups as g}}{{#each g.endpoints as api}}{{{api.http.body.rows[0].name}}}{{/each}}{{/each}}"
+        // Raw interpolation of the field indent should preserve the entities verbatim.
+        // Path: groups[0].endpoints[0].http.body.fields[0].indent — reached via loop aliases.
+        val template = "{{#each groups as g}}{{#each g.endpoints as api}}{{#each api.http.body.fields as f}}{{{f.indent}}}{{f.name}}{{/each}}{{/each}}{{/each}}"
         assertEquals(
             "&ensp;&ensp;&#124;─id",
             TemplateEngine.render(template, model, ctx),

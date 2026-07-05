@@ -1,0 +1,19 @@
+# Normalize line endings to LF across all platforms.
+#
+# Without this, Windows checkouts default to core.autocrlf=true and LF in the
+# index is converted to CRLF on disk. That breaks byte-for-byte parity tests
+# (e.g. MarkdownTemplateParityTest) whose rendered output uses literal "\n".
+# Force LF so checkouts are identical on Linux, macOS, and Windows.
+* text=auto eol=lf
+
+# Binary files — never normalize.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.icns binary
+*.pdf  binary
+*.zip  binary
+*.jar  binary
+*.class binary

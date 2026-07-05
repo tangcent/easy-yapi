@@ -30,7 +30,6 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
             actuatorEnable = true
             logLevel = 40
             outputCharset = "GBK"
-            outputDemo = false
         }
         panel.resetFrom(settings)
 
@@ -42,7 +41,6 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
         assertTrue(target.actuatorEnable)
         assertEquals(40, target.logLevel)
         assertEquals("GBK", target.outputCharset)
-        assertFalse(target.outputDemo)
     }
 
     fun testIsModifiedNullSettings() {
@@ -64,7 +62,6 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
             switchNotice = false
             logLevel = 100
             outputCharset = "ISO-8859-1"
-            outputDemo = false
         }
         panel.resetFrom(modified)
 
@@ -80,7 +77,6 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
         assertFalse(target.switchNotice)
         assertEquals(100, target.logLevel)
         assertEquals("ISO-8859-1", target.outputCharset)
-        assertFalse(target.outputDemo)
     }
 
     fun testResetFromNullDoesNotThrow() {

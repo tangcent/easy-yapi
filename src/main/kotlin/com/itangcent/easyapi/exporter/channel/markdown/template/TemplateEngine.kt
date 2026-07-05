@@ -212,6 +212,12 @@ object TemplateEngine : IdeaLog {
         class Helper(val name: String, val args: List<Expr>) : Expr()
         class BuiltinCall(val name: String, val rawArg: String?) : Expr()
         class Literal(val value: Any) : Expr()
+        /**
+         * A method call on a receiver: `receiver.name(args)`. v1 supports no-arg methods
+         * (`body.asJson5()`); the [args] node is forward-compatible. Chained calls
+         * (`a.b().c()`) are NOT supported — see [parseExpr].
+         */
+        class MethodCall(val receiver: Expr, val name: String, val args: List<Expr>) : Expr()
     }
 
     private class Parser(private val tokens: List<Token>) {
@@ -287,9 +293,34 @@ object TemplateEngine : IdeaLog {
 
         private fun parseExpr(content: String): Expr {
             val trimmed = content.trim()
-            // Builtin call form: NAME(...) or meta.NAME(...)
+
+            // Chained-call v1 boundary (review finding F14): if the expression contains
+            // a ')' followed by a '.', it's a chained method call (e.g. `a.b().c()`) which
+            // v1 does not support. Log once at parse time and render empty.
+            if (hasChainedMethodCall(trimmed)) {
+                LOG.info("Chained method calls are not supported in v1: $trimmed")
+                return Expr.Literal("")
+            }
+
+            // Method-call form: receiver.name(args) — with meta.* carve-out (review finding F4).
+            // Recognized when the expression contains '(' and ends in ')', AND there is a '.'
+            // before the first '(' whose preceding segment is NOT exactly 'meta' (preserving
+            // today's meta.date(...)/meta.time(...)/meta.unknownThing(...) → BuiltinCall behavior).
             val parenIdx = trimmed.indexOf('(')
             if (parenIdx != -1 && trimmed.endsWith(")")) {
+                val lastDotBeforeParen = trimmed.lastIndexOf('.', parenIdx - 1)
+                if (lastDotBeforeParen != -1) {
+                    val receiverPart = trimmed.substring(0, lastDotBeforeParen)
+                    val methodName = trimmed.substring(lastDotBeforeParen + 1, parenIdx).trim()
+                    // meta.* carve-out: 'meta.<name>(...)' stays a BuiltinCall.
+                    if (receiverPart != "meta") {
+                        val rawArgs = trimmed.substring(parenIdx + 1, trimmed.length - 1)
+                        val args = if (rawArgs.isBlank()) emptyList()
+                            else rawArgs.split(',').map { parseSingleExpr(it.trim()) }
+                        return Expr.MethodCall(parseSingleExpr(receiverPart), methodName, args)
+                    }
+                }
+                // Fall through to existing BuiltinCall logic (covers meta.* and bare foo(...)).
                 var name = trimmed.substring(0, parenIdx).trim()
                 val rawArg = trimmed.substring(parenIdx + 1, trimmed.length - 1)
                 if (name.startsWith("meta.")) name = name.substring(5)
@@ -303,6 +334,33 @@ object TemplateEngine : IdeaLog {
                 return Expr.Helper(name, args)
             }
             return parseSingleExpr(trimmed)
+        }
+
+        /**
+         * Detects chained method calls: a `)` followed (after optional whitespace) by a `.`.
+         * Catches `a.b().c()`, `meta.date('yyyy').foo()`, etc. String literals (`'...'`) are
+         * skipped so a `)` inside a string doesn't trigger a false positive.
+         */
+        private fun hasChainedMethodCall(s: String): Boolean {
+            var inString = false
+            var i = 0
+            while (i < s.length) {
+                val c = s[i]
+                if (inString) {
+                    if (c == '\'') inString = false
+                } else {
+                    when (c) {
+                        '\'' -> inString = true
+                        ')' -> {
+                            var j = i + 1
+                            while (j < s.length && s[j].isWhitespace()) j++
+                            if (j < s.length && s[j] == '.') return true
+                        }
+                    }
+                }
+                i++
+            }
+            return false
         }
 
         private fun parseSingleExpr(s: String): Expr {
@@ -388,6 +446,37 @@ object TemplateEngine : IdeaLog {
             is Expr.Path -> evalPath(expr.segments)
             is Expr.BuiltinCall -> TemplateBuiltins.resolve(expr.name, ctx, expr.rawArg)
             is Expr.Helper -> evalHelper(expr.name, expr.args)
+            is Expr.MethodCall -> evalMethodCall(expr)
+        }
+
+        private fun evalMethodCall(expr: Expr.MethodCall): Any? {
+            val target = evalExpr(expr.receiver) ?: return null
+            val argValues = expr.args.map { evalExpr(it) }
+            return invokeMethod(target, expr.name, argValues)
+        }
+
+        /**
+         * Dispatches a method call `target.name(args)` (review finding F7).
+         *
+         * - `BodyView` receiver: `asDemo`/`asJson` → `BodyView.asDemo()` (alias); `asJson5` → `asJson5()`;
+         *   unknown name → null + `info` log.
+         * - Any other receiver type → null + `info` log "Unknown method '<name>' on <receiverType>".
+         */
+        private fun invokeMethod(target: Any, name: String, args: List<Any?>): Any? {
+            return when (target) {
+                is BodyView -> when (name) {
+                    "asDemo", "asJson" -> target.asDemo()
+                    "asJson5" -> target.asJson5()
+                    else -> {
+                        LOG.info("Unknown method '$name' on BodyView")
+                        null
+                    }
+                }
+                else -> {
+                    LOG.info("Unknown method '$name' on ${target::class.simpleName}")
+                    null
+                }
+            }
         }
 
         private fun evalHelper(name: String, args: List<Expr>): Any? {
@@ -539,14 +628,21 @@ object TemplateEngine : IdeaLog {
                 else -> null
             }
             is BodyView -> when (name) {
-                "rows" -> target.rows
-                "demo" -> target.demo
+                "model" -> target.model
+                "fields" -> target.fields
                 else -> null
             }
-            is Row -> when (name) {
+            is FieldView -> when (name) {
                 "name" -> target.name
                 "type" -> target.type
                 "desc" -> target.desc
+                "required" -> target.required
+                "defaultValue" -> target.defaultValue
+                "depth" -> target.depth
+                "indent" -> target.indent
+                "hasChildren" -> target.hasChildren
+                "childrenCount" -> target.childrenCount
+                "structuralKind" -> target.structuralKind.name
                 else -> null
             }
             else -> null

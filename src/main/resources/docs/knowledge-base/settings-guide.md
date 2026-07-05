@@ -18,6 +18,7 @@ This guide documents every setting in **Settings → EasyApi**. Settings are org
 8. [AI](#ai)
 9. [gRPC](#grpc)
 10. [Environments](#environments)
+11. [Markdown Template Reference](#markdown-template-reference)
 
 ---
 
@@ -34,7 +35,6 @@ Framework recognition and output formatting.
 | Infer Return Main | `true` | Extract the inner type of wrapper types (e.g., `Mono<T>` → `T`) | `inferReturnMain` |
 | Query Expanded | `true` | Expand query parameters in the exported tree | `queryExpanded` |
 | Form Expanded | `true` | Expand form parameters in the exported tree | `formExpanded` |
-| Output Demo | `true` | Include demo/example values in exports | `outputDemo` |
 | Output Charset | `UTF-8` | Character encoding for exported files | `outputCharset` |
 | Log Level | `100` (SILENT) | Console verbosity. Lower = more verbose. `100`=SILENT, `50`=WARN, `20`=INFO, `10`=DEBUG, `0`=TRACE | `logLevel` |
 | Gutter Icon | `true` | Show gutter icons for API endpoints in the editor | `gutterIconEnabled` |
@@ -205,3 +205,127 @@ Environment variable management for export and script execution.
 |-------|---------|--------|----------|
 | Project Environments | *(empty)* | Project-scoped environment definitions (JSON) | `projectEnvironments` |
 | Global Environments | *(empty)* | Application-scoped environment definitions (JSON) | `globalEnvironments` |
+
+---
+
+## Markdown Template Reference
+
+Custom Markdown export templates (`.md.tpl` files in `src/main/resources/markdown/templates/`) use a Handlebars-like syntax. This section documents the body-view API introduced in the BodyView refactor.
+
+### BodyView API
+
+Each HTTP/gRPC body or response is exposed as a `BodyView` object with:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `model` | `ObjectModel` | The structured body model (Object, Array, Single, or MapModel). |
+| `fields` | `List<FieldView>` | Pre-flattened field list for table/list rendering. |
+
+**Method calls** (evaluated lazily at render time):
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `body.asDemo()` | `String` | Plain JSON demo string (no code fence). |
+| `body.asJson()` | `String` | Alias of `asDemo()` — byte-identical output. |
+| `body.asJson5()` | `String` | JSON5 demo with inline comments (field descriptions). |
+
+### FieldView fields
+
+Each entry in `body.fields` exposes:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | `String` | Field name (empty for primitive bodies). |
+| `type` | `String` | Type label (e.g. `"string"`, `"object[]"`, `"map"`). |
+| `desc` | `String` | Description = comment + options joined with `<br>`. |
+| `required` | `Boolean` | Whether the field is required. |
+| `defaultValue` | `String?` | Default value (empty string if null). |
+| `depth` | `Int` | Nesting depth (0 = top-level). |
+| `indent` | `String` | Pre-computed indent prefix (`&ensp;&ensp;`×depth + `&#124;─`). Use raw interpolation `{{{f.indent}}}` to preserve HTML entities. |
+| `hasChildren` | `Boolean` | Whether the field has nested children. |
+| `childrenCount` | `Int` | Number of direct children. |
+| `structuralKind` | `String` | One of `OBJECT`, `ARRAY`, `MAP`, `PRIMITIVE`. |
+
+### Body variant behavior
+
+| Body type | `fields` content |
+|-----------|-----------------|
+| Object | One `FieldView` per top-level field; nested fields at depth > 0. |
+| Array<Object> | `[0]` item fields at depth 1. |
+| Primitive (Single) | One synthetic field: `name=""`, `type=model.type`, `desc=""`. |
+| Map | Two synthetic fields: `key` + `value`, both `structuralKind=MAP`. |
+| Recursive | Finite — cycle-safe via `ObjectModelVisitTracker` (max 2 visits per object identity). |
+
+### Recipe: table rendering
+
+```handlebars
+{{#if api.http.body}}
+**Request Body:**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+{{#each api.http.body.fields as f}}| {{{f.indent}}}{{f.name}} | {{f.type}} | {{f.desc}} |
+{{/each}}
+
+**Request Demo:**
+
+```json
+{{{api.http.body.asDemo()}}}
+```
+{{/if}}
+```
+
+> **Note:** Use `{{{f.indent}}}` (triple braces, raw) for the indent prefix so HTML entities like `&ensp;` survive unescaped. Use `{{f.name}}` (double braces) for the name so it gets markdown-escaped.
+
+### Recipe: list rendering
+
+```handlebars
+{{#each api.http.body.fields as f}}
+{{{f.indent}}}{{f.name}} ({{f.type}}) — {{f.desc}}
+{{/each}}
+```
+
+### Recipe: JSON5 demo with comments
+
+```handlebars
+```json5
+{{{api.http.body.asJson5()}}}
+```
+```
+
+### Breaking change: migration from `body.rows` / `body.demo`
+
+**Removed** (v3.0 BodyView refactor):
+- `body.rows` — replaced by `body.fields`
+- `body.demo` — replaced by `body.asDemo()`
+
+**Before (old):**
+```handlebars
+{{#each api.http.body.rows as r}}| {{r.name}} | {{r.type}} | {{r.desc}} |
+{{/each}}
+{{#if api.http.body.demo}}
+```json
+{{{api.http.body.demo}}}
+```
+{{/if}}
+```
+
+**After (new):**
+```handlebars
+{{#each api.http.body.fields as f}}| {{{f.indent}}}{{f.name}} | {{f.type}} | {{f.desc}} |
+{{/each}}
+```json
+{{{api.http.body.asDemo()}}}
+```
+```
+
+Key differences:
+1. `r.name` (which included the indent prefix) is split into `{{{f.indent}}}` (raw) + `{{f.name}}` (escaped).
+2. `body.demo` (a pre-computed string) is now `body.asDemo()` (a method call, evaluated lazily).
+3. The `{{#if body.demo}}` conditional is removed — the demo is always present when a body exists.
+
+### Engine v1 limitations
+
+- **No chained method calls:** `body.asJson5().trim()` renders empty + an info log. Only a single method call per expression is supported.
+- **No template recursion:** `{{#each}}` does not support recursive partials.
+- **`meta.*` is always built-in:** `meta.date(...)`, `meta.time(...)` always resolve to built-in functions, never to model fields.

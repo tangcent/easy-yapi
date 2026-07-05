@@ -45,7 +45,7 @@ class TemplateModelBuilderTest {
             )
         )
 
-        val model = TemplateModelBuilder.build(endpoints, outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(endpoints, moduleName = "API")
 
         assertEquals("API", model.moduleName)
         assertEquals(2, model.endpointCount)
@@ -62,7 +62,7 @@ class TemplateModelBuilderTest {
             metadata = httpMetadata(path = "/api/users", method = HttpMethod.GET)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
 
         assertEquals(1, model.groups.size)
         assertEquals("", model.groups[0].folder)
@@ -77,7 +77,7 @@ class TemplateModelBuilderTest {
             ApiEndpoint(name = "B2", folder = "B", metadata = httpMetadata(path = "/b2", method = HttpMethod.GET))
         )
 
-        val model = TemplateModelBuilder.build(endpoints, outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(endpoints, moduleName = "API")
 
         // groupBy preserves first-appearance order of keys
         assertEquals(listOf("B", "A"), model.groups.map { it.folder })
@@ -99,7 +99,7 @@ class TemplateModelBuilderTest {
             )
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
         val http = model.groups[0].endpoints[0].http!!
 
         assertEquals("HTTP", model.groups[0].endpoints[0].protocol)
@@ -120,7 +120,7 @@ class TemplateModelBuilderTest {
             metadata = httpMetadata(path = "/api/nothing", method = HttpMethod.GET)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
         val http = model.groups[0].endpoints[0].http!!
 
         assertTrue(http.pathParams.isEmpty())
@@ -147,7 +147,7 @@ class TemplateModelBuilderTest {
             )
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
         val http = model.groups[0].endpoints[0].http!!
 
         assertEquals(listOf("page"), http.queryParams.map { it.name })
@@ -171,14 +171,14 @@ class TemplateModelBuilderTest {
             )
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
         val p = model.groups[0].endpoints[0].http!!.pathParams[0]
 
         assertEquals("", p.defaultValue)
         assertEquals("", p.description)
     }
 
-    // ---- Body: rows, demo, outputDemo ----
+    // ---- Body: fields, asDemo ----
 
     @Test
     fun testBodyRowsSimpleObject() {
@@ -193,16 +193,18 @@ class TemplateModelBuilderTest {
             metadata = httpMetadata(path = "/api/users", method = HttpMethod.POST, body = body)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
         val bodyView = model.groups[0].endpoints[0].http!!.body!!
 
-        assertEquals(2, bodyView.rows.size)
-        assertEquals("name", bodyView.rows[0].name)
-        assertEquals("string", bodyView.rows[0].type)
-        assertEquals("user name", bodyView.rows[0].desc)
-        assertEquals("age", bodyView.rows[1].name)
-        assertEquals("int", bodyView.rows[1].type)
-        assertEquals("user age", bodyView.rows[1].desc)
+        assertEquals(2, bodyView.fields.size)
+        assertEquals("name", bodyView.fields[0].name)
+        assertEquals("string", bodyView.fields[0].type)
+        assertEquals("user name", bodyView.fields[0].desc)
+        assertEquals("age", bodyView.fields[1].name)
+        assertEquals("int", bodyView.fields[1].type)
+        assertEquals("user age", bodyView.fields[1].desc)
+        // model is the original ObjectModel (FR-1)
+        assertSame(body, bodyView.model)
     }
 
     @Test
@@ -218,17 +220,21 @@ class TemplateModelBuilderTest {
             metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.GET, responseBody = body)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
         val bodyView = model.groups[0].endpoints[0].http!!.response!!
 
-        // top-level row has no indent
-        assertEquals("data", bodyView.rows[0].name)
-        assertEquals("object", bodyView.rows[0].type)
-        assertEquals("response data", bodyView.rows[0].desc)
-        // nested row has the indent prefix
-        assertEquals("&ensp;&ensp;&#124;─id", bodyView.rows[1].name)
-        assertEquals("long", bodyView.rows[1].type)
-        assertEquals("user id", bodyView.rows[1].desc)
+        // top-level field has no indent
+        assertEquals("data", bodyView.fields[0].name)
+        assertEquals("", bodyView.fields[0].indent)
+        assertEquals(0, bodyView.fields[0].depth)
+        assertEquals("object", bodyView.fields[0].type)
+        assertEquals("response data", bodyView.fields[0].desc)
+        // nested field has the indent prefix (separate from name)
+        assertEquals("id", bodyView.fields[1].name)
+        assertEquals("&ensp;&ensp;&#124;─", bodyView.fields[1].indent)
+        assertEquals(1, bodyView.fields[1].depth)
+        assertEquals("long", bodyView.fields[1].type)
+        assertEquals("user id", bodyView.fields[1].desc)
     }
 
     @Test
@@ -247,12 +253,13 @@ class TemplateModelBuilderTest {
             metadata = httpMetadata(path = "/api/users", method = HttpMethod.GET, responseBody = body)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
-        val row = model.groups[0].endpoints[0].http!!.response!!.rows[0]
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
+        val field = model.groups[0].endpoints[0].http!!.response!!.fields[0]
 
-        assertEquals("data", row.name)
-        assertEquals("object[]", row.type)
-        assertEquals("user list", row.desc)
+        assertEquals("data", field.name)
+        assertEquals("object[]", field.type)
+        assertEquals("user list", field.desc)
+        assertEquals(FieldStructuralKind.ARRAY, field.structuralKind)
     }
 
     @Test
@@ -265,30 +272,15 @@ class TemplateModelBuilderTest {
             metadata = httpMetadata(path = "/api/users", method = HttpMethod.POST, body = body)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
-        val demo = model.groups[0].endpoints[0].http!!.body!!.demo
-
-        assertNotNull("demo must be present when outputDemo=true", demo)
-        assertEquals(ObjectModelJsonConverter.toJson(body), demo)
-    }
-
-    @Test
-    fun testBodyDemoNullWhenOutputDemoFalse() {
-        val body = ObjectModel.Object(
-            mapOf("name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name"))
-        )
-        val endpoint = ApiEndpoint(
-            name = "Create User",
-            metadata = httpMetadata(path = "/api/users", method = HttpMethod.POST, body = body)
-        )
-
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = false, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
         val bodyView = model.groups[0].endpoints[0].http!!.body!!
 
-        // rows still present
-        assertEquals(1, bodyView.rows.size)
-        // demo suppressed 
-        assertNull("demo must be null when outputDemo=false", bodyView.demo)
+        // asDemo() is evaluated lazily; equals ObjectModelJsonConverter.toJson(body)
+        assertEquals(ObjectModelJsonConverter.toJson(body), bodyView.asDemo())
+        // asJson is an alias of asDemo (D5 / FR-9)
+        assertEquals(bodyView.asDemo(), bodyView.asJson())
+        // asJson5 is JSON5 with comments
+        assertEquals(ObjectModelJsonConverter.toJson5(body), bodyView.asJson5())
     }
 
     @Test
@@ -298,21 +290,85 @@ class TemplateModelBuilderTest {
             metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.DELETE)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
 
         assertNull(model.groups[0].endpoints[0].http!!.response)
     }
 
     @Test
-    fun testBodyDemoNullWhenBodyAbsent() {
+    fun testBodyNullWhenBodyAbsent() {
         val endpoint = ApiEndpoint(
             name = "Get User",
             metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
 
         assertNull(model.groups[0].endpoints[0].http!!.body)
+    }
+
+    // ---- Primitive body (Single) — parity with legacy Row(name="", type=model.type, desc="") ----
+
+    @Test
+    fun testPrimitiveBodyProducesOneSyntheticField() {
+        // Review finding F5: Single body → one FieldView with name="", type=model.type, desc="",
+        // structuralKind=PRIMITIVE, depth=0, indent="" — byte-identical to legacy Row.
+        val body = ObjectModel.single(JsonType.STRING)
+        val endpoint = ApiEndpoint(
+            name = "Echo",
+            metadata = httpMetadata(path = "/api/echo", method = HttpMethod.POST, body = body)
+        )
+
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
+        val bodyView = model.groups[0].endpoints[0].http!!.body!!
+
+        assertEquals(1, bodyView.fields.size)
+        val field = bodyView.fields[0]
+        assertEquals("", field.name)
+        assertEquals("string", field.type)
+        assertEquals("", field.desc)
+        assertEquals("", field.indent)
+        assertEquals(0, field.depth)
+        assertFalse(field.required)
+        assertNull(field.defaultValue)
+        assertFalse(field.hasChildren)
+        assertEquals(0, field.childrenCount)
+        assertEquals(FieldStructuralKind.PRIMITIVE, field.structuralKind)
+    }
+
+    // ---- Map body (MapModel) — parity with legacy two rows (key + value) ----
+
+    @Test
+    fun testMapBodyProducesTwoSyntheticFields() {
+        // Review finding F6: MapModel body → two FieldViews at depth 0:
+        // {name="key", type=formatType(keyType), structuralKind=MAP} and {name="value", ...}.
+        val body = ObjectModel.MapModel(
+            keyType = ObjectModel.single(JsonType.STRING),
+            valueType = ObjectModel.single(JsonType.INT),
+        )
+        val endpoint = ApiEndpoint(
+            name = "MapResource",
+            metadata = httpMetadata(path = "/api/map", method = HttpMethod.POST, body = body)
+        )
+
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
+        val bodyView = model.groups[0].endpoints[0].http!!.body!!
+
+        assertEquals(2, bodyView.fields.size)
+        val keyField = bodyView.fields[0]
+        assertEquals("key", keyField.name)
+        assertEquals("string", keyField.type)
+        assertEquals("", keyField.desc)
+        assertEquals("", keyField.indent)
+        assertEquals(0, keyField.depth)
+        assertEquals(FieldStructuralKind.MAP, keyField.structuralKind)
+        val valueField = bodyView.fields[1]
+        assertEquals("value", valueField.name)
+        assertEquals("int", valueField.type)
+        assertEquals("", valueField.desc)
+        assertEquals("", valueField.indent)
+        assertEquals(0, valueField.depth)
+        assertEquals(FieldStructuralKind.MAP, valueField.structuralKind)
     }
 
     // ---- Cycle safety ----
@@ -331,13 +387,13 @@ class TemplateModelBuilderTest {
         )
 
         // Must not stack-overflow
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
-        val rows = model.groups[0].endpoints[0].http!!.response!!.rows
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
+        val fieldsList = model.groups[0].endpoints[0].http!!.response!!.fields
 
-        assertTrue("top-level name row present", rows.any { it.name == "name" })
-        assertTrue("top-level children row present", rows.any { it.name == "children" })
-        // At least one nested row exists (DEFAULT_MAX_VISITS=2 allows one expansion)
-        assertTrue("a nested row with indent prefix present", rows.any { it.name.startsWith("&ensp;&ensp;&#124;─") })
+        assertTrue("top-level name row present", fieldsList.any { it.name == "name" })
+        assertTrue("top-level children row present", fieldsList.any { it.name == "children" })
+        // At least one nested field exists (DEFAULT_MAX_VISITS=2 allows one expansion)
+        assertTrue("a nested field with indent prefix present", fieldsList.any { it.depth > 0 && it.indent.startsWith("&ensp;&ensp;") })
     }
 
     @Test
@@ -353,11 +409,11 @@ class TemplateModelBuilderTest {
             metadata = httpMetadata(path = "/api/node", method = HttpMethod.GET, responseBody = selfRef)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
-        val rows = model.groups[0].endpoints[0].http!!.response!!.rows
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
+        val fieldsList = model.groups[0].endpoints[0].http!!.response!!.fields
 
-        assertTrue(rows.any { it.name == "id" })
-        assertTrue(rows.any { it.name == "parent" })
+        assertTrue(fieldsList.any { it.name == "id" })
+        assertTrue(fieldsList.any { it.name == "parent" })
     }
 
     @Test
@@ -377,11 +433,11 @@ class TemplateModelBuilderTest {
             metadata = httpMetadata(path = "/api/mutual", method = HttpMethod.GET, responseBody = objectA)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
-        val rows = model.groups[0].endpoints[0].http!!.response!!.rows
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
+        val fieldsList = model.groups[0].endpoints[0].http!!.response!!.fields
 
-        assertTrue(rows.any { it.name == "name" })
-        assertTrue(rows.any { it.name == "refB" })
+        assertTrue(fieldsList.any { it.name == "name" })
+        assertTrue(fieldsList.any { it.name == "refB" })
     }
 
     @Test
@@ -400,12 +456,12 @@ class TemplateModelBuilderTest {
             metadata = httpMetadata(path = "/api/nested", method = HttpMethod.GET, responseBody = outer)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
-        val rows = model.groups[0].endpoints[0].http!!.response!!.rows
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
+        val fieldsList = model.groups[0].endpoints[0].http!!.response!!.fields
 
-        assertTrue("middle row present", rows.any { it.name == "middle" })
-        assertTrue("inner row present (depth 1)", rows.any { it.name == "&ensp;&ensp;&#124;─inner" })
-        assertTrue("value row present (depth 2)", rows.any { it.name == "&ensp;&ensp;&ensp;&ensp;&#124;─value" })
+        assertTrue("middle row present", fieldsList.any { it.name == "middle" && it.depth == 0 })
+        assertTrue("inner row present (depth 1)", fieldsList.any { it.name == "inner" && it.depth == 1 && it.indent == "&ensp;&ensp;&#124;─" })
+        assertTrue("value row present (depth 2)", fieldsList.any { it.name == "value" && it.depth == 2 && it.indent == "&ensp;&ensp;&ensp;&ensp;&#124;─" })
     }
 
     // ---- gRPC view ----
@@ -423,7 +479,7 @@ class TemplateModelBuilderTest {
             )
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "gRPC API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "gRPC API")
         val ep = model.groups[0].endpoints[0]
 
         assertEquals("gRPC", ep.protocol)
@@ -454,7 +510,7 @@ class TemplateModelBuilderTest {
             )
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
 
         assertEquals("SERVER_STREAMING", model.groups[0].endpoints[0].grpc!!.streamingType)
     }
@@ -476,13 +532,14 @@ class TemplateModelBuilderTest {
             )
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
         val grpc = model.groups[0].endpoints[0].grpc!!
 
         assertNotNull(grpc.body)
-        assertEquals(1, grpc.body!!.rows.size)
-        assertEquals("user_id", grpc.body!!.rows[0].name)
-        assertNotNull("demo present when outputDemo=true", grpc.body!!.demo)
+        assertEquals(1, grpc.body!!.fields.size)
+        assertEquals("user_id", grpc.body!!.fields[0].name)
+        // asDemo() is the lazy JSON render
+        assertEquals(ObjectModelJsonConverter.toJson(body), grpc.body!!.asDemo())
     }
 
     // ---- Field description (options) ----
@@ -506,8 +563,8 @@ class TemplateModelBuilderTest {
             metadata = httpMetadata(path = "/api/users", method = HttpMethod.POST, body = body)
         )
 
-        val model = TemplateModelBuilder.build(listOf(endpoint), outputDemo = true, moduleName = "API")
-        val desc = model.groups[0].endpoints[0].http!!.body!!.rows[0].desc
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
+        val desc = model.groups[0].endpoints[0].http!!.body!!.fields[0].desc
 
         // Mirrors DefaultMarkdownFormatter.buildFieldDescription:
         // "<comment><br><value1 :desc1><br><value2>"

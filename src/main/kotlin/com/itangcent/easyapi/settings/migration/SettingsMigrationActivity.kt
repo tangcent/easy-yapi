@@ -82,7 +82,6 @@ class SettingsMigrationActivity : StartupActivity {
         appState.setValue(generalKey, "gutterIconEnabled", legacy.gutterIconEnabled.toString())
         appState.setValue(generalKey, "switchNotice", legacy.switchNotice.toString())
         appState.setValue(generalKey, "logLevel", legacy.logLevel.toString())
-        appState.setValue(generalKey, "outputDemo", legacy.outputDemo.toString())
         appState.setValue(generalKey, "outputCharset", legacy.outputCharset)
 
         // HttpSettings

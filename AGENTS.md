@@ -235,6 +235,7 @@ Tests use JUnit 4 + Mockito/Mockito-Kotlin + the IntelliJ Platform Test Framewor
 - Run tests: `./gradlew test`
 - Base classes: `EasyApiLightCodeInsightFixtureTestCase` (PSI/Project-aware), plain JUnit for pure utilities
 - Mocking: `mockito-kotlin`
+- **Cross-platform golden-file rule:** Never read expected-output resources with `File.readText()`. Use `ResultLoader.load()` (trailing-trimmed) or `ResourceLoader.readRaw()` (strict byte parity) — both collapse CRLF→LF so snapshot tests pass on Windows CI where `core.autocrlf` may convert the on-disk golden. `.gitattributes` enforces `eol=lf`; do not weaken it.
 
 ## Skills
 

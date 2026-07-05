@@ -1,5 +1,8 @@
 package com.itangcent.easyapi.exporter.channel.markdown.template
 
+import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
+
 /**
  * The Template Model — the versioned data contract between the plugin and user-authored
  * Markdown templates. Plain data classes with no behavior and no PSI/VFS access.
@@ -98,25 +101,73 @@ data class Header(
 /**
  * A request/response body.
  *
- * - [rows] is the **flat**, cycle-safe list of table rows (the indent prefix is already
- *   applied to [Row.name]); the recursive [com.itangcent.easyapi.psi.model.ObjectModel] tree
- *   is flattened by [TemplateModelBuilder] using [com.itangcent.easyapi.psi.model.ObjectModelVisitTracker]
- *   (cycle-safe by object identity, not depth-capped).
- * - [demo] is the pre-rendered JSON demo text **without** the code fence, or `null` when
- *   the body is null **or** when demos are disabled
- *   (`DefaultMarkdownFormatter(outputDemo = false)`). The `outputDemo` flag is an input to
- *   the model build, not a template variable — the builder sets `demo = null` for every
- *   body when demos are off, so the template's `{{#if ...demo}}` guards suppress the blocks
- *   unchanged .
+ * - [model] is the structured [ObjectModel] tree (the source of truth for a body).
+ *   It is **not** directly iterated by templates — the engine has no recursion and
+ *   [ObjectModel] is a sealed class not in `getFieldByName`. It is exposed for
+ *   method-call rendering (`asDemo()` / `asJson()` / `asJson5()`) and for future
+ *   expansion (e.g. partials / macros when added).
+ * - [fields] is the **flat, cycle-safe** list of [FieldView]s the template iterates
+ *   over for table/list rendering. The recursive `ObjectModel` tree is flattened by
+ *   [TemplateModelBuilder] using [com.itangcent.easyapi.psi.model.ObjectModelVisitTracker]
+ *   (cycle-safe by object identity, not depth-capped). Each [FieldView] carries a
+ *   pre-computed [FieldView.indent] so templates can render indented tables without
+ *   arithmetic.
+ *
+ * The three method-call targets — [asDemo], [asJson], [asJson5] — are evaluated
+ * lazily at render time (NOT pre-computed in the builder). `asJson` is sugar for
+ * `asDemo` (D5 — byte-identical output). All three return strings **without** a
+ * markdown code fence; the template owns the fence.
+ *
+ * **Breaking change (D4):** replaces the legacy `BodyView(rows, demo)` shape.
+ * Migration: `body.rows` → `{{#each body.fields as f}}…{{/each}}` with `{{{f.indent}}}{{f.name}}`;
+ * `body.demo` → `{{{body.asDemo()}}}` (or `asJson5()` for JSON5).
  */
 data class BodyView(
-    val rows: List<Row>,
-    val demo: String?,
+    /** The structured body. FR-1. */
+    val model: ObjectModel,
+    /** Cycle-safe, pre-flattened, with depth+indent. FR-3/FR-4. */
+    val fields: List<FieldView>,
+) {
+    /** Plain JSON, no fence. Always non-empty when called on a non-null BodyView. */
+    fun asDemo(): String = ObjectModelJsonConverter.toJson(model)
+
+    /** Byte-identical to [asDemo] (D5 — asDemo is sugar for asJson). */
+    fun asJson(): String = asDemo()
+
+    /** JSON5 with comments, no fence. */
+    fun asJson5(): String = ObjectModelJsonConverter.toJson5(model)
+}
+
+/**
+ * A single row in a body's flattened [fields] list. Replaces the legacy `Row` —
+ * splitting `name`/`indent`/`depth`/`structuralKind` lets the same data drive both
+ * table and list renderings, and lets templates branch on structure
+ * (`{{#if f.hasChildren}}`).
+ *
+ * For synthetic rows produced for non-`Object` top-level bodies (Single/MapModel),
+ * the non-name/non-type/non-structuralKind fields default to: `desc=""`,
+ * `required=false`, `defaultValue=null`, `hasChildren=false`, `childrenCount=0` —
+ * matching the legacy `flattenInto` byte-for-byte (review finding F10).
+ */
+data class FieldView(
+    /** Leaf name (no indent prefix). Indent is separate. */
+    val name: String,
+    /** Formatted type, e.g. "string", "User[]", "object". */
+    val type: String,
+    /** Comment + options joined with "<br>" (parity with legacy). */
+    val desc: String,
+    val required: Boolean,
+    val defaultValue: String?,
+    /** 0 = top-level. */
+    val depth: Int,
+    /** Pre-computed: "" at depth 0; else "&ensp;&ensp;"×depth + "&#124;─". */
+    val indent: String,
+    /** For `{{#if f.hasChildren}}` branching. */
+    val hasChildren: Boolean,
+    val childrenCount: Int,
+    /** OBJECT / ARRAY / MAP / PRIMITIVE — lets templates branch on body shape. */
+    val structuralKind: FieldStructuralKind,
 )
 
-/** A single row in a body table. [name] may include the indent HTML entity prefix. */
-data class Row(
-    val name: String,
-    val type: String,
-    val desc: String,
-)
+/** Structural classification of a [FieldView], for `{{#if}}` branching in templates. */
+enum class FieldStructuralKind { OBJECT, ARRAY, MAP, PRIMITIVE }

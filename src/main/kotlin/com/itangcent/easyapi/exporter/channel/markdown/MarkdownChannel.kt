@@ -123,7 +123,7 @@ class MarkdownChannel : Channel, IdeaLog {
 
         LOG.info("Markdown template resolved from tier: ${resolved.source}")
 
-        val model = TemplateModelBuilder.build(context.endpointsToExport, outputDemo = true, "API Documentation")
+        val model = TemplateModelBuilder.build(context.endpointsToExport, "API Documentation")
         val ctx = RenderContext.production(projectName = project.name ?: "", pluginVersion = "")
         val content = MarkdownTemplateRenderer.renderWithFallback(resolved.templateText, model, ctx)
         return ExportResult.Success(

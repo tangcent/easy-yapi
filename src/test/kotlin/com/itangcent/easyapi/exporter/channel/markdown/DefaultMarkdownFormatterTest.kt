@@ -24,7 +24,7 @@ import org.junit.Test
 
 class DefaultMarkdownFormatterTest {
 
-    private val formatter = DefaultMarkdownFormatter(outputDemo = true)
+    private val formatter = DefaultMarkdownFormatter()
 
     @Test
     fun testFormatSimpleEndpoint() = runBlocking {
@@ -541,33 +541,6 @@ class DefaultMarkdownFormatterTest {
         val markdown = formatter.format(listOf(endpoint), "gRPC API")
 
         assertTrue(markdown.contains("**Streaming:** BIDIRECTIONAL"))
-    }
-
-    // ==================== No-demo mode ====================
-
-    @Test
-    fun testFormatNoDemoMode() = runBlocking {
-        val noDemoFormatter = DefaultMarkdownFormatter(outputDemo = false)
-        val bodyModel = ObjectModel.Object(
-            mapOf(
-                "name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name")
-            )
-        )
-
-        val endpoint = ApiEndpoint(
-            name = "Create User",
-            metadata = httpMetadata(
-                path = "/api/users",
-                method = HttpMethod.POST,
-                body = bodyModel,
-                headers = listOf(ApiHeader(name = "Content-Type", value = "application/json"))
-            )
-        )
-
-        val markdown = noDemoFormatter.format(listOf(endpoint), "User API")
-
-        assertTrue(markdown.contains("**Request Body:**"))
-        assertFalse(markdown.contains("**Request Demo:**"))
     }
 
     // ==================== Endpoint without name ====================

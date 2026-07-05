@@ -81,7 +81,7 @@ class EndToEndExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = springMvcExporter.export(psiClass!!)
         assertTrue("Should export at least one endpoint", endpoints.isNotEmpty())
 
-        val formatter = DefaultMarkdownFormatter(outputDemo = true)
+        val formatter = DefaultMarkdownFormatter()
         val markdown = formatter.format(endpoints, "User API")
 
         assertTrue("Markdown should contain title", markdown.contains("# User API"))

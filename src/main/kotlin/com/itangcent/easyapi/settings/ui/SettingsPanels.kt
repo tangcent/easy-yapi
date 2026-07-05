@@ -131,9 +131,6 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
 
     private val logLevelCombo = ComboBox(CommonSettingsHelper.VerbosityLevel.values())
     private val outputCharsetCombo = ComboBox(arrayOf("UTF-8", "GBK", "ISO-8859-1"))
-    private val outputDemoCheckBox = JBCheckBox("Output demo in markdown", true).apply {
-        toolTipText = "Include example/demo values in generated markdown documentation"
-    }
 
     private val projectCacheSizeLabel = JBLabel("0 B")
     private val globalCacheSizeLabel = JBLabel("0 B")
@@ -407,8 +404,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         .addComponent(
             SettingsUiKit.titledPanel(
                 "Output", listOf(
-                    SettingsUiKit.labeledRow("Output Charset:", outputCharsetCombo),
-                    outputDemoCheckBox
+                    SettingsUiKit.labeledRow("Output Charset:", outputCharsetCombo)
                 )
             )
         )
@@ -434,7 +430,6 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         switchNotice.isSelected = settings?.switchNotice ?: true
         logLevelCombo.selectedItem = CommonSettingsHelper.VerbosityLevel.toLevel(settings?.logLevel ?: 0)
         outputCharsetCombo.selectedItem = settings?.outputCharset ?: "UTF-8"
-        outputDemoCheckBox.isSelected = settings?.outputDemo ?: true
         refreshCacheSizes()
     }
 
@@ -462,7 +457,6 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         settings.switchNotice = switchNotice.isSelected
         settings.logLevel = (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level ?: 0
         settings.outputCharset = outputCharsetCombo.selectedItem?.toString() ?: "UTF-8"
-        settings.outputDemo = outputDemoCheckBox.isSelected
     }
 
     /**
@@ -485,8 +479,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
                 gutterIconEnabled.isSelected != s.gutterIconEnabled ||
                 switchNotice.isSelected != s.switchNotice ||
                 (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level != s.logLevel ||
-                outputCharsetCombo.selectedItem?.toString() != s.outputCharset ||
-                outputDemoCheckBox.isSelected != s.outputDemo
+                outputCharsetCombo.selectedItem?.toString() != s.outputCharset
     }
 
     /**
@@ -1475,7 +1468,6 @@ class BackupSettingsPanel(private val project: com.intellij.openapi.project.Proj
             obj.get("gutterIconEnabled")?.asBoolean?.let { gutterIconEnabled = it }
             obj.get("switchNotice")?.asBoolean?.let { switchNotice = it }
             obj.get("logLevel")?.asInt?.let { logLevel = it }
-            obj.get("outputDemo")?.asBoolean?.let { outputDemo = it }
             obj.get("outputCharset")?.asString?.let { outputCharset = it }
         }
 
@@ -1536,7 +1528,6 @@ class BackupSettingsPanel(private val project: com.intellij.openapi.project.Proj
         obj.addProperty("gutterIconEnabled", general.gutterIconEnabled)
         obj.addProperty("switchNotice", general.switchNotice)
         obj.addProperty("logLevel", general.logLevel)
-        obj.addProperty("outputDemo", general.outputDemo)
         obj.addProperty("outputCharset", general.outputCharset)
 
         val http = binder.read(com.itangcent.easyapi.settings.module.HttpSettings::class)

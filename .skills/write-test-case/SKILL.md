@@ -166,6 +166,37 @@ class MyFormatterTest : EasyApiLightCodeInsightFixtureTestCase() {
 
 ---
 
+### ⚠️ Cross-platform line endings — the golden-file parity trap
+
+**The pitfall.** Code under test typically emits literal `\n`, but a golden file
+checked out on a Windows CI runner (default `core.autocrlf=true`) becomes `\r\n`
+on disk. A byte-for-byte `assertEquals` then fails on Windows only — passing on
+Linux/macOS, hiding the bug until a Windows CI run.
+
+**Always read golden/expected resources through the test framework**, never via
+`File.readText()` / `Paths.readText()`. Two helpers, both in
+`com.itangcent.easyapi.testFramework`:
+
+| Helper | When to use | Normalization |
+|---|---|---|
+| `ResultLoader.load()` / `load("name")` | Snapshot/golden test where trailing whitespace doesn't matter (default choice) | CRLF→LF + `trimEnd()` |
+| `ResourceLoader.read("/path/in/resources")` | Same, when you control the resource path explicitly | CRLF→LF + `trimEnd()` |
+| `ResourceLoader.readRaw("/path/in/resources")` | **Byte-for-byte parity gate** where trailing whitespace MUST be preserved (e.g. `MarkdownTemplateParityTest`) | CRLF→LF only |
+
+Both `read` and `readRaw` collapse CRLF→LF; the difference is whether trailing
+whitespace is trimmed. Use `readRaw` only when the test's contract is strict
+byte equality — for everything else, prefer `ResultLoader`/`read`.
+
+**When writing a new parity/golden test, ask:** "Does my `actual` value carry
+meaningful trailing whitespace?" If yes → `ResourceLoader.readRaw`. If no →
+`ResultLoader.load` (which already calls `ResourceLoader.read`).
+
+The repo also ships a `.gitattributes` forcing `eol=lf` for text files, so
+golden files committed with LF stay LF on Windows checkouts. Do not weaken this.
+
+
+---
+
 ### Pattern D — Action Test
 **When:** Testing an `AnAction` subclass.
 

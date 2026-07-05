@@ -6,21 +6,22 @@ import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
-import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
 import com.itangcent.easyapi.psi.model.ObjectModelVisitTracker
 
 /**
  * Builds the pure-data [TemplateModel] from already-resolved [ApiEndpoint]s.
  *
  * Pure function: no PSI/VFS access, no side effects. Walks the recursive
- * [ObjectModel] bodies into a flat, cycle-safe list of [Row]s using
- * [ObjectModelVisitTracker] (cycle-safe by object identity, not depth-capped),
- * and pre-renders the JSON `demo` via [ObjectModelJsonConverter.toJson].
+ * [ObjectModel] bodies into a flat, cycle-safe list of [FieldView]s using
+ * [ObjectModelVisitTracker] (cycle-safe by object identity, not depth-capped).
  *
  * The body-flattening logic is ported from the legacy `DefaultMarkdownFormatter`
  * (`formatObjectModelRecursive` / `formatFieldRow` / `formatArrayItemRecursive` /
  * `buildFieldDescription` / `formatType`) so the default template can reproduce the old
  * output byte-for-byte (the parity gate — [MarkdownTemplateParityTest]).
+ *
+ * The JSON demo is **not** pre-rendered here — `BodyView.asDemo()`/`asJson()`/`asJson5()`
+ * are evaluated lazily at render time. See [BodyView] (D5).
  *
  * @see TemplateModel
  */
@@ -28,18 +29,15 @@ object TemplateModelBuilder {
 
     /**
      * @param endpoints the endpoints to render, already resolved (no PSI reads happen here).
-     * @param outputDemo when `false`, every [BodyView.demo] is set to `null` so the template's
-     *   `{{#if ...demo}}` guards suppress the blocks unchanged .
      * @param moduleName the document title passed to `MarkdownChannel.export`.
      */
     fun build(
         endpoints: List<ApiEndpoint>,
-        outputDemo: Boolean,
         moduleName: String,
     ): TemplateModel {
         val groups = endpoints
             .groupBy { it.folder ?: "" }
-            .map { (folder, list) -> Group(folder = folder, endpoints = list.map { it.toView(outputDemo) }) }
+            .map { (folder, list) -> Group(folder = folder, endpoints = list.map { it.toView() }) }
         return TemplateModel(
             moduleName = moduleName,
             groups = groups,
@@ -49,7 +47,7 @@ object TemplateModelBuilder {
 
     // ---- Endpoint → view ----
 
-    private fun ApiEndpoint.toView(outputDemo: Boolean): Endpoint {
+    private fun ApiEndpoint.toView(): Endpoint {
         val meta = metadata
         // Mirror DefaultMarkdownFormatter: `ep.description?.takeIf { it.isNotBlank() }`
         // so whitespace-only descriptions are treated as absent (parity gate).
@@ -61,7 +59,7 @@ object TemplateModelBuilder {
                 protocol = meta.protocol,
                 path = meta.path,
                 method = meta.method.name,
-                http = meta.toHttpView(outputDemo),
+                http = meta.toHttpView(),
                 grpc = null,
             )
             is GrpcMetadata -> Endpoint(
@@ -71,18 +69,18 @@ object TemplateModelBuilder {
                 path = meta.path,
                 method = meta.path.substringAfterLast('/'),
                 http = null,
-                grpc = meta.toGrpcView(outputDemo),
+                grpc = meta.toGrpcView(),
             )
         }
     }
 
-    private fun HttpMetadata.toHttpView(outputDemo: Boolean): HttpView {
+    private fun HttpMetadata.toHttpView(): HttpView {
         val pathParams = parameters.filter { it.binding == ParameterBinding.Path }.map { it.toParam() }
         val queryParams = parameters.filter { it.binding == ParameterBinding.Query }.map { it.toParam() }
         val formParams = parameters.filter { it.binding == ParameterBinding.Form }.map { it.toParam() }
         val headers = headers.map { it.toHeader() }
-        val body = body?.toBodyView(outputDemo)
-        val response = responseBody?.toBodyView(outputDemo)
+        val body = body?.toBodyView()
+        val response = responseBody?.toBodyView()
         val hasRequestContent = pathParams.isNotEmpty() ||
             queryParams.isNotEmpty() ||
             formParams.isNotEmpty() ||
@@ -99,14 +97,14 @@ object TemplateModelBuilder {
         )
     }
 
-    private fun GrpcMetadata.toGrpcView(outputDemo: Boolean): GrpcView {
+    private fun GrpcMetadata.toGrpcView(): GrpcView {
         return GrpcView(
             serviceName = serviceName,
             methodName = path.substringAfterLast('/'),
             streamingType = streamingType.name,
             fullPath = path,
-            body = body?.toBodyView(outputDemo),
-            response = responseBody?.toBodyView(outputDemo),
+            body = body?.toBodyView(),
+            response = responseBody?.toBodyView(),
         )
     }
 
@@ -126,17 +124,22 @@ object TemplateModelBuilder {
     )
 
     // ---- Body flattening (ported from DefaultMarkdownFormatter) ----
+    //
+    // Produces a flat, cycle-safe list of [FieldView]s. The indent string and desc format
+    // match the legacy `Row` byte-for-byte (parity gate — review findings F5, F6):
+    //  - depth 0: indent = ""
+    //  - depth N>0: indent = "&ensp;&ensp;"×N + "&#124;─"
+    //  - desc = comment + options joined with "<br>"
 
-    private fun ObjectModel.toBodyView(outputDemo: Boolean): BodyView {
-        val rows = mutableListOf<Row>()
+    private fun ObjectModel.toBodyView(): BodyView {
+        val fields = mutableListOf<FieldView>()
         val tracker = ObjectModelVisitTracker()
-        flattenInto(rows, this, depth = 0, tracker = tracker)
-        val demo = if (outputDemo) ObjectModelJsonConverter.toJson(this) else null
-        return BodyView(rows = rows, demo = demo)
+        flattenFieldsInto(fields, this, depth = 0, tracker = tracker)
+        return BodyView(model = this, fields = fields)
     }
 
-    private fun flattenInto(
-        rows: MutableList<Row>,
+    private fun flattenFieldsInto(
+        fields: MutableList<FieldView>,
         model: ObjectModel,
         depth: Int,
         tracker: ObjectModelVisitTracker,
@@ -146,27 +149,64 @@ object TemplateModelBuilder {
                 if (!tracker.tryEnter(model)) return
                 try {
                     for ((fieldName, fieldModel) in model.fields) {
-                        appendFieldRow(rows, fieldName, fieldModel, depth, tracker)
+                        appendFieldView(fields, fieldName, fieldModel, depth, tracker)
                     }
                 } finally {
                     tracker.exit(model)
                 }
             }
             is ObjectModel.Array -> {
-                flattenArrayItemInto(rows, model.item, prefix = "[0]", depth = depth, tracker = tracker)
+                flattenArrayItemIntoFields(fields, model.item, prefix = "[0]", depth = depth, tracker = tracker)
             }
             is ObjectModel.Single -> {
-                rows += Row(name = "", type = model.type, desc = "")
+                // Parity (review finding F5): one synthetic row, name="" matching legacy
+                // `Row(name="", type=model.type, desc="")` byte-for-byte.
+                fields += FieldView(
+                    name = "",
+                    type = model.type,
+                    desc = "",
+                    required = false,
+                    defaultValue = null,
+                    depth = 0,
+                    indent = "",
+                    hasChildren = false,
+                    childrenCount = 0,
+                    structuralKind = FieldStructuralKind.PRIMITIVE,
+                )
             }
             is ObjectModel.MapModel -> {
-                rows += Row(name = "key", type = formatType(model.keyType), desc = "")
-                rows += Row(name = "value", type = formatType(model.valueType), desc = "")
+                // Parity (review finding F6): two synthetic rows (key + value), matching
+                // legacy `Row(name="key", type=formatType(keyType), desc="")` + value byte-for-byte.
+                fields += FieldView(
+                    name = "key",
+                    type = formatType(model.keyType),
+                    desc = "",
+                    required = false,
+                    defaultValue = null,
+                    depth = 0,
+                    indent = "",
+                    hasChildren = false,
+                    childrenCount = 0,
+                    structuralKind = FieldStructuralKind.MAP,
+                )
+                fields += FieldView(
+                    name = "value",
+                    type = formatType(model.valueType),
+                    desc = "",
+                    required = false,
+                    defaultValue = null,
+                    depth = 0,
+                    indent = "",
+                    hasChildren = false,
+                    childrenCount = 0,
+                    structuralKind = FieldStructuralKind.MAP,
+                )
             }
         }
     }
 
-    private fun appendFieldRow(
-        rows: MutableList<Row>,
+    private fun appendFieldView(
+        fields: MutableList<FieldView>,
         fieldName: String,
         fieldModel: FieldModel,
         depth: Int,
@@ -175,14 +215,28 @@ object TemplateModelBuilder {
         val indent = if (depth > 0) "&ensp;&ensp;".repeat(depth) + "&#124;─" else ""
         val type = formatType(fieldModel.model)
         val desc = buildFieldDescription(fieldModel)
-        rows += Row(name = "$indent$fieldName", type = type, desc = desc)
+        val structuralKind = structuralKindOf(fieldModel.model)
+        val (hasChildren, childrenCount) = childrenInfo(fieldModel.model, tracker)
+
+        fields += FieldView(
+            name = fieldName,
+            type = type,
+            desc = desc,
+            required = false,
+            defaultValue = null,
+            depth = depth,
+            indent = indent,
+            hasChildren = hasChildren,
+            childrenCount = childrenCount,
+            structuralKind = structuralKind,
+        )
 
         when (val nested = fieldModel.model) {
             is ObjectModel.Object -> {
                 if (tracker.tryEnter(nested)) {
                     try {
                         for ((nestedName, nestedField) in nested.fields) {
-                            appendFieldRow(rows, nestedName, nestedField, depth + 1, tracker)
+                            appendFieldView(fields, nestedName, nestedField, depth + 1, tracker)
                         }
                     } finally {
                         tracker.exit(nested)
@@ -195,7 +249,7 @@ object TemplateModelBuilder {
                         if (tracker.tryEnter(item)) {
                             try {
                                 for ((nestedName, nestedField) in item.fields) {
-                                    appendFieldRow(rows, nestedName, nestedField, depth + 1, tracker)
+                                    appendFieldView(fields, nestedName, nestedField, depth + 1, tracker)
                                 }
                             } finally {
                                 tracker.exit(item)
@@ -209,8 +263,8 @@ object TemplateModelBuilder {
         }
     }
 
-    private fun flattenArrayItemInto(
-        rows: MutableList<Row>,
+    private fun flattenArrayItemIntoFields(
+        fields: MutableList<FieldView>,
         item: ObjectModel,
         prefix: String,
         depth: Int,
@@ -221,22 +275,86 @@ object TemplateModelBuilder {
                 if (!tracker.tryEnter(item)) return
                 try {
                     for ((fieldName, fieldModel) in item.fields) {
-                        appendFieldRow(rows, "$prefix.$fieldName", fieldModel, depth, tracker)
+                        appendFieldView(fields, "$prefix.$fieldName", fieldModel, depth, tracker)
                     }
                 } finally {
                     tracker.exit(item)
                 }
             }
             is ObjectModel.Array -> {
-                flattenArrayItemInto(rows, item.item, "$prefix[0]", depth, tracker)
+                flattenArrayItemIntoFields(fields, item.item, "$prefix[0]", depth, tracker)
             }
             is ObjectModel.Single -> {
-                rows += Row(name = prefix, type = "${item.type}[]", desc = "")
+                fields += FieldView(
+                    name = prefix,
+                    type = "${item.type}[]",
+                    desc = "",
+                    required = false,
+                    defaultValue = null,
+                    depth = depth,
+                    indent = if (depth > 0) "&ensp;&ensp;".repeat(depth) + "&#124;─" else "",
+                    hasChildren = false,
+                    childrenCount = 0,
+                    structuralKind = FieldStructuralKind.PRIMITIVE,
+                )
             }
             is ObjectModel.MapModel -> {
-                rows += Row(name = "$prefix.key", type = formatType(item.keyType), desc = "")
-                rows += Row(name = "$prefix.value", type = formatType(item.valueType), desc = "")
+                fields += FieldView(
+                    name = "$prefix.key",
+                    type = formatType(item.keyType),
+                    desc = "",
+                    required = false,
+                    defaultValue = null,
+                    depth = depth,
+                    indent = if (depth > 0) "&ensp;&ensp;".repeat(depth) + "&#124;─" else "",
+                    hasChildren = false,
+                    childrenCount = 0,
+                    structuralKind = FieldStructuralKind.MAP,
+                )
+                fields += FieldView(
+                    name = "$prefix.value",
+                    type = formatType(item.valueType),
+                    desc = "",
+                    required = false,
+                    defaultValue = null,
+                    depth = depth,
+                    indent = if (depth > 0) "&ensp;&ensp;".repeat(depth) + "&#124;─" else "",
+                    hasChildren = false,
+                    childrenCount = 0,
+                    structuralKind = FieldStructuralKind.MAP,
+                )
             }
+        }
+    }
+
+    /** Returns the structural kind of a model for [FieldView.structuralKind]. */
+    private fun structuralKindOf(model: ObjectModel): FieldStructuralKind = when (model) {
+        is ObjectModel.Object -> FieldStructuralKind.OBJECT
+        is ObjectModel.Array -> FieldStructuralKind.ARRAY
+        is ObjectModel.MapModel -> FieldStructuralKind.MAP
+        is ObjectModel.Single -> FieldStructuralKind.PRIMITIVE
+    }
+
+    /**
+     * Returns `(hasChildren, childrenCount)` for a field's model. `hasChildren` is true
+     * when the model is an Object/Array<Object>/MapModel that would produce nested rows
+     * (subject to cycle-safety). `childrenCount` is the immediate child count (0 for
+     * primitives or cycle-blocked nodes).
+     */
+    private fun childrenInfo(model: ObjectModel, tracker: ObjectModelVisitTracker): Pair<Boolean, Int> {
+        return when (model) {
+            is ObjectModel.Object -> {
+                if (tracker.canEnter(model)) true to model.fields.size
+                else false to 0
+            }
+            is ObjectModel.Array -> {
+                when (val item = model.item) {
+                    is ObjectModel.Object -> if (tracker.canEnter(item)) true to item.fields.size else false to 0
+                    else -> false to 0
+                }
+            }
+            is ObjectModel.MapModel -> true to 2
+            is ObjectModel.Single -> false to 0
         }
     }
 

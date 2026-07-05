@@ -30,7 +30,6 @@ class ApplicationSettingsStateTest {
         assertFalse(s.unsafeSsl)
         assertEquals(HttpClientType.APACHE.value, s.httpClient)
         assertEquals(100, s.logLevel) // SILENT — console off by default
-        assertTrue(s.outputDemo)
         assertEquals("UTF-8", s.outputCharset)
         assertNull(s.builtInConfig)
         assertArrayEquals(emptyArray(), s.remoteConfig)

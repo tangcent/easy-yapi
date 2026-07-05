@@ -35,6 +35,16 @@ class ObjectModelVisitTracker {
         return true
     }
 
+    /**
+     * Returns `true` if [tryEnter] would succeed for [model] right now, **without**
+     * incrementing the visit count. Used by callers that need to pre-compute
+     * `hasChildren` metadata for a [FieldView] before deciding whether to recurse.
+     */
+    fun canEnter(model: ObjectModel.Object): Boolean {
+        val count = counts.getOrDefault(model, 0)
+        return count < ObjectModel.DEFAULT_MAX_VISITS
+    }
+
     /** Must be called once for every successful [tryEnter]. */
     fun exit(model: ObjectModel.Object) {
         val count = counts.getOrDefault(model, 0)

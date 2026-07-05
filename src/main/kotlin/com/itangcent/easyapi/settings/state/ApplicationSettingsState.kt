@@ -57,7 +57,6 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         var httpClient: String = HttpClientType.APACHE.value,
         var extensionConfigs: String = ExtensionConfigRegistry.codesToString(ExtensionConfigRegistry.defaultCodes()),
         var logLevel: Int = 100, // SILENT — console off by default
-        var outputDemo: Boolean = true,
         var outputCharset: String = "UTF-8",
         var builtInConfig: String? = null,
         var remoteConfig: Array<String> = emptyArray(),
@@ -99,7 +98,6 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             if (httpTimeOut != other.httpTimeOut) return false
             if (unsafeSsl != other.unsafeSsl) return false
             if (logLevel != other.logLevel) return false
-            if (outputDemo != other.outputDemo) return false
             if (postmanToken != other.postmanToken) return false
             if (postmanJson5FormatType != other.postmanJson5FormatType) return false
             if (httpClient != other.httpClient) return false
@@ -143,7 +141,6 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             result = 31 * result + httpTimeOut
             result = 31 * result + unsafeSsl.hashCode()
             result = 31 * result + logLevel
-            result = 31 * result + outputDemo.hashCode()
             result = 31 * result + (postmanToken?.hashCode() ?: 0)
             result = 31 * result + postmanJson5FormatType.hashCode()
             result = 31 * result + httpClient.hashCode()
@@ -190,7 +187,6 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             target.httpClient = httpClient
             target.extensionConfigs = extensionConfigs
             target.logLevel = logLevel
-            target.outputDemo = outputDemo
             target.outputCharset = outputCharset
             target.builtInConfig = builtInConfig
             target.remoteConfig = remoteConfig

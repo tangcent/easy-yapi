@@ -97,7 +97,6 @@ class GeneralSettingsPanelLogicTest {
         assertTrue(settings.switchNotice)
         assertEquals(100, settings.logLevel)
         assertEquals("UTF-8", settings.outputCharset)
-        assertTrue(settings.outputDemo)
     }
 
     @Test
@@ -111,8 +110,7 @@ class GeneralSettingsPanelLogicTest {
             gutterIconEnabled = false,
             switchNotice = false,
             logLevel = 40,
-            outputCharset = "GBK",
-            outputDemo = false
+            outputCharset = "GBK"
         )
         assertTrue(settings.feignEnable)
         assertFalse(settings.jaxrsEnable)
@@ -123,7 +121,6 @@ class GeneralSettingsPanelLogicTest {
         assertFalse(settings.switchNotice)
         assertEquals(40, settings.logLevel)
         assertEquals("GBK", settings.outputCharset)
-        assertFalse(settings.outputDemo)
     }
 
     @Test
