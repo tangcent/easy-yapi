@@ -2,14 +2,13 @@ package com.itangcent.easyapi.ide.fieldformat
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
-import com.intellij.psi.util.PsiTreeUtil
 import com.itangcent.easyapi.core.event.ActionCompletedTopic
 import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.ide.support.NotificationUtils
+import com.itangcent.easyapi.ide.support.SelectedHelper
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.logging.console
 import java.awt.datatransfer.StringSelection
@@ -35,7 +34,7 @@ class FieldFormatAction(
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val psiClass = findPsiClass(e) ?: return
+        val psiClass = SelectedHelper.resolveSelection(e)?.psiClass() ?: return
         val console = project.console
         console.info("FieldFormatAction.actionPerformed: channel=${channel.id}, class=${psiClass.qualifiedName}")
         try {
@@ -49,13 +48,5 @@ class FieldFormatAction(
         } finally {
             project.syncPublish(ActionCompletedTopic.TOPIC)
         }
-    }
-
-    private fun findPsiClass(e: AnActionEvent): PsiClass? {
-        val element = e.getData(CommonDataKeys.PSI_ELEMENT)
-        if (element is PsiClass) return element
-        if (element != null) return PsiTreeUtil.getParentOfType(element, PsiClass::class.java)
-        val file = e.getData(CommonDataKeys.PSI_FILE) ?: return null
-        return PsiTreeUtil.findChildOfType(file, PsiClass::class.java)
     }
 }

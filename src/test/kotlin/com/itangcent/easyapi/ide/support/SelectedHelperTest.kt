@@ -336,6 +336,204 @@ class SelectedHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertFalse(selectedMethods.contains(createMethod))
     }
 
+    // ---- Editor caret resolution (PSI_ELEMENT=null, editor context-menu) ----
+
+    /**
+     * Builds an inline Java source file containing multiple top-level classes
+     * — a controller followed by sibling VO/DTO classes — mirroring the layout
+     * of `AnalyticsController.java` that originally triggered the FieldsTo*
+     * "wrong class" bug. All referenced types are explicitly imported per the
+     * light-fixture resolver requirement.
+     */
+    private fun setupMultiClassFile(): Pair<PsiFile, List<PsiClass>> {
+        val source = """
+            package com.itangcent.api;
+
+            import org.springframework.web.bind.annotation.RestController;
+            import org.springframework.web.bind.annotation.RequestMapping;
+            import org.springframework.web.bind.annotation.GetMapping;
+
+            @RestController
+            @RequestMapping("/api/analytics")
+            public class AnalyticsController {
+
+                @GetMapping("/sales/report")
+                public String getSalesReport() {
+                    return "";
+                }
+            }
+
+            class SalesReportVO {
+                private String totalSales;
+                private Long totalOrders;
+
+                public String getTotalSales() {
+                    return totalSales;
+                }
+
+                public void setTotalSales(String totalSales) {
+                    this.totalSales = totalSales;
+                }
+
+                public Long getTotalOrders() {
+                    return totalOrders;
+                }
+
+                public void setTotalOrders(Long totalOrders) {
+                    this.totalOrders = totalOrders;
+                }
+            }
+
+            class DailySalesVO {
+                private String date;
+                private Long sales;
+
+                public String getDate() {
+                    return date;
+                }
+
+                public void setDate(String date) {
+                    this.date = date;
+                }
+
+                public Long getSales() {
+                    return sales;
+                }
+
+                public void setSales(Long sales) {
+                    this.sales = sales;
+                }
+            }
+        """.trimIndent()
+
+        val file = loadFile("api/MultiClassCtrl.java", source)
+        myFixture.configureFromExistingVirtualFile(file.virtualFile)
+        val classes = listOf(
+            findClass("com.itangcent.api.AnalyticsController")!!,
+            findClass("com.itangcent.api.SalesReportVO")!!,
+            findClass("com.itangcent.api.DailySalesVO")!!
+        )
+        return file to classes
+    }
+
+    /**
+     * Right-click inside a *non-first* top-level class (`SalesReportVO`) with
+     * no PSI_ELEMENT set — the editor context-menu scenario. Should resolve to
+     * `SalesReportVO`, NOT the first class in the file (`AnalyticsController`).
+     *
+     * Regression test for the FieldsTo* bug where the PSI_FILE fallback always
+     * returned the first class regardless of caret position.
+     */
+    fun testResolveSelectionFromCaretInNonFirstClass() {
+        val (file, classes) = setupMultiClassFile()
+        val salesReport = classes[1]
+        // Place the caret on the `totalSales` field identifier inside SalesReportVO.
+        val totalSalesField = salesReport.fields.first { it.name == "totalSales" }
+        val caretOffset = totalSalesField.textOffset + 2
+        myFixture.editor.caretModel.moveToOffset(caretOffset)
+
+        val event = createEvent(
+            psiFile = file,
+            editor = myFixture.editor
+            // Note: PSI_ELEMENT deliberately omitted — this is what the editor
+            // context-menu looks like; PSI_ELEMENT is populated by the Project
+            // View, not by the editor right-click.
+        )
+        val selection = SelectedHelper.resolveSelection(event)
+        assertNotNull("Selection must not be null in editor caret context", selection)
+        assertEquals(
+            "Should resolve to SalesReportVO (caret class), not AnalyticsController (first in file)",
+            "com.itangcent.api.SalesReportVO",
+            selection!!.psiClass()!!.qualifiedName
+        )
+    }
+
+    /**
+     * Right-click inside the *first* top-level class with no PSI_ELEMENT.
+     * Caret-based resolution should still find that class.
+     */
+    fun testResolveSelectionFromCaretInFirstClass() {
+        val (file, classes) = setupMultiClassFile()
+        val controller = classes[0]
+        // Place the caret somewhere inside the controller body (the getter method).
+        val method = controller.findMethodsByName("getSalesReport", false).first()
+        myFixture.editor.caretModel.moveToOffset(method.textOffset + 5)
+
+        val event = createEvent(psiFile = file, editor = myFixture.editor)
+        val selection = SelectedHelper.resolveSelection(event)
+        assertNotNull(selection)
+        assertEquals(
+            "com.itangcent.api.AnalyticsController",
+            selection!!.psiClass()!!.qualifiedName
+        )
+    }
+
+    /**
+     * Caret inside a method should resolve to the method's containing class.
+     */
+    fun testResolveSelectionFromCaretInMethodResolvesContainingClass() {
+        val (file, classes) = setupMultiClassFile()
+        val dailySales = classes[2]
+        val setter = dailySales.findMethodsByName("setDate", false).first()
+        myFixture.editor.caretModel.moveToOffset(setter.textOffset + 3)
+
+        val event = createEvent(psiFile = file, editor = myFixture.editor)
+        val selection = SelectedHelper.resolveSelection(event)
+        assertNotNull(selection)
+        assertEquals(
+            "com.itangcent.api.DailySalesVO",
+            selection!!.psiClass()!!.qualifiedName
+        )
+    }
+
+    /**
+     * Editor present but PSI_ELEMENT and caret element both null (caret at EOF
+     * with no resolvable element). Should fall through to the PSI_FILE branch
+     * and return all classes in the file. The first class is the controller.
+     */
+    fun testResolveSelectionFallsBackToFileWhenCaretResolvesNothing() {
+        val (file, _) = setupMultiClassFile()
+        // Caret past end of file — findElementAt returns null.
+        myFixture.editor.caretModel.moveToOffset(file.textLength + 100)
+
+        val event = createEvent(psiFile = file, editor = myFixture.editor)
+        val selection = SelectedHelper.resolveSelection(event)
+        assertNotNull(selection)
+        // PSI_FILE fallback yields all classes; psiClass() returns the first.
+        assertEquals(
+            "com.itangcent.api.AnalyticsController",
+            selection!!.psiClass()!!.qualifiedName
+        )
+    }
+
+    /**
+     * PSI_ELEMENT takes precedence over the editor caret — when both are set,
+     * the explicit element context wins. This guards against the caret branch
+     * shadowing the documented PSI_ELEMENT-first behaviour.
+     */
+    fun testPsiElementTakesPrecedenceOverEditorCaret() {
+        val (file, classes) = setupMultiClassFile()
+        val salesReport = classes[1]
+        val dailySales = classes[2]
+        // Caret inside DailySalesVO, but PSI_ELEMENT points at SalesReportVO.
+        myFixture.editor.caretModel.moveToOffset(
+            dailySales.fields.first { it.name == "date" }.textOffset
+        )
+
+        val event = createEvent(
+            psiElement = salesReport,
+            psiFile = file,
+            editor = myFixture.editor
+        )
+        val selection = SelectedHelper.resolveSelection(event)
+        assertNotNull(selection)
+        assertEquals(
+            "PSI_ELEMENT should win over caret",
+            "com.itangcent.api.SalesReportVO",
+            selection!!.psiClass()!!.qualifiedName
+        )
+    }
+
     // ---- Helper ----
 
     private fun createEvent(

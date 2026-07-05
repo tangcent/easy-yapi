@@ -69,6 +69,24 @@ object SelectedHelper {
             }
         }
 
+        // Editor caret fallback. PSI_ELEMENT is frequently null for an editor
+        // context-menu invocation (it is primarily populated by the Project
+        // View), so resolve the element at the caret ourselves. Without this,
+        // a file containing multiple top-level classes (e.g. a controller that
+        // also declares VO/DTO classes) always resolves to the *first* class in
+        // the file via the PSI_FILE fallback below, regardless of where the
+        // caret is. (Issue: FieldsTo* targets the controller, not the data class.)
+        if (editor != null && psiFile != null) {
+            val offset = editor.caretModel.offset
+            val atCaret = psiFile.findElementAt(offset)
+            if (atCaret != null) {
+                val resolved = resolveContainingClassOrMethod(atCaret)
+                if (resolved != null) {
+                    return SelectionScope(listOf(resolved))
+                }
+            }
+        }
+
         // NAVIGATABLE_ARRAY is used for project tree selections (e.g. selecting
         // a class/directory in the project view). Filter out classes that are
         // not user-defined targets (annotation types, JDK classes, etc.).
