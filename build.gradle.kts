@@ -40,7 +40,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-core:2.12.2")
     implementation("org.xerial:sqlite-jdbc:3.34.0")
 
-    // LangChain4j — AI agent substrate (design §3.0)
+    // LangChain4j — AI agent substrate
     // Explicit versions (avoid BOM — it imposes global kotlin-stdlib constraints
     // that conflict with IntelliJ's bundled Kotlin 2.1+).
     val langchain4jCoreVersion = "1.0.0-rc1"   // core + open-ai
