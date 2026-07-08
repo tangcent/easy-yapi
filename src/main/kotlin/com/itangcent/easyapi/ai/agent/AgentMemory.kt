@@ -42,6 +42,10 @@ data class Proposal(val content: String, val suggestedFileName: String)
  * [userLanguage] carries the detected Markdown template locale  — a
  * BCP-47 tag (e.g. `zh-CN`, `ja`) when the user appears to want non-English
  * output, or `null` when English / undetermined (no suggestion to surface).
+ *
+ * Env-var names are intentionally NOT carried here — the agent resolves
+ * them from existing rule files (via `get_existing_rules_for_key`) and the
+ * source code, not from the Environments panel. See [AmbientPerception].
  */
 data class Ambient(
     val projectName: String,

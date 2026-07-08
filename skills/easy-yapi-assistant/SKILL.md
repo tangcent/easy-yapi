@@ -38,7 +38,7 @@ page first — do **not** rely on memory or guess syntax.
 
 | Bundled file | Built-in `get_plugin_doc` name | What it covers |
 |--------------|--------------------------------|----------------|
-| `docs/rule-guide.md` | `rule-guide` | **The source of truth.** Rule file format, filter syntax, expression prefixes, Groovy binding reference, recipes, and the Custom-Pattern Catalog. |
+| `docs/rule-guide.md` | `rule-guide` | **The source of truth.** Rule file format, filter syntax, expression prefixes, Groovy binding reference, recipes, the Custom-Pattern Catalog, and the Workflow-Pattern Catalog (cross-endpoint auth/signing/refresh recipes). |
 | `docs/index.md` | `index` | Knowledge-base index / topic map. |
 | `docs/README.md` | `overview` | Overview of EasyApi concepts. |
 | `docs/settings-guide.md` | `settings-guide` | Plugin settings reference. |
@@ -376,7 +376,7 @@ they produce is consistent.
 
 **Bundled with this skill (available after `npx skills add` — read these):**
 - `docs/rule-guide.md` — rule file format, filter syntax, recipes, Custom-Pattern
-  Catalog, Groovy binding reference.
+  Catalog, Workflow-Pattern Catalog, Groovy binding reference.
 - `docs/rule-keys.md` — complete rule-key catalog (snapshot of `RuleKeys.kt`).
 - `docs/index.md`, `docs/README.md`, `docs/settings-guide.md`, `docs/usage-guide.md`,
   `docs/easyapi-script-reference.md` — the rest of the knowledge base.

@@ -19,6 +19,16 @@ import java.util.Locale
  * markdown-agnostic hint — markdown-specific business rules (e.g.
  * `markdown.template.language`) are intentionally NOT consulted here; the
  * agent proposes that rule when the ambient language hint is non-English.
+ *
+ * Env-var *names* are NOT captured here. The source of truth for "which
+ * env var should a workflow rule reference?" is the existing rule files
+ * (a `method.additional.header=...${Authorization}` line reveals the
+ * name) plus the source code (the token field the producer returns). The
+ * agent resolves names via the `get_existing_rules_for_key` tool, not by
+ * peeking at the Environments panel — runtime env-var *values* are out of
+ * scope for a rule-authoring agent, and their *keys* can leak
+ * vendor/infrastructure hints (e.g. `STRIPE_SECRET_KEY`) into the
+ * transcript sent to the external LLM provider.
  */
 object AmbientPerception : IdeaLog {
 

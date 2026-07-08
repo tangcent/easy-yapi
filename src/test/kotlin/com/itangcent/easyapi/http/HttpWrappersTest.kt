@@ -100,8 +100,124 @@ class HttpRequestWrapperTest {
             contentType = "application/json"
         )
         val wrapper = HttpRequestWrapper(request)
-        
+
         assertEquals("application/json", wrapper.contentType())
+    }
+
+    // ---- T2.2: mutable header support (Spec: ai-workflow-patterns, D2) ----
+
+    @Test
+    fun testSetHeaderAddsNewHeader() {
+        val request = HttpRequest(url = "http://test.com", method = "GET")
+        val wrapper = HttpRequestWrapper(request)
+
+        assertEquals(0, wrapper.headers().size)
+        wrapper.setHeader("Authorization", "Bearer token")
+        assertEquals(1, wrapper.headers().size)
+        assertEquals("Authorization", wrapper.headers()[0].name)
+        assertEquals("Bearer token", wrapper.headers()[0].value)
+    }
+
+    @Test
+    fun testSetHeaderUpsertsCaseInsensitively() {
+        val request = HttpRequest(
+            url = "http://test.com",
+            method = "GET",
+            headers = listOf(KeyValue("Content-Type", "application/json"))
+        )
+        val wrapper = HttpRequestWrapper(request)
+
+        assertEquals(1, wrapper.headers().size)
+        // Replace existing header (case-insensitive match)
+        wrapper.setHeader("content-type", "text/plain")
+        assertEquals("upsert should NOT add a duplicate header", 1, wrapper.headers().size)
+        assertEquals("text/plain", wrapper.headers()[0].value)
+    }
+
+    @Test
+    fun testSetHeaderReplacesAllMatchingCaseVariants() {
+        val request = HttpRequest(
+            url = "http://test.com",
+            method = "GET",
+            headers = listOf(KeyValue("X-Custom", "old"), KeyValue("x-custom", "dup"))
+        )
+        val wrapper = HttpRequestWrapper(request)
+
+        wrapper.setHeader("X-CUSTOM", "new")
+        assertEquals(1, wrapper.headers().size)
+        assertEquals("new", wrapper.headers()[0].value)
+    }
+
+    @Test
+    fun testRemoveHeaderIsCaseInsensitive() {
+        val request = HttpRequest(
+            url = "http://test.com",
+            method = "GET",
+            headers = listOf(KeyValue("Authorization", "Bearer x"), KeyValue("Content-Type", "application/json"))
+        )
+        val wrapper = HttpRequestWrapper(request)
+
+        wrapper.removeHeader("authorization")
+        assertEquals(1, wrapper.headers().size)
+        assertEquals("Content-Type", wrapper.headers()[0].name)
+    }
+
+    @Test
+    fun testRemoveHeaderNoOpWhenAbsent() {
+        val request = HttpRequest(
+            url = "http://test.com",
+            method = "GET",
+            headers = listOf(KeyValue("Content-Type", "application/json"))
+        )
+        val wrapper = HttpRequestWrapper(request)
+
+        wrapper.removeHeader("Authorization")
+        assertEquals(1, wrapper.headers().size)
+    }
+
+    @Test
+    fun testToHttpRequestCopiesAllFieldsAndUsesHeaderOverrides() {
+        val request = HttpRequest(
+            url = "http://test.com/api",
+            method = "POST",
+            headers = listOf(KeyValue("Content-Type", "application/json")),
+            query = listOf(KeyValue("page", "1")),
+            body = """{"k":"v"}""",
+            formParams = listOf(FormParam.Text("field", "val")),
+            cookies = listOf(HttpCookie("session", "abc")),
+            contentType = "application/json"
+        )
+        val wrapper = HttpRequestWrapper(request)
+
+        wrapper.setHeader("Authorization", "Bearer newTok")
+        wrapper.removeHeader("Content-Type")
+
+        val built = wrapper.toHttpRequest()
+        assertEquals("http://test.com/api", built.url)
+        assertEquals("POST", built.method)
+        assertEquals(1, built.headers.size)
+        assertEquals("Authorization", built.headers[0].name)
+        assertEquals("Bearer newTok", built.headers[0].value)
+        assertEquals(1, built.query.size)
+        assertEquals("""{"k":"v"}""", built.body)
+        assertEquals(1, built.formParams.size)
+        assertEquals(1, built.cookies.size)
+        assertEquals("application/json", built.contentType)
+    }
+
+    @Test
+    fun testToHttpRequestPreservesOriginalWhenNoMutation() {
+        val request = HttpRequest(
+            url = "http://test.com",
+            method = "GET",
+            headers = listOf(KeyValue("Authorization", "Bearer original"))
+        )
+        val wrapper = HttpRequestWrapper(request)
+
+        val built = wrapper.toHttpRequest()
+        assertEquals(request.headers, built.headers)
+        assertEquals(request.url, built.url)
+        assertEquals(request.method, built.method)
     }
 }
 

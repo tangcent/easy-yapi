@@ -14,9 +14,10 @@ This guide describes the **rule file format** used by EasyApi to customize API d
 4. [Expression Prefixes](#expression-prefixes)
 5. [Aggregation Modes](#aggregation-modes)
 6. [Groovy Binding Reference](#groovy-binding-reference)
-7. [Recipes](#recipes)
-8. [Migrating from the Built-in Tab](#migrating-from-the-built-in-tab)
-9. [AI-assisted rule creation](#ai-assisted-rule-creation)
+7. [Workflow Patterns](#workflow-patterns)
+8. [Recipes](#recipes)
+9. [Migrating from the Built-in Tab](#migrating-from-the-built-in-tab)
+10. [AI-assisted rule creation](#ai-assisted-rule-creation)
 
 ---
 
@@ -396,6 +397,81 @@ the same catalog when scanning your project.
 > the recipe. If no, no rule is needed. The detection tools differ by runtime
 > — the built-in IntelliJ agent uses its PSI tools; the external skill uses
 > file/grep search — but the rule recipe produced is the same.
+
+---
+
+## Workflow Patterns
+
+> **Cross-endpoint recipes (unlike the single-endpoint Custom-Pattern Catalog
+> above).** A workflow pattern links a *producing* endpoint (e.g. `/login`) with
+> many *consuming* endpoints via a shared **environment variable**, and is
+> expressed as a **bundle** of rule lines that must be proposed *together*
+> (plus an env var the user creates in the Environments panel). Either half
+> alone is broken.
+
+> **Scope:** `postman.test`/`postman.prerequest` rules affect **Postman
+> export** (embedded as collection scripts). `http.call.before`/
+> `http.call.after` rules affect the **plugin HTTP client** (interceptor
+> hooks, including the in-IDE request runner). Neither affects
+> Markdown/cURL export.
+
+### Correctness rules (read before proposing any workflow rule)
+
+1. **`postman.test` vs `postman.prerequest` — the #1 mistake.**
+   `postman.test` fires **after** the response (read `pm.response`, call
+   `pm.environment.set` to store a token). `postman.prerequest` fires
+   **before** the request (inject headers, compute signatures, mutate
+   `pm.request`). Swapping them is the most common error: a `postman.test`
+   script that tries to set a header for the *current* request is too late,
+   and a `postman.prerequest` script that tries to read `pm.response` has no
+   response yet.
+
+2. **Shared-env-var rule.** When a producing script stores a value via
+   `pm.environment.set("<name>", …)`, the consuming header rule MUST reference
+   the **same** `<name>` (e.g. `Bearer ${<name>}`). The bundle MUST note that
+   the user creates the env var in the Environments panel (or accepts that it
+   is created on first login run).
+
+3. **Anti-duplication.** Before proposing any header/script rule, call
+   `get_existing_rules_for_key` for each key in the bundle; skip any rule
+   already present in any source (project / global / extension / remote),
+   naming the source it already lives in.
+
+4. **Never strip legitimate auth fields.** Do NOT generate `field.ignore` for
+   `password`, `secret`, `clientSecret`, `refreshToken` — a login endpoint
+   legitimately *requires* `password`; stripping it breaks the export.
+
+5. **Never emit secrets.** Every credential is an env-var reference
+   (`${name}`); never a literal value. Warn the user to set the env var in the
+   Environments panel.
+
+6. **Script-context isolation (CRITICAL — silent-failure trap).**
+   `postman.test`/`postman.prerequest` rule values MUST be **literal scripts**
+   (NO `groovy:` prefix). A `groovy:` prefix routes the value to
+   `Jsr223ScriptParser` at export time, where `pm` is NOT bound — the script
+   throws `MissingPropertyException` and the failure is **silently swallowed**,
+   so no script lands in the Postman collection. Conversely,
+   `http.call.before`/`http.call.after` rule values MUST use the `groovy:`
+   prefix (they run in `Jsr223ScriptParser`, where `pm` is NOT available — use
+   `session.set(...)`/`localStorage.set(...)` for storage, NEVER
+   `pm.environment.set(...)`).
+
+### Pattern catalog
+
+| Pattern | Detection signal (PSI tools) | Rule recipe (full bundle) |
+|---------|------------------------------|---------------------------|
+| **Auth Token Chaining** (flagship) | **Producer:** endpoint path contains `/login`, `/signin`, `/auth`, `/token`, or `/oauth/token` (case-insensitive) OR method name contains `login`/`signin`/`authenticate`/`token`; return type carries a field named `token`/`accessToken`/`access_token`/`jwt`/`idToken`/`authToken`. **Consumer:** controllers in packages *other than* the auth controller. | **Producer** (post-response — extracts token, stores in env var):<br>`postman.test[groovy: it.containingClass().name() == "com.example.AuthController"]=def token = pm.response.json().token; if (token) { pm.environment.set("Authorization", token) }`<br>**Consumer** (attaches Bearer header to secured endpoints):<br>`method.additional.header[groovy: it.containingClass().name().startsWith("com.example.api.")]={"name":"Authorization","value":"Bearer ${Authorization}","desc":"bearer token from login","required":true}`<br>**Env var:** `Authorization` (reuse existing if present — resolve the name from any existing `method.additional.header=…${…}` rule via `get_existing_rules_for_key`, not from the Environments panel).<br>⚠ Uses `postman.test` (NOT `postman.prerequest`) — the token only exists after the login response.<br>⚠ If the token field is ambiguous (multiple candidates), call `ask_clarification` (single_choice) before writing the script. |
+| **Static Auth (API Key / Basic)** | Security filter/interceptor calling `request.getHeader("X-API-Key")` / `"Authorization"` starting `Basic `; or custom `@ApiKeyAuth` annotation. Discover via `find_classes_by_annotation` + `get_psi_class_info` (read filter body for `getHeader(...)`). | **API-key-in-header:**<br>`method.additional.header={"name":"X-API-Key","value":"${apiKey}","desc":"api key","required":true}`<br>**API-key-in-query:**<br>`method.additional.param={"name":"key","type":"String","value":"${apiKey}","required":true,"desc":"api key"}`<br>**Basic auth:**<br>`method.additional.header={"name":"Authorization","value":"Basic ${basicAuth}","desc":"http basic credentials","required":true}`<br>**No script** — the user supplies the credential once in the Environments panel (base64-encode `user:pass` for Basic). |
+| **Per-Request Injection (Correlation / Idempotency)** | Filter/interceptor reading `request.getHeader("X-Request-Id")` / `"X-Correlation-Id"` / `"X-Trace-Id"`; or `Idempotency-Key` header on POST/PUT methods. | **Correlation ID** (global, pre-request):<br>`postman.prerequest=pm.request.headers.upsert("X-Request-Id", java.util.UUID.randomUUID().toString())`<br>**Idempotency key** (scoped to mutating methods — never unscoped):<br>`postman.prerequest[groovy: it.methodType().name() == "POST" || it.methodType().name() == "PUT"]=pm.request.headers.upsert("Idempotency-Key", java.util.UUID.randomUUID().toString())`<br>Uses `pm.request.headers.upsert(...)` (add-or-replace, case-insensitive), not `.add(...)` (which would duplicate). |
+| **Request Signing (HMAC)** | Filter/interceptor using `javax.crypto.Mac` / `HmacSHA256` / `Sha256.hmac`; reads `appSecret`/`appKey`/`accessKeyId`; or custom `@SignedRequest` annotation. | **Pre-request signing script** (computes HMAC, attaches signature header):<br>`postman.prerequest[groovy: it.containingClass().name().startsWith("com.example.api.")]=def mac = javax.crypto.Mac.getInstance("HmacSHA256"); mac.init(new javax.crypto.spec.SecretKeySpec("${appSecret}".getBytes("UTF-8"), "HmacSHA256")); def stringToSign = pm.request.url + "\n" + pm.request.body; def raw = mac.doFinal(stringToSign.getBytes("UTF-8")); def sig = raw.collect { String.format("%02x", it) }.join(); pm.request.headers.upsert("X-Signature", sig)`<br>**No hardcoded secret** — `${appSecret}` is always an env-var reference.<br>⚠ For non-trivial signing (AWS SigV4, etc.) treat as a scaffold + call `ask_clarification` for the canonical-string / algorithm variant. |
+| **401-Refresh** | Refresh endpoint at `/refresh`, `/token/refresh`; OR user explicitly asks for auto-refresh; OR documented "if 401, call /refresh" convention. | **Post-call rule** (detects 401, calls refresh, sets new header, forces retry):<br>`http.call.after=groovy: if (response.code() == 401) { def refreshReq = new com.itangcent.easyapi.http.HttpRequest("https://api.example.com/refresh", "POST", java.util.Collections.emptyList(), java.util.Collections.emptyList(), "grant_type=refresh_token", java.util.Collections.emptyList(), java.util.Collections.emptyList(), null); def resp = httpClient.executeSync(refreshReq); def newToken = new groovy.json.JsonSlurper().parseText(resp.body).access_token; if (newToken) { request.setHeader("Authorization", "Bearer " + newToken); response.discard() } }`<br>**Retry limit:** up to 3 (enforced by `HttpClientScriptInterceptor`). The retry re-sends the mutated request wrapper, so `request.setHeader(...)` + `response.discard()` is sufficient — `pm` is NOT available in `http.call.after` (use `session.set(...)` for cross-request persistence if needed).<br>⚠ Keep the refresh endpoint itself script-free (recursion guard limits sub-request hooks to depth < 2). Wrap in `try/catch`. |
+
+> **Detection tip for the AI assistant:** before proposing a workflow bundle,
+> probe endpoints with `list_project_endpoints`; confirm the producer/consumer
+> split; call `get_existing_rules_for_key` for each key to avoid duplicates;
+> use `ask_clarification` at ambiguous points (token field name, consumer
+> scope). **Propose the bundle, not half of it** — a consumer header without
+> the producer script (or vice versa) is a broken chain.
 
 ---
 

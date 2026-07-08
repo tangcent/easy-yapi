@@ -126,6 +126,78 @@ Confirm a hit with `get_psi_class_info`, then ask: *does it change the
 request/response contract invisibly?* If yes, apply the catalog recipe.
 If no, no rule is needed.
 
+## Workflow-pattern detection
+
+Workflow patterns are **cross-endpoint** recipes — unlike the single-endpoint
+custom-pattern catalog above, they bundle rules across multiple controllers
+(login + secured, signer + signed). When the user's request touches auth,
+signing, correlation, or auto-refresh, probe for these five groups:
+
+- **Auth token chaining** — a login/token endpoint whose response carries a
+  token, plus secured controllers needing a `Bearer` header.
+- **Static auth (API key / Basic)** — a filter/annotation reading
+  `X-API-Key` / `Authorization: Basic`.
+- **Per-request injection** — `X-Request-Id`, `X-Correlation-Id`,
+  `Idempotency-Key` headers.
+- **Request signing (HMAC)** — `javax.crypto.Mac` / `HmacSHA256` in a
+  filter, `appSecret` / `appKey` config.
+- **401-refresh** — a `/refresh` / `/token/refresh` endpoint, or a user
+  asking for auto-refresh.
+
+**Fetch the full recipe on demand** via `get_plugin_doc` with
+`name="rule-guide"` (the "Workflow Patterns" section). Do NOT reproduce the
+table from memory — the canonical doc carries detection signals, complete
+`key[filter]=value` lines, and env-var-reuse notes.
+
+### Workflow correctness rules (CRITICAL — follow exactly)
+
+1. **Bundle integrity.** Workflow rules that form a chain (login-script +
+   consumer-header, signer + signed-consumer) MUST be proposed together in
+   a single `propose_rule_content` call. Proposing half a chain is
+   forbidden — a consumer header that references a token no script stores
+   is a silent bug.
+
+2. **`postman.test` vs `postman.prerequest` (#1 mistake).** `postman.test`
+   fires AFTER the response (read `pm.response`, `pm.environment.set` a
+   token). `postman.prerequest` fires BEFORE the request (inject headers,
+   compute signatures, mutate `pm.request`). Swapping them is the most
+   common workflow-rule error: a token extracted in `prerequest` reads the
+   PREVIOUS response (or none); a header injected in `test` lands after
+   the request has gone out.
+
+3. **No hardcoded secrets.** Every credential in a workflow rule is an
+   env-var reference (`${Authorization}`, `${appSecret}`, `${apiKey}`).
+   Never emit a literal token, key, or password in rule content.
+
+4. **Script-context isolation (CRITICAL — silent-failure trap).**
+   `postman.test`/`postman.prerequest` rule values MUST be **literal
+   scripts** (NO `groovy:` prefix). A `groovy:` prefix routes the value to
+   `Jsr223ScriptParser` at export time, where `pm` is NOT bound — the script
+   throws and the failure is **silently swallowed**, so no script lands in
+   the Postman collection. Conversely, `http.call.before`/`http.call.after`
+   rule values MUST use the `groovy:` prefix (they run in `Jsr223ScriptParser`,
+   where `pm` is NOT available — use `session.set(...)`/`localStorage.set(...)`
+   for storage, NEVER `pm.environment.set(...)`).
+
+### Perceive → reason → act for workflows
+
+- **Perceive.** `list_project_endpoints` to find login/token/refresh
+  endpoints; `find_classes_by_annotation` / `find_classes_by_supertype`
+  for auth filters/interceptors; `get_psi_method_info` on the producer to
+  confirm the token field name; `get_existing_rules_for_key` for
+  `method.additional.header`, `postman.test`, `postman.prerequest`,
+  `http.call.after` to avoid duplicates. Prefer the array form to batch.
+- **Reason.** Confirm the producer/consumer split. If the token field is
+  ambiguous (multiple `*token*` keys) or the consumer scope is unclear,
+  call `ask_clarification` with concrete options — do not guess. Reuse an
+  existing env-var name when one is already referenced in the project's
+  rules — resolve it from the rule files (e.g. grep `${...}` out of the
+  existing `method.additional.header` values returned by
+  `get_existing_rules_for_key`), not from the Environments panel. Default
+  to `Authorization` when no existing rule references a token env var.
+- **Act.** Propose the full bundle in one `propose_rule_content` call
+  (filename like `auth-chaining.properties`). Never propose half a bundle.
+
 ## Markdown language template
 
 When the ambient `user language` is non-English AND no

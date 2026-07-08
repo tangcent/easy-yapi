@@ -6,6 +6,7 @@ import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.http.HttpClientProvider
+import com.itangcent.easyapi.http.ScriptHttpClient
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.SourceHelper
 import com.itangcent.easyapi.psi.type.JsonType
@@ -123,12 +124,16 @@ abstract class Jsr223ScriptParser(
             bindings["fieldContext"] = context.wrapExt("fieldContext", context.fieldContext)
         }
 
-        // httpClient
-        val httpClient = runCatching {
+        // httpClient — wrapped in ScriptHttpClient so `groovy:` scripts can call
+        // executeSync(...) (the suspend HttpClient.execute is not callable from the
+        // blocking JSR-223 boundary). Scope: bound ONLY here (groovy: rule values +
+        // http.call.before/after events), NOT in PmScriptExecutor (postman.* scripts
+        // use pm.sendRequest for sub-requests if ever needed). Spec: ai-workflow-patterns T2.3.
+        val rawHttpClient = runCatching {
             HttpClientProvider.getInstance(context.project).getClient()
         }.onFailure { LOG.warn("Jsr223ScriptParser: failed to get httpClient", it) }
             .getOrNull()
-        bindings["httpClient"] = httpClient
+        bindings["httpClient"] = rawHttpClient?.let { ScriptHttpClient(it) }
 
         // helper + alias
         bindings["helper"] = ScriptHelper(context)

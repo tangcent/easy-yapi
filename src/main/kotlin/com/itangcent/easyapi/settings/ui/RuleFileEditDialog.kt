@@ -166,7 +166,7 @@ class RuleFileEditDialog(
                 }
             )
             appendLine()
-            appendLine("Standard HTTP frameworks (Spring MVC, WebFlux, JAX-RS, Feign) need no rules. Scan for Custom-Pattern Catalog signals: Filter/HandlerInterceptor/WebFilter requiring a header, ResponseBodyAdvice wrapping responses, HandlerMethodArgumentResolver injecting hidden params, custom meta-/security annotations. Use find_classes_by_annotation + get_psi_class_info to confirm a hit, then apply the catalog recipe from the rule guide.")
+            appendLine("Standard HTTP frameworks (Spring MVC, WebFlux, JAX-RS, Feign) need no rules. Scan for Custom-Pattern Catalog signals: Filter/HandlerInterceptor/WebFilter requiring a header, ResponseBodyAdvice wrapping responses, HandlerMethodArgumentResolver injecting hidden params, custom meta-/security annotations. Use find_classes_by_annotation + get_psi_class_info to confirm a hit, then apply the catalog recipe from the rule guide. Also scan for Workflow-Pattern Catalog signals: secured endpoints paired with a login/token endpoint (auth token chaining), static API-key/Basic auth, correlation/idempotency header requirements, and HMAC request signing — apply the catalog recipe from the rule guide when found.")
             if (content.isNotBlank()) {
                 appendLine()
                 appendLine("Current content of '$name':")

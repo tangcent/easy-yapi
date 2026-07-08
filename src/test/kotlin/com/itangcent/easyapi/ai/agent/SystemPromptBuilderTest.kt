@@ -184,4 +184,23 @@ class SystemPromptBuilderTest {
             text.contains("user language: ja", ignoreCase = true)
         )
     }
+
+    // ── Token-budget tripwire (review Issue #8) ──
+
+    @Test
+    fun `preamble content stays under token-budget ceiling`() {
+        // The preamble is the fixed system prompt appended once at conversation start.
+        // NFR-3 targets a ~600-token preamble budget. T5.1 added a condensed
+        // "## Workflow-pattern detection" section (~2.8k chars). This tripwire catches
+        // unexpected growth beyond the current actual length + a small headroom.
+        val msg = SystemPromptBuilder.build()
+        val content = msg.content
+        val ceiling = 16_500 // post-script-context-isolation-rule actual ~15.6k + ~0.9k headroom
+        Assert.assertTrue(
+            "Preamble content length (${content.length} chars) must stay under $ceiling chars " +
+                "to stay within NFR-3's token budget. If a future section is added, raise the " +
+                "ceiling to the new actual length + headroom.",
+            content.length < ceiling
+        )
+    }
 }

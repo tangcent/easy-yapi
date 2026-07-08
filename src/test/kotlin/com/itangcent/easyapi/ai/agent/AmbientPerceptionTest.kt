@@ -25,6 +25,10 @@ import java.util.Locale
  * The capture is pure-ish: no PSI reads, no network, no config access — it
  * reads only `Locale.getDefault()` (JVM-global). Tests set/restore the default
  * locale in `tearDown` to avoid cross-test contamination.
+ *
+ * Env-var keys are intentionally NOT captured (source-of-truth is the existing
+ * rule files + source code, resolved via `get_existing_rules_for_key`; the
+ * Environments panel is runtime state, not a rule-authoring source).
  */
 class AmbientPerceptionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
