@@ -116,9 +116,14 @@ sealed class ResolvedType {
          * Returns methods declared directly in this class (not inherited).
          * Excludes constructors.
          * Each [ResolvedMethod] gets [ResolvedMethod.ownerClassType] = this.
+         *
+         * Note: `PsiClass.methods` includes inherited methods, so we filter by
+         * [PsiMember.containingClass] to keep only this class's own declarations.
          */
         fun declaredMethods(): List<ResolvedMethod> {
-            return psiClass.methods.filter { !it.isConstructor }.map { method ->
+            return psiClass.methods.filter {
+                !it.isConstructor && it.containingClass == psiClass
+            }.map { method ->
                 ResolvedMethod(
                     name = method.name,
                     psiMethod = method,
@@ -130,9 +135,12 @@ sealed class ResolvedType {
 
         /**
          * Returns fields declared directly in this class (not inherited).
+         *
+         * Note: `PsiClass.fields` includes inherited fields, so we filter by
+         * [PsiMember.containingClass] to keep only this class's own declarations.
          */
         fun declaredFields(): List<ResolvedField> {
-            return psiClass.fields.map { field ->
+            return psiClass.fields.filter { it.containingClass == psiClass }.map { field ->
                 ResolvedField(
                     name = field.name,
                     psiField = field,
@@ -412,11 +420,39 @@ class ResolvedMethod(
      *
      * Uses [PsiMethod.findSuperMethods] for correct JVM signature matching (including erasure),
      * then resolves the generic context from the owner's supertype hierarchy.
+     *
+     * When [findSuperMethods] returns empty (e.g. a class implementing a **bounded-generic** interface
+     * like `implements IController<LQ extends IQuery>`, where generic erasure breaks PSI signature
+     * matching), falls back to a name + arity + parameter-type-compatibility lookup over
+     * `owner.superClasses()`. The returned [ResolvedMethod] is bound to the matching super
+     * [ClassType], so its generic context is correct.
+     *
+     * The type-compatibility check (see [parameterTypesCompatible]) rejects candidates whose
+     * parameter types are clearly incompatible with this method's (e.g. `process(String)` vs
+     * an interface's `process(Long)`), preventing false-positive inheritance of mapping
+     * annotations onto genuinely-new methods that merely share a name + arity with an unrelated
+     * supertype method. It also disambiguates same-arity same-name overloads by type.
      */
     fun superMethod(): ResolvedMethod? {
         val owner = ownerClassType ?: return null
         val superPsiMethods = psiMethod.findSuperMethods()
-        if (superPsiMethods.isEmpty()) return null
+        if (superPsiMethods.isEmpty()) {
+            // Fallback for bounded-generic interface impl and other cases where PSI signature
+            // matching fails due to generic erasure. Walk the owner's direct supertypes and
+            // match by name + parameter count + type compatibility. Recursion up the hierarchy
+            // is handled by the superMethods() extension, which loops superMethod() at each level.
+            val targetName = psiMethod.name
+            val targetArity = psiMethod.parameterList.parameters.size
+            for (superClassType in owner.superClasses()) {
+                val match = superClassType.declaredMethods().firstOrNull {
+                    it.name == targetName &&
+                        it.psiMethod.parameterList.parameters.size == targetArity &&
+                        parameterTypesCompatible(this, it)
+                }
+                if (match != null) return match
+            }
+            return null
+        }
 
         // Build a lookup from class qualified name to the resolved supertype ClassType
         val superTypesByClass = owner.superClasses().associateBy { it.psiClass.qualifiedName }
@@ -1048,6 +1084,61 @@ suspend fun areMethodsRelated(method1: PsiMethod, method2: PsiMethod): Boolean {
 }
 
 // ========== Extension functions for hierarchy navigation ==========
+
+/**
+ * Checks whether the parameter types of [impl] and [candidate] are compatible,
+ * i.e. the methods could plausibly be in an override relationship.
+ *
+ * Used by [ResolvedMethod.superMethod]'s name + arity fallback to reject
+ * false-positive matches — e.g. a genuinely-new `process(String)` must not be
+ * linked to an unrelated supertype's `process(Long)` merely because they share
+ * a name + arity. This also disambiguates same-arity same-name overloads by type.
+ *
+ * Rules (per parameter, all must hold):
+ * - Same qualified name → compatible (covers identical concrete types and
+ *   identical type variables, including generics substituted to the same type).
+ * - Both primitives → must be the same kind.
+ * - Both class types → one must inherit from the other (bidirectional, to
+ *   tolerate the candidate being a generic bound substituted to a subtype).
+ * - Either side unresolved (e.g. an unsubstituted type variable) → lenient:
+ *   treat as compatible so the fast path remains authoritative and we never
+ *   regress a genuine override that the fallback was designed to repair.
+ */
+private fun parameterTypesCompatible(
+    impl: ResolvedMethod,
+    candidate: ResolvedMethod
+): Boolean {
+    val implParams = impl.params
+    val candidateParams = candidate.params
+    if (implParams.size != candidateParams.size) return false
+    for (i in implParams.indices) {
+        if (!typesCompatible(implParams[i].type, candidateParams[i].type)) return false
+    }
+    return true
+}
+
+private fun typesCompatible(a: ResolvedType, b: ResolvedType): Boolean {
+    val aQn = a.qualifiedName()
+    val bQn = b.qualifiedName()
+    if (aQn == bQn) return true
+    if (a is ResolvedType.PrimitiveType && b is ResolvedType.PrimitiveType) {
+        return a.kind == b.kind
+    }
+    val aClass = (a as? ResolvedType.ClassType)?.psiClass
+    val bClass = (b as? ResolvedType.ClassType)?.psiClass
+    if (aClass != null && bClass != null) {
+        val aQnResolved = aClass.qualifiedName ?: return true
+        val bQnResolved = bClass.qualifiedName ?: return true
+        return InheritanceHelper.isInheritor(aClass, bQnResolved) ||
+            InheritanceHelper.isInheritor(bClass, aQnResolved)
+    }
+    // One or both sides could not be resolved to a PsiClass (e.g. a JDK type
+    // whose PsiClassType.resolve() returned null in a restricted search scope,
+    // or an unbound type variable). Fall back to simple-name comparison to
+    // avoid false-positive inheritance onto unrelated methods that merely share
+    // name + arity with a supertype method.
+    return a.simpleName() == b.simpleName()
+}
 
 /**
  * Walks up the super method chain, yielding each ancestor declaration.

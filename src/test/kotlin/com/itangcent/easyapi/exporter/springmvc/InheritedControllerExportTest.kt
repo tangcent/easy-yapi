@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.exporter.springmvc
 
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.DocHelper
@@ -246,6 +247,78 @@ class InheritedControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue(
             "Path should include /base prefix from AbstractBaseController @RequestMapping, got: ${getItem!!.path}",
             getItem.path.contains("base")
+        )
+    }
+
+    // ========== Issue #1343: bounded generic interface (LQ extends IQuery) ==========
+
+    fun testIssue1343_BoundedGenericInterface_ThreeEndpointsExported() = runTest {
+        loadFile("api/inherit/issue1343/IQuery.java")
+        loadFile("api/inherit/issue1343/ConcreteQuery.java")
+        loadFile("api/inherit/issue1343/IController.java")
+        loadFile("api/inherit/issue1343/BusinessController.java")
+        val psiClass = findClass("com.itangcent.api.inherit.issue1343.BusinessController")!!
+        val endpoints = exporter.export(psiClass)
+
+        assertEquals("Should export 3 endpoints, got: ${endpoints.size}", 3, endpoints.size)
+
+        val getQuery = endpoints.find { it.httpMetadata?.method == HttpMethod.GET }
+        assertNotNull("Should export GET /api/query (mapping inherited from IController)", getQuery)
+        assertTrue(
+            "GET path should be /api/query, got: ${getQuery!!.path}",
+            getQuery.path.endsWith("/api/query")
+        )
+
+        val postSave = endpoints.find { it.httpMetadata?.method == HttpMethod.POST }
+        assertNotNull("Should export POST /api/save (mapping inherited from IController)", postSave)
+        assertTrue(
+            "POST path should be /api/save, got: ${postSave!!.path}",
+            postSave.path.endsWith("/api/save")
+        )
+
+        val deleteById = endpoints.find { it.httpMetadata?.method == HttpMethod.DELETE }
+        assertNotNull("Should export DELETE /api/{id} (mapping inherited from IController)", deleteById)
+        assertTrue(
+            "DELETE path should be /api/{id}, got: ${deleteById!!.path}",
+            deleteById.path.contains("/api/") && deleteById.path.contains("{id}")
+        )
+    }
+
+    fun testIssue1343_BoundedGenericInterface_RequestBodyInherited() = runTest {
+        loadFile("api/inherit/issue1343/IQuery.java")
+        loadFile("api/inherit/issue1343/ConcreteQuery.java")
+        loadFile("api/inherit/issue1343/IController.java")
+        loadFile("api/inherit/issue1343/BusinessController.java")
+        val psiClass = findClass("com.itangcent.api.inherit.issue1343.BusinessController")!!
+        val endpoints = exporter.export(psiClass)
+
+        // IController.save declares @RequestBody on its parameter; BusinessController does not re-declare it.
+        // The @RequestBody must be inherited via searchParameterAnnotation -> superMethods().
+        val postSave = endpoints.find { it.httpMetadata?.method == HttpMethod.POST }
+        assertNotNull("Should export POST /api/save", postSave)
+        assertNotNull(
+            "save endpoint should have a request body inherited from interface @RequestBody",
+            postSave!!.httpMetadata?.body
+        )
+    }
+
+    fun testIssue1343_BoundedGenericInterface_PathVariableInherited() = runTest {
+        loadFile("api/inherit/issue1343/IQuery.java")
+        loadFile("api/inherit/issue1343/ConcreteQuery.java")
+        loadFile("api/inherit/issue1343/IController.java")
+        loadFile("api/inherit/issue1343/BusinessController.java")
+        val psiClass = findClass("com.itangcent.api.inherit.issue1343.BusinessController")!!
+        val endpoints = exporter.export(psiClass)
+
+        // IController.delete declares @PathVariable("id"); BusinessController does not re-declare it.
+        val deleteById = endpoints.find { it.httpMetadata?.method == HttpMethod.DELETE }
+        assertNotNull("Should export DELETE /api/{id}", deleteById)
+        val pathParams = deleteById!!.httpMetadata?.parameters
+            ?.filter { it.binding == ParameterBinding.Path } ?: emptyList()
+        assertTrue(
+            "delete endpoint should have a Path parameter 'id' inherited from interface @PathVariable, " +
+                "got: ${deleteById.httpMetadata?.parameters?.map { it.name + ":" + it.binding }}",
+            pathParams.any { it.name == "id" }
         )
     }
 }

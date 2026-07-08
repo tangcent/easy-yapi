@@ -19,9 +19,9 @@ import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.InheritanceHelper
 import com.itangcent.easyapi.psi.type.ResolvedMethod
+import com.itangcent.easyapi.psi.type.ResolvedParam
 import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.psi.type.SpecialTypeHandler
-import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.module.ParsingOutputSettings
@@ -128,9 +128,9 @@ class SpringMvcClassExporter(
                 val folder = methodFolderName.takeIf { it.isNotBlank() } ?: classFolder.name
 
                 val resolvedBindings = resolveParameterBindings(resolvedMethod)
-                val params = buildParameters(resolvedBindings, resolvedMethod)
+                val params = buildParameters(resolvedBindings)
                 val paramHeaders = extractParamHeaders(resolvedBindings)
-                val body = buildRequestBody(resolvedBindings, resolvedMethod)
+                val body = buildRequestBody(resolvedBindings)
                 val response = read { ReturnTypeUnwrapper.unwrap(method.returnType) }
                 val responseBody = buildResponseBody(resolvedMethod)
 
@@ -250,7 +250,7 @@ class SpringMvcClassExporter(
      * Pre-resolved binding for a single method parameter.
      */
     private data class ResolvedParamBinding(
-        val parameter: PsiParameter,
+        val param: ResolvedParam,
         val binding: ParameterBinding
     )
 
@@ -258,28 +258,28 @@ class SpringMvcClassExporter(
      * Resolves bindings for all parameters in a single pass.
      * Ignored parameters (HttpServletRequest, etc.) are excluded from the result.
      *
-     * Uses [ResolvedMethod] to support annotation inheritance from super methods
-     * (interfaces, base classes).
+     * Iterates [ResolvedMethod.params] directly so each binding carries the resolved
+     * parameter type, eliminating the need for reverse-lookup in [buildParameters].
+     *
+     * @requires ReadAction context (call site is inside `withContext(IdeDispatchers.ReadAction)`)
      */
     private suspend fun resolveParameterBindings(resolvedMethod: ResolvedMethod): List<ResolvedParamBinding> {
-        val method = resolvedMethod.psiMethod
-        val parameters = read { method.parameterList.parameters.toList() }
-        return parameters.mapIndexedNotNull { index, p ->
-            val binding = bindingResolver.resolve(p, resolvedMethod, index) ?: ParameterBinding.Query
+        return resolvedMethod.params.mapIndexedNotNull { index, param ->
+            val binding = bindingResolver.resolve(param.psiParameter, resolvedMethod, index) ?: ParameterBinding.Query
             if (binding == ParameterBinding.Ignored) return@mapIndexedNotNull null
-            ResolvedParamBinding(p, binding)
+            ResolvedParamBinding(param, binding)
         }
     }
 
     private suspend fun buildParameters(
-        bindings: List<ResolvedParamBinding>,
-        resolvedMethod: ResolvedMethod
+        bindings: List<ResolvedParamBinding>
     ): List<ApiParameter> {
         val result = ArrayList<ApiParameter>()
-        for ((p, binding) in bindings) {
+        for ((param, binding) in bindings) {
             if (binding == ParameterBinding.Body) continue
 
-            val paramName = p.name
+            val p = param.psiParameter
+            val paramName = param.name
             LOG.info("before parse param:$paramName")
 
             if (metadataResolver.isParamIgnored(p)) {
@@ -290,23 +290,17 @@ class SpringMvcClassExporter(
             engine.evaluate(RuleKeys.API_PARAM_PARSE_BEFORE, p)
 
             try {
-                // Find the resolved type for this parameter from the ResolvedMethod
-                val resolvedParamType = resolvedMethod.params
-                    .firstOrNull { it.psiParameter == p }?.type
+                val resolvedParamType = param.type
 
                 if (binding == ParameterBinding.Form) {
-                    val expandedParams = if (resolvedParamType != null) {
-                        expandFormParameter(resolvedParamType)
-                    } else emptyList()
+                    val expandedParams = expandFormParameter(resolvedParamType)
                     if (expandedParams.isNotEmpty()) {
                         result.addAll(expandedParams)
                     } else {
                         result.add(buildSingleParameter(p, paramName, binding))
                     }
                 } else if (binding == ParameterBinding.Query) {
-                    val expandedParams = if (resolvedParamType != null) {
-                        expandQueryParameter(resolvedParamType)
-                    } else emptyList()
+                    val expandedParams = expandQueryParameter(resolvedParamType)
                     if (expandedParams.isNotEmpty()) {
                         result.addAll(expandedParams)
                     } else {
@@ -433,9 +427,10 @@ class SpringMvcClassExporter(
 
     private suspend fun extractParamHeaders(bindings: List<ResolvedParamBinding>): List<ApiHeader> {
         val headers = ArrayList<ApiHeader>()
-        for ((p, binding) in bindings) {
+        for ((param, binding) in bindings) {
             if (binding != ParameterBinding.Header) continue
-            val name = metadataResolver.resolveParamName(p, p.name)
+            val p = param.psiParameter
+            val name = metadataResolver.resolveParamName(p, param.name)
             val defaultValue = metadataResolver.resolveParamDefaultValue(p)
             val example = metadataResolver.resolveParamDemo(p)
             headers.add(ApiHeader(name = name, value = defaultValue ?: example))
@@ -463,15 +458,11 @@ class SpringMvcClassExporter(
     )
 
     private suspend fun buildRequestBody(
-        bindings: List<ResolvedParamBinding>,
-        resolvedMethod: ResolvedMethod
+        bindings: List<ResolvedParamBinding>
     ): ObjectModel? {
-        for ((p, binding) in bindings) {
+        for ((param, binding) in bindings) {
             if (binding != ParameterBinding.Body) continue
-            val resolvedParamType = resolvedMethod.params
-                .firstOrNull { it.psiParameter == p }?.type
-                ?: TypeResolver.resolve(p.type)
-            return endpointBuilder.expandBodyParam(resolvedParamType)
+            return endpointBuilder.expandBodyParam(param.type)
         }
         return null
     }
