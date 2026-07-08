@@ -197,6 +197,107 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("searchAnnotation should find @GetMapping from interface", ann)
     }
 
+    // ========== Issue #1343: bounded generic interface (LQ extends IQuery) ==========
+
+    fun testIssue1343_BoundedGenericInterface_SuperMethodAndAnnotation() = runTest {
+        loadFile("api/inherit/issue1343/IQuery.java")
+        loadFile("api/inherit/issue1343/ConcreteQuery.java")
+        loadFile("api/inherit/issue1343/IController.java")
+        loadFile("api/inherit/issue1343/BusinessController.java")
+        val psiClass = findClass("com.itangcent.api.inherit.issue1343.BusinessController")!!
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
+        val query = methods.first { it.name == "query" }
+
+        // The method from suitableMethods() is the override in BusinessController
+        assertEquals("BusinessController", query.psiMethod.containingClass?.name)
+
+        // Root cause: findSuperMethods() returns empty for bounded-generic interface impl,
+        // so superMethod() must fall back to name+arity lookup over owner.superClasses().
+        val sup = query.superMethod()
+        assertNotNull("superMethod() should find IController.query via generic fallback", sup)
+        assertEquals("IController", sup?.psiMethod?.containingClass?.name)
+
+        // Consumer auto-benefit: searchAnnotation walks superMethods() and must find @GetMapping
+        val ann = query.searchAnnotation("org.springframework.web.bind.annotation.GetMapping")
+        assertNotNull("searchAnnotation should find @GetMapping from IController", ann)
+    }
+
+    // ========== Issue #1343: overload disambiguation by arity ==========
+
+    fun testIssue1343_DifferentArity_Disambiguated() = runTest {
+        loadFile("api/inherit/issue1343/IQuery.java")
+        loadFile("api/inherit/issue1343/ConcreteQuery.java")
+        loadFile("api/inherit/issue1343/OverloadIface.java")
+        loadFile("api/inherit/issue1343/OverloadImpl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.issue1343.OverloadImpl")!!
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
+        val queries = methods.filter { it.name == "query" }
+        assertEquals("both overloads should be present", 2, queries.size)
+
+        // arity-1 override -> superMethod() must resolve to arity-1 interface method (with @GetMapping)
+        val q1 = queries.first { it.params.size == 1 }
+        val sup1 = q1.superMethod()
+        assertNotNull("arity-1 superMethod should be found via fallback", sup1)
+        assertEquals(1, sup1!!.params.size)
+        assertNotNull(
+            "arity-1 @GetMapping should be inherited",
+            q1.searchAnnotation("org.springframework.web.bind.annotation.GetMapping")
+        )
+
+        // arity-2 override -> superMethod() must resolve to arity-2 interface method (with @PostMapping)
+        val q2 = queries.first { it.params.size == 2 }
+        val sup2 = q2.superMethod()
+        assertNotNull("arity-2 superMethod should be found via fallback", sup2)
+        assertEquals(2, sup2!!.params.size)
+        assertNotNull(
+            "arity-2 @PostMapping should be inherited",
+            q2.searchAnnotation("org.springframework.web.bind.annotation.PostMapping")
+        )
+    }
+
+    fun testIssue1343_SameArityOverload_FastPathDisambiguates() = runTest {
+        loadFile("api/inherit/issue1343/IQuery.java")
+        loadFile("api/inherit/issue1343/ConcreteQuery.java")
+        loadFile("api/inherit/issue1343/SameArityIface.java")
+        loadFile("api/inherit/issue1343/SameArityImpl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.issue1343.SameArityImpl")!!
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
+
+        // SameArityIface declares two arity-1 query methods: query(String) [no mapping] and
+        // query(LQ) [@GetMapping]. SameArityImpl overrides both.
+        //
+        // When findSuperMethods() works (the normal case), it correctly links
+        // query(ConcreteQuery) -> query(LQ) via generic signature matching — the name+arity
+        // fallback is NOT triggered. This test verifies that the fast path disambiguates
+        // same-arity overloads correctly.
+        //
+        // The name+arity fallback's known limitation (it cannot distinguish same-arity
+        // same-name overloads and picks the first candidate in declaration order) only
+        // applies when findSuperMethods() returns empty, which is an edge case.
+        val q = methods.first {
+            it.name == "query" &&
+                it.psiMethod.containingClass?.name == "SameArityImpl" &&
+                (it.psiMethod.parameterList.parameters[0].type as? com.intellij.psi.PsiClassType)
+                    ?.resolve()?.qualifiedName == "com.itangcent.api.inherit.issue1343.ConcreteQuery"
+        }
+        val sup = q.superMethod()
+        assertNotNull("superMethod() should find the interface declaration", sup)
+        assertEquals("SameArityIface", sup!!.psiMethod.containingClass?.name)
+        // The fast path links query(ConcreteQuery) -> query(LQ) [which has @GetMapping],
+        // NOT query(String) [which has no mapping]. Verify by checking the parameter type:
+        // LQ is a type variable whose canonicalText is "LQ", not "java.lang.String".
+        val supParamCanonical = sup.psiMethod.parameterList.parameters[0].type.canonicalText
+        assertTrue(
+            "fast path should link to query(LQ), not query(String); param was: $supParamCanonical",
+            supParamCanonical == "LQ" || supParamCanonical.contains("LQ")
+        )
+        // Consequently the @GetMapping on query(LQ) IS reachable:
+        assertNotNull(
+            "same-arity overload should reach @GetMapping via fast path",
+            q.searchAnnotation("org.springframework.web.bind.annotation.GetMapping")
+        )
+    }
+
     // ========== Composite case: generic + annotations on super ==========
 
     fun testComposite_GenericWithAnnotationsOnSuper() = runTest {
@@ -329,6 +430,118 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals(
             "Overloaded methods should have distinct parameter type signatures",
             2, paramSignatures.size
+        )
+    }
+
+    // ========== declaredMethods() / declaredFields() return only own members ==========
+
+    fun testDeclaredMethods_ReturnsOnlyOwnDeclarations() = runTest {
+        // StringCtrl has an EMPTY body — it inherits getItem()/createItem() from
+        // GenericBaseCtrl<String>. declaredMethods() must therefore return NONE
+        // (PsiClass.methods includes inherited members, so without the
+        // containingClass filter this would incorrectly return the inherited pair).
+        loadFile("api/generic/GenericBaseCtrl.java")
+        loadFile("api/generic/StringCtrl.java")
+        val stringCtrl = findClass("com.itangcent.api.generic.StringCtrl")!!
+        val ct = ResolvedType.ClassType(stringCtrl, emptyList())
+
+        val declared = ct.declaredMethods().map { it.name }
+        assertTrue(
+            "StringCtrl declares no methods; declaredMethods() must be empty, got: $declared",
+            declared.isEmpty()
+        )
+
+        // Sanity: the base class DOES declare them.
+        val baseCtrl = findClass("com.itangcent.api.generic.GenericBaseCtrl")!!
+        val baseDeclared = ResolvedType.ClassType(baseCtrl, emptyList()).declaredMethods().map { it.name }
+        assertTrue("getItem" in baseDeclared)
+        assertTrue("createItem" in baseDeclared)
+    }
+
+    fun testDeclaredFields_ReturnsOnlyOwnDeclarations() = runTest {
+        // FieldChild extends FieldBase; FieldChild declares {childField} and
+        // inherits {baseFieldA, baseFieldB}. declaredFields() must return ONLY
+        // {childField} (PsiClass.fields includes inherited fields, so without
+        // the containingClass filter it would return all three).
+        loadFile("api/inherit/issue1343/FieldBase.java")
+        loadFile("api/inherit/issue1343/FieldChild.java")
+        val child = findClass("com.itangcent.api.inherit.issue1343.FieldChild")!!
+        val ct = ResolvedType.ClassType(child, emptyList())
+
+        val declared = ct.declaredFields().map { it.name }
+        assertEquals(
+            "FieldChild.declaredFields() must contain only its own field, got: $declared",
+            listOf("childField"), declared
+        )
+
+        val base = findClass("com.itangcent.api.inherit.issue1343.FieldBase")!!
+        val baseDeclared = ResolvedType.ClassType(base, emptyList()).declaredFields().map { it.name }
+        assertEquals(
+            "FieldBase.declaredFields() must contain its own two fields, got: $baseDeclared",
+            setOf("baseFieldA", "baseFieldB"), baseDeclared.toSet()
+        )
+    }
+
+    // ========== Issue #1343: fallback type-compatibility hardening ==========
+
+    fun testIssue1343_DifferentParamType_NotInherited() = runTest {
+        // UnrelatedBoundedIface<LQ extends IQuery> declares process(LQ) with @GetMapping.
+        // UnrelatedBoundedImpl implements UnrelatedBoundedIface<ConcreteQuery>:
+        //   - process(ConcreteQuery) is a genuine override → the name+arity fallback
+        //     links it (ConcreteQuery is compatible with LQ's resolved binding) →
+        //     inherits @GetMapping.
+        //   - process(String) is a NEW method with a different signature. It shares
+        //     name + arity (1) with the interface's process(LQ). Without the
+        //     type-compatibility guard the fallback would falsely link them and
+        //     inherit @GetMapping. The guard must reject the candidate (String is
+        //     incompatible with ConcreteQuery, the resolved binding of LQ), so
+        //     process(String) gets NO mapping.
+        loadFile("api/inherit/issue1343/IQuery.java")
+        loadFile("api/inherit/issue1343/ConcreteQuery.java")
+        loadFile("api/inherit/issue1343/UnrelatedBoundedIface.java")
+        loadFile("api/inherit/issue1343/UnrelatedBoundedImpl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.issue1343.UnrelatedBoundedImpl")!!
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
+
+        val processMethods = methods.filter { it.name == "process" && it.params.size == 1 }
+        assertEquals(
+            "Expected 2 'process' methods (ConcreteQuery + String)",
+            2, processMethods.size
+        )
+
+        val processQuery = processMethods.first {
+            it.psiMethod.parameterList.parameters[0].type.canonicalText.let { t ->
+                t.contains("ConcreteQuery")
+            }
+        }
+        val processString = processMethods.first {
+            it.psiMethod.parameterList.parameters[0].type.canonicalText.let { t ->
+                t == "String" || t == "java.lang.String"
+            }
+        }
+
+        // Genuine override: fallback links it → inherits @GetMapping.
+        val querySuper = processQuery.superMethod()
+        assertNotNull(
+            "process(ConcreteQuery) superMethod should resolve to UnrelatedBoundedIface.process(LQ)",
+            querySuper
+        )
+        assertEquals("UnrelatedBoundedIface", querySuper!!.psiMethod.containingClass?.name)
+        assertNotNull(
+            "process(ConcreteQuery) should inherit @GetMapping from interface",
+            processQuery.searchAnnotation("org.springframework.web.bind.annotation.GetMapping")
+        )
+
+        // New method: superMethod() must be null (fallback rejected by type check),
+        // and @GetMapping must NOT be inherited.
+        assertNull(
+            "process(String) must NOT be linked to UnrelatedBoundedIface.process(LQ) " +
+                "(different signature, not an override); superMethod() should be null",
+            processString.superMethod()
+        )
+        assertNull(
+            "process(String) must NOT inherit @GetMapping from UnrelatedBoundedIface.process(LQ)",
+            processString.searchAnnotation("org.springframework.web.bind.annotation.GetMapping")
         )
     }
 }
