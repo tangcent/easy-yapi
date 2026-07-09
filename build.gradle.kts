@@ -126,6 +126,13 @@ java {
 tasks.withType<Test>().configureEach {
     useJUnit()
     maxParallelForks = 1
+    // The forked test JVM loads the full IntelliJ Platform + bundled plugins
+    // (Java, Kotlin, Groovy, Scala), which is memory-hungry. The default heap
+    // is far too small and leads to OOM-induced stub-index corruption
+    // (`Stubs` index status REQUIRES_REBUILD), which in turn fails tests
+    // non-deterministically. 3g gives the index/cache layer enough headroom
+    // for the full suite (5000+ tests) to run without OOM.
+    maxHeapSize = "3g"
     testLogging {
         events("started", "passed", "failed", "skipped")
         showExceptions = true

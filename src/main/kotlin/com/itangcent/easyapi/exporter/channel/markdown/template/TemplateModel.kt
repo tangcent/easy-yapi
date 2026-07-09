@@ -62,7 +62,28 @@ data class HttpView(
      * to other templates.
      */
     val hasRequestContent: Boolean,
-)
+    /**
+     * Lazy cURL provider. Default `{ null }` so templates that never call
+     * `curl()` pay no formatting cost, and so direct construction without this field
+     * (existing tests / parity fixtures) renders byte-identically.
+     *
+     * Computed by [TemplateModelBuilder.toHttpView] from the endpoint + injected host +
+     * format options. Markdown renders with `runPreScripts = false`,
+     * so the provider invokes the pure [com.itangcent.easyapi.exporter.channel.curl.CurlBuilder.format]
+     * — no `Project`, no suspend, no scripts.
+     */
+    val curlProvider: () -> String? = { null },
+) {
+    /**
+     * Template-callable no-arg method: `{{{api.http.curl()}}}`.
+     *
+     * Returns the cURL command string, or `null` if the provider yields null (e.g.
+     * construction without a provider — backward-compat). The template engine
+     * stringifies `null` as `""`, so existing templates that don't reference
+     * `curl()` are unaffected.
+     */
+    fun curl(): String? = curlProvider()
+}
 
 /** gRPC-specific view of an endpoint. */
 data class GrpcView(
@@ -115,23 +136,23 @@ data class Header(
  *
  * The three method-call targets — [asDemo], [asJson], [asJson5] — are evaluated
  * lazily at render time (NOT pre-computed in the builder). `asJson` is sugar for
- * `asDemo` (D5 — byte-identical output). All three return strings **without** a
+ * `asDemo` (byte-identical output). All three return strings **without** a
  * markdown code fence; the template owns the fence.
  *
- * **Breaking change (D4):** replaces the legacy `BodyView(rows, demo)` shape.
+ * **Breaking change:** replaces the legacy `BodyView(rows, demo)` shape.
  * Migration: `body.rows` → `{{#each body.fields as f}}…{{/each}}` with `{{{f.indent}}}{{f.name}}`;
  * `body.demo` → `{{{body.asDemo()}}}` (or `asJson5()` for JSON5).
  */
 data class BodyView(
-    /** The structured body. FR-1. */
+    /** The structured body. */
     val model: ObjectModel,
-    /** Cycle-safe, pre-flattened, with depth+indent. FR-3/FR-4. */
+    /** Cycle-safe, pre-flattened, with depth+indent. */
     val fields: List<FieldView>,
 ) {
     /** Plain JSON, no fence. Always non-empty when called on a non-null BodyView. */
     fun asDemo(): String = ObjectModelJsonConverter.toJson(model)
 
-    /** Byte-identical to [asDemo] (D5 — asDemo is sugar for asJson). */
+    /** Byte-identical to [asDemo] (asDemo is sugar for asJson). */
     fun asJson(): String = asDemo()
 
     /** JSON5 with comments, no fence. */

@@ -2,6 +2,8 @@ package com.itangcent.easyapi.exporter.channel.markdown.template
 
 import com.itangcent.easyapi.psi.model.ObjectModel
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Clock
 import java.time.Instant
@@ -432,5 +434,97 @@ class TemplateEngineTest {
         val model = singleEndpointModel()
         val template = "{{#each groups as g}}{{#each g.endpoints as api}}{{api.protocol}}|{{api.path}}|{{api.method}}{{/each}}{{/each}}"
         assertEquals("HTTP|/api/users/{id}|GET", TemplateEngine.render(template, model, ctx))
+    }
+
+    // ---------- HttpView.curl() method call ----------
+
+    @Test
+    fun testHttpViewCurlMethodRendersCommand() {
+        // `{{{api.http.curl()}}}` is the user-facing template surface.
+        // The provider is wired by TemplateModelBuilder; here we pass a model built via
+        // the builder so the provider is real (not the default `{ null }`).
+        val endpoint = com.itangcent.easyapi.exporter.model.ApiEndpoint(
+            name = "Get User",
+            metadata = com.itangcent.easyapi.exporter.model.httpMetadata(
+                path = "/api/users/{id}",
+                method = com.itangcent.easyapi.exporter.model.HttpMethod.GET,
+            ),
+        )
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
+
+        val template = "{{#each groups as g}}{{#each g.endpoints as api}}{{{api.http.curl()}}}{{/each}}{{/each}}"
+        val rendered = TemplateEngine.render(template, model, ctx)
+
+        assertTrue("rendered output should contain 'curl' banner: $rendered", rendered.contains("curl"))
+        assertTrue("rendered output should contain '-X GET' method: $rendered", rendered.contains("-X GET"))
+        assertTrue(
+            "rendered output should contain default '{{host}}' placeholder: $rendered",
+            rendered.contains("{{host}}"),
+        )
+    }
+
+    @Test
+    fun testHttpViewCurlMethodWithExplicitHost() {
+        val endpoint = com.itangcent.easyapi.exporter.model.ApiEndpoint(
+            name = "Get User",
+            metadata = com.itangcent.easyapi.exporter.model.httpMetadata(
+                path = "/api/users/{id}",
+                method = com.itangcent.easyapi.exporter.model.HttpMethod.GET,
+            ),
+        )
+        val model = TemplateModelBuilder.build(
+            listOf(endpoint),
+            moduleName = "API",
+            host = "https://api.example.com",
+        )
+
+        val template = "{{#each groups as g}}{{#each g.endpoints as api}}{{{api.http.curl()}}}{{/each}}{{/each}}"
+        val rendered = TemplateEngine.render(template, model, ctx)
+
+        assertTrue(
+            "rendered curl should contain explicit host: $rendered",
+            rendered.contains("https://api.example.com"),
+        )
+        assertFalse(
+            "rendered curl should NOT contain '{{host}}' when host is explicit: $rendered",
+            rendered.contains("{{host}}"),
+        )
+    }
+
+    @Test
+    fun testHttpViewCurlMethodReturnsEmptyWhenProviderIsNull() {
+        // Backward-compat: an HttpView constructed directly (not via the builder) has the
+        // default `curlProvider = { null }`. `{{{api.http.curl()}}}` must render as empty,
+        // NOT throw — pins the byte-parity guarantee for templates that don't use curl().
+        val endpoint = simpleHttpEndpointView("x").copy(
+            http = HttpView(
+                pathParams = emptyList(),
+                queryParams = emptyList(),
+                formParams = emptyList(),
+                headers = emptyList(),
+                body = null,
+                response = null,
+                hasRequestContent = false,
+                // curlProvider defaults to { null }
+            ),
+        )
+        val model = TemplateModel(
+            moduleName = "M",
+            groups = listOf(Group(folder = "", endpoints = listOf(endpoint))),
+            endpointCount = 1,
+        )
+
+        val template = "{{#each groups as g}}{{#each g.endpoints as api}}[{{{api.http.curl()}}}]{{/each}}{{/each}}"
+        assertEquals("[]", TemplateEngine.render(template, model, ctx))
+    }
+
+    @Test
+    fun testHttpViewUnknownMethodReturnsEmpty() {
+        // Unknown method name on HttpView → null + info log → empty (no throw).
+        val endpoint = simpleHttpEndpointView("x")
+        val model = singleEndpointModel()
+
+        val template = "{{#each groups as g}}{{#each g.endpoints as api}}[{{{api.http.unknownMethod()}}}]{{/each}}{{/each}}"
+        assertEquals("[]", TemplateEngine.render(template, model, ctx))
     }
 }

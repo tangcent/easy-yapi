@@ -1,10 +1,31 @@
 package com.itangcent.easyapi.rule.context
 
+import com.intellij.openapi.project.Project
+import com.itangcent.easyapi.exporter.channel.curl.CurlBuildOptions
+import com.itangcent.easyapi.exporter.channel.curl.CurlBuilder
+import com.itangcent.easyapi.exporter.channel.curl.CurlScriptScopes
+import com.itangcent.easyapi.exporter.channel.curl.CurlSettings
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.settings.settings
 
-class ScriptApiEndpoint(val endpoint: ApiEndpoint) {
+/**
+ * Script-facing wrapper around [ApiEndpoint], exposed to rule scripts as `it` / `api`.
+ *
+ * Constructed by [RuleContext.wrapExt] (single construction site). The optional
+ * [project] is carried so [toCurl] can read [CurlSettings] and run pre-scripts;
+ * rules that don't call [toCurl] pay no Project-coupling cost.
+ *
+ * @param endpoint The underlying endpoint. Rule mutations (e.g. [setPath],
+ *  [appendDesc]) write through to this instance.
+ * @param project The current IntelliJ project, or null when constructed outside
+ *  a rule context (e.g. in unit tests). Used only by [toCurl].
+ */
+class ScriptApiEndpoint(
+    val endpoint: ApiEndpoint,
+    private val project: Project? = null,
+) {
 
     private val http: HttpMetadata? get() = endpoint.metadata as? HttpMetadata
 
@@ -66,6 +87,56 @@ class ScriptApiEndpoint(val endpoint: ApiEndpoint) {
 
     fun appendDesc(desc: String?) {
         endpoint.appendDesc(desc)
+    }
+
+    /**
+     * Builds a cURL command for this endpoint. Available in rule scripts as
+     * `api.toCurl()`.
+     *
+     * ## Example
+     *
+     * ```config
+     * export.after=groovy:api.appendDesc("\n\n```\n" + api.toCurl() + "\n```\n")
+     * ```
+     *
+     * ## Behavior
+     *
+     * - [host] defaults to [CurlBuilder.DEFAULT_HOST] (`"{{host}}"`) so rule authors
+     *   can resolve it later via environment/config. Pass an explicit host (e.g.
+     *   `api.toCurl("https://api.example.com")`) to bake it in.
+     * - Format options (long flags, pretty-print, etc.) flow from the persisted
+     *   [CurlSettings], so the user's cURL settings tab controls rule-generated
+     *   cURL too.
+     * - When [runPreScripts] is `true` AND [project] is non-null, folder+class
+     *   pre-request scripts are applied to a deep copy before formatting
+     *   (original endpoint untouched). Endpoint-scope scripts are
+     *   intentionally NOT included here because `export.after` fires post-build and
+     *   the endpoint-key scope semantics differ from the copy/export path.
+     * - When [project] is null (e.g. unit tests, headless rule eval), falls back to
+     *   the pure [CurlBuilder.format] path — no settings, no scripts.
+     *
+     * ## Threading
+     *
+     * `export.after` rules fire synchronously inside the rule engine's script
+     * thread (a background worker). This method is non-suspend and delegates to
+     * [CurlBuilder.buildSync], which `runBlocking`s the suspend builder internally.
+     * That is safe because [PreScriptApplier.applyScripts] is EDT-free (no `swing`
+     * hops) — `runBlocking` on a background thread never deadlocks with EDT.
+     *
+     * @param host Target host; defaults to [CurlBuilder.DEFAULT_HOST] when blank.
+     * @param runPreScripts When true and [project] is set, run folder+class
+     *  pre-request scripts before formatting. Default false.
+     * @return The formatted cURL command string.
+     */
+    @JvmOverloads
+    fun toCurl(host: String = CurlBuilder.DEFAULT_HOST, runPreScripts: Boolean = false): String {
+        val p = project ?: return CurlBuilder.format(endpoint, host)
+        val options = CurlBuildOptions(
+            format = p.settings<CurlSettings>().toFormatOptions(),
+            runPreScripts = runPreScripts,
+            scopes = if (runPreScripts) CurlScriptScopes.resolveFolderAndClassScopes(endpoint) else emptyList(),
+        )
+        return CurlBuilder.buildSync(p, endpoint, host, options)
     }
 
     override fun toString(): String = endpoint.toString()

@@ -1,5 +1,7 @@
 package com.itangcent.easyapi.exporter.channel.markdown.template
 
+import com.itangcent.easyapi.exporter.channel.curl.CurlBuilder
+import com.itangcent.easyapi.exporter.channel.curl.CurlFormatOptions
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
@@ -203,7 +205,7 @@ class TemplateModelBuilderTest {
         assertEquals("age", bodyView.fields[1].name)
         assertEquals("int", bodyView.fields[1].type)
         assertEquals("user age", bodyView.fields[1].desc)
-        // model is the original ObjectModel (FR-1)
+        // model is the original ObjectModel
         assertSame(body, bodyView.model)
     }
 
@@ -277,7 +279,7 @@ class TemplateModelBuilderTest {
 
         // asDemo() is evaluated lazily; equals ObjectModelJsonConverter.toJson(body)
         assertEquals(ObjectModelJsonConverter.toJson(body), bodyView.asDemo())
-        // asJson is an alias of asDemo (D5 / FR-9)
+        // asJson is an alias of asDemo
         assertEquals(bodyView.asDemo(), bodyView.asJson())
         // asJson5 is JSON5 with comments
         assertEquals(ObjectModelJsonConverter.toJson5(body), bodyView.asJson5())
@@ -569,5 +571,142 @@ class TemplateModelBuilderTest {
         // Mirrors DefaultMarkdownFormatter.buildFieldDescription:
         // "<comment><br><value1 :desc1><br><value2>"
         assertEquals("user status<br>ACTIVE :active user<br>INACTIVE", desc)
+    }
+
+    // ---- HttpView.curl() ----
+
+    @Test
+    fun testHttpViewCurlDefaultHostContainsPlaceholderAndMethod() {
+        // Default host = CurlBuilder.DEFAULT_HOST = "{{host}}". curl() must be non-null and
+        // contain the cURL banner + the method + the placeholder host.
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)
+        )
+
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "API")
+        val curl = model.groups[0].endpoints[0].http!!.curl()
+
+        assertNotNull("curl() must be non-null with default host", curl)
+        val c = curl!!
+        assertTrue("curl should contain 'curl' banner: $c", c.contains("curl"))
+        assertTrue("curl should contain '-X GET' method: $c", c.contains("-X GET"))
+        assertTrue("curl should contain default '{{host}}' placeholder: $c", c.contains("{{host}}"))
+    }
+
+    @Test
+    fun testHttpViewCurlWithExplicitHost() {
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)
+        )
+
+        val model = TemplateModelBuilder.build(
+            listOf(endpoint),
+            moduleName = "API",
+            host = "https://api.example.com",
+        )
+        val curl = model.groups[0].endpoints[0].http!!.curl()!!
+
+        assertTrue("curl should contain explicit host: $curl", curl.contains("https://api.example.com"))
+        assertFalse(
+            "curl should NOT contain '{{host}}' placeholder when explicit host given: $curl",
+            curl.contains("{{host}}"),
+        )
+    }
+
+    @Test
+    fun testHttpViewCurlWithBlankHostFallsBackToDefault() {
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)
+        )
+
+        val model = TemplateModelBuilder.build(
+            listOf(endpoint),
+            moduleName = "API",
+            host = "   ", // blank
+        )
+        val curl = model.groups[0].endpoints[0].http!!.curl()!!
+
+        assertTrue("blank host should fall back to default placeholder: $curl", curl.contains("{{host}}"))
+    }
+
+    @Test
+    fun testHttpViewCurlRespectsFormatOptions() {
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)
+        )
+
+        val model = TemplateModelBuilder.build(
+            listOf(endpoint),
+            moduleName = "API",
+            host = "https://api.example.com",
+            formatOptions = CurlFormatOptions(longFlags = true),
+        )
+        val curl = model.groups[0].endpoints[0].http!!.curl()!!
+
+        assertTrue("long-flags option should produce --request: $curl", curl.contains("--request"))
+        assertFalse(
+            "long-flags option should NOT produce short -X: $curl",
+            curl.contains("-X GET"),
+        )
+    }
+
+    @Test
+    fun testGrpcEndpointHasNoHttpViewSoCurlNotApplicable() {
+        // gRPC endpoints have http=null → curl() is unreachable. This pins that the curlProvider
+        // is only wired on HttpView, never on GrpcView.
+        val endpoint = ApiEndpoint(
+            name = "GetUser",
+            metadata = GrpcMetadata(
+                path = "/user.UserService/GetUser",
+                serviceName = "UserService",
+                methodName = "GetUser",
+                packageName = "user",
+                streamingType = GrpcStreamingType.UNARY,
+            )
+        )
+
+        val model = TemplateModelBuilder.build(listOf(endpoint), moduleName = "gRPC API")
+        val ep = model.groups[0].endpoints[0]
+
+        assertNull("gRPC endpoint has no HttpView", ep.http)
+        assertNotNull("gRPC endpoint has GrpcView", ep.grpc)
+    }
+
+    @Test
+    fun testHttpViewCurlMatchesCurlBuilderFormatDirectly() {
+        // Cross-check: the provider's output must equal a direct CurlBuilder.format call
+        // with the same inputs — pins that the provider is a thin delegate.
+        val endpoint = ApiEndpoint(
+            name = "Create User",
+            metadata = httpMetadata(
+                path = "/api/users",
+                method = HttpMethod.POST,
+                contentType = "application/json",
+                body = ObjectModel.Object(
+                    mapOf("name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name"))
+                ),
+            ),
+        )
+
+        val host = "https://api.example.com"
+        val options = CurlFormatOptions(includeComments = false)
+        val model = TemplateModelBuilder.build(
+            listOf(endpoint),
+            moduleName = "API",
+            host = host,
+            formatOptions = options,
+        )
+        val providerCurl = model.groups[0].endpoints[0].http!!.curl()!!
+        val directCurl = CurlBuilder.format(
+            endpoint,
+            host,
+            com.itangcent.easyapi.exporter.channel.curl.CurlBuildOptions(format = options),
+        )
+
+        assertEquals(directCurl, providerCurl)
     }
 }

@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Registry of bundled locale→classpath-resource Markdown templates .
  *
- * The Default Template (English, byte-identical per Req 2) is **not** in this registry —
+ * The Default Template (English, byte-identical) is **not** in this registry —
  * it is handled by [DefaultMarkdownTemplate] and serves as the floor of the precedence
  * chain. `en` therefore appears in [availableLocales] but [templateFor]("en") returns `null`
  * so the resolver falls through to the default tier .

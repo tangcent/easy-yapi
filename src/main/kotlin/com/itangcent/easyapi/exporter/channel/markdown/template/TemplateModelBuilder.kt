@@ -1,9 +1,13 @@
 package com.itangcent.easyapi.exporter.channel.markdown.template
 
+import com.itangcent.easyapi.exporter.channel.curl.CurlBuildOptions
+import com.itangcent.easyapi.exporter.channel.curl.CurlBuilder
+import com.itangcent.easyapi.exporter.channel.curl.CurlFormatOptions
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.GrpcMetadata
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelVisitTracker
@@ -21,23 +25,42 @@ import com.itangcent.easyapi.psi.model.ObjectModelVisitTracker
  * output byte-for-byte (the parity gate — [MarkdownTemplateParityTest]).
  *
  * The JSON demo is **not** pre-rendered here — `BodyView.asDemo()`/`asJson()`/`asJson5()`
- * are evaluated lazily at render time. See [BodyView] (D5).
+ * are evaluated lazily at render time. See [BodyView].
+ *
+ * ## Lazy cURL provider
+ *
+ * [build] accepts an optional [host] + [CurlFormatOptions]; when supplied (or via the
+ * defaults — `CurlBuilder.DEFAULT_HOST` + `CurlFormatOptions()`), each [HttpView] carries
+ * a lazy [HttpView.curlProvider] that templates can invoke as `{{{api.http.curl()}}}`.
+ * The provider invokes the pure [CurlBuilder.format] (no `Project`, no suspend, no
+ * scripts). [IdeaLog] is implemented only so the provider can warn on
+ * an unexpected formatting failure; the builder itself remains side-effect-free.
  *
  * @see TemplateModel
  */
-object TemplateModelBuilder {
+object TemplateModelBuilder : IdeaLog {
 
     /**
      * @param endpoints the endpoints to render, already resolved (no PSI reads happen here).
      * @param moduleName the document title passed to `MarkdownChannel.export`.
+     * @param host Target host for [HttpView.curl]. Defaults to
+     *   [CurlBuilder.DEFAULT_HOST] (`"{{host}}"`) so a bare `build(...)` call — as in
+     *   [MarkdownTemplateParityTest] / [TemplateModelBuilderTest] — yields `curl()` output
+     *   with the placeholder host (or `null` if the template never invokes it). Blank
+     *   string is treated as the default.
+     * @param formatOptions Format flags forwarded to [CurlBuilder.format] inside the
+     *   `curlProvider`. Defaults to [CurlFormatOptions] (5 flags at their defaults).
      */
     fun build(
         endpoints: List<ApiEndpoint>,
         moduleName: String,
+        host: String = CurlBuilder.DEFAULT_HOST,
+        formatOptions: CurlFormatOptions = CurlFormatOptions(),
     ): TemplateModel {
+        val curlHost = host.takeIf { it.isNotBlank() } ?: CurlBuilder.DEFAULT_HOST
         val groups = endpoints
             .groupBy { it.folder ?: "" }
-            .map { (folder, list) -> Group(folder = folder, endpoints = list.map { it.toView() }) }
+            .map { (folder, list) -> Group(folder = folder, endpoints = list.map { it.toView(curlHost, formatOptions) }) }
         return TemplateModel(
             moduleName = moduleName,
             groups = groups,
@@ -47,7 +70,7 @@ object TemplateModelBuilder {
 
     // ---- Endpoint → view ----
 
-    private fun ApiEndpoint.toView(): Endpoint {
+    private fun ApiEndpoint.toView(curlHost: String, formatOptions: CurlFormatOptions): Endpoint {
         val meta = metadata
         // Mirror DefaultMarkdownFormatter: `ep.description?.takeIf { it.isNotBlank() }`
         // so whitespace-only descriptions are treated as absent (parity gate).
@@ -59,7 +82,7 @@ object TemplateModelBuilder {
                 protocol = meta.protocol,
                 path = meta.path,
                 method = meta.method.name,
-                http = meta.toHttpView(),
+                http = meta.toHttpView(this, curlHost, formatOptions),
                 grpc = null,
             )
             is GrpcMetadata -> Endpoint(
@@ -74,7 +97,11 @@ object TemplateModelBuilder {
         }
     }
 
-    private fun HttpMetadata.toHttpView(): HttpView {
+    private fun HttpMetadata.toHttpView(
+        endpoint: ApiEndpoint,
+        curlHost: String,
+        formatOptions: CurlFormatOptions,
+    ): HttpView {
         val pathParams = parameters.filter { it.binding == ParameterBinding.Path }.map { it.toParam() }
         val queryParams = parameters.filter { it.binding == ParameterBinding.Query }.map { it.toParam() }
         val formParams = parameters.filter { it.binding == ParameterBinding.Form }.map { it.toParam() }
@@ -94,6 +121,14 @@ object TemplateModelBuilder {
             body = body,
             response = response,
             hasRequestContent = hasRequestContent,
+            // Lazy cURL; `runPreScripts=false` (pure format only).
+            curlProvider = {
+                runCatching {
+                    CurlBuilder.format(endpoint, curlHost, CurlBuildOptions(format = formatOptions))
+                }.onFailure {
+                    LOG.warn("curl: failed to build for '${endpoint.name}': ${it.message}", it)
+                }.getOrNull()
+            },
         )
     }
 

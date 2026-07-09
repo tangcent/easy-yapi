@@ -22,6 +22,7 @@ import com.itangcent.easyapi.exporter.channel.Channel
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
 import com.itangcent.easyapi.exporter.channel.markdown.MarkdownExportMetadata
+import com.itangcent.easyapi.exporter.channel.curl.CurlSettings
 import com.itangcent.easyapi.exporter.channel.markdown.template.BundledLanguageTemplates
 import com.itangcent.easyapi.exporter.channel.markdown.template.DefaultMarkdownTemplate
 import com.itangcent.easyapi.exporter.channel.markdown.template.FetchResult
@@ -36,6 +37,7 @@ import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.settings.settings
 import kotlinx.coroutines.CancellationException
 import java.awt.BorderLayout
 import java.awt.CardLayout
@@ -123,7 +125,19 @@ class MarkdownChannel : Channel, IdeaLog {
 
         LOG.info("Markdown template resolved from tier: ${resolved.source}")
 
-        val model = TemplateModelBuilder.build(context.endpointsToExport, "API Documentation")
+        // Host + format options for `{{{api.http.curl()}}}`:
+        //  - `markdown.curl.host` config key (blank → `CurlBuilder.DEFAULT_HOST` placeholder).
+        //  - Format flags from the cURL settings tab (`CurlSettings.toFormatOptions()`),
+        //    so the user's cURL formatting preferences flow into Markdown-generated curls.
+        //    Markdown render path pins `runPreScripts = false`.
+        val curlHost = configReader.getFirst("markdown.curl.host").orEmpty()
+        val curlFormatOptions = project.settings<CurlSettings>().toFormatOptions()
+        val model = TemplateModelBuilder.build(
+            context.endpointsToExport,
+            "API Documentation",
+            host = curlHost,
+            formatOptions = curlFormatOptions,
+        )
         val ctx = RenderContext.production(projectName = project.name ?: "", pluginVersion = "")
         val content = MarkdownTemplateRenderer.renderWithFallback(resolved.templateText, model, ctx)
         return ExportResult.Success(

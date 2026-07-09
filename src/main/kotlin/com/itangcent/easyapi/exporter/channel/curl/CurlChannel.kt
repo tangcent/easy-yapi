@@ -11,21 +11,28 @@ import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.channel.Channel
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
-import com.itangcent.easyapi.exporter.channel.curl.CurlExportMetadata
-import com.itangcent.easyapi.exporter.channel.curl.CurlFormatter
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.settings
+import com.itangcent.easyapi.settings.ui.SettingsPanel
 import kotlinx.coroutines.CancellationException
 import java.io.File
+import kotlin.reflect.KClass
 
 /**
  * [Channel] that exports API endpoints as cURL commands.
  *
- * Supports both HTTP and gRPC endpoints. No configuration panel needed.
+ * Supports both HTTP and gRPC endpoints. Variable rendering (`{{var}}` / `${var}`)
+ * is driven by [CurlSettings.renderMode] and delegated to [CurlExportResolver]; the
+ * per-export formatting flags come from [CurlConfig.options] (collected by
+ * [CurlOptionsPanel] in the export dialog). Persistent formatting defaults live in
+ * [CurlSettings] and are edited via [CurlSettingsPanel] in the EasyApi settings.
  *
  * @see Channel
  * @see CurlFormatter
+ * @see CurlExportResolver
  */
 class CurlChannel : Channel, IdeaLog {
 
@@ -33,16 +40,47 @@ class CurlChannel : Channel, IdeaLog {
     override val displayName: String = "cURL"
     override val supportsGrpc: Boolean = true
 
-    override fun createOptionsPanel(project: Project): ChannelOptionsPanel? = null
+    override val settingsType: KClass<out Settings> = CurlSettings::class
+    override val settingsTabOrder: Int = 110
+
+    override fun createOptionsPanel(project: Project): ChannelOptionsPanel = CurlOptionsPanel(project)
+
+    override fun createSettingsPanel(project: Project): SettingsPanel<*>? = CurlSettingsPanel(project)
 
     override suspend fun export(context: ExportContext): ExportResult {
         LOG.info("CurlChannel.export: endpoints=${context.endpointsToExport.size}")
-        val hostCacheHelper = DefaultHttpContextCacheHelper.getInstance(context.project)
+        val project = context.project
+        val hostCacheHelper = DefaultHttpContextCacheHelper.getInstance(project)
         val host = swing {
             hostCacheHelper.selectHost("Select Host For cURL Export")
         }
 
-        val content = CurlFormatter.formatAll(context.endpointsToExport, host)
+        val curlConfig = context.channelConfig as? CurlConfig
+        val options = curlConfig?.options ?: CurlFormatOptions()
+        // runPreScripts: per-export override (null → use persistent CurlSettings default).
+        val runPreScripts = curlConfig?.runPreScripts ?: project.settings<CurlSettings>().runPreScripts
+
+        // CurlExportResolver is a project service — it reads renderMode from
+        // CurlSettings internally. resetBatchCache() ensures a fresh prompt per export.
+        val resolver = CurlExportResolver.getInstance(project)
+        resolver.resetBatchCache()
+        val resolved = resolver.resolveAll(context.endpointsToExport, host)
+            ?: throw CancellationException("User cancelled environment selection")
+
+        // Run folder+class pre-scripts on each endpoint before formatting.
+        // Batch path uses folder+class scopes only (no per-endpoint inline scripts) —
+        // PreScriptApplier is EDT-free, safe to call from this background coroutine.
+        val scriptedEndpoints = if (runPreScripts && resolved.first.isNotEmpty()) {
+            val applier = PreScriptApplier.getInstance(project)
+            resolved.first.map { ep ->
+                val scopes = CurlScriptScopes.resolveFolderAndClassScopes(ep)
+                applier.applyScripts(ep, resolved.second, scopes)
+            }
+        } else {
+            resolved.first
+        }
+
+        val content = CurlFormatter.formatAll(scriptedEndpoints, resolved.second, options)
 
         return ExportResult.Success(
             count = context.endpointsToExport.size,
@@ -57,9 +95,13 @@ class CurlChannel : Channel, IdeaLog {
         config: ChannelConfig
     ): Boolean {
         val metadata = result.metadata as? CurlExportMetadata ?: return false
-        val fileConfig = config as? ChannelConfig.FileConfig
+        val (outputDir, fileName) = when (config) {
+            is CurlConfig -> config.outputDir to config.fileName
+            is ChannelConfig.FileConfig -> config.outputDir to config.fileName
+            else -> null to null
+        }
 
-        val targetFile = resolveTargetFile(project, fileConfig, "curl_commands.sh")
+        val targetFile = resolveTargetFile(project, outputDir, fileName, "curl_commands.sh")
             ?: throw CancellationException("User cancelled file selection")
 
         background {
@@ -78,11 +120,10 @@ class CurlChannel : Channel, IdeaLog {
 
     private suspend fun resolveTargetFile(
         project: Project,
-        fileConfig: ChannelConfig.FileConfig?,
-        defaultFileName: String
+        outputDir: String?,
+        fileName: String?,
+        defaultFileName: String,
     ): File? {
-        val outputDir = fileConfig?.outputDir
-        val fileName = fileConfig?.fileName
         if (!outputDir.isNullOrBlank()) {
             val dir = File(outputDir)
             if (!dir.exists()) {

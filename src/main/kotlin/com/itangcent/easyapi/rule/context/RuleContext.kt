@@ -154,7 +154,7 @@ class RuleContext private constructor(
         if (value == null) return null
         if (key == "fieldContext" && value is String) return ScriptFieldPathContext(value)
         if (value is PsiElement) return withElement(value).asScriptIt()
-        if (value is ApiEndpoint) return ScriptApiEndpoint(value)
+        if (value is ApiEndpoint) return ScriptApiEndpoint(value, project)
         return value
     }
 

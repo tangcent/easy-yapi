@@ -456,10 +456,12 @@ object TemplateEngine : IdeaLog {
         }
 
         /**
-         * Dispatches a method call `target.name(args)` (review finding F7).
+         * Dispatches a method call `target.name(args)`.
          *
          * - `BodyView` receiver: `asDemo`/`asJson` → `BodyView.asDemo()` (alias); `asJson5` → `asJson5()`;
          *   unknown name → null + `info` log.
+         * - `HttpView` receiver: `curl` → `HttpView.curl()` (may return null when the
+         *   provider yields null — backward-compat); unknown name → null + `info` log.
          * - Any other receiver type → null + `info` log "Unknown method '<name>' on <receiverType>".
          */
         private fun invokeMethod(target: Any, name: String, args: List<Any?>): Any? {
@@ -469,6 +471,13 @@ object TemplateEngine : IdeaLog {
                     "asJson5" -> target.asJson5()
                     else -> {
                         LOG.info("Unknown method '$name' on BodyView")
+                        null
+                    }
+                }
+                is HttpView -> when (name) {
+                    "curl" -> target.curl()
+                    else -> {
+                        LOG.info("Unknown method '$name' on HttpView")
                         null
                     }
                 }

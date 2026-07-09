@@ -105,7 +105,7 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
         api.class.parse.after=groovy:logger.info("lifecycle:api.class.parse.after:" + it.name())
         api.method.parse.before=groovy:logger.info("lifecycle:api.method.parse.before:" + it.name())
         api.method.parse.after=groovy:logger.info("lifecycle:api.method.parse.after:" + it.name())
-        export.after=groovy:logger.info("lifecycle:export.after:" + it.name())
+        export.after=groovy:api.appendDesc("\n```\n" + api.toCurl() + "\n```\n")
         """.trimIndent()
     )
 
@@ -223,5 +223,54 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val endpoints = springExporter.export(psiClass!!)
         assertTrue("Should not export endpoints for non-controller", endpoints.isEmpty())
+    }
+
+    // ── export.after rule: api.toCurl() ──────────────────
+
+    /**
+     * Verifies the `export.after` rule's `api.toCurl()` (default host) appends a
+     * cURL command containing `curl`, the HTTP method, and the `{{host}}` default
+     * placeholder to the endpoint description.
+     */
+    fun testSpringMvcExportAfterToCurlDefaultHost() = runTest {
+        val psiClass = findClass("com.itangcent.api.UserCtrl")
+        assertNotNull(psiClass)
+
+        val endpoints = springExporter.export(psiClass!!)
+        assertTrue("Should export endpoints", endpoints.isNotEmpty())
+
+        val ep = endpoints.first()
+        val desc = ep.description ?: ""
+        assertTrue("description should contain curl command: $desc", desc.contains("curl"))
+        assertTrue("description should contain {{host}} default: $desc", desc.contains("{{host}}"))
+        // The HTTP method should appear in the curl command (-X GET / --request GET)
+        val method = (ep.metadata as? com.itangcent.easyapi.exporter.model.HttpMetadata)?.method?.name
+        assertNotNull("endpoint should have HTTP method", method)
+        assertTrue("description should contain method $method: $desc", desc.contains(method!!))
+    }
+
+    /**
+     * Verifies `api.toCurl("https://api.example.com")` bakes the explicit host
+     * into the generated cURL command (host parameter).
+     *
+     * Uses a direct [com.itangcent.easyapi.rule.context.ScriptApiEndpoint] call
+     * (rather than a second rule config) because [createConfigReader] is shared
+     * across the whole class. The direct call exercises the same code path:
+     * `CurlBuilder.buildSync(project, endpoint, host, options)` with
+     * `runPreScripts=false`.
+     */
+    fun testToCurlWithExplicitHost() = runTest {
+        val psiClass = findClass("com.itangcent.api.UserCtrl")
+        assertNotNull(psiClass)
+
+        val endpoints = springExporter.export(psiClass!!)
+        assertTrue("Should export endpoints", endpoints.isNotEmpty())
+
+        val ep = endpoints.first()
+        val scriptEp = com.itangcent.easyapi.rule.context.ScriptApiEndpoint(ep, project)
+        val curl = scriptEp.toCurl("https://api.example.com")
+        assertTrue("curl should contain explicit host: $curl", curl.contains("https://api.example.com"))
+        assertTrue("curl should not contain {{host}} placeholder when explicit host given: $curl",
+            !curl.contains("{{host}}"))
     }
 }

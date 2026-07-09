@@ -19,6 +19,9 @@ import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ExportOrchestrator
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelRegistry
+import com.itangcent.easyapi.exporter.channel.curl.CurlExportResolver
+import com.itangcent.easyapi.exporter.channel.curl.CurlScriptScopes
+import com.itangcent.easyapi.exporter.channel.curl.CurlSettings
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.path
@@ -30,6 +33,7 @@ import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.type.areMethodsRelated
 import com.itangcent.easyapi.script.ScriptEditorPanel
 import com.itangcent.easyapi.script.ScriptScope
+import com.itangcent.easyapi.settings.settings
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Dimension
@@ -339,11 +343,38 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
             })
             popupMenu.add(createMenuItem("Copy as cURL") {
                 val host = endpointDetailsPanel.getSelectedHost()
-                val curl = com.itangcent.easyapi.exporter.channel.curl.CurlFormatter.format(endpoint, host)
-                val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard
-                val selection = java.awt.datatransfer.StringSelection(curl)
-                clipboard.setContents(selection, null)
-                showCopyNotification()
+                val settings = project.settings<CurlSettings>()
+                val sourceEndpoint = if (settings.copyFromEdited) {
+                    endpointDetailsPanel.buildEditedEndpoint() ?: endpoint
+                } else {
+                    endpoint
+                }
+                backgroundAsync {
+                    try {
+                        // The resolve→format pipeline (incl. format options from settings)
+                        // lives in CurlExportResolver.formatForCopy; this handler only owns
+                        // the dashboard-specific UI concerns: host, edited-vs-original,
+                        // clipboard, notification.
+                        val curl = CurlExportResolver.getInstance(project).formatForCopy(sourceEndpoint, host)
+                            ?: return@backgroundAsync  // user cancelled env dialog
+                        swing {
+                            val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard
+                            clipboard.setContents(java.awt.datatransfer.StringSelection(curl), null)
+                            showCopyNotification()
+                        }
+                    } catch (_: kotlin.coroutines.cancellation.CancellationException) {
+                        LOG.info("Copy as cURL cancelled by user")
+                    } catch (e: Throwable) {
+                        LOG.warn("Copy as cURL failed", e)
+                        swing {
+                            NotificationUtils.notifyError(
+                                project,
+                                "Copy as cURL Failed",
+                                "Copy as cURL failed: ${e.message}"
+                            )
+                        }
+                    }
+                }
             })
             popupMenu.addSeparator()
             popupMenu.add(createMenuItem("Navigate to Source") {
@@ -683,18 +714,10 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
     }
 
     fun resolveScriptScopesForEndpoint(endpoint: ApiEndpoint): List<ScriptScope> {
-        val scopes = mutableListOf<ScriptScope>()
-        val folder = endpoint.folder?.takeIf { it.isNotBlank() }
-        if (folder != null) {
-            scopes.add(ScriptScope.Module(folder))
-        }
-        val qualifiedName = ApplicationManager.getApplication().runReadAction<String?> {
-            endpoint.sourceClass?.qualifiedName
-        } ?: endpoint.className
-        if (qualifiedName != null) {
-            scopes.add(ScriptScope.Class(qualifiedName))
-        }
-        return scopes
+        // Delegates to the shared curl-package helper (DRY) — folder + class
+        // scopes only, matching the dashboard's prior behavior. The curl single-endpoint
+        // path (CurlExportResolver.formatForCopy) additionally appends the Endpoint scope.
+        return CurlScriptScopes.resolveFolderAndClassScopes(endpoint)
     }
 
     /**

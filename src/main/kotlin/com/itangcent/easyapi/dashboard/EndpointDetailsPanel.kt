@@ -21,10 +21,13 @@ import com.itangcent.easyapi.settings.module.GrpcSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.script.pm.*
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.ApiHeader
+import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.GrpcMetadata
 import com.itangcent.easyapi.exporter.model.GrpcStreamingType
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.MutableExtension
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.http.*
@@ -35,6 +38,7 @@ import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.model.grpcMetadata
 import com.itangcent.easyapi.exporter.model.isGrpc
 import com.itangcent.easyapi.ide.support.NotificationUtils
+import com.itangcent.easyapi.exporter.channel.curl.EndpointVariableResolver
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
 import kotlinx.coroutines.*
 import java.awt.BorderLayout
@@ -1503,6 +1507,58 @@ class EndpointDetailsPanel(
             }
             editCacheService.delete(key, endpoint.isGrpc)
         }
+    }
+
+    /**
+     * Builds an [ApiEndpoint] reflecting the user's dashboard edits (path, headers,
+     * query params, body, contentType). Returns null if no endpoint is loaded.
+     *
+     * The edited body JSON is stashed in [extensions][ApiEndpoint.extensions] under
+     * [EndpointVariableResolver.RESOLVED_BODY_JSON_KEY] so that [com.itangcent.easyapi.exporter.channel.curl.CurlFormatter]
+     * picks it up instead of re-serializing the original [com.itangcent.easyapi.psi.model.ObjectModel] body.
+     *
+     * Path params and form params are preserved from the original endpoint (their
+     * values are edited in separate table models that feed into the request sender,
+     * not into the cURL formatter's URL/header construction).
+     */
+    fun buildEditedEndpoint(): ApiEndpoint? {
+        val original = currentEndpoint ?: return null
+        val editedBody = bodyArea.text.takeIf { it.isNotBlank() }
+
+        val extensions = MutableExtension()
+        extensions.putAll(original.extensions.exts)
+        if (editedBody != null) {
+            extensions[EndpointVariableResolver.RESOLVED_BODY_JSON_KEY] = editedBody
+        }
+
+        val editedMeta = when (val meta = original.metadata) {
+            is HttpMetadata -> {
+                val editedHeaders = (0 until headersTableModel.rowCount).mapNotNull { row ->
+                    val name = headersTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
+                    val value = headersTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                    if (name.isNotEmpty()) ApiHeader(name = name, value = value) else null
+                }
+                val editedQueryParams = (0 until paramsTableModel.rowCount).mapNotNull { row ->
+                    val name = paramsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
+                    val value = paramsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                    if (name.isNotEmpty()) {
+                        ApiParameter(name = name, defaultValue = value, binding = ParameterBinding.Query)
+                    } else null
+                }
+                val preservedParams = meta.parameters.filter {
+                    it.binding == ParameterBinding.Path || it.binding == ParameterBinding.Form
+                }
+                meta.copy(
+                    path = pathField.text,
+                    headers = editedHeaders.toMutableList(),
+                    parameters = (preservedParams + editedQueryParams).toMutableList(),
+                    contentType = endpointContentType,
+                )
+            }
+            else -> meta
+        }
+
+        return original.copy(metadata = editedMeta, extensions = extensions)
     }
 
     private fun saveCurrentEdit() {
