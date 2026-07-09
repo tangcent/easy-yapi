@@ -193,6 +193,19 @@ Every key below is sourced from [RuleKeys.kt](../../src/main/kotlin/com/itangcen
 | `yapi.save.before` | event | throw-in-error | Hook fired before each YApi save |
 | `yapi.save.after` | event | throw-in-error | Hook fired after each YApi save |
 
+### Hoppscotch rules
+
+| Key | Type | Mode | Description |
+|-----|------|------|-------------|
+| `hopp.prerequest` | string | merge | Pre-request script (Hoppscotch) |
+| `hopp.class.prerequest` | string | merge | Class-level pre-request script (alias: `class.hopp.prerequest`) |
+| `hopp.collection.prerequest` | event | — | Collection-level pre-request script (alias: `collection.hopp.prerequest`) |
+| `hopp.test` | string | merge | Post-response test script |
+| `hopp.class.test` | string | merge | Class-level test script (alias: `class.hopp.test`) |
+| `hopp.collection.test` | event | — | Collection-level test script (alias: `collection.hopp.test`) |
+| `hopp.host` | string | replace | Host override for Hoppscotch export |
+| `hopp.format.after` | event | throw-in-error | Hook fired after Hoppscotch collection formatting |
+
 ### Enum / constant rules
 
 | Key | Type | Mode | Description |
