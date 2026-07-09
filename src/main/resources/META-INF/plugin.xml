@@ -37,6 +37,7 @@
         <channel implementation="com.itangcent.easyapi.exporter.channel.yapi.YapiChannel"/>
         <channel implementation="com.itangcent.easyapi.exporter.channel.curl.CurlChannel"/>
         <channel implementation="com.itangcent.easyapi.exporter.channel.httpclient.HttpClientChannel"/>
+        <channel implementation="com.itangcent.easyapi.exporter.channel.hoppscotch.HoppscotchChannel"/>
         <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.JsonFieldFormatChannel"/>
         <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.Json5FieldFormatChannel"/>
         <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.PropertiesFieldFormatChannel"/>
