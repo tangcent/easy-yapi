@@ -4,7 +4,7 @@ package com.itangcent.easyapi.ai.tools
  * The standard set of tools handed to the [ToolRegistry] for a real
  * conversation.
  *
- * 10 perception tools + 1 staging action (`propose_rule_content`).
+ * 11 perception tools + 1 staging action (`propose_rule_content`).
  * `write_rule_file` is intentionally NOT registered in v1 — the disk write
  * happens only through the user-confirmed "Save…" UI flow.
  *
@@ -26,6 +26,7 @@ fun standardRuleTools(): List<AiTool> = listOf(
     FindClassesByAnnotationTool(),
     FindClassesBySupertypeTool(),
     GetExistingRulesForKeyTool(),
+    GetModuleDependencyGraphTool(),
     AskClarificationTool(),
     ProposeRuleContentTool()
     // WriteRuleFileTool() is reserved — not registered in v1.

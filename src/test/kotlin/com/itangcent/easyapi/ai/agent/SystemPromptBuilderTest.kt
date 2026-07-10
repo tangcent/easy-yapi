@@ -96,6 +96,37 @@ class SystemPromptBuilderTest {
     }
 
     @Test
+    fun `preamble mentions multi-app namespacing`() {
+        // Per-app env-var namespacing: the preamble must teach the agent to
+        // resolve a namespace key and namespace every env var in a workflow
+        // bundle by that key. The full recipe lives in rule-guide.md; the
+        // preamble carries only the condensed detection + on-demand-fetch
+        // pointer (Decision 5).
+        val msg = SystemPromptBuilder.build()
+        val text = msg.content
+        Assert.assertTrue(
+            "preamble should mention the Multi-app namespacing subsection",
+            text.contains("Multi-app namespacing")
+        )
+        Assert.assertTrue(
+            "preamble should mention the namespace-key resolution order (module name)",
+            text.contains("module name", ignoreCase = true)
+        )
+        Assert.assertTrue(
+            "preamble should mention the namespace-key resolution order (spring.application.name)",
+            text.contains("spring.application.name")
+        )
+        Assert.assertTrue(
+            "preamble should mention the namespace-key resolution order (ask_clarification)",
+            text.contains("ask_clarification")
+        )
+        Assert.assertTrue(
+            "preamble should name get_module_dependency_graph tool",
+            text.contains("get_module_dependency_graph")
+        )
+    }
+
+    @Test
     fun `ambient message includes project name editing file and existing files`() {
         val msg = SystemPromptBuilder.ambient(
             Ambient(
@@ -185,6 +216,86 @@ class SystemPromptBuilderTest {
         )
     }
 
+    // ── Ambient module-names hint  ─────────────────────────────────
+
+    @Test
+    fun `ambient message renders module names when moduleNames is non-empty`() {
+        val msg = SystemPromptBuilder.ambient(
+            Ambient(
+                projectName = "demo",
+                editingRuleFile = null,
+                existingRuleFiles = emptyList(),
+                moduleNames = listOf("order-service", "payment-service")
+            )
+        )
+        val text = msg.content
+        Assert.assertTrue(
+            "ambient should include 'modules: order-service, payment-service' when moduleNames is non-empty: $text",
+            text.contains("modules: order-service, payment-service")
+        )
+    }
+
+    @Test
+    fun `ambient message omits module names segment when moduleNames is empty`() {
+        // Mirrors the existing userLanguage null-skip pattern — don't surface
+        // empty signals (a workspace with no API-bearing modules yields the
+        // default emptyList(), which carries no useful perception).
+        val msg = SystemPromptBuilder.ambient(
+            Ambient(
+                projectName = "demo",
+                editingRuleFile = null,
+                existingRuleFiles = emptyList(),
+                moduleNames = emptyList()
+            )
+        )
+        val text = msg.content
+        Assert.assertFalse(
+            "ambient should NOT include a 'modules:' segment when moduleNames is empty: $text",
+            text.contains("modules:")
+        )
+    }
+
+    // ── Ambient framework-hints  ─────────────────────────────────
+
+    @Test
+    fun `ambient message renders framework hints when frameworkHints is non-empty`() {
+        // The detected web-framework labels are surfaced so the agent knows
+        // which frameworks are active without a list_project_endpoints call.
+        // Conditional-append style — mirrors moduleNames/userLanguage.
+        val msg = SystemPromptBuilder.ambient(
+            Ambient(
+                projectName = "demo",
+                editingRuleFile = null,
+                existingRuleFiles = emptyList(),
+                frameworkHints = listOf("SpringMVC", "Feign")
+            )
+        )
+        val text = msg.content
+        Assert.assertTrue(
+            "ambient should include 'frameworks active: SpringMVC, Feign' when frameworkHints is non-empty: $text",
+            text.contains("frameworks active: SpringMVC, Feign")
+        )
+    }
+
+    @Test
+    fun `ambient message omits framework segment when frameworkHints is empty`() {
+        // Empty list → no hint (a workspace with no recognized frameworks yields
+        // the default emptyList(), which carries no useful perception).
+        val msg = SystemPromptBuilder.ambient(
+            Ambient(
+                projectName = "demo",
+                editingRuleFile = null,
+                existingRuleFiles = emptyList(),
+                frameworkHints = emptyList()
+            )
+        )
+        val text = msg.content
+        Assert.assertFalse(
+            "ambient should NOT include a 'frameworks active:' segment when frameworkHints is empty: $text",
+            text.contains("frameworks active:")
+        )
+    }
+
     // ── Token-budget tripwire (review Issue #8) ──
 
     @Test
@@ -193,9 +304,15 @@ class SystemPromptBuilderTest {
         // NFR-3 targets a ~600-token preamble budget. T5.1 added a condensed
         // "## Workflow-pattern detection" section (~2.8k chars). This tripwire catches
         // unexpected growth beyond the current actual length + a small headroom.
+        //
+        // Ceiling raised from 16_500 → 17_800 for the condensed "### Multi-app
+        // namespacing" subsection added under "## Workflow-pattern detection"
+        // (per Decision 5: ~600-800-char target subsection + on-demand fetch via
+        // `get_plugin_doc name="rule-guide"` for the full recipe; ceiling is the new
+        // actual ~16.8k + ~1k headroom).
         val msg = SystemPromptBuilder.build()
         val content = msg.content
-        val ceiling = 16_500 // post-script-context-isolation-rule actual ~15.6k + ~0.9k headroom
+        val ceiling = 17_800 // raised for Multi-app namespacing subsection (Decision 5): actual ~16.8k + ~1k headroom
         Assert.assertTrue(
             "Preamble content length (${content.length} chars) must stay under $ceiling chars " +
                 "to stay within NFR-3's token budget. If a future section is added, raise the " +

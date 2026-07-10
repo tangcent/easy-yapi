@@ -4,6 +4,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
+import com.itangcent.easyapi.config.ConfigReader
+import com.itangcent.easyapi.exporter.channel.PlaceholderSyntaxConverter
+import com.itangcent.easyapi.exporter.channel.PlaceholderTargetSyntax
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.ParameterBinding
@@ -257,7 +260,10 @@ class PostmanFormatter(
         val headers = meta.headers.map {
             PostmanHeader(
                 key = it.name,
-                value = it.value ?: "",
+                value = PlaceholderSyntaxConverter.convert(
+                    it.value ?: "",
+                    PlaceholderTargetSyntax.POSTMAN
+                ) { name -> !ConfigReader.getInstance(project).getFirst(name).isNullOrEmpty() },
                 type = "text",
                 description = ""
             )
