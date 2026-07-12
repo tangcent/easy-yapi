@@ -1,0 +1,35 @@
+{
+  "name": "Get User",
+  "request": {
+    "method": "GET",
+    "header": [
+      {
+        "key": "Authorization",
+        "value": "Bearer abc123",
+        "type": "text",
+        "description": ""
+      },
+      {
+        "key": "Content-Type",
+        "value": "application/json",
+        "type": "text",
+        "description": ""
+      }
+    ],
+    "url": {
+      "raw": "{{host}}/api/users",
+      "host": [
+        "{{host}}"
+      ],
+      "path": [
+        "api",
+        "users"
+      ],
+      "query": [],
+      "variable": []
+    },
+    "description": ""
+  },
+  "response": [],
+  "event": []
+}

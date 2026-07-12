@@ -44,6 +44,18 @@ object SystemPromptBuilder : IdeaLog {
         if (amb.existingRuleFiles.isNotEmpty()) {
             parts += "other rule files: ${amb.existingRuleFiles.joinToString(", ")}"
         }
+        // Surface the IntelliJ Modules that contain API-bearing PSI so the
+        // agent can detect multi-app workspaces cheaply (on-demand fetch for
+        // the full recipe via `get_plugin_doc`). Empty list → no hint.
+        if (amb.moduleNames.isNotEmpty()) {
+            parts += "modules: ${amb.moduleNames.joinToString(", ")}"
+        }
+        // Surface the detected web frameworks so the agent knows which
+        // frameworks are active without a list_project_endpoints round-trip.
+        // Derived from the same PSI scan as moduleNames. Empty list → no hint.
+        if (amb.frameworkHints.isNotEmpty()) {
+            parts += "frameworks active: ${amb.frameworkHints.joinToString(", ")}"
+        }
         // Surface the detected Markdown template locale so the agent can decide
         // whether to propose `markdown.template.language=<tag>`. `en`/null
         // mean "default (English) template" — no hint, no proposal.

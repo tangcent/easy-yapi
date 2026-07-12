@@ -149,6 +149,37 @@ signing, correlation, or auto-refresh, probe for these five groups:
 table from memory — the canonical doc carries detection signals, complete
 `key[filter]=value` lines, and env-var-reuse notes.
 
+### Multi-app namespacing
+
+When multiple apps (Modules with API-bearing PSI — see the ambient `modules:`
+hint or `list_project_endpoints`) share a workspace, namespace every per-app
+env var by a resolved key so exports don't collide. The ambient
+`frameworks active:` hint shows which web frameworks are present so you can
+pre-fetch framework-specific recipes without inferring from endpoints.
+
+- **Cluster modules into apps**: when the ambient `modules:` hint shows N > 1,
+  call `get_module_dependency_graph` and cluster the API-bearing modules into
+  connected components (layered `api`+`impl` collapse to one app; disjoint
+  apps stay separate). Fall back to `ask_clarification` on shared-leaf
+  ambiguity (e.g. a `common` module both apps depend on).
+- **Resolve the namespace key** in order: (1) Module name
+  (`ModuleHelper.resolveModuleName`, normalized to a safe segment — see the
+  naming convention in the rule-guide recipe); (2)
+  `spring.application.name` via `read_rule_file` on the app's
+  `application.yml`/`application-*.yml`/`application.properties` (one-time
+  `FileReadConsentGate`; on denial/absent fall through); (3)
+  `ask_clarification` on collision. `get_psi_class_info` can't read
+  `application.yml`.
+- **Namespace every env var**: host `{{<key>}}`, bearer `{{<key>-token}}`,
+  login `{{<key>-username}}`/`{{<key>-password}}`; producer/consumer share
+  one name (bundle integrity).
+- **Split bundles per app**: one `propose_rule_content` per app; each bundle
+  complete on its own.
+- **Record the resolution branch** (module name/`spring.application.name`/
+  user-clarified) and key in the proposal summary.
+- **Fetch the full recipe** via `get_plugin_doc name="rule-guide"` (the
+  "Multi-Application Namespace" section) — don't reproduce it from memory.
+
 ### Workflow correctness rules (CRITICAL — follow exactly)
 
 1. **Bundle integrity.** Workflow rules that form a chain (login-script +

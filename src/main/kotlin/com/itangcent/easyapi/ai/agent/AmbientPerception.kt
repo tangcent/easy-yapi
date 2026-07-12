@@ -1,8 +1,20 @@
 package com.itangcent.easyapi.ai.agent
 
 import com.itangcent.easyapi.config.source.RuleFileResolver
+import com.itangcent.easyapi.core.threading.readSync
+import com.itangcent.easyapi.exporter.core.ApiClassRecognizer
+import com.itangcent.easyapi.exporter.core.CompositeApiClassRecognizer
+import com.itangcent.easyapi.exporter.feign.FeignClientRecognizer
+import com.itangcent.easyapi.exporter.grpc.GrpcServiceRecognizer
+import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
+import com.itangcent.easyapi.exporter.springmvc.ActuatorEndpointRecognizer
+import com.itangcent.easyapi.exporter.springmvc.SpringControllerRecognizer
 import com.itangcent.easyapi.logging.IdeaLog
+import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
+import com.intellij.psi.JavaPsiFacade
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.searches.AnnotatedElementsSearch
 import java.nio.file.Paths
 import java.util.Locale
 
@@ -45,12 +57,114 @@ object AmbientPerception : IdeaLog {
             RuleFileResolver(project).listRuleFiles()
         }.getOrDefault(emptyList())
         val userLanguage = detectUserLanguage()
+        val perception = runCatching { captureApiPerception(project) }
+            .onFailure { LOG.warn("Ambient perception capture failed", it) }
+            .getOrDefault(ApiPerception(emptyList(), emptyList()))
         // Trace what the agent "saw" at turn start.
         LOG.info("ambient capture: project=$projectName " +
             "editingRuleFile=${editingRuleFile ?: "<none>"} " +
             "existingRuleFiles=${existingRuleFiles.size} " +
-            "userLanguage=${userLanguage ?: "<none>"}")
-        return Ambient(projectName, editingRuleFile, existingRuleFiles, userLanguage)
+            "userLanguage=${userLanguage ?: "<none>"} " +
+            "moduleNames=${perception.moduleNames.size} " +
+            "frameworkHints=${perception.frameworkHints.size}")
+        LOG.info("Ambient captured ${perception.moduleNames.size} API-bearing module(s), " +
+            "${perception.frameworkHints.size} framework(s)")
+        return Ambient(
+            projectName,
+            editingRuleFile,
+            existingRuleFiles,
+            userLanguage,
+            perception.moduleNames,
+            perception.frameworkHints
+        )
+    }
+
+    /**
+     * Single PSI scan that captures both the API-bearing module names and the
+     * detected web-framework labels, computed once per [capture] so the agent
+     * can detect multi-app workspaces and active frameworks cheaply without an
+     * `list_project_endpoints` round-trip on every turn.
+     *
+     * Reuses [CompositeApiClassRecognizer.allTargetAnnotations] — the same
+     * aggregated annotation set `ApiScanner` searches on — and the indexed
+     * [AnnotatedElementsSearch] primitive, so no new PSI tool is introduced
+     * (cached fields on `Ambient`, not new tools). For each controller class
+     * found, its containing module is resolved via
+     * [ModuleUtilCore.findModuleForPsiElement]. When an annotation FQN produces
+     * ≥1 hit, its owning recognizer's [ApiClassRecognizer.frameworkName] is
+     * collected into [ApiPerception.frameworkHints] (deduped).
+     *
+     * Settings gates (Req 9.3) are respected automatically: disabled
+     * recognizers are excluded from [CompositeApiClassRecognizer.allTargetAnnotations],
+     * so their annotations are never searched and their framework labels never
+     * surface — even though [annotationFrameworkLookup] covers every recognizer.
+     *
+     * PSI read runs inside `readSync`. Best-effort: a per-annotation search
+     * failure is logged and skipped so ambient capture never blocks the agent.
+     *
+     * Privacy: collects module **names** and short framework **labels** only —
+     * never env-var keys or values from the Environments panel.
+     */
+    private fun captureApiPerception(project: Project): ApiPerception = readSync {
+        val annotationFqns = CompositeApiClassRecognizer.getInstance(project).allTargetAnnotations
+        if (annotationFqns.isEmpty()) return@readSync ApiPerception(emptyList(), emptyList())
+        val projectScope = GlobalSearchScope.projectScope(project)
+        val allScope = GlobalSearchScope.allScope(project)
+        val javaFacade = JavaPsiFacade.getInstance(project)
+        val moduleNames = LinkedHashSet<String>()
+        val frameworkHints = LinkedHashSet<String>()
+        for (annotationFqn in annotationFqns) {
+            try {
+                val annotationClass = javaFacade.findClass(annotationFqn, allScope) ?: continue
+                if (!annotationClass.isAnnotationType) continue
+                val annotated = AnnotatedElementsSearch.searchPsiClasses(annotationClass, projectScope).findAll()
+                var hasHit = false
+                for (psiClass in annotated) {
+                    if (psiClass.isAnnotationType) continue
+                    hasHit = true
+                    val module = ModuleUtilCore.findModuleForPsiElement(psiClass)
+                    if (module != null && module.name.isNotBlank()) {
+                        moduleNames.add(module.name)
+                    }
+                }
+                if (hasHit) {
+                    annotationFrameworkLookup[annotationFqn]?.let { frameworkHints.add(it) }
+                }
+            } catch (e: Exception) {
+                LOG.warn("Ambient perception capture: error searching annotation $annotationFqn", e)
+            }
+        }
+        ApiPerception(moduleNames.toList(), frameworkHints.toList())
+    }
+
+    /**
+     * Maps each framework annotation FQN to its framework label
+     * ([ApiClassRecognizer.frameworkName]), built once from every recognizer
+     * regardless of settings. The settings gate is applied upstream by
+     * [CompositeApiClassRecognizer.allTargetAnnotations] (which excludes
+     * disabled recognizers), so only FQNs present there are ever looked up.
+     *
+     * Instantiating the recognizers is cheap (they are data holders; the
+     * `suspend isApiClass` is never called here). This avoids touching
+     * `CompositeApiClassRecognizer` (whose `cachedRecognizers` is private) and
+     * keeps the annotation→framework mapping sourced from the recognizer
+     * implementations themselves rather than duplicated string literals.
+     */
+    private val annotationFrameworkLookup: Map<String, String> = run {
+        val recognizers: List<ApiClassRecognizer> = listOf(
+            SpringControllerRecognizer(),
+            FeignClientRecognizer(),
+            JaxRsResourceRecognizer(),
+            ActuatorEndpointRecognizer(),
+            GrpcServiceRecognizer()
+        )
+        val map = HashMap<String, String>()
+        for (recognizer in recognizers) {
+            for (annotationFqn in recognizer.targetAnnotations) {
+                map[annotationFqn] = recognizer.frameworkName
+            }
+        }
+        map
     }
 
     /**
@@ -79,3 +193,13 @@ object AmbientPerception : IdeaLog {
         return null
     }
 }
+
+/**
+ * Result of the single API-perception PSI scan: the API-bearing module names
+ * and the detected web-framework labels, computed together in one pass by
+ * [AmbientPerception.captureApiPerception].
+ */
+private data class ApiPerception(
+    val moduleNames: List<String>,
+    val frameworkHints: List<String>
+)

@@ -220,6 +220,40 @@ change. This mirrors the built-in agent's `propose_rule_content` →
 user-confirmed "Save…" flow; the only difference is you write the file
 directly instead of staging it through a UI.
 
+### Multi-app namespacing
+
+When a workspace hosts more than one app (each IntelliJ Module /
+`spring.application.name` is a candidate app — detect by scanning the
+project's module structure and `application.yml` files), namespace every
+per-app env var by a resolved key so exports don't collide. Apply this
+**even for a single-app workspace** — a single app today doesn't mean a
+single app forever, and bare `{{host}}` / `${Authorization}` would collide
+if the user exports a different app later into the same Postman environment.
+
+- **Resolve the namespace key** in order: (1) Module name (inferred from
+  the source file's IntelliJ module / directory), normalized lower-case
+  with spaces/underscores → hyphens, characters outside `[a-z0-9-]`
+  stripped, capped at 40 chars; (2) `spring.application.name` read
+  directly from the app's `application.yml`/`application-*.yml`/
+  `application.properties` (fall through if absent); (3) ask the user a
+  short clarifying question on collision or unresolved ambiguity.
+- **Namespace every env var**: host `{{<key>}}`, bearer `{{<key>-token}}`,
+  login `{{<key>-username}}`/`{{<key>-password}}` (lower-case by default;
+  UPPER when an existing rule already uses it — reuse the existing casing
+  rather than renaming). The producer's stored name and the consumer's
+  referenced name MUST be identical (bundle integrity still holds).
+- **Split bundles per app**: propose one bundle per app, each complete on
+  its own (producer script + consumer header + host + env var, all sharing
+  the same key); for consumers you can't confidently assign to an app
+  (shared/common modules), ask the user with concrete app options.
+- **Record the resolution branch** (module name / `spring.application.name` /
+  user-clarified) and the resulting key in the proposal shown to the user,
+  so they can correct a wrong guess before saving.
+- **Fetch the full recipe** from the bundled `docs/rule-guide.md` (the
+  "Multi-Application Namespace" section) — don't reproduce it from memory.
+  Note: the v1 runtime converts unresolved `${...}` placeholders in
+  **header values** only; do not promise body-level namespacing.
+
 ## Critical Rule File Format (follow exactly — inlined from the agent preamble)
 
 Each line is `<key>[<filter>]=<value>` or `<key>=<value>` (no filter). The

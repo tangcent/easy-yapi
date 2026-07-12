@@ -51,5 +51,26 @@ data class Ambient(
     val projectName: String,
     val editingRuleFile: String?,
     val existingRuleFiles: List<String>,
-    val userLanguage: String? = null
+    val userLanguage: String? = null,
+    /**
+     * Names of the IntelliJ `Module`s in the workspace that contain API-bearing
+     * PSI (e.g. `@RestController` / `@Controller` classes), captured once per
+     * [AmbientPerception.capture] so the agent can detect multi-app workspaces
+     * cheaply without an `list_project_endpoints` round-trip on every turn.
+     *
+     * Privacy: carries only module **names** — never env-var keys or values
+     * from the Environments panel.
+     */
+    val moduleNames: List<String> = emptyList(),
+    /**
+     * Web frameworks detected among the project's API-bearing PSI (e.g.
+     * `SpringMVC`, `Feign`, `JAX-RS`, `gRPC`), derived from the
+     * `frameworkName` of each [com.itangcent.easyapi.exporter.core.CompositeApiClassRecognizer]
+     * implementation that recognized at least one API class. Computed once per
+     * [AmbientPerception.capture] in the same PSI scan as [moduleNames].
+     *
+     * Privacy: carries only short framework labels — never env-var keys or
+     * values from the Environments panel.
+     */
+    val frameworkHints: List<String> = emptyList()
 )

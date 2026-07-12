@@ -4,6 +4,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
+import com.itangcent.easyapi.config.ConfigReader
+import com.itangcent.easyapi.exporter.channel.PlaceholderSyntaxConverter
+import com.itangcent.easyapi.exporter.channel.PlaceholderTargetSyntax
 import com.itangcent.easyapi.exporter.channel.hoppscotch.model.*
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.HttpMetadata
@@ -171,7 +174,10 @@ class HoppscotchFormatter(
         return meta.headers.map { header ->
             HoppKeyValue(
                 key = header.name,
-                value = header.value ?: header.example ?: "",
+                value = PlaceholderSyntaxConverter.convert(
+                    header.value ?: header.example ?: "",
+                    PlaceholderTargetSyntax.HOPPSCOTCH
+                ) { name -> !ConfigReader.getInstance(project).getFirst(name).isNullOrEmpty() },
                 active = true,
                 description = header.description
             )

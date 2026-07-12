@@ -1,0 +1,14 @@
+[
+  {
+    "key": "Authorization",
+    "value": "Bearer static-token",
+    "active": true,
+    "description": null
+  },
+  {
+    "key": "Accept",
+    "value": "application/json",
+    "active": true,
+    "description": null
+  }
+]

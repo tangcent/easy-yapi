@@ -488,6 +488,206 @@ the same catalog when scanning your project.
 
 ---
 
+## Multi-Application Namespace
+
+> **Per-app namespacing for workspaces that host more than one service.** Real
+> workspaces frequently contain several applications / modules — an
+> `order-service` + a `payment-service` + an `admin-portal` — each with its own
+> authorization filter, login endpoint, and host. Without namespacing, two apps
+> in one workspace both write `Authorization` and the second export silently
+> overwrites the first app's token in the Postman environment; every endpoint
+> points at `{{host}}` so all apps share one host; and app A's login captures
+> into `username` / `password` collide with app B's. Namespacing disambiguates
+> every per-app env var by the application identity, baked as a literal into the
+> rule at **authoring time** (the agent has PSI + file access; the runtime does
+> not).
+
+> **Bundle integrity still holds.** A workflow bundle is a producer script +
+> consumer header (+ env var) proposed together (see [Workflow Patterns](#workflow-patterns)).
+> Namespacing does not relax this: within one bundle the producer's stored
+> env-var name and the consumer's referenced env-var name MUST be identical,
+> and both MUST carry the same namespace key. Either half alone is still broken.
+
+### Namespace-key resolution order
+
+The agent resolves the namespace key for a target app in this order, and records
+which branch it used so the user can correct a wrong guess before saving:
+
+1. **IntelliJ Module name** of the target endpoints' source classes, via
+   `ModuleHelper.resolveModuleName(psiElement)` (always available, no framework
+   dependency). The raw module name is normalized through the canonical
+   `NamespaceKeyNormalizer` (see the naming-convention table below) so
+   `OrderService` → `order-service`, `order_service` → `order-service`,
+   `admin portal` → `admin-portal`. The normalized key uses only the
+   character class `[a-z0-9-]` (lower-case ASCII letters, digits, hyphens);
+   every other character is stripped or replaced. This is the same value `runtime.module()`
+   returns at export time, so the agent's literal key and the runtime module
+   name agree whenever this branch is taken.
+
+2. **`spring.application.name`** read at **authoring time** via `read_rule_file`
+   (the ONLY file-reading tool the agent has). Call it with the app's
+   `application.yml` / `application-*.yml` / `application.properties` path —
+   this triggers a one-time `FileReadConsentGate` consent prompt the user must
+   approve. Use this branch only when the module name is absent, empty, or a
+   generic placeholder (`<unnamed>`, the project name, etc.). If the user denies
+   consent or the file is absent, fall back to branch (3).
+   **Do NOT attempt `get_psi_class_info` for this purpose** — it is
+   class-signature only (name, modifiers, annotations, field/method signatures)
+   and cannot read `application.yml` or any non-class file.
+
+3. **`ask_clarification`** (`single_choice`) when both branches above are
+   ambiguous, or when two target apps would resolve to the same key (collision).
+   Offer concrete disambiguation options (the original names + the normalized
+   candidates) before writing any rule — never let the second app silently
+   overwrite the first.
+
+> **Authoring-time vs runtime split is hard.** The namespace key is resolved by
+> the agent (PSI + file access) and baked as a literal into the rule value. The
+> runtime host rule uses `runtime.module()` (the runtime mirror of branch 1); it
+> cannot read `spring.application.name` — `ConfigReader` / `config.get(...)`
+> sees only `.easy.api.config*` plugin rule files, never the project's
+> `application.yml`. If the app name is needed at runtime, it must be a literal
+> the agent baked in at authoring time.
+
+### Per-app env-var naming convention
+
+Every per-app env var in a workflow/host bundle is namespaced by the resolved
+key. The canonical transform is `NamespaceKeyNormalizer.normalize(input)` — the
+same pure utility the agent invokes — so users can predict the result:
+
+| Slot | Placeholder | Notes |
+|------|-------------|-------|
+| Host | `{{<key>}}` | Proposed as `postman.host={{<key>}}` / `hopp.host={{<key>}}`. The Hoppscotch formatter rewrites unresolved `${...}` in header values to `<<key>>` at export time. |
+| Bearer token | `{{<key>-token}}` | Lower-case `-token` suffix by default (matches the lowercase workflow-recipe convention). Allow `-TOKEN` (UPPER) when an existing rule already uses it — reuse the existing casing via `get_existing_rules_for_key` rather than renaming. |
+| Login username | `{{<key>-username}}` | Same casing rule as the token. |
+| Login password | `{{<key>-password}}` | Same casing rule as the token. |
+
+In rule values the namespaced var is written as `${<key>-token}` (e.g.
+`Bearer ${order-service-token}`); the Postman/Hoppscotch formatters convert
+**unresolved** `${...}` in header values to the platform syntax
+(`{{order-service-token}}` / `<<order-service-token>>`) at export time.
+**Resolved** `${...}` (config-backed) and regex-capture `${1}` are left
+untouched.
+
+### Multi-app bundle-split rule
+
+When the ambient `modules:` hint shows more than one API-bearing module (N > 1),
+call `get_module_dependency_graph` and cluster the API-bearing modules into
+connected components (layered modules like `admin-api` + `admin-impl` collapse
+to one app; disjoint apps stay separate). Each connected component is one app
+group. When `list_project_endpoints` / the ambient `moduleNames` set reveals
+more than one app group, propose **one namespaced bundle per app** — one
+`propose_rule_content` call per bundle. Each bundle must still be complete on
+its own (producer script + consumer header + host + env var, all carrying the
+same namespace key) per the bundle-integrity rule above.
+
+For consumers the agent cannot confidently assign to an app group (shared /
+common modules consumed by several apps — e.g. a `common` or `dto` module both
+apps depend on), call `ask_clarification` (`single_choice`, concrete app
+options) rather than guess.
+
+Before proposing any bundle, call `get_existing_rules_for_key` for each key in
+the bundle and skip rules already present in any source (project / global /
+extension / remote) scoped to the same namespace key — the same
+anti-duplication rule from [Workflow Patterns](#workflow-patterns) applies
+per-app.
+
+### Known limitation — body-level namespacing
+
+The v1 runtime enabler converts unresolved `${...}` placeholders **only in
+header values** (the `method.additional.header` value surface, where
+`Authorization: Bearer ${<key>-token}` lives). Conversion of `${...}` in
+`method.additional.param` values and the request body is **deferred** — the
+request body has JSON-structure / JSON5-mode / `ObjectModel` serialization
+concerns that make symmetric conversion riskier and out of scope for v1.
+
+**Do NOT promise body-level namespacing** in your proposals. If a namespaced
+token is needed in a body, propose it as `${<key>-token}` and note that the user
+must wire the env var in the Environments panel until param/body conversion
+ships.
+
+### Resolution-branch recording
+
+The agent's proposal summary MUST state which resolution branch was used
+(module name / `spring.application.name` / user-clarified via
+`ask_clarification`) and the resulting namespace key, so the user can correct a
+wrong guess before saving. For example:
+
+> *Namespacing* — `order-service` resolved from **module name** (branch 1);
+> `payment-service` resolved from **spring.application.name** (branch 2, read
+> via `read_rule_file` from `application.yml`); the admin portal was
+> **user-clarified** (branch 3) after colliding with `payment-service` on the
+> normalized `admin` candidate.
+
+### Single-app still namespaced
+
+Namespacing applies **even when only one app is currently exported**. A
+single-app workspace does not imply a single-app user — the user may export a
+different app later into the same Postman environment, and bare `{{host}}` /
+`${Authorization}` would then collide. Default to the namespaced form
+(`{{<key>-token}}`, etc.) silently; only call `ask_clarification` on genuine
+collision or unresolved ambiguity, not on the single-app case.
+
+### Worked example — two apps in one workspace
+
+A workspace contains `order-service` (IntelliJ module `order-service`, Spring
+Boot app with `spring.application.name=order-service`) and `payment-service`
+(module `payment-service`, `spring.application.name=payment-service`). Each has
+its own `/login` producer and a set of secured consumers.
+
+**Detection.** `list_project_endpoints` + the ambient `moduleNames` set reveal
+two app groups. The agent resolves the key for each via branch 1 (module name) —
+both normalize cleanly (`order-service`, `payment-service`), no collision, no
+clarification needed.
+
+**Bundle 1 — `order-service`** (one `propose_rule_content`):
+
+```
+# Host — namespaced per app
+postman.host={{order-service}}
+
+# Producer (post-response — extracts token, stores in namespaced env var)
+postman.test[groovy: it.containingClass().name() == "com.example.order.AuthController"]=def token = pm.response.json().token; if (token) { pm.environment.set("order-service-token", token) }
+
+# Consumer (attaches namespaced Bearer header to order-service secured endpoints)
+method.additional.header[groovy: it.containingClass().name().startsWith("com.example.order.api.")]={"name":"Authorization","value":"Bearer ${order-service-token}","desc":"bearer token from order-service login","required":true}
+```
+
+**Bundle 2 — `payment-service`** (a second `propose_rule_content`):
+
+```
+# Host — namespaced per app
+postman.host={{payment-service}}
+
+# Producer (post-response — extracts token, stores in namespaced env var)
+postman.test[groovy: it.containingClass().name() == "com.example.payment.AuthController"]=def token = pm.response.json().token; if (token) { pm.environment.set("payment-service-token", token) }
+
+# Consumer (attaches namespaced Bearer header to payment-service secured endpoints)
+method.additional.header[groovy: it.containingClass().name().startsWith("com.example.payment.api.")]={"name":"Authorization","value":"Bearer ${payment-service-token}","desc":"bearer token from payment-service login","required":true}
+```
+
+**Env vars** (user creates in the Environments panel): `order-service` (host),
+`order-service-token`, `payment-service` (host), `payment-service-token`. The
+two apps never overwrite each other — each token lives in its own namespaced
+slot.
+
+**Proposal summary.** State the branch used per app: `order-service` — module
+name (branch 1); `payment-service` — module name (branch 1). No clarification
+was needed (no collision). Each bundle is complete on its own (producer +
+consumer + host + env var, all carrying the same key).
+
+> **Detection tip for the AI assistant:** before proposing any namespaced
+> bundle, run `list_project_endpoints` and read the ambient `moduleNames` set
+> to detect multi-app workspaces; resolve the key per app via the order above
+> (module name → `spring.application.name` via `read_rule_file` + consent gate
+> → `ask_clarification`); call `get_existing_rules_for_key` for each key to
+> avoid duplicate host / header rules scoped to the same namespace; record the
+> resolution branch per app in the proposal summary. **Propose one complete
+> bundle per app** — a namespaced consumer header without its matching producer
+> script (or vice versa) is still a broken chain.
+
+---
+
 ## Recipes
 
 ### 1. Rename an API endpoint
