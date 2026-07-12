@@ -4,6 +4,7 @@ import com.itangcent.easyapi.ai.AiRuntimeConfig
 import com.itangcent.easyapi.ai.AiMessage
 import com.itangcent.easyapi.ai.AiToolCall
 import com.itangcent.easyapi.ai.AiProvider
+import com.itangcent.easyapi.ai.ChatTimeoutException
 import com.itangcent.easyapi.ai.tools.AiTool
 import com.itangcent.easyapi.ai.tools.AskClarificationTool
 import com.itangcent.easyapi.ai.tools.ToolContext
@@ -14,10 +15,12 @@ import com.itangcent.easyapi.config.source.RuleFileResolver
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.cancelAndJoin
+import java.io.IOException
 
 /**
  * Tests for [RuleAuthoringAgent].
@@ -124,8 +127,21 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
     /**
      * Script 3: LLM loops on a non-terminal perception tool `maxRequests`
      * times → `TurnOutcome.StepLimitHit`.
+     *
+     * The guard config is overridden so the loop detector does NOT fire
+     * within the small step budget (repetitionThreshold=10 > maxRequests=3,
+     * debounce off) — this preserves the test's intent of exercising the
+     * step-limit path rather than the loop-detector path.
      */
     fun testStepLimitHit() = runBlocking {
+        ctx = ctx.copy(
+            aiSettings = ctx.aiSettings.copy(
+                loopSafety = LoopSafetyConfig(
+                    repetitionThreshold = 10,
+                    debounceEnabled = false
+                )
+            )
+        )
         val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
         val events = captureEvents()
         val agent = RuleAuthoringAgent(aiService, tools, ctx, events.flow)
@@ -488,6 +504,398 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    // --- Loop-detection integration tests (Phase 5, Task 25) ---
+
+    /**
+     * 3 identical `list_rule_keys` calls → `TurnOutcome.LoopDetected` via
+     * consecutive-duplicate detection. The 2nd and 3rd calls are debounced
+     * (default `debounceEnabled=true`); the streak counter advances via
+     * `observeResult` on the blocked results and terminates at 3.
+     */
+    fun testLoopDetectedConsecutive() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, ctx, events.flow)
+
+        repeat(3) {
+            aiService.enqueueToolCalls(AiToolCall("c$it", "list_rule_keys", "{}"))
+        }
+
+        val outcome = agent.runTurn("loop", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.LoopDetected, outcome)
+        val loopEvent = events.collected.filterIsInstance<AgentEvent.LoopDetected>().single()
+        assertTrue("reason should contain 'consecutive': ${loopEvent.reason}",
+            loopEvent.reason.contains("consecutive"))
+        assertEquals("list_rule_keys", loopEvent.tool)
+        assertEquals(3, loopEvent.count)
+    }
+
+    /**
+     * Alternating `list_rule_keys` → `read_rule_file` (period 2, 2
+     * repetitions) → `TurnOutcome.LoopDetected` via call-cycle detection.
+     */
+    fun testLoopDetectedCycle() = runBlocking {
+        // Need 4 steps for a period-2 cycle with 2 repetitions.
+        ctx = ctx.copy(aiSettings = ctx.aiSettings.copy(maxRequests = 5))
+        val tools = ToolRegistry(listOf(
+            ListRuleKeysFakeTool(),
+            NamedFakeTool("read_rule_file")
+        ))
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, ctx, events.flow)
+
+        aiService.enqueueToolCalls(AiToolCall("c1", "list_rule_keys", "{}"))
+        aiService.enqueueToolCalls(AiToolCall("c2", "read_rule_file", "{}"))
+        aiService.enqueueToolCalls(AiToolCall("c3", "list_rule_keys", "{}"))
+        aiService.enqueueToolCalls(AiToolCall("c4", "read_rule_file", "{}"))
+
+        val outcome = agent.runTurn("loop cycle", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.LoopDetected, outcome)
+        val loopEvent = events.collected.filterIsInstance<AgentEvent.LoopDetected>().single()
+        assertTrue("reason should contain 'cycle': ${loopEvent.reason}",
+            loopEvent.reason.contains("cycle"))
+    }
+
+    /**
+     * Same tool, different args, but identical `ToolResult.Text` content 3
+     * times → `TurnOutcome.LoopDetected` via output-stagnation detection.
+     */
+    fun testLoopDetectedStagnation() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, ctx, events.flow)
+
+        aiService.enqueueToolCalls(AiToolCall("c1", "list_rule_keys", """{"a":1}"""))
+        aiService.enqueueToolCalls(AiToolCall("c2", "list_rule_keys", """{"b":2}"""))
+        aiService.enqueueToolCalls(AiToolCall("c3", "list_rule_keys", """{"c":3}"""))
+
+        val outcome = agent.runTurn("loop stagnation", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.LoopDetected, outcome)
+        val loopEvent = events.collected.filterIsInstance<AgentEvent.LoopDetected>().single()
+        assertTrue("reason should contain 'stagnation': ${loopEvent.reason}",
+            loopEvent.reason.contains("stagnation"))
+        assertEquals("list_rule_keys", loopEvent.tool)
+        assertEquals(3, loopEvent.count)
+    }
+
+    /**
+     * Identical non-blank assistant text WITH tool calls (so the turn
+     * doesn't end via COMMUNICATE) 3 times → `TurnOutcome.LoopDetected` via
+     * reasoning-repetition detection. Different args so consecutive/stagnation
+     * don't fire first.
+     */
+    fun testLoopDetectedReasoning() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, ctx, events.flow)
+
+        repeat(3) { i ->
+            aiService.enqueueToolCalls(
+                AiToolCall("c$i", "list_rule_keys", """{"arg":$i}"""),
+                content = "Let me check the rules."
+            )
+        }
+
+        val outcome = agent.runTurn("loop reasoning", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.LoopDetected, outcome)
+        val loopEvent = events.collected.filterIsInstance<AgentEvent.LoopDetected>().single()
+        assertTrue("reason should contain 'reasoning': ${loopEvent.reason}",
+            loopEvent.reason.contains("reasoning"))
+        assertNull("tool should be null for reasoning repetition", loopEvent.tool)
+        assertEquals(3, loopEvent.count)
+    }
+
+    /**
+     * 2 identical calls with debounce ON → 2nd call is debounced (Observed
+     * carries an Error mentioning "Duplicate"). With `repetitionThreshold=3`,
+     * the 3rd identical call terminates.
+     */
+    fun testDebounceBlocksDuplicate() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, ctx, events.flow)
+
+        repeat(3) {
+            aiService.enqueueToolCalls(AiToolCall("c$it", "list_rule_keys", "{}"))
+        }
+
+        val outcome = agent.runTurn("loop debounce", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.LoopDetected, outcome)
+
+        val observed = events.collected.filterIsInstance<AgentEvent.Observed>()
+        assertEquals("should have 3 Observed events", 3, observed.size)
+        // 1st Observed is the actual result.
+        assertFalse(
+            "1st Observed should not mention 'Duplicate': ${observed[0].resultSummary}",
+            observed[0].resultSummary.contains("Duplicate")
+        )
+        // 2nd and 3rd are debounced.
+        assertTrue(
+            "2nd Observed should mention 'Duplicate': ${observed[1].resultSummary}",
+            observed[1].resultSummary.contains("Duplicate")
+        )
+        assertTrue(
+            "3rd Observed should mention 'Duplicate': ${observed[2].resultSummary}",
+            observed[2].resultSummary.contains("Duplicate")
+        )
+    }
+
+    /**
+     * On `LoopDetected`, the event sequence must NOT contain `TurnComplete`
+     * or `ProposalReady` (abnormal exit — REQ-2 AC-2).
+     */
+    fun testLoopDetectedEmitsNoTurnComplete() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, ctx, events.flow)
+
+        repeat(3) {
+            aiService.enqueueToolCalls(AiToolCall("c$it", "list_rule_keys", "{}"))
+        }
+
+        val outcome = agent.runTurn("loop", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.LoopDetected, outcome)
+        val phases = events.collected.map { it::class.simpleName }
+        assertFalse("LoopDetected should NOT emit TurnComplete",
+            phases.contains("TurnComplete"))
+        assertFalse("LoopDetected should NOT emit ProposalReady",
+            phases.contains("ProposalReady"))
+    }
+
+    /**
+     * Two sequential `runTurn` calls: turn 1 loops (LoopDetected), turn 2
+     * starts with a fresh `LoopGuard` (counter reset) and can call the same
+     * tool once without immediate termination (REQ-1 AC-4).
+     */
+    fun testPerTurnFreshness() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, ctx, events.flow)
+
+        // Turn 1: 3 identical calls → LoopDetected.
+        repeat(3) {
+            aiService.enqueueToolCalls(AiToolCall("c$it", "list_rule_keys", "{}"))
+        }
+        val o1 = agent.runTurn("loop", memory)
+        assertEquals(TurnOutcome.LoopDetected, o1)
+
+        // Turn 2: fresh guard — 1 call then answer → Answered.
+        aiService.enqueueToolCalls(AiToolCall("d1", "list_rule_keys", "{}"))
+        aiService.enqueueText("done")
+        val o2 = agent.runTurn("again", memory)
+        assertEquals(TurnOutcome.Answered, o2)
+
+        events.cancelAndCollect()
+    }
+
+    // --- Retry integration tests (Phase 5, Task 26) ---
+
+    /**
+     * Transient `IOException` on the first attempt, then a plain-text answer.
+     * Asserts `TurnOutcome.Answered`, `Retrying(1, 2)` emitted, no `Failed`.
+     */
+    fun testRetryOnTransient() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val rctx = retryCtx()
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, rctx, events.flow)
+
+        aiService.enqueueThrow(IOException("connection reset"))
+        aiService.enqueueText("recovered answer")
+
+        val outcome = agent.runTurn("test", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.Answered, outcome)
+        val phases = events.collected.map { it::class.simpleName }
+        assertTrue("should emit Retrying", phases.contains("Retrying"))
+        assertFalse("should NOT emit Failed", phases.contains("Failed"))
+        assertTrue("should emit Message (recovery)", phases.contains("Message"))
+        val retrying = events.collected.filterIsInstance<AgentEvent.Retrying>().single()
+        assertEquals(1, retrying.attempt)
+        assertEquals(2, retrying.maxRetries)
+    }
+
+    /**
+     * Non-transient `IllegalArgumentException("401 unauthorized")` → fail
+     * fast. Asserts `TurnOutcome.Answered`, `Failed` with "attempt(s)", NO
+     * `Retrying` (REQ-4 AC-3, NFR-2).
+     */
+    fun testNoRetryOnAuth() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val rctx = retryCtx()
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, rctx, events.flow)
+
+        aiService.enqueueThrow(IllegalArgumentException("401 unauthorized"))
+
+        val outcome = agent.runTurn("test", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.Answered, outcome)
+        val phases = events.collected.map { it::class.simpleName }
+        assertFalse("should NOT emit Retrying", phases.contains("Retrying"))
+        val failed = events.collected.filterIsInstance<AgentEvent.Failed>().single()
+        assertTrue("Failed reason should contain 'attempt(s)': ${failed.reason}",
+            failed.reason.contains("attempt(s)"))
+    }
+
+    /**
+     * `ChatTimeoutException` on the first attempt, then a plain-text answer.
+     * Asserts the timeout is classified as transient and retried (end-to-end
+     * test for the Phase 4 fix — REQ-4 Decision 4, NFR-2).
+     */
+    fun testTimeoutRetriedAsTransient() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val rctx = retryCtx()
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, rctx, events.flow)
+
+        aiService.enqueueThrow(ChatTimeoutException(5000L, RuntimeException("inner")))
+        aiService.enqueueText("recovered after timeout")
+
+        val outcome = agent.runTurn("test", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.Answered, outcome)
+        val phases = events.collected.map { it::class.simpleName }
+        assertTrue("should emit Retrying (timeout is transient)", phases.contains("Retrying"))
+        assertFalse("should NOT emit Failed", phases.contains("Failed"))
+    }
+
+    /**
+     * `1 + chatMaxRetries` transient failures → retries exhausted. Asserts
+     * `TurnOutcome.Answered`, `Failed` with attempt count, `Retrying` per
+     * attempt (REQ-4 AC-4, AC-8).
+     */
+    fun testRetriesExhaustedTerminal() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val rctx = retryCtx(maxRetries = 2)
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, rctx, events.flow)
+
+        // 1 + 2 = 3 transient failures → exhausted.
+        repeat(3) { aiService.enqueueThrow(IOException("timeout $it")) }
+
+        val outcome = agent.runTurn("test", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.Answered, outcome)
+        val failed = events.collected.filterIsInstance<AgentEvent.Failed>().single()
+        assertTrue("Failed reason should contain 'after 3 attempt(s)': ${failed.reason}",
+            failed.reason.contains("after 3 attempt(s)"))
+        val retrying = events.collected.filterIsInstance<AgentEvent.Retrying>()
+        assertEquals("should emit Retrying 3 times", 3, retrying.size)
+    }
+
+    /**
+     * Assert `Retrying(attempt, maxRetries)` is emitted on each transient
+     * failure that is retried, and NOT on success or non-transient failures
+     * (REQ-4 AC-8).
+     */
+    fun testRetryingEventEmitted() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val rctx = retryCtx(maxRetries = 2)
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, rctx, events.flow)
+
+        // 2 transient failures then success.
+        aiService.enqueueThrow(IOException("fail 1"))
+        aiService.enqueueThrow(IOException("fail 2"))
+        aiService.enqueueText("recovered")
+
+        val outcome = agent.runTurn("test", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.Answered, outcome)
+        val retrying = events.collected.filterIsInstance<AgentEvent.Retrying>()
+        assertEquals("should emit Retrying 2 times", 2, retrying.size)
+        assertEquals(1, retrying[0].attempt)
+        assertEquals(2, retrying[1].attempt)
+        assertEquals(2, retrying[0].maxRetries)
+        val phases = events.collected.map { it::class.simpleName }
+        assertFalse("should NOT emit Failed", phases.contains("Failed"))
+    }
+
+    /**
+     * Assert `Failed.reason` contains "after N attempt(s)" on terminal
+     * exhaustion (REQ-4 AC-4).
+     */
+    fun testTerminalFailedHasAttemptCount() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val rctx = retryCtx(maxRetries = 1)
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, rctx, events.flow)
+
+        // 1 + 1 = 2 transient failures → exhausted.
+        repeat(2) { aiService.enqueueThrow(IOException("fail $it")) }
+
+        val outcome = agent.runTurn("test", memory)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.Answered, outcome)
+        val failed = events.collected.filterIsInstance<AgentEvent.Failed>().single()
+        assertTrue("Failed reason should contain 'after 2 attempt(s)': ${failed.reason}",
+            failed.reason.contains("after 2 attempt(s)"))
+    }
+
+    /**
+     * Cancel the turn job mid-retry backoff → `CancellationException` must
+     * propagate (not swallowed by the retry policy). Asserts the job is
+     * cancelled and no `Failed` event was emitted (REQ-4 AC-5).
+     *
+     * NOTE: tested with `runBlocking` + a long backoff. The agent job is
+     * launched UNDISPATCHED so it runs synchronously until it suspends in
+     * `delay`; the test then cancels during the backoff window.
+     */
+    fun testCancellationNotSwallowed() = runBlocking {
+        // Long backoff so we can reliably cancel mid-backoff.
+        val cancelCtx = ctx.copy(
+            aiSettings = ctx.aiSettings.copy(
+                loopSafety = LoopSafetyConfig(
+                    chatMaxRetries = 2,
+                    chatBackoffBaseMs = 10_000,
+                    chatBackoffMaxMs = 10_000
+                )
+            )
+        )
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, cancelCtx, events.flow)
+
+        aiService.enqueueThrow(IOException("timeout"))
+        aiService.enqueueText("recovered")
+
+        val job = scope().launch(
+            context = kotlinx.coroutines.Dispatchers.Unconfined,
+            start = CoroutineStart.UNDISPATCHED
+        ) {
+            agent.runTurn("test", memory)
+        }
+        // The agent has run synchronously until the backoff `delay` —
+        // give a short breather then cancel.
+        delay(100)
+        job.cancelAndJoin()
+
+        assertTrue("job should be cancelled (CancellationException propagated)",
+            job.isCancelled)
+        val phases = events.collected.map { it::class.simpleName }
+        assertFalse("cancellation should not emit Failed", phases.contains("Failed"))
+        events.cancelAndCollect()
+    }
+
     // --- Helpers ---
 
     /**
@@ -517,6 +925,23 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private fun scope() =
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Unconfined)
+
+    /**
+     * Build a [ToolContext] tuned for retry tests: short backoff (1–10 ms)
+     * so retried turns stay snappy, with a configurable [chatMaxRetries].
+     * All other loop-safety knobs keep their defaults.
+     */
+    private fun retryCtx(maxRetries: Int = 2): ToolContext {
+        return ctx.copy(
+            aiSettings = ctx.aiSettings.copy(
+                loopSafety = LoopSafetyConfig(
+                    chatMaxRetries = maxRetries,
+                    chatBackoffBaseMs = 1,
+                    chatBackoffMaxMs = 10
+                )
+            )
+        )
+    }
 
     private class EventCapture(
         val flow: MutableSharedFlow<AgentEvent>,
@@ -584,5 +1009,18 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
             executed = true
             return ToolResult.Text("wrote")
         }
+    }
+
+    /**
+     * A perception tool with a configurable name, returning a stub `ok`
+     * result. Used by loop-detection tests that need a second tool (e.g.
+     * `read_rule_file` for call-cycle detection).
+     */
+    private class NamedFakeTool(override val name: String) : AiTool {
+        override val description = "A fake tool for testing."
+        override val kind = ToolKind.PERCEPTION
+        override val parametersSchema: Map<String, Any?> = emptyMap()
+        override suspend fun execute(args: Map<String, Any?>, ctx: ToolContext): ToolResult =
+            ToolResult.Text("ok")
     }
 }

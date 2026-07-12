@@ -38,6 +38,33 @@ sealed class AgentEvent {
     /** The loop failed terminally. */
     data class Failed(val reason: String) : AgentEvent()
 
+    /**
+     * The agent was detected repeating itself and the turn was terminated.
+     *
+     * Terminal — comparable to [Failed]: the turn has ended abnormally and
+     * no [TurnComplete] / [ProposalReady] will follow. The UI should offer
+     * loop-specific recovery.
+     *
+     * @param reason Human-readable loop-type label (e.g. "consecutive duplicate").
+     * @param tool The tool involved in the loop, if any (`null` for
+     * reasoning repetition).
+     * @param count Repetition count derived from the triggering reason.
+     */
+    data class LoopDetected(val reason: String, val tool: String?, val count: Int) : AgentEvent()
+
+    /**
+     * A transient chat failure is being retried.
+     *
+     * Non-terminal — the turn is still in progress. The UI must NOT treat
+     * this as a turn-end signal (no recovery dialog, no terminal handling);
+     * the indicator is cleared on the next non-retry event. [Failed] is
+     * reserved for terminal exhaustion only.
+     *
+     * @param attempt The current attempt number (1-based).
+     * @param maxRetries The configured maximum number of retries.
+     */
+    data class Retrying(val attempt: Int, val maxRetries: Int) : AgentEvent()
+
     /** The current turn completed normally. */
     object TurnComplete : AgentEvent()
 }

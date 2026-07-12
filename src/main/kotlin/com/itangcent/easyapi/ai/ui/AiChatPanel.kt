@@ -133,6 +133,14 @@ class AiChatPanel(
     private var clarificationPending: Boolean = false
 
     /**
+     * The reason/tool captured from the most recent [AgentEvent.LoopDetected],
+     * used to enrich the recovery dialog text. Overwritten on each loop
+     * detection; consumed by [offerLoopRecovery].
+     */
+    private var lastLoopReason: String? = null
+    private var lastLoopTool: String? = null
+
+    /**
      * Optional hook. When set, a staged proposal
      * card shows an **"Apply to editor"** button that calls this with the
      * proposal content — used by [com.itangcent.easyapi.settings.ui.RuleFileEditDialog]
@@ -386,6 +394,10 @@ class AiChatPanel(
                             statusLabel.text = "Request limit reached."
                             offerContinueOrCancel(sess)
                         }
+                        TurnOutcome.LoopDetected -> {
+                            statusLabel.text = "Agent appears stuck."
+                            offerLoopRecovery(sess)
+                        }
                     }
                 }
             } catch (e: kotlinx.coroutines.CancellationException) {
@@ -460,6 +472,16 @@ class AiChatPanel(
                     "EasyApi AI Assistant",
                     ev.reason
                 )
+            }
+            is AgentEvent.LoopDetected -> {
+                // Capture the loop reason/tool so the recovery dialog can
+                // name the offending tool. The status label is set from the
+                // TurnOutcome.LoopDetected branch after the turn ends.
+                lastLoopReason = ev.reason
+                lastLoopTool = ev.tool
+            }
+            is AgentEvent.Retrying -> {
+                statusLabel.text = "Retrying chat (attempt ${ev.attempt}/${ev.maxRetries})…"
             }
             AgentEvent.TurnComplete -> {
                 // Turn finished — status already updated in sendCurrentInput.
@@ -914,6 +936,57 @@ class AiChatPanel(
                     throw e
                 } catch (e: Throwable) {
                     LOG.warn("Continue turn failed", e)
+                } finally {
+                    ui { setRunning(false) }
+                }
+            }
+        }
+    }
+
+    /**
+     * Offers loop-recovery after a [TurnOutcome.LoopDetected] turn, mirroring
+     * [offerContinueOrCancel].
+     *
+     * The dialog names the offending tool (captured from
+     * [AgentEvent.LoopDetected]) when available. Continuing injects a
+     * user-style anti-repetition hint (design Decision 5) and re-runs the
+     * turn — a fresh `LoopGuard` starts automatically (it is per-turn).
+     * Recovery is user-initiated; there is no auto-retry.
+     */
+    private fun offerLoopRecovery(sess: ConversationSession) {
+        val tool = lastLoopTool
+        val dialogText = if (tool != null) {
+            "The agent was repeating the same action ($tool). Retry with guidance, or stop?"
+        } else {
+            "The agent was repeating the same action. Retry with guidance, or stop?"
+        }
+        val options = arrayOf("Continue", "Cancel")
+        val choice = JOptionPane.showOptionDialog(
+            null,
+            dialogText,
+            "EasyApi AI Assistant",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            options,
+            options[0]
+        )
+        if (choice == JOptionPane.YES_OPTION) {
+            // User-style anti-repetition hint (design Decision 5) — same
+            // injection channel as the "(continue)" nudge in offerContinueOrCancel.
+            val hint = "The previous turn repeated without progress. " +
+                "Try a different tool, change the arguments, or communicate your conclusion."
+            setRunning(true)
+            turnJob = workScope.launch {
+                try {
+                    sess.agent.runTurn(
+                        hint, sess.memory,
+                        AmbientPerception.capture(project, editingFilePath)
+                    )
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    LOG.warn("Loop-recovery turn failed", e)
                 } finally {
                     ui { setRunning(false) }
                 }

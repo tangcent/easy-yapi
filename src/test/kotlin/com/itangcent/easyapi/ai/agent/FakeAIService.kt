@@ -17,12 +17,30 @@ import com.itangcent.easyapi.ai.AIService
  */
 class FakeAIService : AIService {
 
-    private val queue: ArrayDeque<AiChatResponse> = ArrayDeque()
+    /** A queued chat outcome: either a response to return or a throwable to throw. */
+    private sealed class QueueEntry {
+        data class Response(val response: AiChatResponse) : QueueEntry()
+        data class Throw(val error: Throwable) : QueueEntry()
+    }
+
+    private val queue: ArrayDeque<QueueEntry> = ArrayDeque()
     private val requests: MutableList<AiChatRequest> = mutableListOf()
 
     /** Enqueue a response that the next [chat] call will return. */
     fun enqueue(response: AiChatResponse): FakeAIService {
-        queue.addLast(response)
+        queue.addLast(QueueEntry.Response(response))
+        return this
+    }
+
+    /**
+     * Enqueue a throwable that the next [chat] call will throw (instead of
+     * returning a response). The request is still recorded before the throw,
+     * so [requests] assertions remain accurate. Entries are dequeued in FIFO
+     * order relative to [enqueue] / [enqueueText] / [enqueueToolCalls], so a
+     * test can script a failure followed by a success.
+     */
+    fun enqueueThrow(e: Throwable): FakeAIService {
+        queue.addLast(QueueEntry.Throw(e))
         return this
     }
 
@@ -54,7 +72,10 @@ class FakeAIService : AIService {
             error("FakeAIService queue is empty — script underflow. " +
                 "Requests received so far: ${requests.size}.")
         }
-        return queue.removeFirst()
+        return when (val entry = queue.removeFirst()) {
+            is QueueEntry.Response -> entry.response
+            is QueueEntry.Throw -> throw entry.error
+        }
     }
 
     override suspend fun testConnection(): Result<String> =

@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.ai
 
 import com.intellij.openapi.project.Project
+import com.itangcent.easyapi.ai.agent.LoopSafetyConfig
 import com.itangcent.easyapi.settings.module.AiSettings
 import com.itangcent.easyapi.settings.settings
 
@@ -19,6 +20,9 @@ import com.itangcent.easyapi.settings.settings
  * @param contextWindow Approximate context window (in tokens) of [model],
  * used to derive the agent's token budget. Defaults to [AiProvider.contextWindow]
  * of [provider]; pass an explicit value when a per-model window is known.
+ * @param loopSafety Loop-safety and chat-retry tuning. Defaults to
+ * [LoopSafetyConfig] MVP values; no settings-UI change is required for the
+ * default.
  */
 data class AiRuntimeConfig(
     val provider: AiProvider,
@@ -27,7 +31,8 @@ data class AiRuntimeConfig(
     val model: String,
     val requestTimeoutSec: Int,
     val maxRequests: Int,
-    val contextWindow: Int = provider.contextWindow
+    val contextWindow: Int = provider.contextWindow,
+    val loopSafety: LoopSafetyConfig = LoopSafetyConfig()
 ) {
     companion object {
         /**

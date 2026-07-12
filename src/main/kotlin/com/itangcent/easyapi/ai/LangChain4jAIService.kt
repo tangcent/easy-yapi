@@ -19,6 +19,7 @@ import dev.langchain4j.model.chat.request.json.JsonStringSchema
 import dev.langchain4j.model.chat.response.ChatResponse
 import com.itangcent.easyapi.util.json.GsonUtils
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.annotations.ApiStatus
@@ -53,10 +54,19 @@ class LangChain4jAIService(
         }
         request.maxTokens?.let { builder.maxOutputTokens(it) }
 
-        val resp = withContext(Dispatchers.IO) {
+        // withTimeout MUST wrap withContext (not the other way around): a
+        // blocking Java call inside withTimeout has no suspension point, so
+        // withTimeout would silently return the block's value instead of
+        // throwing. Wrapping withContext gives a real suspension point
+        // (dispatcher switch) so the timeout is enforced.
+        val resp = try {
             withTimeout(settings.requestTimeoutSec * 1000L) {
-                chatModel.chat(builder.build())
+                withContext(Dispatchers.IO) {
+                    chatModel.chat(builder.build())
+                }
             }
+        } catch (e: TimeoutCancellationException) {
+            throw ChatTimeoutException(settings.requestTimeoutSec * 1000L, e)
         }
         return resp.toAiChatResponse()
     }
