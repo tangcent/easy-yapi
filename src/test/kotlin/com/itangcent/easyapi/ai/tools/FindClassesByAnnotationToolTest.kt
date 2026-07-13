@@ -252,6 +252,81 @@ class FindClassesByAnnotationToolTest : EasyApiLightCodeInsightFixtureTestCase()
         Assert.assertEquals(ToolKind.PERCEPTION, FindClassesByAnnotationTool().kind)
     }
 
+    // ------------------------------------------------------------------
+    // Task 11 — tolerance + context parameter
+    // ------------------------------------------------------------------
+
+    fun testAcceptsSimpleNameForAnnotationFqn() {
+        addClasses()
+        // "Marker" is a simple name — resolveAllClasses finds com.example.Marker.
+        val result = runBlocking {
+            FindClassesByAnnotationTool().execute(
+                mapOf("annotationFqn" to "Marker"),
+                ctx()
+            )
+        }
+        Assert.assertTrue("expected Text result, got $result", result is ToolResult.Text)
+        val fqns: List<String> = GsonUtils.fromJson((result as ToolResult.Text).value)
+        Assert.assertTrue(
+            "should find MarkedOne via simple-name resolution",
+            fqns.contains("com.example.MarkedOne")
+        )
+        Assert.assertTrue(
+            "should find MarkedTwo via simple-name resolution",
+            fqns.contains("com.example.MarkedTwo")
+        )
+    }
+
+    fun testAcceptsSimpleNameWithContext() {
+        addClasses()
+        // "Marker" + context "com.example.MarkedOne" → context nails it to
+        // com.example.Marker (MarkedOne's same-package scope).
+        val result = runBlocking {
+            FindClassesByAnnotationTool().execute(
+                mapOf(
+                    "annotationFqn" to "Marker",
+                    "context" to "com.example.MarkedOne"
+                ),
+                ctx()
+            )
+        }
+        Assert.assertTrue("expected Text result, got $result", result is ToolResult.Text)
+        val fqns: List<String> = GsonUtils.fromJson((result as ToolResult.Text).value)
+        Assert.assertTrue(
+            "should find MarkedOne with context",
+            fqns.contains("com.example.MarkedOne")
+        )
+    }
+
+    fun testContextUnresolvableFallsBackSilently() {
+        addClasses()
+        // Bogus context → falls back to no-context simple-name resolution.
+        val result = runBlocking {
+            FindClassesByAnnotationTool().execute(
+                mapOf(
+                    "annotationFqn" to "Marker",
+                    "context" to "bogus.not.a.real.fqn.or.path"
+                ),
+                ctx()
+            )
+        }
+        Assert.assertTrue(
+            "bogus context should fall back silently: $result",
+            result is ToolResult.Text
+        )
+        val fqns: List<String> = GsonUtils.fromJson((result as ToolResult.Text).value)
+        Assert.assertTrue(
+            "should still find MarkedOne via fallback",
+            fqns.contains("com.example.MarkedOne")
+        )
+    }
+
+    fun testSchemaDeclaresContextProperty() {
+        val schema = FindClassesByAnnotationTool().parametersSchema
+        val props = schema["properties"] as Map<*, *>
+        Assert.assertTrue("should declare context", props.containsKey("context"))
+    }
+
     private class NoOpApprovalGate : ApprovalGate {
         override suspend fun await(toolName: String, args: Map<String, Any?>): Boolean = true
     }

@@ -1,24 +1,28 @@
 package com.itangcent.easyapi.ai.tools
 
-import com.intellij.psi.JavaPsiFacade
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiMethod
-import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.PsiElement
 import com.itangcent.easyapi.core.threading.read
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.util.json.GsonUtils
 
 /**
  * Perception tool that returns PSI class info for one or more classes
  *.
  *
- * Resolves each class by FQN inside a read action and returns name, modifiers,
- * annotations, fields, and method signatures.
+ * Resolves each class by FQN (or simple name with optional `context`) inside a
+ * read action and returns name, modifiers, annotations, fields (with additive
+ * `typeFqn` — the [com.itangcent.easyapi.psi.type.ResolvedType.qualifiedName]
+ * with type args encoded inline), and method signatures (with additive
+ * `returnTypeFqn` and per-parameter `typeFqn`).
+ *
+ * All signature building is delegated to [PsiSignatureBuilder] — this tool
+ * only resolves the PSI class and builds error messages.
  *
  * Supports batch: pass `fqns` (array) to inspect multiple classes in one call.
  * Returns a JSON object for a single class, or a JSON object mapping each FQN
  * to its info (or an error string) for batch mode.
  */
-class GetPsiClassInfoTool : AiTool {
+class GetPsiClassInfoTool : AiTool, IdeaLog {
 
     override val name: String = "get_psi_class_info"
 
@@ -36,65 +40,74 @@ class GetPsiClassInfoTool : AiTool {
         "properties" to mapOf(
             "fqn" to mapOf(
                 "type" to "string",
-                "description" to "Fully qualified class name."
+                "description" to "Fully qualified class name (or simple name when `context` is supplied)."
             ),
             "fqns" to mapOf(
                 "type" to "array",
                 "items" to mapOf("type" to "string"),
                 "description" to "Multiple fully qualified class names to inspect in one call (batch mode)."
+            ),
+            "context" to mapOf(
+                "type" to "string",
+                "description" to "Optional: file path or class FQN whose import scope " +
+                    "is used to resolve simple-name `fqn`/`fqns` entries and field " +
+                    "type FQNs."
             )
         )
     )
 
     override suspend fun execute(args: Map<String, Any?>, ctx: ToolContext): ToolResult {
-        val fqns = extractFqns(args)
+        val fqns = PsiNameResolver.extractStringList(args, "fqn", "fqns")
         if (fqns.isEmpty()) return ToolResult.Error("missing parameter: provide `fqn` (string) or `fqns` (array)")
 
+        val contextElement = PsiNameResolver.resolveContextArg(args, ctx.project)
+
         if (fqns.size == 1) {
-            val info = lookupOne(fqns[0], ctx)
-                ?: return ToolResult.Error("class not found: ${fqns[0]}")
+            val info = lookupOne(fqns[0], ctx, contextElement)
+            if (info == null) {
+                return ToolResult.Error(buildNotFoundMessage(fqns[0], ctx, contextElement))
+            }
             return ToolResult.Text(GsonUtils.toJson(info))
         }
-        val result = fqns.associateWith { lookupOne(it, ctx) ?: "not found" }
+        val result = fqns.associateWith { lookupOne(it, ctx, contextElement) ?: "not found" }
         return ToolResult.Text(GsonUtils.toJson(result))
     }
 
-    private fun extractFqns(args: Map<String, Any?>): List<String> {
-        val batch = args["fqns"] as? List<*>
-        if (batch != null) {
-            return batch.mapNotNull { it?.toString()?.takeIf { s -> s.isNotBlank() } }
+    /**
+     * Builds the error message for a missing class. When the lookup was a
+     * simple name without context and `PsiNameResolver` found multiple
+     * matches, the message guides the agent to `find_classes_by_name`
+     * (Design Decision 4). Otherwise a plain "class not found" is returned.
+     */
+    private suspend fun buildNotFoundMessage(
+        fqn: String,
+        ctx: ToolContext,
+        contextElement: PsiElement?
+    ): String {
+        // Ambiguity only applies to simple names (no dot) without a context
+        // that could have nailed the resolution.
+        if (!fqn.contains('.') && contextElement == null) {
+            val matches = PsiNameResolver.resolveAllClasses(fqn, ctx.project, null)
+            if (matches.size > 1) {
+                return "ambiguous simple name '$fqn': ${matches.size} classes match, " +
+                    "use find_classes_by_name to disambiguate"
+            }
         }
-        val single = args["fqn"] as? String
-        return if (single.isNullOrBlank()) emptyList() else listOf(single)
+        return "class not found: $fqn"
     }
 
     // All PSI access (name, fields, methods, annotations) must happen inside
     // the read action — PSI element getters require a read action.
-    private suspend fun lookupOne(fqn: String, ctx: ToolContext): Map<String, Any?>? = read {
-        val psiClass = JavaPsiFacade.getInstance(ctx.project)
-.findClass(fqn, GlobalSearchScope.projectScope(ctx.project))
+    private suspend fun lookupOne(
+        fqn: String,
+        ctx: ToolContext,
+        contextElement: PsiElement?
+    ): Map<String, Any?>? = read {
+        val psiClass = PsiNameResolver.resolveClass(fqn, ctx.project, contextElement)
             ?: return@read null
-        psiClass.toInfoMap()
+        // Implicit contextElement for type enrichment: when no explicit context
+        // was supplied, use the resolved class's containing file (REQ-4 AC-9).
+        val enrichmentContext = contextElement ?: psiClass.containingFile
+        PsiSignatureBuilder.classToMap(psiClass, ctx.project, enrichmentContext)
     }
-
-    private fun PsiClass.toInfoMap(): Map<String, Any?> = mapOf(
-        "name" to name,
-        "fqn" to qualifiedName,
-        "modifiers" to modifierList?.text,
-        "annotations" to annotations.map { it.qualifiedName },
-        "fields" to fields.map {
-            mapOf("name" to it.name, "type" to it.type.presentableText)
-        },
-        "methods" to methods.map { it.toSignatureMap() }
-    )
-
-    private fun PsiMethod.toSignatureMap(): Map<String, Any?> = mapOf(
-        "name" to name,
-        "modifiers" to modifierList?.text,
-        "returnType" to returnType?.presentableText,
-        "parameters" to parameterList.parameters.map { p ->
-            mapOf("name" to p.name, "type" to p.type.presentableText)
-        },
-        "annotations" to annotations.map { it.qualifiedName }
-    )
 }

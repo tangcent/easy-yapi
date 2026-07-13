@@ -49,14 +49,16 @@ class GetModuleDependencyGraphTool : AiTool, IdeaLog {
             for (module in modules) {
                 try {
                     val deps = ModuleRootManager.getInstance(module).orderEntries
+                        .asSequence()
                         .filterIsInstance<ModuleOrderEntry>()
                         // Req 8.1: restrict to workspace (non-external) modules —
                         // a ModuleOrderEntry whose Module is null is an external /
                         // unloaded reference, not a structural workspace edge.
                         .filter { it.module != null }
-                        .mapNotNull { it.moduleName }
+                        .map { it.moduleName }
                         .filter { it.isNotBlank() && it != module.name }
                         .distinct()
+                        .toList()
                     result[module.name] = deps.toMutableList()
                 } catch (e: Exception) {
                     LOG.warn("module-dep-graph: error reading module ${module.name}", e)

@@ -199,6 +199,81 @@ class FindClassesBySupertypeToolTest : EasyApiLightCodeInsightFixtureTestCase() 
         Assert.assertEquals(ToolKind.PERCEPTION, FindClassesBySupertypeTool().kind)
     }
 
+    // ------------------------------------------------------------------
+    // Task 12 — tolerance + context parameter
+    // ------------------------------------------------------------------
+
+    fun testAcceptsSimpleNameForSupertypeFqn() {
+        addClasses()
+        // "OncePerRequestFilter" is a simple name — resolveAllClasses finds it.
+        val result = runBlocking {
+            FindClassesBySupertypeTool().execute(
+                mapOf("supertypeFqn" to "OncePerRequestFilter"),
+                ctx()
+            )
+        }
+        Assert.assertTrue("expected Text result, got $result", result is ToolResult.Text)
+        val fqns: List<String> = GsonUtils.fromJson((result as ToolResult.Text).value)
+        Assert.assertTrue(
+            "should find MerchantJwtFilter via simple-name resolution",
+            fqns.contains("com.example.MerchantJwtFilter")
+        )
+        Assert.assertTrue(
+            "should find OpsJwtFilter via simple-name resolution",
+            fqns.contains("com.example.OpsJwtFilter")
+        )
+    }
+
+    fun testAcceptsSimpleNameWithContext() {
+        addClasses()
+        // "OncePerRequestFilter" + context "com.example.MerchantJwtFilter" →
+        // context nails it via MerchantJwtFilter's import.
+        val result = runBlocking {
+            FindClassesBySupertypeTool().execute(
+                mapOf(
+                    "supertypeFqn" to "OncePerRequestFilter",
+                    "context" to "com.example.MerchantJwtFilter"
+                ),
+                ctx()
+            )
+        }
+        Assert.assertTrue("expected Text result, got $result", result is ToolResult.Text)
+        val fqns: List<String> = GsonUtils.fromJson((result as ToolResult.Text).value)
+        Assert.assertTrue(
+            "should find MerchantJwtFilter with context",
+            fqns.contains("com.example.MerchantJwtFilter")
+        )
+    }
+
+    fun testContextUnresolvableFallsBackSilently() {
+        addClasses()
+        // Bogus context → falls back to no-context simple-name resolution.
+        val result = runBlocking {
+            FindClassesBySupertypeTool().execute(
+                mapOf(
+                    "supertypeFqn" to "OncePerRequestFilter",
+                    "context" to "bogus.not.a.real.fqn.or.path"
+                ),
+                ctx()
+            )
+        }
+        Assert.assertTrue(
+            "bogus context should fall back silently: $result",
+            result is ToolResult.Text
+        )
+        val fqns: List<String> = GsonUtils.fromJson((result as ToolResult.Text).value)
+        Assert.assertTrue(
+            "should still find MerchantJwtFilter via fallback",
+            fqns.contains("com.example.MerchantJwtFilter")
+        )
+    }
+
+    fun testSchemaDeclaresContextProperty() {
+        val schema = FindClassesBySupertypeTool().parametersSchema
+        val props = schema["properties"] as Map<*, *>
+        Assert.assertTrue("should declare context", props.containsKey("context"))
+    }
+
     private class NoOpApprovalGate : ApprovalGate {
         override suspend fun await(toolName: String, args: Map<String, Any?>): Boolean = true
     }

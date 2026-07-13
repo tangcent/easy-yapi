@@ -43,7 +43,7 @@ class GetExistingRulesForKeyTool : AiTool {
     )
 
     override suspend fun execute(args: Map<String, Any?>, ctx: ToolContext): ToolResult {
-        val keys = extractKeys(args)
+        val keys = PsiNameResolver.extractStringList(args, "key", "keys")
         if (keys.isEmpty()) return ToolResult.Error("missing parameter: provide `key` (string) or `keys` (array)")
 
         if (keys.size == 1) {
@@ -51,15 +51,6 @@ class GetExistingRulesForKeyTool : AiTool {
         }
         val result = keys.associateWith { lookupOne(it, ctx) }
         return ToolResult.Text(GsonUtils.toJson(result))
-    }
-
-    private fun extractKeys(args: Map<String, Any?>): List<String> {
-        val batch = args["keys"] as? List<*>
-        if (batch != null) {
-            return batch.mapNotNull { it?.toString()?.takeIf { s -> s.isNotBlank() } }
-        }
-        val single = args["key"] as? String
-        return if (single.isNullOrBlank()) emptyList() else listOf(single)
     }
 
     private fun lookupOne(key: String, ctx: ToolContext): List<Map<String, Any?>> {

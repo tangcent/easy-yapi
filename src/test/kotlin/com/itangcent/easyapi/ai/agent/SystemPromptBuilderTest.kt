@@ -310,9 +310,13 @@ class SystemPromptBuilderTest {
         // (per Decision 5: ~600-800-char target subsection + on-demand fetch via
         // `get_plugin_doc name="rule-guide"` for the full recipe; ceiling is the new
         // actual ~16.8k + ~1k headroom).
+        // Ceiling raised 17_800 → 19_200 for the agent-psi-resolution spec (Task 14):
+        // preamble now documents `find_classes_by_name` as the primary simple-name
+        // resolver, `typeFqn` chaining, and `detail="full"` opt-in. Actual ~18.2k
+        // + ~1k headroom.
         val msg = SystemPromptBuilder.build()
         val content = msg.content
-        val ceiling = 17_800 // raised for Multi-app namespacing subsection (Decision 5): actual ~16.8k + ~1k headroom
+        val ceiling = 19_200 // raised for agent-psi-resolution preamble update: actual ~18.2k + ~1k headroom
         Assert.assertTrue(
             "Preamble content length (${content.length} chars) must stay under $ceiling chars " +
                 "to stay within NFR-3's token budget. If a future section is added, raise the " +

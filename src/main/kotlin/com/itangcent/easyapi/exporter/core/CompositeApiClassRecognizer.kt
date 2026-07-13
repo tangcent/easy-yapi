@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.exporter.core
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -23,15 +24,20 @@ import com.itangcent.easyapi.settings.onSettingsChanged
  * should use this class instead of checking annotations directly.
  */
 @Service(Service.Level.PROJECT)
-class CompositeApiClassRecognizer(private val project: Project) {
+class CompositeApiClassRecognizer(private val project: Project) : Disposable {
 
     @Volatile
     private var cachedRecognizers: List<ApiClassRecognizer> = buildRecognizers()
 
     init {
-        project.onSettingsChanged {
+        project.onSettingsChanged(this) {
             cachedRecognizers = buildRecognizers()
         }
+    }
+
+    override fun dispose() {
+        // The MessageBus connection created in init with `this` as the parent
+        // is automatically disposed when this service is disposed.
     }
 
     private fun buildRecognizers(): List<ApiClassRecognizer> {

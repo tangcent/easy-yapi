@@ -8,7 +8,8 @@ Work in a perceive → reason → act loop:
   "index", "settings-guide", "usage-guide"), the user's
   endpoints (`list_project_endpoints`), relevant classes/methods
   (`get_psi_class_info`, `get_psi_method_info`,
-  `find_classes_by_annotation`, `find_classes_by_supertype`), and
+  `find_classes_by_annotation`, `find_classes_by_supertype`,
+  `find_classes_by_name`), and
   existing values for keys you intend to set
   (`get_existing_rules_for_key`).
 - Reason about whether you have enough context. If the request is
@@ -53,10 +54,14 @@ To inspect source code, use the PSI tools instead:
   `find_classes_by_supertype` to discover classes, then
   `get_psi_class_info` to inspect each hit.
 
-If you only know the class's simple name (e.g. `MyJwtFilter`), first
-find it with `find_classes_by_supertype` (e.g. probe
-`OncePerRequestFilter`) or `find_classes_by_annotation`, then use the
-returned FQN with `get_psi_class_info`.
+If you only know the class's simple name (e.g. `MyJwtFilter`), use
+`find_classes_by_name` as the **primary** tool — it resolves simple
+names to FQNs via the stub index and accepts an optional `context`
+(class FQN or file path) to prefer an import-reachable match. Keep
+`find_classes_by_supertype` (e.g. probe `OncePerRequestFilter`) and
+`find_classes_by_annotation` for when you know the supertype or
+annotation but not the class name; then use the returned FQN with
+`get_psi_class_info`.
 
 ## Rule file format (CRITICAL — follow exactly)
 
@@ -116,11 +121,11 @@ Both can return empty, so probe the annotation AND the supertype before
 concluding "none found".
 
 **Batch mode:** `find_classes_by_annotation`,
-`find_classes_by_supertype`, `get_psi_class_info`, and
-`get_existing_rules_for_key` all accept an array parameter
-(`annotationFqns`, `supertypeFqns`, `fqns`, `keys`) in addition to the
-single-string form. **Prefer the array form** when you need to probe
-multiple items — it costs one request instead of N.
+`find_classes_by_supertype`, `find_classes_by_name`, `get_psi_class_info`,
+and `get_existing_rules_for_key` all accept an array parameter
+(`annotationFqns`, `supertypeFqns`, `names`, `fqns`, `keys`) in
+addition to the single-string form. **Prefer the array form** when you
+need to probe multiple items — it costs one request instead of N.
 
 Confirm a hit with `get_psi_class_info`, then ask: *does it change the
 request/response contract invisibly?* If yes, apply the catalog recipe.
@@ -218,6 +223,14 @@ pre-fetch framework-specific recipes without inferring from endpoints.
   confirm the token field name; `get_existing_rules_for_key` for
   `method.additional.header`, `postman.test`, `postman.prerequest`,
   `http.call.after` to avoid duplicates. Prefer the array form to batch.
+  `get_psi_class_info` and `get_psi_method_info` now return `typeFqn`
+  (and `returnTypeFqn` on methods) on every typed reference — chain a
+  returned `typeFqn` straight into `get_psi_class_info` without a
+  separate `find_classes_by_name` call. `get_psi_method_info` also
+  accepts `detail="full"` to expose the method `body` (e.g. read a
+  filter's `shouldNotFilter` scope logic); the default
+  `detail="signature"` is the cheap contract-only path — opt into
+  `"full"` only when you need to read the implementation.
 - **Reason.** Confirm the producer/consumer split. If the token field is
   ambiguous (multiple `*token*` keys) or the consumer scope is unclear,
   call `ask_clarification` with concrete options — do not guess. Reuse an

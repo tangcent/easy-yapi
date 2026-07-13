@@ -377,6 +377,7 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
         Assert.assertTrue("get_psi_method_info", names.contains("get_psi_method_info"))
         Assert.assertTrue("find_classes_by_annotation", names.contains("find_classes_by_annotation"))
         Assert.assertTrue("find_classes_by_supertype", names.contains("find_classes_by_supertype"))
+        Assert.assertTrue("find_classes_by_name", names.contains("find_classes_by_name"))
         Assert.assertTrue("get_existing_rules_for_key", names.contains("get_existing_rules_for_key"))
         Assert.assertTrue("get_module_dependency_graph", names.contains("get_module_dependency_graph"))
         Assert.assertTrue("propose_rule_content", names.contains("propose_rule_content"))
@@ -384,7 +385,7 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
             "write_rule_file must NOT be registered in v1",
             names.contains("write_rule_file")
         )
-        Assert.assertEquals("exactly 12 tools in v1", 12, tools.size)
+        Assert.assertEquals("exactly 13 tools in v1", 13, tools.size)
     }
 
     // --- helpers ---

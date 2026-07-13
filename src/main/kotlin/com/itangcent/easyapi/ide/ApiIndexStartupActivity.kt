@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.ide
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.itangcent.easyapi.cache.api.ApiFileChangeListener
@@ -21,11 +22,19 @@ import kotlin.time.Duration.Companion.seconds
  * Uses [backgroundAsync] to ensure all downstream PSI operations run on clean
  * background threads without inherited EDT context.
  *
+ * **Test mode:** This activity is a no-op when `ApplicationManager.isUnitTestMode`
+ * is true. Tests explicitly control the [ApiIndexManager] lifecycle (setUp/tearDown),
+ * and the delayed background initialization (5s + 10s delays) would leak coroutines
+ * on the singleton `IdeDispatchers.scope` that outlive disposed test projects,
+ * causing `AlreadyDisposedException` on CI where the delays elapse during later tests.
+ *
  * @see ApiIndexManager
  * @see ApiFileChangeListener
  */
 class ApiIndexStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
+        if (ApplicationManager.getApplication().isUnitTestMode) return
+
         backgroundAsync {
             DumbModeHelper.waitForSmartMode(project)
 
