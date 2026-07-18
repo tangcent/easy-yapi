@@ -4,8 +4,8 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.extensions.PluginId
+import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.logging.IdeaLog
 
 /**
@@ -20,7 +20,10 @@ import com.itangcent.easyapi.logging.IdeaLog
  *
  * Registration is triggered eagerly via [ensureActionsRegistered] (called from
  * [com.itangcent.easyapi.ide.action.ChannelActionInitActivity]) and lazily via
- * [getChildren] as a fallback.
+ * [getChildren] as a fallback. Enablement is filtered through
+ * [FieldFormatChannelRegistry.getEnabledChannels] so disabled formats do not
+ * get an action registered; visibility of already-registered actions is
+ * re-evaluated per-context by [FieldFormatAction.update] (Decision A5).
  *
  * ## Adding a new format
  *
@@ -34,20 +37,22 @@ class FieldFormatActionGroup : DefaultActionGroup(), IdeaLog {
         const val ACTION_ID_PREFIX = "com.itangcent.easy_api.actions.fieldformat."
         private val PLUGIN_ID = PluginId.getId("com.itangcent.idea.plugin.easy-yapi")
 
-        private val CHANNEL_EP = ExtensionPointName.create<FieldFormatChannel>(
-            "com.itangcent.idea.plugin.easy-yapi.fieldFormatChannel"
-        )
-
         /**
-         * Registers all field-format actions with [ActionManager] (with plugin ID
-         * for keymap categorization) and adds them as children of this group.
-         * Safe to call multiple times (idempotent).
+         * Registers all **enabled** field-format actions with [ActionManager]
+         * (with plugin ID for keymap categorization) and adds them as children
+         * of this group. Safe to call multiple times (idempotent).
+         *
+         * Takes [project] so it can consult [FieldFormatChannelRegistry.isEnabled]
+         * (which reads the stored preference via
+         * [com.itangcent.easyapi.settings.SettingBinder]). The `fieldFormatChannel`
+         * EP itself is application-scoped, so [FieldFormatChannelRegistry.allChannels]
+         * does not need the project — only the enablement read does.
          */
-        fun ensureActionsRegistered() {
+        fun ensureActionsRegistered(project: Project) {
             val actionManager = ActionManager.getInstance()
             val group = actionManager.getAction(GROUP_ID) as? FieldFormatActionGroup ?: return
 
-            CHANNEL_EP.extensionList.forEach { channel ->
+            FieldFormatChannelRegistry.getInstance(project).getEnabledChannels().forEach { channel ->
                 val actionId = ACTION_ID_PREFIX + channel.id
                 if (actionManager.getAction(actionId) == null) {
                     val action = FieldFormatAction(channel)
@@ -56,10 +61,40 @@ class FieldFormatActionGroup : DefaultActionGroup(), IdeaLog {
                 }
             }
         }
+
+        /**
+         * Re-applies the enablement filter to the action group after a settings
+         * change. Newly-enabled formats get their action registered (via
+         * [ensureActionsRegistered]); disabled formats' actions are hidden
+         * (presentation visible=false) without unregistering, so keymap IDs
+         * remain stable across enable/disable cycles (Req A4.1–A4.3, Decision A5).
+         *
+         * Visibility for existing actions is re-evaluated by each
+         * [FieldFormatAction]'s `update(AnActionEvent)` method (per-context
+         * presentation) when the menu is next shown. We deliberately do NOT
+         * mutate `templatePresentation.isVisible` here — the IntelliJ Platform
+         * forbids direct template-presentation mutation
+         * (Presentation.assertNotTemplatePresentation). This achieves the same
+         * "hide not unregister" semantics (Decision A5) while respecting the
+         * platform's presentation contract.
+         *
+         * Safe to call when the group is not registered (no-op) and idempotent.
+         */
+        fun refreshActions(project: Project) {
+            val actionManager = ActionManager.getInstance()
+            actionManager.getAction(GROUP_ID) as? FieldFormatActionGroup ?: return
+            // Re-run the add path so newly-enabled formats are registered.
+            // Visibility for existing actions is re-evaluated lazily by each
+            // FieldFormatAction.update() when the menu is next displayed.
+            ensureActionsRegistered(project)
+        }
     }
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> {
-        ensureActionsRegistered()
+        // Lazy fallback: register enabled actions for the current project (if any).
+        // The primary registration path is ChannelActionInitActivity at startup +
+        // EasyApiSettingsConfigurable.apply() via refreshActions(project).
+        e?.project?.let { ensureActionsRegistered(it) }
         return super.getChildren(e)
     }
 

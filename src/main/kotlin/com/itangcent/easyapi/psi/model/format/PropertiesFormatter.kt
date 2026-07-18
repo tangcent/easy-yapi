@@ -1,4 +1,4 @@
-package com.itangcent.easyapi.exporter.formatter
+package com.itangcent.easyapi.psi.model.format
 
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.FieldOption

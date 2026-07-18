@@ -1,4 +1,4 @@
-package com.itangcent.easyapi.exporter.formatter
+package com.itangcent.easyapi.psi.model.format
 
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.FieldOption
@@ -13,7 +13,7 @@ class PropertiesFormatterTest {
     fun testFormatSingleValue() {
         val model = ObjectModel.Single(JsonType.STRING)
         val formatter = PropertiesFormatter()
-        
+
         val result = formatter.format(model)
         assertTrue(result.isEmpty())
     }
@@ -27,7 +27,7 @@ class PropertiesFormatterTest {
         )
         val obj = ObjectModel.Object(fields = mapOf("username" to fieldModel))
         val formatter = PropertiesFormatter()
-        
+
         val result = formatter.format(obj)
         assertTrue(result.contains("username=admin"))
     }
@@ -41,7 +41,7 @@ class PropertiesFormatterTest {
         )
         val obj = ObjectModel.Object(fields = mapOf("name" to field))
         val formatter = PropertiesFormatter()
-        
+
         val result = formatter.format(obj)
         assertTrue(result.contains("# User name"))
         assertTrue(result.contains("name="))
@@ -55,7 +55,7 @@ class PropertiesFormatterTest {
         val userField = FieldModel(model = userObj)
         val rootObj = ObjectModel.Object(fields = mapOf("user" to userField))
         val formatter = PropertiesFormatter()
-        
+
         val result = formatter.format(rootObj)
         assertTrue(result.contains("user.name="))
     }
@@ -67,7 +67,7 @@ class PropertiesFormatterTest {
         val field = FieldModel(model = arrayModel)
         val obj = ObjectModel.Object(fields = mapOf("tags" to field))
         val formatter = PropertiesFormatter()
-        
+
         val result = formatter.format(obj)
         assertTrue(result.contains("tags=[]"))
     }
@@ -79,7 +79,7 @@ class PropertiesFormatterTest {
         val field = FieldModel(model = mapModel)
         val obj = ObjectModel.Object(fields = mapOf("metadata" to field))
         val formatter = PropertiesFormatter()
-        
+
         val result = formatter.format(obj)
         assertTrue(result.contains("metadata={}"))
     }
@@ -97,7 +97,7 @@ class PropertiesFormatterTest {
         )
         val obj = ObjectModel.Object(fields = mapOf("status" to field))
         val formatter = PropertiesFormatter()
-        
+
         val result = formatter.format(obj)
         assertTrue(result.contains("status="))
         assertTrue(result.contains("active :Active user"))
@@ -113,7 +113,7 @@ class PropertiesFormatterTest {
         )
         val obj = ObjectModel.Object(fields = mapOf("email" to field))
         val formatter = PropertiesFormatter()
-        
+
         val result = formatter.format(obj)
         assertTrue(result.contains("# User email address"))
         assertTrue(result.contains("email="))
@@ -125,7 +125,7 @@ class PropertiesFormatterTest {
         val selfField = FieldModel(model = obj)
         (obj.fields as MutableMap)["parent"] = selfField
         val formatter = PropertiesFormatter()
-        
+
         val result = formatter.format(obj)
         assertTrue(result.contains("parent="))
     }
@@ -140,7 +140,7 @@ class PropertiesFormatterTest {
         )
         val obj = ObjectModel.Object(fields = fields)
         val formatter = PropertiesFormatter()
-        
+
         val result = formatter.format(obj)
         assertTrue(result.contains("count=0"))
         assertTrue(result.contains("enabled=false"))

@@ -65,7 +65,7 @@ class FieldFormatExtensionsTest : EasyApiLightCodeInsightFixtureTestCase() {
         val model = helper.buildObjectModel(psiClass, option = JsonOption.ALL)!!
 
         val actual = model.toYaml()
-        val expected = ResourceLoader.read("/result/com.itangcent.easyapi.exporter.formatter.YamlFormatterTest.txt")
+        val expected = ResourceLoader.read("/result/com.itangcent.easyapi.psi.model.format.YamlFormatterTest.txt")
         assertEquals(expected, actual)
     }
 

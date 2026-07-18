@@ -10,7 +10,7 @@ import com.itangcent.easyapi.core.threading.write
 import com.itangcent.easyapi.exporter.channel.Channel
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
-import com.itangcent.easyapi.exporter.formatter.HttpClientFileFormatter
+import com.itangcent.easyapi.exporter.channel.httpclient.HttpClientFileFormatter
 import com.itangcent.easyapi.exporter.channel.httpclient.HttpClientExportMetadata
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
@@ -30,6 +30,7 @@ class HttpClientChannel : Channel, IdeaLog {
     override val id: String = "http-client"
     override val displayName: String = "HTTP Client"
     override val supportsGrpc: Boolean = true
+    override val enabledByDefault: Boolean = false
 
     override fun createOptionsPanel(project: Project): ChannelOptionsPanel? = null
 

@@ -40,6 +40,22 @@ interface FieldFormatChannel {
     val actionText: String
 
     /**
+     * Whether this format is enabled out-of-the-box, before any user preference.
+     *
+     * Mirrors [com.itangcent.easyapi.exporter.channel.Channel.enabledByDefault].
+     * All four shipping formats (JSON, JSON5, Properties, YAML) keep the default
+     * `true` (Decision A2 — none is experimental). A future experimental format
+     * overrides this to `false` and the enablement machinery handles it with no
+     * further work. The effective enabled state is resolved against the stored
+     * user preference by
+     * [FieldFormatChannelRegistry.isEnabled].
+     *
+     * This is a static (compile-time) declaration; it is not user-editable or
+     * persisted directly (Req A1.3).
+     */
+    val enabledByDefault: Boolean get() = true
+
+    /**
      * Converts the given [psiClass] fields to the channel's output format.
      *
      * @param project the current IntelliJ project

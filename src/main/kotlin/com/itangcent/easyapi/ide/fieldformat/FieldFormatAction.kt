@@ -32,6 +32,17 @@ class FieldFormatAction(
     private val channel: FieldFormatChannel
 ) : AnAction(channel.actionText), IdeaLog {
 
+    override fun update(e: AnActionEvent) {
+        // Re-evaluate visibility per-display-context (NOT templatePresentation,
+        // which the platform forbids mutating — Presentation.assertNotTemplatePresentation).
+        // This is the chokepoint for "hide not unregister" (Decision A5): a
+        // disabled format's action stays registered (keymap IDs remain stable)
+        // but is hidden from the menu because isVisible resolves to false.
+        e.presentation.isVisible = e.project?.let {
+            FieldFormatChannelRegistry.getInstance(it).isEnabled(channel)
+        } ?: false
+    }
+
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val psiClass = SelectedHelper.resolveSelection(e)?.psiClass() ?: return

@@ -4,20 +4,20 @@ import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 /**
- * Platform tests for the *behavior* fields of [GeneralSettingsPanel]
- * (scanning, editor, output, diagnostics).
+ * Platform tests for [FeaturesSettingsPanel] — the framework-support toggles
+ * (feign/jaxrs/actuator) relocated from [GeneralSettingsPanelPlatformTest].
  *
- * Framework-support toggles (feign/jaxrs/actuator) live on
- * [FeaturesSettingsPanel] now and are covered by
- * [FeaturesSettingsPanelPlatformTest].
+ * Channel / field-format enablement on the same panel is covered by
+ * [FeaturesSettingsPanelChannelEnablementTest] and
+ * [FeaturesSettingsPanelFieldFormatEnablementTest].
  */
-class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase() {
+class FeaturesSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    private lateinit var panel: GeneralSettingsPanel
+    private lateinit var panel: FeaturesSettingsPanel
 
     override fun setUp() {
         super.setUp()
-        panel = GeneralSettingsPanel(project)
+        panel = FeaturesSettingsPanel(project)
     }
 
     fun testResetFromAndApplyToDefaultSettings() {
@@ -27,22 +27,26 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
         val target = GeneralSettings()
         panel.applyTo(target)
 
-        // After resetFrom + applyTo, the target should have the same values as what was displayed
-        // Note: isModified may be true because resetFrom populates default repos not in settings
+        // After resetFrom + applyTo, target reflects defaults.
+        assertFalse(target.feignEnable)
+        assertTrue(target.jaxrsEnable)
+        assertFalse(target.actuatorEnable)
     }
 
     fun testResetFromCustomSettingsAndApplyTo() {
         val settings = GeneralSettings().apply {
-            logLevel = 40
-            outputCharset = "GBK"
+            feignEnable = true
+            jaxrsEnable = false
+            actuatorEnable = true
         }
         panel.resetFrom(settings)
 
         val target = GeneralSettings()
         panel.applyTo(target)
 
-        assertEquals(40, target.logLevel)
-        assertEquals("GBK", target.outputCharset)
+        assertTrue(target.feignEnable)
+        assertFalse(target.jaxrsEnable)
+        assertTrue(target.actuatorEnable)
     }
 
     fun testIsModifiedNullSettings() {
@@ -55,24 +59,18 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
 
     fun testRoundTripWithAllFieldsModified() {
         val modified = GeneralSettings().apply {
-            autoScanEnabled = false
-            concurrentScanEnabled = true
-            gutterIconEnabled = false
-            switchNotice = false
-            logLevel = 100
-            outputCharset = "ISO-8859-1"
+            feignEnable = true
+            jaxrsEnable = false
+            actuatorEnable = true
         }
         panel.resetFrom(modified)
 
         val target = GeneralSettings()
         panel.applyTo(target)
 
-        assertFalse(target.autoScanEnabled)
-        assertTrue(target.concurrentScanEnabled)
-        assertFalse(target.gutterIconEnabled)
-        assertFalse(target.switchNotice)
-        assertEquals(100, target.logLevel)
-        assertEquals("ISO-8859-1", target.outputCharset)
+        assertTrue(target.feignEnable)
+        assertFalse(target.jaxrsEnable)
+        assertTrue(target.actuatorEnable)
     }
 
     fun testResetFromNullDoesNotThrow() {
@@ -85,14 +83,15 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
 
         val target = GeneralSettings()
         panel.applyTo(target)
-        // Should not throw, target should have default values for behavior fields
-        assertTrue(target.autoScanEnabled)
-        assertEquals("UTF-8", target.outputCharset)
+        // Should not throw, target should have default values for framework toggles.
+        assertFalse(target.feignEnable)
+        assertTrue(target.jaxrsEnable)
+        assertFalse(target.actuatorEnable)
     }
 
     fun testIsModifiedAfterResetFromAndApplyTo() {
         val settings = GeneralSettings().apply {
-            logLevel = 40
+            feignEnable = true
         }
         panel.resetFrom(settings)
 
@@ -100,6 +99,6 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
         panel.applyTo(target)
 
         // After applyTo, the target should reflect the panel state
-        assertEquals(40, target.logLevel)
+        assertTrue(target.feignEnable)
     }
 }

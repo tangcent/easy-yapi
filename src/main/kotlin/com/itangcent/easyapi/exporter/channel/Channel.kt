@@ -61,6 +61,15 @@ interface Channel {
     /** Text to display in the action menu when [exposeAsAction] is `true`. */
     val actionText: String? get() = null
 
+    /**
+     * Whether this channel is enabled out-of-the-box, before any user preference.
+     * Default-on channels appear in all export surfaces immediately; default-off
+     * channels (e.g. experimental ones) require the user to enable them in
+     * Settings → General → "Export Channels". Resolved against the stored user
+     * preference by [ChannelRegistry.isEnabled].
+     */
+    val enabledByDefault: Boolean get() = true
+
     /** Hint for settings-tab ordering; lower = earlier. Default 100. */
     val settingsTabOrder: Int get() = 100
 

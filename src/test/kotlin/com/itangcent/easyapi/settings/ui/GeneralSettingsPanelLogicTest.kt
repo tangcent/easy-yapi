@@ -182,4 +182,131 @@ class GeneralSettingsPanelLogicTest {
         val s2 = GrpcSettings(grpcRepositories = arrayOf("a", "c"))
         assertNotEquals(s1, s2)
     }
+
+    // --- Task 1.2: GeneralSettings enabledChannels / disabledChannels ---
+
+    @Test
+    fun testEnabledChannelsDefaultEmpty() {
+        val settings = GeneralSettings()
+        assertEquals(0, settings.enabledChannels.size)
+        assertEquals(0, settings.disabledChannels.size)
+    }
+
+    @Test
+    fun testEnabledChannelsCustomValues() {
+        val settings = GeneralSettings(
+            enabledChannels = arrayOf("http-client", "hoppscotch"),
+            disabledChannels = arrayOf("markdown")
+        )
+        assertEquals(2, settings.enabledChannels.size)
+        assertEquals("http-client", settings.enabledChannels[0])
+        assertEquals("hoppscotch", settings.enabledChannels[1])
+        assertEquals(1, settings.disabledChannels.size)
+        assertEquals("markdown", settings.disabledChannels[0])
+    }
+
+    @Test
+    fun testEnabledChannelsEquality() {
+        val s1 = GeneralSettings(enabledChannels = arrayOf("a", "b"), disabledChannels = arrayOf("c"))
+        val s2 = GeneralSettings(enabledChannels = arrayOf("a", "b"), disabledChannels = arrayOf("c"))
+        assertEquals(s1, s2)
+        assertEquals(s1.hashCode(), s2.hashCode())
+    }
+
+    @Test
+    fun testEnabledChannelsInequality() {
+        val s1 = GeneralSettings(enabledChannels = arrayOf("a", "b"))
+        val s2 = GeneralSettings(enabledChannels = arrayOf("a", "c"))
+        assertNotEquals(s1, s2)
+
+        val d1 = GeneralSettings(disabledChannels = arrayOf("x"))
+        val d2 = GeneralSettings(disabledChannels = arrayOf("y"))
+        assertNotEquals(d1, d2)
+    }
+
+    @Test
+    fun testEnabledChannelsCopy() {
+        val s1 = GeneralSettings(enabledChannels = arrayOf("http-client"), disabledChannels = arrayOf("markdown"))
+        val s2 = s1.copy(disabledChannels = emptyArray())
+        assertArrayEquals(arrayOf("http-client"), s2.enabledChannels)
+        assertEquals(0, s2.disabledChannels.size)
+        // original unchanged
+        assertEquals(1, s1.disabledChannels.size)
+    }
+
+    // --- Task A.2: GeneralSettings enabledFieldFormatChannels / disabledFieldFormatChannels ---
+
+    @Test
+    fun testEnabledFieldFormatChannelsDefaultEmpty() {
+        val settings = GeneralSettings()
+        assertEquals(0, settings.enabledFieldFormatChannels.size)
+        assertEquals(0, settings.disabledFieldFormatChannels.size)
+    }
+
+    @Test
+    fun testEnabledFieldFormatChannelsCustomValues() {
+        val settings = GeneralSettings(
+            enabledFieldFormatChannels = arrayOf("json5", "yaml"),
+            disabledFieldFormatChannels = arrayOf("json")
+        )
+        assertEquals(2, settings.enabledFieldFormatChannels.size)
+        assertEquals("json5", settings.enabledFieldFormatChannels[0])
+        assertEquals("yaml", settings.enabledFieldFormatChannels[1])
+        assertEquals(1, settings.disabledFieldFormatChannels.size)
+        assertEquals("json", settings.disabledFieldFormatChannels[0])
+    }
+
+    @Test
+    fun testEnabledFieldFormatChannelsEquality() {
+        val s1 = GeneralSettings(
+            enabledFieldFormatChannels = arrayOf("a", "b"),
+            disabledFieldFormatChannels = arrayOf("c")
+        )
+        val s2 = GeneralSettings(
+            enabledFieldFormatChannels = arrayOf("a", "b"),
+            disabledFieldFormatChannels = arrayOf("c")
+        )
+        assertEquals(s1, s2)
+        assertEquals(s1.hashCode(), s2.hashCode())
+    }
+
+    @Test
+    fun testEnabledFieldFormatChannelsInequality() {
+        val s1 = GeneralSettings(enabledFieldFormatChannels = arrayOf("a", "b"))
+        val s2 = GeneralSettings(enabledFieldFormatChannels = arrayOf("a", "c"))
+        assertNotEquals(s1, s2)
+
+        val d1 = GeneralSettings(disabledFieldFormatChannels = arrayOf("x"))
+        val d2 = GeneralSettings(disabledFieldFormatChannels = arrayOf("y"))
+        assertNotEquals(d1, d2)
+    }
+
+    @Test
+    fun testEnabledFieldFormatChannelsCopy() {
+        val s1 = GeneralSettings(
+            enabledFieldFormatChannels = arrayOf("json5"),
+            disabledFieldFormatChannels = arrayOf("json")
+        )
+        val s2 = s1.copy(disabledFieldFormatChannels = emptyArray())
+        assertArrayEquals(arrayOf("json5"), s2.enabledFieldFormatChannels)
+        assertEquals(0, s2.disabledFieldFormatChannels.size)
+        // original unchanged
+        assertEquals(1, s1.disabledFieldFormatChannels.size)
+    }
+
+    @Test
+    fun testFieldFormatChannelsIndependentFromExportChannels() {
+        // The two EPs use independent id spaces (Decision A4). Setting one pair
+        // must not affect the other.
+        val settings = GeneralSettings(
+            enabledChannels = arrayOf("markdown"),
+            disabledChannels = arrayOf("postman"),
+            enabledFieldFormatChannels = arrayOf("json"),
+            disabledFieldFormatChannels = arrayOf("yaml")
+        )
+        assertEquals(listOf("markdown"), settings.enabledChannels.toList())
+        assertEquals(listOf("postman"), settings.disabledChannels.toList())
+        assertEquals(listOf("json"), settings.enabledFieldFormatChannels.toList())
+        assertEquals(listOf("yaml"), settings.disabledFieldFormatChannels.toList())
+    }
 }

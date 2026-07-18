@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.psi.model
 
-import com.itangcent.easyapi.exporter.formatter.PropertiesFormatter
-import com.itangcent.easyapi.exporter.formatter.YamlFormatter
+import com.itangcent.easyapi.psi.model.format.PropertiesFormatter
+import com.itangcent.easyapi.psi.model.format.YamlFormatter
 
 /**
  * Extension functions for converting an [ObjectModel] into various text formats.

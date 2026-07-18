@@ -11,16 +11,15 @@ import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.channel.Channel
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
-import com.itangcent.easyapi.exporter.channel.hoppscotch.*
 import com.itangcent.easyapi.exporter.channel.hoppscotch.model.HoppCollection
 import com.itangcent.easyapi.exporter.channel.hoppscotch.model.hoppscotchGson
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
-import com.itangcent.easyapi.rule.RuleKey
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.rule.RuleKey
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.settings
 import kotlinx.coroutines.CancellationException
@@ -55,6 +54,7 @@ class HoppscotchChannel : Channel, IdeaLog {
     override val supportsGrpc: Boolean = false
     override val exposeAsAction: Boolean = true
     override val actionText: String = "Export to Hoppscotch (Beta)"
+    override val enabledByDefault: Boolean = false
     override val settingsType: KClass<out com.itangcent.easyapi.settings.Settings> = HoppscotchSettings::class
 
     override fun createOptionsPanel(project: Project): ChannelOptionsPanel {

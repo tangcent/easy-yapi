@@ -68,7 +68,7 @@ class FieldFormatActionGroupRegistrationTest : EasyApiLightCodeInsightFixtureTes
             }
         }
 
-        FieldFormatActionGroup.ensureActionsRegistered()
+        FieldFormatActionGroup.ensureActionsRegistered(project)
 
         // After registration, all four channel actions should be present
         listOf("json", "json5", "yaml", "properties").forEach { id ->
@@ -82,8 +82,8 @@ class FieldFormatActionGroupRegistrationTest : EasyApiLightCodeInsightFixtureTes
 
     fun testEnsureActionsRegisteredIsIdempotent() {
         // Call twice — should not throw and should not duplicate
-        FieldFormatActionGroup.ensureActionsRegistered()
-        FieldFormatActionGroup.ensureActionsRegistered()
+        FieldFormatActionGroup.ensureActionsRegistered(project)
+        FieldFormatActionGroup.ensureActionsRegistered(project)
 
         val actionManager = ActionManager.getInstance()
         val jsonAction = actionManager.getAction(
@@ -94,12 +94,12 @@ class FieldFormatActionGroupRegistrationTest : EasyApiLightCodeInsightFixtureTes
 
     fun testEnsureActionsRegisteredReturnsWhenGroupNotRegistered() {
         // In the test fixture, if the group is not registered in ActionManager,
-        // ensureActionsRegistered() should return early without throwing.
+        // ensureActionsRegistered(project) should return early without throwing.
         // This covers the `?: return` branch.
         // Note: The group IS registered via plugin.xml in the test fixture,
         // so this test verifies the happy path. The null branch is covered
         // implicitly by the safe-cast.
-        FieldFormatActionGroup.ensureActionsRegistered()
+        FieldFormatActionGroup.ensureActionsRegistered(project)
         // No exception means success
     }
 
@@ -108,6 +108,10 @@ class FieldFormatActionGroupRegistrationTest : EasyApiLightCodeInsightFixtureTes
         val group = actionManager.getAction(FieldFormatActionGroup.GROUP_ID)
             as? FieldFormatActionGroup
         assertNotNull("FieldFormatActionGroup should be registered", group)
+
+        // Register actions explicitly (getChildren with a null event no longer
+        // triggers registration, since ensureActionsRegistered now needs a project).
+        FieldFormatActionGroup.ensureActionsRegistered(project)
 
         // Call getChildren with null event (the lazy fallback path)
         val children = group!!.getChildren(null)

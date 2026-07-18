@@ -7,6 +7,7 @@ import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiScanner
 import com.itangcent.easyapi.exporter.ExportOrchestrator
+import com.itangcent.easyapi.exporter.channel.ChannelRegistry
 import com.itangcent.easyapi.ide.DumbModeHelper
 import com.itangcent.easyapi.ide.support.SelectedHelper
 import com.itangcent.easyapi.ide.support.runWithProgress
@@ -23,7 +24,18 @@ class ChannelExportAction(
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.project != null
+        val project = e.project
+        e.presentation.isEnabled = project != null
+        if (project != null) {
+            // Re-evaluate visibility per-display-context (NOT templatePresentation,
+            // which the platform forbids mutating — Presentation.assertNotTemplatePresentation).
+            // This is the chokepoint for "hide not unregister" (Decision 4): a
+            // disabled channel's action stays registered (keymap IDs remain
+            // stable) but is hidden from the menu because isVisible resolves to false.
+            val registry = ChannelRegistry.getInstance(project)
+            val channel = registry.getChannel(channelId)
+            e.presentation.isVisible = channel?.let { registry.isEnabled(it) } ?: true
+        }
     }
 
     override fun actionPerformed(e: AnActionEvent) {

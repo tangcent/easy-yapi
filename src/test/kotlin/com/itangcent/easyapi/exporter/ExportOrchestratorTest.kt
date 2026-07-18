@@ -3,15 +3,25 @@ package com.itangcent.easyapi.exporter
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
 import com.intellij.psi.PsiMethod
+import com.intellij.testFramework.registerServiceInstance
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.markdown.MarkdownConfig
+import com.itangcent.easyapi.exporter.channel.postman.PostmanSettings
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.http.HttpClient
+import com.itangcent.easyapi.http.HttpClientProvider
+import com.itangcent.easyapi.http.HttpRequest
 import com.itangcent.easyapi.ide.support.SelectionScope
+import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
 
 class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -33,6 +43,14 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun tearDown() {
         try {
             previousDialog?.let { TestDialogManager.setTestDialog(it) }
+            // Restore HttpClientProvider so a mock registered by
+            // testExportViaChannel_logsWarnWhenChannelExportReturnsError does not
+            // leak into subsequent test classes (e.g. MarkdownChannelTemplateTest,
+            // which uses a real HttpClientProvider to fetch remote templates).
+            project.registerServiceInstance(
+                HttpClientProvider::class.java,
+                HttpClientProvider(project)
+            )
         } finally {
             super.tearDown()
         }
@@ -211,6 +229,104 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
         val result = orchestrator.exportViaChannel("nonexistent-channel", endpoints, testFileConfig)
         assertNotNull(result)
         assertTrue("Should be Error for unknown channel", result is ExportResult.Error)
+    }
+
+    // --- Task 3.1: ExportOrchestrator refuses a disabled channel (Req 4.4) ---
+    // http-client is default-off (Task 2.1), so with no stored preference it is
+    // disabled and the export boundary must refuse it before scanning/exporting.
+
+    fun testOrchestrateExportWithDefaultOffChannelReturnsError() = runTest {
+        val result = orchestrator.orchestrateExport(null, "http-client", ChannelConfig.Empty)
+        assertNotNull(result)
+        assertTrue("Should be Error for disabled channel", result is ExportResult.Error)
+        val msg = (result as ExportResult.Error).message
+        assertTrue(
+            "Error should name the channel as disabled. Got: $msg",
+            msg.contains("disabled", ignoreCase = true)
+        )
+    }
+
+    fun testExportViaChannelWithDefaultOffChannelReturnsError() = runTest {
+        val endpoints = listOf(createTestEndpoint())
+        val result = orchestrator.exportViaChannel("http-client", endpoints, ChannelConfig.Empty)
+        assertNotNull(result)
+        assertTrue("Should be Error for disabled channel", result is ExportResult.Error)
+        val msg = (result as ExportResult.Error).message
+        assertTrue(
+            "Error should name the channel as disabled. Got: $msg",
+            msg.contains("disabled", ignoreCase = true)
+        )
+    }
+
+    fun testOrchestrateExportWithExplicitlyEnabledChannelProceeds() = runTest {
+        // Explicitly enable http-client; the disabled guard must NOT fire.
+        val binder = SettingBinder.getInstance(project)
+        val original = binder.read(GeneralSettings::class)
+        try {
+            binder.save(GeneralSettings(enabledChannels = arrayOf("http-client")))
+            // Select a non-controller model class so scanEndpoints yields no
+            // endpoints — the export is then refused with "No API endpoints found"
+            // (not "disabled"), proving the guard passed without triggering the
+            // host-selection dialog of the http-client export path.
+            val userInfoClass = findClass("com.itangcent.model.UserInfo")
+            assertNotNull("UserInfo should be loaded", userInfoClass)
+            val selection = SelectionScope(listOf(userInfoClass!!))
+            val result = orchestrator.orchestrateExport(selection, "http-client", ChannelConfig.Empty)
+            assertNotNull(result)
+            assertTrue("Should be Error (no endpoints found)", result is ExportResult.Error)
+            val msg = (result as ExportResult.Error).message
+            assertFalse(
+                "An explicitly-enabled channel must not be refused as disabled. Got: $msg",
+                msg.contains("disabled", ignoreCase = true)
+            )
+        } finally {
+            // Restore original settings so this test does not pollute others
+            // (DefaultSettingBinder invalidates its cache on save → fresh read).
+            binder.save(original)
+        }
+    }
+
+    // --- Task 3.2: exportViaChannel LOG.warn path when channel.export returns Error ---
+    // Exercises the `else if (result is ExportResult.Error) { LOG.warn(...) }` branch
+    // (line 125 of ExportOrchestrator.kt). We trigger this by making the Postman
+    // upload fail: a fake token forces the upload path, and a mock HttpClientProvider
+    // returns a client whose execute() throws — PostmanApiClient catches the exception
+    // and returns UploadResult(success=false), causing PostmanChannel.export to return
+    // ExportResult.Error.
+
+    fun testExportViaChannel_logsWarnWhenChannelExportReturnsError() = runTest {
+        val binder = SettingBinder.getInstance(project)
+        val originalGeneral = binder.read(GeneralSettings::class)
+        val originalPostman = binder.read(PostmanSettings::class)
+        try {
+            // Set a fake Postman token so the upload path is taken (not mock mode).
+            binder.save(PostmanSettings(postmanToken = "fake-token-for-test"))
+
+            // Replace HttpClientProvider with a mock whose getClient() returns a
+            // failing HttpClient. PostmanApiClient.uploadCollection catches the
+            // exception and returns UploadResult(success=false).
+            val failingClient = object : HttpClient {
+                override suspend fun execute(request: HttpRequest) =
+                    throw java.net.ConnectException("Connection refused (test mock)")
+                override fun close() {}
+            }
+            val mockProvider = mock<HttpClientProvider> {
+                on { getClient(anyOrNull(), anyOrNull(), anyOrNull()) } doReturn failingClient
+            }
+            project.registerServiceInstance(HttpClientProvider::class.java, mockProvider)
+
+            val endpoints = listOf(createTestEndpoint())
+            val result = orchestrator.exportViaChannel("postman", endpoints, ChannelConfig.Empty)
+
+            assertNotNull(result)
+            assertTrue(
+                "Postman export with a failing HTTP client should return Error. Got: $result",
+                result is ExportResult.Error
+            )
+        } finally {
+            binder.save(originalGeneral)
+            binder.save(originalPostman)
+        }
     }
 
     private fun createTestEndpoint(

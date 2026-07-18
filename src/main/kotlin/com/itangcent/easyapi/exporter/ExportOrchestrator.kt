@@ -37,6 +37,11 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         val channel = channelRegistry.getChannel(channelId)
             ?: return ExportResult.Error("No channel registered for id: $channelId")
 
+        if (!channelRegistry.isEnabled(channel)) {
+            LOG.info("ExportOrchestrator refusing disabled channel: $channelId")
+            return ExportResult.Error("Channel '$channelId' is disabled. Enable it in Settings → EasyApi → General.")
+        }
+
         indicator?.text = "Scanning for API endpoints..."
         indicator?.isIndeterminate = true
         val endpoints = scanEndpoints(selection, indicator)
@@ -86,6 +91,11 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         LOG.info("ExportOrchestrator.exportViaChannel: channelId=$channelId, endpoints=${endpoints.size}")
         val channel = channelRegistry.getChannel(channelId)
             ?: return ExportResult.Error("No channel registered for id: $channelId")
+
+        if (!channelRegistry.isEnabled(channel)) {
+            LOG.info("ExportOrchestrator refusing disabled channel: $channelId")
+            return ExportResult.Error("Channel '$channelId' is disabled. Enable it in Settings → EasyApi → General.")
+        }
 
         indicator?.text = "Exporting ${endpoints.size} endpoints via ${channel.displayName}..."
         indicator?.isIndeterminate = false

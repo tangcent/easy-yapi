@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.exporter.channel.httpclient
 
-import com.itangcent.easyapi.exporter.formatter.HttpClientFileFormatter
+import com.itangcent.easyapi.exporter.channel.httpclient.HttpClientFileFormatter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter

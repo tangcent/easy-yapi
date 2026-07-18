@@ -151,4 +151,51 @@ class FieldFormatChannelTest : EasyApiLightCodeInsightFixtureTestCase() {
             )
         }
     }
+
+    // ---------- Task A.1: FieldFormatChannel.enabledByDefault ----------
+
+    /**
+     * A stub [FieldFormatChannel] that does NOT override [FieldFormatChannel.enabledByDefault],
+     * so it resolves to the interface default (`true`).
+     */
+    private class DefaultEnabledStubFieldFormatChannel : FieldFormatChannel {
+        override val id: String = "stub-default-on"
+        override val displayName: String = "Stub Default On"
+        override val actionText: String = "ToStub"
+        override suspend fun format(project: com.intellij.openapi.project.Project, psiClass: com.intellij.psi.PsiClass): String = ""
+    }
+
+    /**
+     * A stub [FieldFormatChannel] that overrides [FieldFormatChannel.enabledByDefault] to `false`.
+     */
+    private class DefaultOffStubFieldFormatChannel : FieldFormatChannel {
+        override val id: String = "stub-default-off"
+        override val displayName: String = "Stub Default Off"
+        override val actionText: String = "ToStubOff"
+        override val enabledByDefault: Boolean = false
+        override suspend fun format(project: com.intellij.openapi.project.Project, psiClass: com.intellij.psi.PsiClass): String = ""
+    }
+
+    fun testEnabledByDefaultDefaultsToTrue() {
+        // A FieldFormatChannel that does not override enabledByDefault resolves to true.
+        val channel = DefaultEnabledStubFieldFormatChannel()
+        assertTrue(
+            "FieldFormatChannel.enabledByDefault should default to true when not overridden",
+            channel.enabledByDefault
+        )
+        // All four production channels also keep the default (Decision A2).
+        assertTrue(JsonFieldFormatChannel().enabledByDefault)
+        assertTrue(Json5FieldFormatChannel().enabledByDefault)
+        assertTrue(YamlFieldFormatChannel().enabledByDefault)
+        assertTrue(PropertiesFieldFormatChannel().enabledByDefault)
+    }
+
+    fun testEnabledByDefaultCanBeOverridden() {
+        // A FieldFormatChannel that overrides enabledByDefault = false resolves to false.
+        val channel = DefaultOffStubFieldFormatChannel()
+        assertFalse(
+            "FieldFormatChannel.enabledByDefault should resolve to false when overridden",
+            channel.enabledByDefault
+        )
+    }
 }

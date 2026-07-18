@@ -1,4 +1,4 @@
-package com.itangcent.easyapi.exporter.formatter
+package com.itangcent.easyapi.psi.model.format
 
 import com.itangcent.easyapi.psi.DefaultPsiClassHelper
 import com.itangcent.easyapi.psi.JsonOption

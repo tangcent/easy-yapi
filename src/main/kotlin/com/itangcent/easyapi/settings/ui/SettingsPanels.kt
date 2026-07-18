@@ -27,9 +27,13 @@ import com.itangcent.easyapi.cache.AppCacheRepository
 import com.itangcent.easyapi.cache.ProjectCacheRepository
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swingAsync
+import com.itangcent.easyapi.exporter.channel.Channel
+import com.itangcent.easyapi.exporter.channel.ChannelRegistry
 import com.itangcent.easyapi.exporter.channel.postman.PostmanApiClient
 import com.itangcent.easyapi.exporter.channel.postman.Workspace
 import com.itangcent.easyapi.exporter.channel.postman.asCached
+import com.itangcent.easyapi.ide.fieldformat.FieldFormatChannel
+import com.itangcent.easyapi.ide.fieldformat.FieldFormatChannelRegistry
 import com.itangcent.easyapi.repository.DefaultRepositories
 import com.itangcent.easyapi.repository.RepositoryConfig
 import com.itangcent.easyapi.repository.RepositoryType
@@ -99,22 +103,16 @@ interface SettingsPanel<T : Settings> {
 /**
  * General settings panel for basic plugin configuration.
  *
- * Provides UI for:
- * - Framework support toggles (Feign, JAX-RS, Actuator)
- * - Logging level selection
- * - Output charset and demo settings
- * - Cache management
+ * Holds the *behavior / config* toggles — scanning, editor, output,
+ * diagnostics, cache, repositories. All *enablement* toggles (framework
+ * support, export channels, field-format channels) live in
+ * [FeaturesSettingsPanel] so "enable a thing" has one coherent home.
+ *
+ * Typed by [GeneralSettings]; the repositories table is cross-module (its data
+ * belongs to [GrpcSettings]) and is wired via the `*Repositories*` helpers,
+ * mirroring the cross-module pattern used by [FeaturesSettingsPanel].
  */
 class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel<GeneralSettings> {
-    private val feignEnable = JBCheckBox("Enable Feign client support").apply {
-        toolTipText = "Enable parsing of Feign client interfaces as API endpoints"
-    }
-    private val jaxrsEnable = JBCheckBox("Enable JAX-RS support", true).apply {
-        toolTipText = "Enable parsing of JAX-RS annotations (@Path, @GET, etc.) as API endpoints"
-    }
-    private val actuatorEnable = JBCheckBox("Enable Spring Actuator support").apply {
-        toolTipText = "Enable export of Spring Boot Actuator endpoints (e.g., /health, /metrics)"
-    }
     private val autoScanEnabled = JBCheckBox("Enable automatic API scanning on file changes", true).apply {
         toolTipText = "Automatically re-scan APIs when source files are modified"
     }
@@ -382,13 +380,6 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
     override val component: JComponent = FormBuilder.createFormBuilder()
         .addComponent(
             SettingsUiKit.titledPanel(
-                "Framework Support", listOf(
-                    feignEnable, jaxrsEnable, actuatorEnable
-                )
-            )
-        )
-        .addComponent(
-            SettingsUiKit.titledPanel(
                 "Scanning", listOf(
                     autoScanEnabled, concurrentScanEnabled
                 )
@@ -421,9 +412,6 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         .panel
 
     override fun resetFrom(settings: GeneralSettings?) {
-        feignEnable.isSelected = settings?.feignEnable ?: false
-        jaxrsEnable.isSelected = settings?.jaxrsEnable ?: true
-        actuatorEnable.isSelected = settings?.actuatorEnable ?: false
         autoScanEnabled.isSelected = settings?.autoScanEnabled ?: true
         concurrentScanEnabled.isSelected = settings?.concurrentScanEnabled ?: false
         gutterIconEnabled.isSelected = settings?.gutterIconEnabled ?: true
@@ -448,9 +436,6 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
     }
 
     override fun applyTo(settings: GeneralSettings) {
-        settings.feignEnable = feignEnable.isSelected
-        settings.jaxrsEnable = jaxrsEnable.isSelected
-        settings.actuatorEnable = actuatorEnable.isSelected
         settings.autoScanEnabled = autoScanEnabled.isSelected
         settings.concurrentScanEnabled = concurrentScanEnabled.isSelected
         settings.gutterIconEnabled = gutterIconEnabled.isSelected
@@ -471,10 +456,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
 
     override fun isModified(settings: GeneralSettings?): Boolean {
         val s = settings ?: return false
-        return feignEnable.isSelected != s.feignEnable ||
-                jaxrsEnable.isSelected != s.jaxrsEnable ||
-                actuatorEnable.isSelected != s.actuatorEnable ||
-                autoScanEnabled.isSelected != s.autoScanEnabled ||
+        return autoScanEnabled.isSelected != s.autoScanEnabled ||
                 concurrentScanEnabled.isSelected != s.concurrentScanEnabled ||
                 gutterIconEnabled.isSelected != s.gutterIconEnabled ||
                 switchNotice.isSelected != s.switchNotice ||
@@ -494,6 +476,273 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
     }
 
     companion object : IdeaLog
+}
+
+/**
+ * Features settings panel — the single home for all *enablement* toggles.
+ *
+ * Consolidates three groups that are conceptually one thing ("should this
+ * extension point be active?"):
+ * - **Framework support** (Feign, JAX-RS, Actuator) — moved here from
+ *   [GeneralSettingsPanel] so all enable/disable checkboxes share a tab.
+ * - **Export Channels** — one checkbox per registered [Channel], built
+ *   dynamically from [ChannelRegistry.allChannels] (Req 3.1, 3.4).
+ * - **Field Format Channels** — one checkbox per registered
+ *   [FieldFormatChannel], built from
+ *   [FieldFormatChannelRegistry.allChannels] (Req A3.1, A3.4).
+ *
+ * Typed by [GeneralSettings] (the same module [GeneralSettingsPanel] reads),
+ * so a panel touching a module it doesn't "own" follows the existing
+ * `grpcRepositories` precedent. The channel/format checkbox logic is isolated
+ * in cross-module helpers that mirror that pattern (design Decision 5 / A3).
+ */
+class FeaturesSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel<GeneralSettings> {
+    private val feignEnable = JBCheckBox("Enable Feign client support").apply {
+        toolTipText = "Enable parsing of Feign client interfaces as API endpoints"
+    }
+    private val jaxrsEnable = JBCheckBox("Enable JAX-RS support", true).apply {
+        toolTipText = "Enable parsing of JAX-RS annotations (@Path, @GET, etc.) as API endpoints"
+    }
+    private val actuatorEnable = JBCheckBox("Enable Spring Actuator support").apply {
+        toolTipText = "Enable export of Spring Boot Actuator endpoints (e.g., /health, /metrics)"
+    }
+
+    /**
+     * Dynamic checkbox→channel mapping for the "Export Channels" section.
+     *
+     * Built once from [ChannelRegistry.allChannels] (deliberately **unfiltered**,
+     * so disabled channels are listed and can be re-enabled — Req 3.4). Empty
+     * when no channels are registered, in which case the section is skipped
+     * gracefully (Req 3.7).
+     */
+    private val channelEnablementCheckboxes = mutableListOf<Pair<Channel, JBCheckBox>>()
+
+    /**
+     * Dynamic checkbox→format mapping for the "Field Format Channels" section
+     * (Req A3.1, A3.4).
+     *
+     * Built once from [FieldFormatChannelRegistry.allChannels] (deliberately
+     * **unfiltered**, so disabled formats are listed and can be re-enabled —
+     * Req A3.4). Empty when no formats are registered, in which case the
+     * section is skipped gracefully (Req A3.7).
+     */
+    private val fieldFormatEnablementCheckboxes = mutableListOf<Pair<FieldFormatChannel, JBCheckBox>>()
+
+    /**
+     * Builds the "Export Channels" titled panel containing one [JBCheckBox] per
+     * registered channel (Req 3.1, 3.4). Uses [ChannelRegistry.allChannels]
+     * (unfiltered) so disabled channels remain listed and re-enableable.
+     *
+     * Returns an empty panel when no channels are registered (Req 3.7 — graceful
+     * skip, no error).
+     */
+    private fun buildChannelEnablementPanel(): JComponent {
+        val allChannels = ChannelRegistry.getInstance(project).allChannels()
+        channelEnablementCheckboxes.clear()
+        if (allChannels.isEmpty()) {
+            return JPanel()
+        }
+        val checkboxes = allChannels.map { channel ->
+            JBCheckBox(channel.displayName).apply {
+                toolTipText = "Enable the ${channel.displayName} export channel"
+            }.also { cb -> channelEnablementCheckboxes.add(channel to cb) }
+        }
+        return SettingsUiKit.titledPanel("Export Channels", checkboxes)
+    }
+
+    /**
+     * Builds the "Field Format channels" titled panel containing one [JBCheckBox]
+     * per registered format (Req A3.1, A3.4). Uses
+     * [FieldFormatChannelRegistry.allChannels] (unfiltered) so disabled formats
+     * remain listed and re-enableable.
+     *
+     * Returns an empty panel when no formats are registered (Req A3.7 — graceful
+     * skip, no error).
+     */
+    private fun buildFieldFormatEnablementPanel(): JComponent {
+        val allFormats = FieldFormatChannelRegistry.getInstance(project).allChannels()
+        fieldFormatEnablementCheckboxes.clear()
+        if (allFormats.isEmpty()) {
+            return JPanel()
+        }
+        val checkboxes = allFormats.map { format ->
+            JBCheckBox(format.displayName).apply {
+                toolTipText = "Enable the ${format.displayName} field-format action"
+            }.also { cb -> fieldFormatEnablementCheckboxes.add(format to cb) }
+        }
+        return SettingsUiKit.titledPanel("Field Format Channels", checkboxes)
+    }
+
+    override val component: JComponent = FormBuilder.createFormBuilder()
+        .addComponent(
+            SettingsUiKit.titledPanel(
+                "Framework Support", listOf(
+                    feignEnable, jaxrsEnable, actuatorEnable
+                )
+            )
+        )
+        .addComponent(buildChannelEnablementPanel())
+        .addComponent(buildFieldFormatEnablementPanel())
+        .addComponentFillVertically(JPanel(), 0)
+        .panel
+
+    override fun resetFrom(settings: GeneralSettings?) {
+        feignEnable.isSelected = settings?.feignEnable ?: false
+        jaxrsEnable.isSelected = settings?.jaxrsEnable ?: true
+        actuatorEnable.isSelected = settings?.actuatorEnable ?: false
+    }
+
+    override fun applyTo(settings: GeneralSettings) {
+        settings.feignEnable = feignEnable.isSelected
+        settings.jaxrsEnable = jaxrsEnable.isSelected
+        settings.actuatorEnable = actuatorEnable.isSelected
+    }
+
+    override fun isModified(settings: GeneralSettings?): Boolean {
+        val s = settings ?: return false
+        return feignEnable.isSelected != s.feignEnable ||
+                jaxrsEnable.isSelected != s.jaxrsEnable ||
+                actuatorEnable.isSelected != s.actuatorEnable
+    }
+
+    // --- Channel enablement (cross-module methods, mirror the *Repositories* pattern) ---
+    // The data lives on [GeneralSettings] (enabledChannels / disabledChannels),
+    // but the UI is built from [ChannelRegistry.allChannels]. These three methods
+    // keep the checkbox-list logic isolated and testable (design Decision 5).
+
+    /**
+     * Resets the "Export Channels" checkboxes to the effective enabled state
+     * derived from [GeneralSettings.enabledChannels] / [GeneralSettings.disabledChannels]
+     * overlaid on each channel's [Channel.enabledByDefault] (Req 3.6).
+     *
+     * No-op when no channels are registered (Req 3.7).
+     */
+    fun resetChannelEnablementFrom(channels: List<Channel>, settings: GeneralSettings) {
+        channelEnablementCheckboxes.forEach { (channel, cb) ->
+            cb.isSelected = ChannelRegistry.resolveEnabled(
+                channel, settings.enabledChannels, settings.disabledChannels
+            )
+        }
+    }
+
+    /**
+     * Reads the "Export Channels" checkboxes and writes them back to
+     * [GeneralSettings.enabledChannels] / [GeneralSettings.disabledChannels].
+     *
+     * Normalization (design "Normalization on save"): an id is never written to
+     * both arrays. A default-off channel checked → `enabledChannels`; a
+     * default-on channel unchecked → `disabledChannels`; matching-default
+     * channels produce no entry (fall back to `enabledByDefault`).
+     */
+    fun applyChannelEnablementTo(settings: GeneralSettings) {
+        val enabled = mutableListOf<String>()
+        val disabled = mutableListOf<String>()
+        channelEnablementCheckboxes.forEach { (channel, cb) ->
+            when {
+                cb.isSelected && !channel.enabledByDefault -> enabled.add(channel.id)
+                !cb.isSelected && channel.enabledByDefault -> disabled.add(channel.id)
+                // default-on & checked → no entry (falls back to default-on)
+                // default-off & unchecked → no entry (falls back to default-off)
+            }
+        }
+        settings.enabledChannels = enabled.toTypedArray()
+        settings.disabledChannels = disabled.toTypedArray()
+    }
+
+    /**
+     * Returns `true` if any "Export Channels" checkbox differs from the effective
+     * enabled state in [settings]. No-op (returns `false`) when no channels are
+     * registered (Req 3.7).
+     */
+    fun isChannelEnablementModified(channels: List<Channel>, settings: GeneralSettings): Boolean {
+        channelEnablementCheckboxes.forEach { (channel, cb) ->
+            val effective = ChannelRegistry.resolveEnabled(
+                channel, settings.enabledChannels, settings.disabledChannels
+            )
+            if (cb.isSelected != effective) return true
+        }
+        return false
+    }
+
+    /** Test-only: the checkbox selection state for [channelId], or null if absent. */
+    internal fun channelCheckboxState(channelId: String): Boolean? =
+        channelEnablementCheckboxes.firstOrNull { it.first.id == channelId }?.second?.isSelected
+
+    /** Test-only: sets the checkbox selection state for [channelId] (no-op if absent). */
+    internal fun setChannelCheckboxForTest(channelId: String, selected: Boolean) {
+        channelEnablementCheckboxes.firstOrNull { it.first.id == channelId }?.second?.isSelected = selected
+    }
+
+    // --- Field-format enablement (cross-module methods, mirror the channel ones) ---
+    // The data lives on [GeneralSettings] (enabledFieldFormatChannels /
+    // disabledFieldFormatChannels), but the UI is built from
+    // [FieldFormatChannelRegistry.allChannels]. These three methods keep the
+    // checkbox-list logic isolated and testable (Decision A3).
+
+    /**
+     * Resets the "Field Format Channels" checkboxes to the effective enabled
+     * state derived from [GeneralSettings.enabledFieldFormatChannels] /
+     * [GeneralSettings.disabledFieldFormatChannels] overlaid on each format's
+     * [FieldFormatChannel.enabledByDefault] (Req A3.6).
+     *
+     * No-op when no formats are registered (Req A3.7).
+     */
+    fun resetFieldFormatEnablementFrom(channels: List<FieldFormatChannel>, settings: GeneralSettings) {
+        fieldFormatEnablementCheckboxes.forEach { (channel, cb) ->
+            cb.isSelected = FieldFormatChannelRegistry.resolveEnabled(
+                channel, settings.enabledFieldFormatChannels, settings.disabledFieldFormatChannels
+            )
+        }
+    }
+
+    /**
+     * Reads the "Field Format Channels" checkboxes and writes them back to
+     * [GeneralSettings.enabledFieldFormatChannels] /
+     * [GeneralSettings.disabledFieldFormatChannels].
+     *
+     * Normalization (design "Normalization on save"): an id is never written to
+     * both arrays. A default-off format checked → `enabledFieldFormatChannels`;
+     * a default-on format unchecked → `disabledFieldFormatChannels`; matching-
+     * default formats produce no entry (fall back to `enabledByDefault`).
+     */
+    fun applyFieldFormatEnablementTo(settings: GeneralSettings) {
+        val enabled = mutableListOf<String>()
+        val disabled = mutableListOf<String>()
+        fieldFormatEnablementCheckboxes.forEach { (channel, cb) ->
+            when {
+                cb.isSelected && !channel.enabledByDefault -> enabled.add(channel.id)
+                !cb.isSelected && channel.enabledByDefault -> disabled.add(channel.id)
+                // default-on & checked → no entry (falls back to default-on)
+                // default-off & unchecked → no entry (falls back to default-off)
+            }
+        }
+        settings.enabledFieldFormatChannels = enabled.toTypedArray()
+        settings.disabledFieldFormatChannels = disabled.toTypedArray()
+    }
+
+    /**
+     * Returns `true` if any "Field Format Channels" checkbox differs from the
+     * effective enabled state in [settings]. No-op (returns `false`) when no
+     * formats are registered (Req A3.7).
+     */
+    fun isFieldFormatEnablementModified(channels: List<FieldFormatChannel>, settings: GeneralSettings): Boolean {
+        fieldFormatEnablementCheckboxes.forEach { (channel, cb) ->
+            val effective = FieldFormatChannelRegistry.resolveEnabled(
+                channel, settings.enabledFieldFormatChannels, settings.disabledFieldFormatChannels
+            )
+            if (cb.isSelected != effective) return true
+        }
+        return false
+    }
+
+    /** Test-only: the checkbox selection state for format [channelId], or null if absent. */
+    internal fun fieldFormatCheckboxState(channelId: String): Boolean? =
+        fieldFormatEnablementCheckboxes.firstOrNull { it.first.id == channelId }?.second?.isSelected
+
+    /** Test-only: sets the checkbox selection state for format [channelId] (no-op if absent). */
+    internal fun setFieldFormatCheckboxForTest(channelId: String, selected: Boolean) {
+        fieldFormatEnablementCheckboxes.firstOrNull { it.first.id == channelId }?.second?.isSelected = selected
+    }
 }
 
 object CommonSettingsHelper {
@@ -1455,7 +1704,7 @@ class BackupSettingsPanel(private val project: com.intellij.openapi.project.Proj
      * Imports settings from a JSON file (flat format compatible with the
      * legacy `Settings` god-object) and distributes fields across modules.
      */
-    private fun applyImported(json: String) {
+    internal fun applyImported(json: String) {
         val obj = JsonParser.parseString(json)?.takeIf { it.isJsonObject }?.asJsonObject ?: return
         val binder = SettingBinder.getInstance(project)
 
@@ -1469,6 +1718,14 @@ class BackupSettingsPanel(private val project: com.intellij.openapi.project.Proj
             obj.get("switchNotice")?.asBoolean?.let { switchNotice = it }
             obj.get("logLevel")?.asInt?.let { logLevel = it }
             obj.get("outputCharset")?.asString?.let { outputCharset = it }
+            obj.get("enabledChannels")?.takeIf { it.isJsonArray }?.asJsonArray?.map { it.asString }
+                ?.toTypedArray()?.let { enabledChannels = it }
+            obj.get("disabledChannels")?.takeIf { it.isJsonArray }?.asJsonArray?.map { it.asString }
+                ?.toTypedArray()?.let { disabledChannels = it }
+            obj.get("enabledFieldFormatChannels")?.takeIf { it.isJsonArray }?.asJsonArray?.map { it.asString }
+                ?.toTypedArray()?.let { enabledFieldFormatChannels = it }
+            obj.get("disabledFieldFormatChannels")?.takeIf { it.isJsonArray }?.asJsonArray?.map { it.asString }
+                ?.toTypedArray()?.let { disabledFieldFormatChannels = it }
         }
 
         binder.update(com.itangcent.easyapi.settings.module.HttpSettings::class) {
@@ -1515,7 +1772,7 @@ class BackupSettingsPanel(private val project: com.intellij.openapi.project.Proj
      * Exports all module settings as a flat JSON object (compatible with the
      * legacy `Settings` god-object format).
      */
-    private fun exportSettings(): String {
+    internal fun exportSettings(): String {
         val obj = JsonObject()
         val binder = SettingBinder.getInstance(project)
 
@@ -1529,6 +1786,10 @@ class BackupSettingsPanel(private val project: com.intellij.openapi.project.Proj
         obj.addProperty("switchNotice", general.switchNotice)
         obj.addProperty("logLevel", general.logLevel)
         obj.addProperty("outputCharset", general.outputCharset)
+        obj.add("enabledChannels", GsonUtils.GSON.toJsonTree(general.enabledChannels))
+        obj.add("disabledChannels", GsonUtils.GSON.toJsonTree(general.disabledChannels))
+        obj.add("enabledFieldFormatChannels", GsonUtils.GSON.toJsonTree(general.enabledFieldFormatChannels))
+        obj.add("disabledFieldFormatChannels", GsonUtils.GSON.toJsonTree(general.disabledFieldFormatChannels))
 
         val http = binder.read(com.itangcent.easyapi.settings.module.HttpSettings::class)
         obj.addProperty("httpTimeOut", http.httpTimeOut)

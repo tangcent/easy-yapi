@@ -3,6 +3,9 @@ package com.itangcent.easyapi.settings.ui
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.ProjectManager
 import com.itangcent.easyapi.exporter.channel.ChannelRegistry
+import com.itangcent.easyapi.ide.action.ChannelQuickActionGroup
+import com.itangcent.easyapi.ide.fieldformat.FieldFormatActionGroup
+import com.itangcent.easyapi.ide.fieldformat.FieldFormatChannelRegistry
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
 import com.itangcent.easyapi.settings.module.AiSettings
@@ -23,6 +26,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
     private var tabs: JTabbedPane? = null
 
     private val generalPanel = GeneralSettingsPanel(project)
+    private val featuresPanel = FeaturesSettingsPanel(project)
     private val httpPanel = HttpSettingsPanel()
     private val parsingOutputPanel = ParsingOutputSettingsPanel()
     private val extensionPanel = ExtensionConfigPanel()
@@ -54,6 +58,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         }
 
         const val TAB_GENERAL = "General"
+        const val TAB_FEATURES = "Features"
         const val TAB_POSTMAN = "Postman"
         const val TAB_HTTP = "HTTP"
         const val TAB_PARSING_OUTPUT = "Parsing & Output"
@@ -78,6 +83,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
             channelPanels.clear()
             tabs = JTabbedPane().also { t ->
                 t.addTab(TAB_GENERAL, wrapNorth(generalPanel.component))
+                t.addTab(TAB_FEATURES, wrapNorth(featuresPanel.component))
                 t.addTab(TAB_HTTP, wrapNorth(httpPanel.component))
                 t.addTab(TAB_PARSING_OUTPUT, wrapNorth(parsingOutputPanel.component))
                 t.addTab(TAB_EXTENSIONS, extensionPanel.component)
@@ -148,6 +154,9 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         val environment = binder.read(EnvironmentSettings::class)
 
         return generalPanel.isModified(general) ||
+            featuresPanel.isModified(general) ||
+            featuresPanel.isChannelEnablementModified(ChannelRegistry.getInstance(project).allChannels(), general) ||
+            featuresPanel.isFieldFormatEnablementModified(FieldFormatChannelRegistry.getInstance(project).allChannels(), general) ||
             generalPanel.isRepositoriesModified(grpc) ||
             httpPanel.isModified(binder.read(HttpSettings::class)) ||
             parsingOutputPanel.isModified(parsingOutput) ||
@@ -170,6 +179,9 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
 
         val general = binder.read(GeneralSettings::class)
         generalPanel.applyTo(general)
+        featuresPanel.applyTo(general)
+        featuresPanel.applyChannelEnablementTo(general)
+        featuresPanel.applyFieldFormatEnablementTo(general)
 
         val grpc = binder.read(GrpcSettings::class)
         generalPanel.applyRepositoriesTo(grpc)
@@ -201,6 +213,14 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         binder.save(http)
         binder.save(ruleFile)
         binder.save(ai)
+
+        // Re-apply the enablement filter to the quick-action group so newly
+        // enabled channels appear and disabled channels are hidden without an
+        // IDE restart (Req 5.1, 5.2). Safe to call when no group is registered.
+        ChannelQuickActionGroup.refreshActions(project)
+        // Mirror for field-format actions: re-register newly-enabled formats and
+        // let per-context update() hide disabled ones (Req A4, Decision A5).
+        FieldFormatActionGroup.refreshActions(project)
     }
 
     /**
@@ -242,6 +262,9 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
 
         val general = binder.read(GeneralSettings::class)
         generalPanel.resetFrom(general)
+        featuresPanel.resetFrom(general)
+        featuresPanel.resetChannelEnablementFrom(ChannelRegistry.getInstance(project).allChannels(), general)
+        featuresPanel.resetFieldFormatEnablementFrom(FieldFormatChannelRegistry.getInstance(project).allChannels(), general)
         generalPanel.resetRepositoriesFrom(binder.read(GrpcSettings::class))
 
         val parsingOutput = binder.read(ParsingOutputSettings::class)
@@ -275,6 +298,24 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
     internal fun tabsForTest(): List<String> {
         val t = tabs ?: return emptyList()
         return (0 until t.tabCount).map { t.getTitleAt(it) }
+    }
+
+    /** Test-only: the channel-enablement checkbox state for [channelId], or null. */
+    internal fun channelCheckboxStateForTest(channelId: String): Boolean? =
+        featuresPanel.channelCheckboxState(channelId)
+
+    /** Test-only: sets the channel-enablement checkbox state for [channelId]. */
+    internal fun setChannelCheckboxForTest(channelId: String, selected: Boolean) {
+        featuresPanel.setChannelCheckboxForTest(channelId, selected)
+    }
+
+    /** Test-only: the field-format enablement checkbox state for [channelId], or null. */
+    internal fun fieldFormatCheckboxStateForTest(channelId: String): Boolean? =
+        featuresPanel.fieldFormatCheckboxState(channelId)
+
+    /** Test-only: sets the field-format enablement checkbox state for [channelId]. */
+    internal fun setFieldFormatCheckboxForTest(channelId: String, selected: Boolean) {
+        featuresPanel.setFieldFormatCheckboxForTest(channelId, selected)
     }
 }
 

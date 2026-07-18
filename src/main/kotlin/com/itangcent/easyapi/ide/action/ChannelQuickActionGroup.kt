@@ -24,7 +24,7 @@ class ChannelQuickActionGroup : DefaultActionGroup(), IdeaLog {
 
     companion object {
         const val ACTION_ID_PREFIX = "com.itangcent.easy_api.actions.channel."
-        private const val GROUP_ID = "com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"
+        internal const val GROUP_ID = "com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"
         private val PLUGIN_ID = PluginId.getId("com.itangcent.idea.plugin.easy-yapi")
 
         /**
@@ -52,6 +52,33 @@ class ChannelQuickActionGroup : DefaultActionGroup(), IdeaLog {
                         group.addAction(action)
                     }
                 }
+        }
+
+        /**
+         * Re-applies the enablement filter to the action group after a settings
+         * change. Newly-enabled channels get their action registered (via
+         * [ensureActionsRegistered]); disabled channels' actions are hidden
+         * (presentation visible=false) without unregistering, so keymap IDs
+         * remain stable across enable/disable cycles (Req 5.1, 5.2, Decision 4).
+         *
+         * Visibility for existing actions is re-evaluated by each
+         * [ChannelExportAction]'s `update(AnActionEvent)` method (per-context
+         * presentation) when the menu is next shown. We deliberately do NOT
+         * mutate `templatePresentation.isVisible` here — the IntelliJ Platform
+         * forbids direct template-presentation mutation
+         * (Presentation.assertNotTemplatePresentation). This achieves the same
+         * "hide not unregister" semantics (Decision 4) while respecting the
+         * platform's presentation contract.
+         *
+         * Safe to call when the group is not registered (no-op) and idempotent.
+         */
+        fun refreshActions(project: Project) {
+            val actionManager = ActionManager.getInstance()
+            actionManager.getAction(GROUP_ID) as? ChannelQuickActionGroup ?: return
+            // Re-run the add path so newly-enabled channels are registered.
+            // Visibility for existing actions is re-evaluated lazily by each
+            // ChannelExportAction.update() when the menu is next displayed.
+            ensureActionsRegistered(project)
         }
     }
 

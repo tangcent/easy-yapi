@@ -1,5 +1,8 @@
 package com.itangcent.easyapi.exporter.channel
 
+import com.itangcent.easyapi.exporter.channel.curl.CurlChannel
+import com.itangcent.easyapi.exporter.channel.markdown.MarkdownChannel
+import com.itangcent.easyapi.exporter.channel.postman.PostmanChannel
 import com.itangcent.easyapi.exporter.model.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -224,5 +227,25 @@ class ChannelTest {
         val channel = ActionChannel(actionText = null)
         assertTrue(channel.exposeAsAction)
         assertNull(channel.actionText)
+    }
+
+    // --- Task 2.1: default-on shipping channels inherit enabledByDefault = true ---
+
+    @Test
+    fun testMarkdownChannelIsDefaultOn() {
+        // Req 1.5: MarkdownChannel inherits the default (enabledByDefault = true).
+        assertTrue(MarkdownChannel().enabledByDefault)
+    }
+
+    @Test
+    fun testPostmanChannelIsDefaultOn() {
+        // Req 1.5: PostmanChannel inherits the default (enabledByDefault = true).
+        assertTrue(PostmanChannel().enabledByDefault)
+    }
+
+    @Test
+    fun testCurlChannelIsDefaultOn() {
+        // Req 1.5: CurlChannel inherits the default (enabledByDefault = true).
+        assertTrue(CurlChannel().enabledByDefault)
     }
 }
