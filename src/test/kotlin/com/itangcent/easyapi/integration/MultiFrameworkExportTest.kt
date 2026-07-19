@@ -1,11 +1,11 @@
 package com.itangcent.easyapi.integration
 
-import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.exporter.feign.FeignClassExporter
-import com.itangcent.easyapi.exporter.jaxrs.JaxRsClassExporter
-import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
-import com.itangcent.easyapi.psi.helper.DocHelper
-import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
+import com.itangcent.easyapi.core.config.ConfigReader
+import com.itangcent.easyapi.framework.feign.FeignClassExporter
+import com.itangcent.easyapi.framework.jaxrs.JaxRsClassExporter
+import com.itangcent.easyapi.framework.springmvc.SpringMvcClassExporter
+import com.itangcent.easyapi.core.psi.helper.DocHelper
+import com.itangcent.easyapi.core.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 

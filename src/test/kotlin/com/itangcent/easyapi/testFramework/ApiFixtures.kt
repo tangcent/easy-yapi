@@ -1,11 +1,11 @@
 package com.itangcent.easyapi.testFramework
 
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ApiHeader
-import com.itangcent.easyapi.exporter.model.ApiParameter
-import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.model.ParameterBinding
-import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.core.export.ApiEndpoint
+import com.itangcent.easyapi.core.export.ApiHeader
+import com.itangcent.easyapi.core.export.ApiParameter
+import com.itangcent.easyapi.core.export.HttpMethod
+import com.itangcent.easyapi.core.export.ParameterBinding
+import com.itangcent.easyapi.core.export.httpMetadata
 
 object ApiFixtures {
 

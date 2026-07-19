@@ -1,14 +1,14 @@
 package com.itangcent.easyapi.integration
 
-import com.itangcent.easyapi.exporter.channel.postman.PostmanFormatOptions
-import com.itangcent.easyapi.exporter.channel.postman.PostmanFormatter
-import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
-import com.itangcent.easyapi.exporter.channel.curl.CurlFormatter
-import com.itangcent.easyapi.exporter.channel.markdown.DefaultMarkdownFormatter
-import com.itangcent.easyapi.exporter.model.httpMetadata
-import com.itangcent.easyapi.psi.helper.DocHelper
-import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
-import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
+import com.itangcent.easyapi.channel.postman.PostmanFormatOptions
+import com.itangcent.easyapi.channel.postman.PostmanFormatter
+import com.itangcent.easyapi.framework.springmvc.SpringMvcClassExporter
+import com.itangcent.easyapi.channel.curl.CurlFormatter
+import com.itangcent.easyapi.channel.markdown.DefaultMarkdownFormatter
+import com.itangcent.easyapi.core.export.httpMetadata
+import com.itangcent.easyapi.core.psi.helper.DocHelper
+import com.itangcent.easyapi.core.psi.helper.UnifiedDocHelper
+import com.itangcent.easyapi.core.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 

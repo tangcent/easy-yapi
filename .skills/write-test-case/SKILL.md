@@ -142,8 +142,8 @@ class MyExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
 3. In the test, compare with `ResultLoader.load()` or `ResultLoader.load("name")`.
 
 **File naming convention:**
-- Default: `com.itangcent.easyapi.exporter.MyFormatterTest.txt`
-- Named: `com.itangcent.easyapi.exporter.MyFormatterTest.testParseRequests.txt`
+- Default: `com.itangcent.easyapi.core.export.MyFormatterTest.txt`
+- Named: `com.itangcent.easyapi.core.export.MyFormatterTest.testParseRequests.txt`
 - Inner classes: `$` is replaced by `.` (e.g., `MyTest.InnerTest` → `MyTest.InnerTest.txt`)
 
 ```kotlin
@@ -254,9 +254,9 @@ class MyActionTest : EasyApiLightCodeInsightFixtureTestCase() {
 **Base:** `EasyApiLightCodeInsightFixtureTestCase`
 
 ```kotlin
-import com.itangcent.easyapi.exporter.feign.FeignClassExporter
-import com.itangcent.easyapi.exporter.jaxrs.JaxRsClassExporter
-import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
+import com.itangcent.easyapi.framework.feign.FeignClassExporter
+import com.itangcent.easyapi.framework.jaxrs.JaxRsClassExporter
+import com.itangcent.easyapi.framework.springmvc.SpringMvcClassExporter
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import org.junit.Assert.*
@@ -427,8 +427,8 @@ Target class uses PSI / Project?
 ./gradlew test
 
 # Run a specific test class
-./gradlew test --tests "com.itangcent.easyapi.exporter.ExportOrchestratorTest"
+./gradlew test --tests "com.itangcent.easyapi.core.export.ExportOrchestratorTest"
 
 # Run a specific test method
-./gradlew test --tests "com.itangcent.easyapi.exporter.ExportOrchestratorTest.testGetInstanceReturnsSameInstance"
+./gradlew test --tests "com.itangcent.easyapi.core.export.ExportOrchestratorTest.testGetInstanceReturnsSameInstance"
 ```

@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.gap
 
-import com.itangcent.easyapi.exporter.channel.curl.CurlFormatter
-import com.itangcent.easyapi.exporter.channel.postman.PostmanFormatter
+import com.itangcent.easyapi.channel.curl.CurlFormatter
+import com.itangcent.easyapi.channel.postman.PostmanFormatter
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import org.junit.Assert.*

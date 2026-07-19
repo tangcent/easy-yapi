@@ -1,6 +1,6 @@
-# EasyApi Usage Guide
+# EasyYapi Usage Guide
 
-This guide walks through the most common EasyApi workflows — installation, first export, the API Dashboard, search, field conversion, pre/post scripts, and AI-assisted rule creation.
+This guide walks through the most common EasyYapi workflows — installation, first export, the API Dashboard, search, field conversion, pre/post scripts, and AI-assisted rule creation.
 
 > For the full rule key catalog and filter syntax, see the [Rule Authoring Guide](rule-guide.md). For settings reference, see the [Settings Guide](settings-guide.md). For Postman-compatible Groovy scripting, see the [Script Reference](easyapi-script-reference.md).
 
@@ -21,9 +21,9 @@ This guide walks through the most common EasyApi workflows — installation, fir
 ## Install
 
 1. Open **IntelliJ IDEA → Settings → Plugins → Marketplace**.
-2. Search for **EasyApi** (or **EasyYapi**).
+2. Search for **EasyYapi** (or **EasyYapi**).
 3. Click **Install**, then restart the IDE.
-4. After restart, open **Settings → EasyApi** to configure the plugin.
+4. After restart, open **Settings → EasyYapi** to configure the plugin.
 
 ### Manual install (from source)
 
@@ -39,30 +39,30 @@ cd easy-yapi
 
 ## First Export
 
-EasyApi can export API endpoints to YApi, Postman, Markdown, cURL, or IntelliJ HTTP Client.
+EasyYapi can export API endpoints to YApi, Postman, Markdown, cURL, or IntelliJ HTTP Client.
 
 ### Export to YApi
 
-1. Configure your YApi server and tokens in **Settings → EasyApi → YApi**.
+1. Configure your YApi server and tokens in **Settings → EasyYapi → YApi**.
 2. Right-click a controller class (or package) in the Project view.
-3. Select **EasyApi → Export to YApi**.
+3. Select **EasyYapi → Export to YApi**.
 4. The plugin scans the selected elements, resolves types, and uploads to YApi.
 5. A notification appears when the upload completes.
 
 ### Export to Postman
 
-1. (Optional) Configure your Postman token and workspace in **Settings → EasyApi → Postman**.
-2. Right-click a controller class and select **EasyApi → Export to Postman**.
+1. (Optional) Configure your Postman token and workspace in **Settings → EasyYapi → Postman**.
+2. Right-click a controller class and select **EasyYapi → Export to Postman**.
 3. If a token is configured, the collection is uploaded directly. Otherwise, a JSON file is saved.
 
 ### Export to Markdown
 
-1. Right-click a controller class and select **EasyApi → Export to Markdown**.
+1. Right-click a controller class and select **EasyYapi → Export to Markdown**.
 2. Choose a destination file. The plugin writes a `.md` file with endpoint tables.
 
 ### Export to cURL
 
-1. Right-click an endpoint method and select **EasyApi → Export to cURL**.
+1. Right-click an endpoint method and select **EasyYapi → Export to cURL**.
 2. The cURL command is copied to the clipboard (or saved to a file).
 
 ---
@@ -103,7 +103,7 @@ Type in the search bar to filter the tree in real time.
 
 ## Field Conversion
 
-EasyApi resolves field types from source code. When the source type doesn't match the API schema you want (e.g., `Mono<User>` should be documented as `User`), use **type conversion rules**.
+EasyYapi resolves field types from source code. When the source type doesn't match the API schema you want (e.g., `Mono<User>` should be documented as `User`), use **type conversion rules**.
 
 ### Example: Unwrap Reactor `Mono`
 
@@ -113,7 +113,7 @@ Create a rule file (Settings → Rules → add a `.rules` file) with:
 #regex:reactor\.core\.publisher\.Mono<(.*?)>?json.rule.convert=${1}
 ```
 
-This tells EasyApi: whenever you encounter a type matching `Mono<X>`, treat it as `X` for documentation purposes.
+This tells EasyYapi: whenever you encounter a type matching `Mono<X>`, treat it as `X` for documentation purposes.
 
 ### Example: Map `LocalDateTime` to `string`
 
@@ -127,7 +127,7 @@ See the [Rule Authoring Guide](rule-guide.md#json-rules) for the full list of JS
 
 ## Pre/Post Scripts
 
-EasyApi supports Postman-compatible **pre-request** and **post-response** scripts written in Groovy. These run before/after API calls initiated from the dashboard.
+EasyYapi supports Postman-compatible **pre-request** and **post-response** scripts written in Groovy. These run before/after API calls initiated from the dashboard.
 
 ### Quick example
 
@@ -155,16 +155,16 @@ For the full `pm.*` API reference, see the [Script Reference](easyapi-script-ref
 
 ## AI-assisted Rule Creation
 
-EasyApi 3.0 includes an AI assistant that can author rules for you in natural language.
+EasyYapi 3.0 includes an AI assistant that can author rules for you in natural language.
 
 ### Prerequisites
 
-1. Configure an AI provider in **Settings → EasyApi → AI** (the dedicated AI tab).
+1. Configure an AI provider in **Settings → EasyYapi → AI** (the dedicated AI tab).
 2. Click **Test Connection** to verify.
 
 ### Workflow
 
-1. Open **Settings → EasyApi → Rules**.
+1. Open **Settings → EasyYapi → Rules**.
 2. Click **Chat** (bottom action bar) to reveal the inline AI panel, or **Magic** to run a built-in review-and-detect instruction.
 3. Type a request, e.g.:
    - "Rename all endpoints in `UserController` to start with `fetch_`"

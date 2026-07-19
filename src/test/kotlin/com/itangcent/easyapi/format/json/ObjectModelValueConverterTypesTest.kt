@@ -1,0 +1,316 @@
+package com.itangcent.easyapi.format.json
+
+import com.itangcent.easyapi.core.psi.model.ObjectModel
+import com.itangcent.easyapi.core.psi.type.JsonType
+import junit.framework.TestCase
+
+/**
+ * Tests [ObjectModelValueConverter.toSimpleValue] behavior for the various
+ * [JsonType] constants produced by PSI type resolution.
+ *
+ * Originally located at `core/psi/DefaultPsiClassHelperUtilityTest.kt`, this
+ * file was moved to `format/json/` because it is a pure unit test of
+ * [ObjectModelValueConverter] — every test case calls
+ * `ObjectModelValueConverter.toSimpleValue(...)` on a model built from a
+ * [JsonType]. Co-locating the test with the converter avoids a concrete-impl
+ * upward import from `core.psi` to `format.json` (DAG rule per Decision CO3).
+ */
+class ObjectModelValueConverterTypesTest : TestCase() {
+
+    fun testGetDefaultValueForTypeBoolean() {
+        val model = callGetDefaultValueForType("boolean")
+        assertEquals(false, ObjectModelValueConverter.toSimpleValue(model))
+
+        val wrapperModel = callGetDefaultValueForType("java.lang.Boolean")
+        assertEquals(false, ObjectModelValueConverter.toSimpleValue(wrapperModel))
+    }
+
+    fun testGetDefaultValueForTypeByte() {
+        val model = callGetDefaultValueForType("byte")
+        assertEquals(0, ObjectModelValueConverter.toSimpleValue(model))
+
+        val wrapperModel = callGetDefaultValueForType("java.lang.Byte")
+        assertEquals(0, ObjectModelValueConverter.toSimpleValue(wrapperModel))
+    }
+
+    fun testGetDefaultValueForTypeChar() {
+        val model = callGetDefaultValueForType("char")
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(model))
+
+        val wrapperModel = callGetDefaultValueForType("java.lang.Character")
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(wrapperModel))
+    }
+
+    fun testGetDefaultValueForTypeShort() {
+        val model = callGetDefaultValueForType("short")
+        assertEquals(0, ObjectModelValueConverter.toSimpleValue(model))
+
+        val wrapperModel = callGetDefaultValueForType("java.lang.Short")
+        assertEquals(0, ObjectModelValueConverter.toSimpleValue(wrapperModel))
+    }
+
+    fun testGetDefaultValueForTypeInt() {
+        val model = callGetDefaultValueForType("int")
+        assertEquals(0, ObjectModelValueConverter.toSimpleValue(model))
+
+        val wrapperModel = callGetDefaultValueForType("java.lang.Integer")
+        assertEquals(0, ObjectModelValueConverter.toSimpleValue(wrapperModel))
+    }
+
+    fun testGetDefaultValueForTypeLong() {
+        val model = callGetDefaultValueForType("long")
+        assertEquals(0L, ObjectModelValueConverter.toSimpleValue(model))
+
+        val wrapperModel = callGetDefaultValueForType("java.lang.Long")
+        assertEquals(0L, ObjectModelValueConverter.toSimpleValue(wrapperModel))
+    }
+
+    fun testGetDefaultValueForTypeFloat() {
+        val model = callGetDefaultValueForType("float")
+        assertEquals(0.0f, ObjectModelValueConverter.toSimpleValue(model))
+
+        val wrapperModel = callGetDefaultValueForType("java.lang.Float")
+        assertEquals(0.0f, ObjectModelValueConverter.toSimpleValue(wrapperModel))
+    }
+
+    fun testGetDefaultValueForTypeDouble() {
+        val model = callGetDefaultValueForType("double")
+        assertEquals(0.0, ObjectModelValueConverter.toSimpleValue(model))
+
+        val wrapperModel = callGetDefaultValueForType("java.lang.Double")
+        assertEquals(0.0, ObjectModelValueConverter.toSimpleValue(wrapperModel))
+    }
+
+    fun testGetDefaultValueForTypeString() {
+        val model = callGetDefaultValueForType("java.lang.String")
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(model))
+    }
+
+    fun testGetDefaultValueForTypeList() {
+        val listModel = callGetDefaultValueForType("java.util.List")
+        val value = ObjectModelValueConverter.toSimpleValue(listModel)
+        assertTrue(value is List<*>)
+        assertTrue((value as List<*>).isEmpty())
+
+        val genericListModel = callGetDefaultValueForType("java.util.List<java.lang.String>")
+        val genericValue = ObjectModelValueConverter.toSimpleValue(genericListModel)
+        assertTrue(genericValue is List<*>)
+        assertTrue((genericValue as List<*>).isEmpty())
+    }
+
+    fun testGetDefaultValueForTypeSet() {
+        val setModel = callGetDefaultValueForType("java.util.Set")
+        val value = ObjectModelValueConverter.toSimpleValue(setModel)
+        assertTrue(value is List<*>)
+        assertTrue((value as List<*>).isEmpty())
+
+        val genericSetModel = callGetDefaultValueForType("java.util.Set<java.lang.Integer>")
+        val genericValue = ObjectModelValueConverter.toSimpleValue(genericSetModel)
+        assertTrue(genericValue is List<*>)
+        assertTrue((genericValue as List<*>).isEmpty())
+    }
+
+    fun testGetDefaultValueForTypeMap() {
+        val mapModel = callGetDefaultValueForType("java.util.Map")
+        val value = ObjectModelValueConverter.toSimpleValue(mapModel)
+        assertTrue(value is Map<*, *>)
+        assertTrue((value as Map<*, *>).isEmpty())
+
+        val genericMapModel = callGetDefaultValueForType("java.util.Map<java.lang.String, java.lang.Object>")
+        val genericValue = ObjectModelValueConverter.toSimpleValue(genericMapModel)
+        assertTrue(genericValue is Map<*, *>)
+        assertTrue((genericValue as Map<*, *>).isEmpty())
+    }
+
+    fun testGetDefaultValueForUnknownType() {
+        val model = callGetDefaultValueForType("com.example.UnknownType")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is Map<*, *>)
+        assertTrue((value as Map<*, *>).isEmpty())
+
+        val objectModel = callGetDefaultValueForType("java.lang.Object")
+        assertTrue(ObjectModelValueConverter.toSimpleValue(objectModel) is Map<*, *>)
+    }
+
+    fun testGetDefaultValueForComplexGenericList() {
+        val model = callGetDefaultValueForType("java.util.List<java.util.List<java.lang.String>>")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is List<*>)
+        assertTrue((value as List<*>).isEmpty())
+    }
+
+    fun testGetDefaultValueForComplexGenericMap() {
+        val model = callGetDefaultValueForType("java.util.Map<java.lang.String, java.util.List<java.lang.Integer>>")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is Map<*, *>)
+        assertTrue((value as Map<*, *>).isEmpty())
+    }
+
+    fun testGetDefaultValueForWildcardList() {
+        val model = callGetDefaultValueForType("java.util.List<?>")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is List<*>)
+        assertTrue((value as List<*>).isEmpty())
+    }
+
+    fun testGetDefaultValueForBoundedWildcardList() {
+        val model = callGetDefaultValueForType("java.util.List<? extends java.lang.Number>")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is List<*>)
+        assertTrue((value as List<*>).isEmpty())
+    }
+
+    fun testGetDefaultValueForArrayList() {
+        val model = callGetDefaultValueForType("java.util.ArrayList")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is List<*>)
+        assertTrue((value as List<*>).isEmpty())
+    }
+
+    fun testGetDefaultValueForHashMap() {
+        val model = callGetDefaultValueForType("java.util.HashMap")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is Map<*, *>)
+        assertTrue((value as Map<*, *>).isEmpty())
+    }
+
+    fun testGetDefaultValueForLinkedList() {
+        val model = callGetDefaultValueForType("java.util.LinkedList")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is List<*>)
+        assertTrue((value as List<*>).isEmpty())
+    }
+
+    fun testGetDefaultValueForTreeSet() {
+        val model = callGetDefaultValueForType("java.util.TreeSet")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is List<*>)
+        assertTrue((value as List<*>).isEmpty())
+    }
+
+    fun testGetDefaultValueForConcurrentMap() {
+        val model = callGetDefaultValueForType("java.util.concurrent.ConcurrentMap")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is Map<*, *>)
+        assertTrue((value as Map<*, *>).isEmpty())
+    }
+
+    fun testGetDefaultValueForNestedGenericTypes() {
+        val model = callGetDefaultValueForType("java.util.Map<java.lang.String, java.util.Map<java.lang.Integer, java.util.List<java.lang.String>>>")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is Map<*, *>)
+        assertTrue((value as Map<*, *>).isEmpty())
+    }
+
+    fun testGetDefaultValueForSetWithGeneric() {
+        val model = callGetDefaultValueForType("java.util.Set<java.lang.String>")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is List<*>)
+        assertTrue((value as List<*>).isEmpty())
+    }
+
+    fun testGetDefaultValueForPrimitiveWrapperTypes() {
+        assertEquals(false, ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Boolean")))
+        assertEquals(0, ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Byte")))
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Character")))
+        assertEquals(0, ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Short")))
+        assertEquals(0, ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Integer")))
+        assertEquals(0L, ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Long")))
+        assertEquals(0.0f, ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Float")))
+        assertEquals(0.0, ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Double")))
+    }
+
+    fun testGetDefaultValueForCommonJavaTypes() {
+        assertTrue(ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Object")) is Map<*, *>)
+
+        val classValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Class"))
+        assertTrue(classValue is Map<*, *>)
+        assertTrue((classValue as Map<*, *>).isEmpty())
+
+        val exceptionValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Exception"))
+        assertTrue(exceptionValue is Map<*, *>)
+        assertTrue((exceptionValue as Map<*, *>).isEmpty())
+
+        val threadValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Thread"))
+        assertTrue(threadValue is Map<*, *>)
+        assertTrue((threadValue as Map<*, *>).isEmpty())
+
+        val fileValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.io.File"))
+        assertEquals("java.io.File should be treated as file type", "(binary)", fileValue)
+
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.util.Date")))
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDate")))
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDateTime")))
+    }
+
+    fun testGetDefaultValueForTypeWithSpaces() {
+        val model = callGetDefaultValueForType("  java.lang.String  ")
+        val value = ObjectModelValueConverter.toSimpleValue(model)
+        assertTrue(value is Map<*, *>)
+        assertTrue((value as Map<*, *>).isEmpty())
+    }
+
+    fun testGetDefaultValueForTypeWithNullInput() {
+        val model = callGetDefaultValueForType("")
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(model))
+    }
+
+    fun testGetDefaultValueForTypeCaseSensitivity() {
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.String")))
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.string")))
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("Java.lang.String")))
+    }
+
+    fun testGetDefaultValueForTypeWithArraySyntax() {
+        val stringArrayValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.String[]"))
+        assertTrue(stringArrayValue is List<*>)
+        assertTrue((stringArrayValue as List<*>).isEmpty())
+
+        val intArrayValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("int[]"))
+        assertTrue(intArrayValue is List<*>)
+        assertTrue((intArrayValue as List<*>).isEmpty())
+    }
+
+    fun testGetDefaultValueForTypeWithPrimitiveArray() {
+        val byteArrayValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("byte[]"))
+        assertTrue(byteArrayValue is List<*>)
+        assertTrue((byteArrayValue as List<*>).isEmpty())
+
+        val charArrayValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("char[]"))
+        assertTrue(charArrayValue is List<*>)
+        assertTrue((charArrayValue as List<*>).isEmpty())
+
+        val intArrayValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("int[]"))
+        assertTrue(intArrayValue is List<*>)
+        assertTrue((intArrayValue as List<*>).isEmpty())
+
+        val longArrayValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("long[]"))
+        assertTrue(longArrayValue is List<*>)
+        assertTrue((longArrayValue as List<*>).isEmpty())
+    }
+
+    private fun callGetDefaultValueForType(typeName: String): ObjectModel? {
+        return ObjectModel.single(JsonType.fromJavaType(typeName))
+    }
+
+    fun testFromFileTypeMarkerResolvesToFile() {
+        val model = ObjectModel.single(JsonType.fromJavaType("__file__"))
+        val single = model.asSingle()
+        assertNotNull("ObjectModel.Single should be created from __file__", single)
+        assertEquals("__file__ should resolve to 'file' type", JsonType.FILE, single!!.type)
+    }
+
+    fun testFromFileTypeMarkerNotObject() {
+        val model = ObjectModel.single(JsonType.fromJavaType("__file__"))
+        val single = model.asSingle()
+        assertNotNull(single)
+        assertNotSame("__file__ should NOT resolve to 'object' type", JsonType.OBJECT, single!!.type)
+    }
+
+    fun testFromFileTypeCanonicalResolvesToFile() {
+        val model = ObjectModel.single(JsonType.fromJavaType("org.springframework.web.multipart.MultipartFile"))
+        val single = model.asSingle()
+        assertNotNull(single)
+        assertEquals("MultipartFile canonical name should resolve to 'file' type", JsonType.FILE, single!!.type)
+    }
+}

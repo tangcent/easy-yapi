@@ -1,6 +1,6 @@
-# EasyApi Settings Guide
+# EasyYapi Settings Guide
 
-This guide documents every setting in **Settings → EasyApi**. Settings are organized into tabs: General, Postman, YApi, HTTP, Intelligent, Extensions, Remote, Rules, AI, gRPC, and Environments. Each section below covers one tab, listing every field with its label, default value, effect, and the underlying `Settings` property name.
+This guide documents every setting in **Settings → EasyYapi**. Settings are organized into tabs: General, Postman, YApi, HTTP, Intelligent, Extensions, Remote, Rules, AI, gRPC, and Environments. Each section below covers one tab, listing every field with its label, default value, effect, and the underlying `Settings` property name.
 
 > **Tip:** Project-level settings override application-level settings. Use the gear icon in the settings dialog to switch scope.
 
@@ -110,7 +110,7 @@ Plugin extension codes for custom behavior.
 
 ## Rules
 
-Rule file management. EasyApi 3.0 discovers rule files by **folder**, not by
+Rule file management. EasyYapi 3.0 discovers rule files by **folder**, not by
 an explicit list. The tab has three sub-tabs — **Project**,
 **Global**, **Remote** — and a bottom action bar with **Chat**, **Magic**, and
 **Help** buttons that host the inline AI assistant.

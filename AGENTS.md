@@ -36,7 +36,7 @@ class MyProjectService(private val project: Project) {
 }
 ```
 
-**Examples:** [ApiScanner](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/dashboard/ApiScanner.kt), [ApiDashboardService](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/dashboard/ApiDashboardService.kt), [IdeaConsoleProvider](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/logging/IdeaConsoleProvider.kt), [PostmanCollectionHelper](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/exporter/postman/PostmanCollectionHelper.kt), [HttpClientProvider](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/http/HttpClientProvider.kt)
+**Examples:** [ApiScanner](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/dashboard/ApiScanner.kt), [ApiDashboardService](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/dashboard/ApiDashboardService.kt), [IdeaConsoleProvider](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/logging/IdeaConsoleProvider.kt), [PostmanCollectionHelper](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/channel/postman/PostmanCollectionHelper.kt), [HttpClientProvider](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/http/HttpClientProvider.kt)
 
 ### Object Helper/Utils
 
@@ -48,7 +48,7 @@ object MyHelperUtils {
 }
 ```
 
-**Examples:** [SpringMvcConstants](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/exporter/springmvc/SpringMvcConstants.kt), [MavenHelper](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/util/ide/MavenHelper.kt), [ObjectModelUtils](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/psi/model/ObjectModelUtils.kt)
+**Examples:** [SpringMvcConstants](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/framework/springmvc/SpringMvcConstants.kt), [MavenHelper](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/util/ide/MavenHelper.kt), [ObjectModelUtils](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/psi/model/ObjectModelUtils.kt)
 
 ## Code Style
 
@@ -60,7 +60,7 @@ object MyHelperUtils {
 
 ## Threading Model
 
-All PSI/VFS operations must follow IntelliJ's threading rules. Use [IdeDispatchers](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/threading/IdeDispatchers.kt).
+All PSI/VFS operations must follow IntelliJ's threading rules. Use [IdeDispatchers](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/internal/threading/IdeDispatchers.kt).
 
 ### Dispatchers
 
@@ -150,7 +150,7 @@ The plugin has three output channels. **Pick one** by the first-match-wins rule 
 
 ### IdeaLog interface
 
-Implement `IdeaLog` to get a `LOG` property; do **not** call `Logger.getLogger()` directly.
+Implement `IdeaLog` ([core/logging/IdeaLog.kt](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/logging/IdeaLog.kt)) to get a `LOG` property; do **not** call `Logger.getLogger()` directly.
 
 ```kotlin
 class MyService : IdeaLog {
@@ -182,7 +182,7 @@ val selected = Messages.showChooseDialog(
 val choice = Messages.showYesNoCancelDialog("Overwrite?", "Confirm", Messages.getQuestionIcon())
 ```
 
-**Example:** [DefaultHttpContextCacheHelper](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/cache/http/DefaultHttpContextCacheHelper.kt) — host selection dialog.
+**Example:** [DefaultHttpContextCacheHelper](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/cache/http/DefaultHttpContextCacheHelper.kt) — host selection dialog.
 
 ### DialogWrapper — complex multi-field dialogs
 
@@ -210,23 +210,90 @@ class MyConfigDialog(private val project: Project) : DialogWrapper(project) {
 }
 ```
 
-**Examples:** [ExportDialog](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/ide/dialog/ExportDialog.kt), [ScriptExecutorDialog](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/ide/script/ScriptExecutorDialog.kt)
+**Examples:** [ExportDialog](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/ide/dialog/ExportDialog.kt), [ScriptExecutorDialog](file:///Users/tangcent/code/github/easy-api/src/main/kotlin/com/itangcent/easyapi/core/ide/script/ScriptExecutorDialog.kt)
 
 ## Project Structure
 
+The codebase is organized into four top-level buckets under `src/main/kotlin/com/itangcent/easyapi/`. Adding a new channel, format, or framework is a one-package operation plus one `plugin.xml` line — see the [Package Layout](#package-layout) rule below for where new code goes.
+
 ```
-src/main/kotlin/com/itangcent/easyapi/
-├── core/          # Core infrastructure (events, threading, application services)
-├── psi/           # PSI utilities (adapters, doc helpers, type resolution)
-├── exporter/      # Export functionality (YApi, Postman, Markdown, cURL, gRPC)
-├── config/        # Config parsing and management
-├── rule/          # Rule engine and parsers
-├── http/          # HTTP client implementations
-├── ide/           # IDE integration (actions, dialogs, search)
-├── logging/       # Logging infrastructure
-├── dashboard/     # API Dashboard tool window
-└── script/        # Script execution support
+com.itangcent.easyapi/
+├── channel/                         # OUTPUT — export destinations
+│   ├── spi/                         #   Channel EP contract + registry + shared scaffolding
+│   │   ├── Channel.kt
+│   │   ├── ChannelConfig.kt
+│   │   ├── ChannelOptionsPanel.kt
+│   │   ├── ChannelRegistry.kt
+│   │   └── PlaceholderSyntaxConverter.kt
+│   ├── curl/                        #   one package per channel
+│   ├── hoppscotch/  (+ model/)
+│   ├── httpclient/
+│   ├── markdown/    (+ template/)
+│   └── postman/     (+ model/)
+│
+├── format/                          # FIELD/OBJECT SERIALIZATION
+│   ├── spi/                         #   FieldFormatChannel EP + registry + actions + shared exts
+│   │   ├── FieldFormatChannel.kt
+│   │   ├── FieldFormatChannelRegistry.kt
+│   │   ├── FieldFormatAction.kt
+│   │   ├── FieldFormatActionGroup.kt
+│   │   └── FieldFormatExtensions.kt   # the to toJson/toJson5/toYaml/toProperties entry fns
+│   ├── json/                        #   ObjectModelJsonConverter + Builder + Handlers + Value converter
+│   ├── json5/                       #   Json5Handler (subset of json/ — see Decision F2)
+│   ├── yaml/                        #   YamlFormatter
+│   └── properties/                  #   PropertiesFormatter
+│
+├── framework/                       # INPUT — source framework exporters
+│   ├── spi/                         #   Framework EP contract + registry (mirror of channel/spi, format/spi)
+│   │   └── FrameworkRegistry.kt     #     single chokepoint for framework enablement, mirrors ChannelRegistry
+│   ├── springmvc/                   #   Spring MVC + Actuator
+│   ├── jaxrs/
+│   ├── feign/
+│   └── grpc/                        #   class exporter + type parser + service recognizer — runtime plumbing is core/grpc
+│
+└── core/                            # SHARED INFRASTRUCTURE (the umbrella)
+    ├── internal/                    #   relocated narrow core/ (services, event, threading)
+    │   ├── event/
+    │   └── threading/
+    ├── export/                      #   the neutral pipeline (see Decision C2)
+    │   ├── ClassExporter.kt
+    │   ├── ClassExporterRegistry.kt
+    │   ├── EndpointBuilder.kt
+    │   ├── ExportOrchestrator.kt
+    │   ├── ApiModels.kt  ExportContext.kt  ExportMetadata.kt
+    │   ├── ExportResult.kt  Extension.kt  PathSelector.kt
+    │   └── recognizer/  # ApiClassRecognizer, CompositeApiClassRecognizer, MetaAnnotationResolver
+    ├── psi/        (+ adapter/ doc/ helper/ model/ type/)  # ObjectModel lives here; format/ consumes it
+    ├── config/     (+ model/ parser/ resource/ source/)
+    ├── rule/       (+ context/ engine/ parser/)
+    ├── http/
+    ├── logging/
+    ├── ide/        (+ action/ dialog/ linemarker/ script/ search/ support/)  # NO fieldformat/
+    ├── dashboard/
+    ├── script/     (+ env/ pm/)
+    ├── util/       (+ file/ ide/ json/ storage/ text/)  # FormatterHelper stays — see Decision F1
+    ├── cache/      (+ api/ http/ json/)
+    ├── settings/   (+ migration/ module/ state/ ui/)
+    ├── ai/         (+ agent/ credentials/ tools/ ui/)
+    ├── grpc/       # runtime plumbing (descriptor reflection, proto) — peer of framework/grpc's consumer
+    ├── repository/
+    └── extension/
 ```
+
+The narrow original `core/` package (services, events, threading) was renamed to `core/internal/` so `core/` could serve as the umbrella for all shared infrastructure. The `core.export/` sub-package is the **neutral pipeline home** — neither `framework/` (input) nor `channel/` (output) owns the `ClassExporter` SPI; it lives at `core.export/` so both can depend on it without pointing up to a sibling bucket. The four buckets form a DAG: `channel` may import from `format`, `framework`, and `core`; `format` and `framework` may import from `core` (and `core.grpc/` for `framework.grpc`); `core` imports only EP-contract seams (`channel.spi.*`, `format.spi.*`, `framework.spi.*`, `core.export.*`) from its siblings — concrete per-id implementations (`channel.<id>.*`, `format.<id>.*`, `framework.<id>.*`) imported from `core.*` are forbidden. The `framework.spi.*` carve-out (Decision CO3 broadened by the package-restructure-patch) is the single exception that lets `core.*` resolve framework enablement via `FrameworkRegistry` without pointing at a concrete `framework.<id>.*` implementation.
+
+### Package Layout
+
+When adding new code, apply this decision rule (first match wins) to pick the bucket:
+
+1. **One output destination** (Postman, Markdown, cURL, Hoppscotch, IntelliJ HTTP Client, …) → `channel/<id>/`
+2. **One field serialization format** (JSON, JSON5, YAML, Properties, TOML, …) → `format/<id>/`
+3. **One source framework** (Spring MVC, JAX-RS, Feign, gRPC, Micronaut, …) → `framework/<id>/`
+4. **Else** — shared by ≥2 buckets, or runtime/IDE plumbing with no extension target → `core/<sub-package>/`
+
+The four top-level buckets are named explicitly: `channel`, `format`, `framework`, `core`. Code shared across exactly two buckets but with no natural home elsewhere lives in `core/` (e.g. the pipeline in `core/export/` is used by both `framework/` and `channel/`).
+
+**EP-contract sub-packages.** Each input/output bucket owns a `spi/` sub-package for its EP contract surfaces, which `core.*` may legitimately import (the only sibling imports `core.*` allows): `channel.spi.*` (Channel + ChannelRegistry), `format.spi.*` (FieldFormatChannel + FieldFormatChannelRegistry), `framework.spi.*` (FrameworkRegistry — added by the package-restructure-patch under the broadened CO3 rule). Concrete per-id implementations (`channel.<id>.*`, `format.<id>.*`, `framework.<id>.*`) imported from `core.*` remain forbidden.
 
 ## Testing
 
@@ -236,6 +303,10 @@ Tests use JUnit 4 + Mockito/Mockito-Kotlin + the IntelliJ Platform Test Framewor
 - Base classes: `EasyApiLightCodeInsightFixtureTestCase` (PSI/Project-aware), plain JUnit for pure utilities
 - Mocking: `mockito-kotlin`
 - **Cross-platform golden-file rule:** Never read expected-output resources with `File.readText()`. Use `ResultLoader.load()` (trailing-trimmed) or `ResourceLoader.readRaw()` (strict byte parity) — both collapse CRLF→LF so snapshot tests pass on Windows CI where `core.autocrlf` may convert the on-disk golden. `.gitattributes` enforces `eol=lf`; do not weaken it.
+
+## Tooling
+
+- **`codegraph` MCP index refresh:** After a refactor that moves/renames files, refresh the index with `codegraph sync` (incremental) or `codegraph index` (full rebuild) from the project root. The `codegraph_explore` MCP tool is read-only and does not refresh the index.
 
 ## Skills
 

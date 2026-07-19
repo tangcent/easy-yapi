@@ -1,0 +1,152 @@
+package com.itangcent.easyapi.core.ide.linemarker
+
+import com.intellij.codeInsight.daemon.GutterIconNavigationHandler
+import com.intellij.codeInsight.daemon.LineMarkerInfo
+import com.intellij.codeInsight.daemon.LineMarkerProvider
+import com.intellij.icons.AllIcons
+import com.intellij.openapi.editor.markup.GutterIconRenderer
+import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiIdentifier
+import com.intellij.psi.PsiMethod
+import com.itangcent.easyapi.core.cache.api.ApiIndex
+import com.itangcent.easyapi.core.cache.api.ApiIndexManager
+import com.itangcent.easyapi.core.internal.threading.IdeDispatchers
+import com.itangcent.easyapi.core.internal.threading.swing
+import com.itangcent.easyapi.core.dashboard.ApiDashboardService
+import com.itangcent.easyapi.core.export.recognizer.CompositeApiClassRecognizer
+import com.itangcent.easyapi.core.grpc.GrpcMethodResolver
+import com.itangcent.easyapi.core.logging.IdeaLog
+import com.itangcent.easyapi.core.psi.helper.UnifiedAnnotationHelper
+import com.itangcent.easyapi.core.settings.module.GeneralSettings
+import com.itangcent.easyapi.core.settings.settings
+import com.itangcent.easyapi.core.util.ide.ProjectClassAvailabilityService
+import kotlinx.coroutines.runBlocking
+import java.awt.event.MouseEvent
+
+/**
+ * Line marker provider for API methods.
+ *
+ * Adds a gutter icon to methods annotated with API annotations
+ * (Spring MVC, JAX-RS, etc.) that allows quick navigation
+ * to the API Dashboard.
+ *
+ * When the endpoint is not found in the current index (e.g., after a branch
+ * switch or new file), clicking the gutter icon triggers a re-scan of the
+ * containing file before navigating.
+ *
+ * ## Supported Annotations
+ * - Spring MVC: @RequestMapping, @GetMapping, @PostMapping, etc.
+ * - JAX-RS: @GET, @POST, @PUT, @DELETE, @PATCH, @Path
+ *
+ * @see ApiDashboardService for navigation target
+ */
+class ApiMethodLineMarkerProvider : LineMarkerProvider {
+
+    private val annotationHelper = UnifiedAnnotationHelper()
+
+    override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
+        if (element !is PsiIdentifier) return null
+        val parent = element.parent as? PsiMethod ?: return null
+
+        if (!isGutterIconEnabled(element.project)) return null
+
+        if (!isApiMethod(parent) && !isIndexedMethod(parent)) return null
+
+        return LineMarkerInfo(
+            element,
+            element.textRange,
+            AllIcons.Actions.Execute,
+            { "Open in API Dashboard" },
+            ApiMethodNavigationHandler,
+            GutterIconRenderer.Alignment.LEFT,
+            { "Open in API Dashboard" }
+        )
+    }
+
+    private fun isIndexedMethod(method: PsiMethod): Boolean {
+        return ApiIndex.getInstance(method.project).containsMethod(method)
+    }
+
+    private fun isGutterIconEnabled(project: Project): Boolean {
+        return project.settings<GeneralSettings>().gutterIconEnabled
+    }
+
+    private fun isApiMethod(method: PsiMethod): Boolean {
+        val availabilityService = ProjectClassAvailabilityService.getInstance(method.project)
+        
+        return runBlocking {
+            allApiAnnotations.any { annotationFqn ->
+                availabilityService.hasClassInProject(annotationFqn) && 
+                    annotationHelper.hasAnn(method, annotationFqn)
+            } || isGrpcRpcMethod(method)
+        }
+    }
+
+    /**
+     * All possible API method annotations across supported frameworks.
+     */
+    private val allApiAnnotations: List<String> = listOf(
+        "org.springframework.web.bind.annotation.RequestMapping",
+        "org.springframework.web.bind.annotation.GetMapping",
+        "org.springframework.web.bind.annotation.PostMapping",
+        "org.springframework.web.bind.annotation.PutMapping",
+        "org.springframework.web.bind.annotation.DeleteMapping",
+        "org.springframework.web.bind.annotation.PatchMapping",
+        "javax.ws.rs.GET",
+        "javax.ws.rs.POST",
+        "javax.ws.rs.PUT",
+        "javax.ws.rs.DELETE",
+        "javax.ws.rs.PATCH",
+        "javax.ws.rs.Path"
+    )
+
+    /**
+     * Detects gRPC RPC methods by signature pattern:
+     * - Unary/server-streaming: (Req, StreamObserver<Resp>) -> void
+     * - Client/bidirectional: (StreamObserver<Resp>) -> StreamObserver<Req>
+     *
+     * Uses the `apiClassRecognizer` EP seam (Decision CO9) to verify the
+     * containing class is claimed by at least one recognizer's
+     * [ApiClassRecognizer.matchesClass] fast-path — without consulting the
+     * rule engine (PR1 contract). Only then is the more expensive
+     * [GrpcMethodResolver.resolveStreamingType] invoked.
+     */
+    private suspend fun isGrpcRpcMethod(method: PsiMethod): Boolean {
+        val containingClass = method.containingClass ?: return false
+        val composite = CompositeApiClassRecognizer.getInstance(method.project)
+        if (composite.recognizers().none { it.matchesClass(containingClass) }) return false
+        val resolver = GrpcMethodResolver.getInstance(method.project)
+        return resolver.resolveStreamingType(method) != null
+    }
+
+    private object ApiMethodNavigationHandler : GutterIconNavigationHandler<PsiElement>, IdeaLog {
+
+        override fun navigate(e: MouseEvent, element: PsiElement) {
+            val method = element.parent as? PsiMethod ?: return
+            val project = element.project
+
+            IdeDispatchers.backgroundAsync {
+                val service = ApiDashboardService.getInstance(project)
+                val found = service.navigateToMethod(method)
+
+                swing {
+                    com.intellij.openapi.wm.ToolWindowManager.getInstance(project)
+                        .getToolWindow("API Dashboard")
+                        ?.activate(null)
+                }
+
+                if (!found) {
+                    val filePath = method.containingFile?.virtualFile?.path ?: return@backgroundAsync
+                    LOG.info("Endpoint not found in index, re-scanning file: $filePath")
+
+                    ApiIndexManager.getInstance(project).reIndex(listOf(filePath))
+
+                    swing {
+                        service.navigateToMethod(method)
+                    }
+                }
+            }
+        }
+    }
+}

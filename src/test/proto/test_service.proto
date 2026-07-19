@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package test.grpc;
 
-option java_package = "com.itangcent.easyapi.grpc.test";
+option java_package = "com.itangcent.easyapi.core.grpc.test";
 option java_multiple_files = true;
 
 service EchoService {

@@ -21,111 +21,138 @@
     </extensions>
 
     <extensionPoints>
-        <extensionPoint name="classExporter" interface="com.itangcent.easyapi.exporter.ClassExporter" area="IDEA_PROJECT" dynamic="true"/>
-        <extensionPoint name="channel" interface="com.itangcent.easyapi.exporter.channel.Channel" area="IDEA_PROJECT" dynamic="true"/>
-        <extensionPoint name="fieldFormatChannel" interface="com.itangcent.easyapi.ide.fieldformat.FieldFormatChannel" dynamic="true"/>
+        <extensionPoint name="classExporter" interface="com.itangcent.easyapi.core.export.ClassExporter" area="IDEA_PROJECT" dynamic="true"/>
+        <extensionPoint name="channel" interface="com.itangcent.easyapi.channel.spi.Channel" area="IDEA_PROJECT" dynamic="true"/>
+        <extensionPoint name="fieldFormatChannel" interface="com.itangcent.easyapi.format.spi.FieldFormatChannel" dynamic="true"/>
+        <!-- Decision CO9: EP-based discovery for framework recognizers.
+             CompositeApiClassRecognizer iterates EP-discovered instances and
+             filters by ApiClassRecognizer.isEnabled(project) — so core.*
+             no longer hard-imports framework.<id>.* recognizer classes (DAG rule CO3). -->
+        <extensionPoint name="apiClassRecognizer" interface="com.itangcent.easyapi.core.export.recognizer.ApiClassRecognizer" area="IDEA_PROJECT" dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.itangcent.idea.plugin.easy-yapi">
-        <classExporter implementation="com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter"/>
-        <classExporter implementation="com.itangcent.easyapi.exporter.feign.FeignClassExporter"/>
-        <classExporter implementation="com.itangcent.easyapi.exporter.jaxrs.JaxRsClassExporter"/>
-        <classExporter implementation="com.itangcent.easyapi.exporter.springmvc.ActuatorEndpointExporter"/>
-        <classExporter implementation="com.itangcent.easyapi.exporter.grpc.GrpcClassExporter"/>
-        <channel implementation="com.itangcent.easyapi.exporter.channel.markdown.MarkdownChannel"/>
-        <channel implementation="com.itangcent.easyapi.exporter.channel.postman.PostmanChannel"/>
-        <channel implementation="com.itangcent.easyapi.exporter.channel.yapi.YapiChannel"/>
-        <channel implementation="com.itangcent.easyapi.exporter.channel.curl.CurlChannel"/>
-        <channel implementation="com.itangcent.easyapi.exporter.channel.httpclient.HttpClientChannel"/>
-        <channel implementation="com.itangcent.easyapi.exporter.channel.hoppscotch.HoppscotchChannel"/>
-        <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.JsonFieldFormatChannel"/>
-        <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.Json5FieldFormatChannel"/>
-        <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.PropertiesFieldFormatChannel"/>
-        <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.YamlFieldFormatChannel"/>
+        <classExporter implementation="com.itangcent.easyapi.framework.springmvc.SpringMvcClassExporter"/>
+        <classExporter implementation="com.itangcent.easyapi.framework.feign.FeignClassExporter"/>
+        <classExporter implementation="com.itangcent.easyapi.framework.jaxrs.JaxRsClassExporter"/>
+        <classExporter implementation="com.itangcent.easyapi.framework.springmvc.ActuatorEndpointExporter"/>
+        <classExporter implementation="com.itangcent.easyapi.framework.grpc.GrpcClassExporter"/>
+        <!-- Decision CO9: register framework recognizers via EP.
+             CompositeApiClassRecognizer discovers these via ExtensionPointName
+             and filters by isEnabled(project) (settings-driven). -->
+        <apiClassRecognizer implementation="com.itangcent.easyapi.framework.springmvc.SpringControllerRecognizer"/>
+        <apiClassRecognizer implementation="com.itangcent.easyapi.framework.jaxrs.JaxRsResourceRecognizer"/>
+        <apiClassRecognizer implementation="com.itangcent.easyapi.framework.feign.FeignClientRecognizer"/>
+        <apiClassRecognizer implementation="com.itangcent.easyapi.framework.springmvc.ActuatorEndpointRecognizer"/>
+        <apiClassRecognizer implementation="com.itangcent.easyapi.framework.grpc.GrpcServiceRecognizer"/>
+        <channel implementation="com.itangcent.easyapi.channel.markdown.MarkdownChannel"/>
+        <channel implementation="com.itangcent.easyapi.channel.postman.PostmanChannel"/>
+        <channel implementation="com.itangcent.easyapi.channel.yapi.YapiChannel"/>
+        <channel implementation="com.itangcent.easyapi.channel.curl.CurlChannel"/>
+        <channel implementation="com.itangcent.easyapi.channel.httpclient.HttpClientChannel"/>
+        <channel implementation="com.itangcent.easyapi.channel.hoppscotch.HoppscotchChannel"/>
+        <fieldFormatChannel implementation="com.itangcent.easyapi.format.json.JsonFieldFormatChannel"/>
+        <fieldFormatChannel implementation="com.itangcent.easyapi.format.json5.Json5FieldFormatChannel"/>
+        <fieldFormatChannel implementation="com.itangcent.easyapi.format.properties.PropertiesFieldFormatChannel"/>
+        <fieldFormatChannel implementation="com.itangcent.easyapi.format.yaml.YamlFieldFormatChannel"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="com.itangcent.easyapi.core.EasyApiApplicationService"/>
-        <applicationService serviceImplementation="com.itangcent.easyapi.settings.state.ApplicationSettingsState"/>
+        <applicationService serviceImplementation="com.itangcent.easyapi.core.internal.EasyApiApplicationService"/>
+        <applicationService serviceImplementation="com.itangcent.easyapi.core.settings.state.ApplicationSettingsState"/>
         <!-- Unified settings state (replaces all per-module *SettingsState classes) -->
-        <applicationService serviceImplementation="com.itangcent.easyapi.settings.state.UnifiedAppSettingsState"/>
-        <!-- Migration flag + activity (Phase 2) -->
-        <applicationService serviceImplementation="com.itangcent.easyapi.settings.migration.MigrationFlag"/>
-        <applicationService serviceImplementation="com.itangcent.easyapi.cache.AppCacheRepository"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.core.EasyApiProjectService"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.core.event.EventBus"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.util.storage.SessionStorage"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.rule.engine.RuleEngine"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.http.HttpClientProvider"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.logging.IdeaConsoleProvider"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.ai.AiAssistantService"/>
-        <projectService serviceInterface="com.itangcent.easyapi.config.ConfigReader"
-                        serviceImplementation="com.itangcent.easyapi.config.DefaultConfigReader"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.config.ConfigSyncService"/>
-        <projectService serviceInterface="com.itangcent.easyapi.settings.SettingBinder"
-                        serviceImplementation="com.itangcent.easyapi.settings.DefaultSettingBinder"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.settings.state.ProjectSettingsState"/>
+        <applicationService serviceImplementation="com.itangcent.easyapi.core.settings.state.UnifiedAppSettingsState"/>
+        <!-- Migration flag + activity -->
+        <applicationService serviceImplementation="com.itangcent.easyapi.core.settings.migration.MigrationFlag"/>
+        <applicationService serviceImplementation="com.itangcent.easyapi.core.cache.AppCacheRepository"/>
+        <!-- Decision CO8: register CurlRenderer SPI → cURL impl.
+             core.* callers (ScriptApiEndpoint.toCurl, ApiDashboardPanel copy-as-cURL)
+             look up via CurlRenderer.getInstance(); never import the concrete
+             CurlBuilder/CurlExportResolver/CurlScriptScopes/CurlSettings from core
+             (DAG rule CO3). Application-scoped because ScriptApiEndpoint may be
+             constructed with project=null (headless rule eval, unit tests) and the
+             pure-format path must still be reachable. -->
+        <applicationService serviceInterface="com.itangcent.easyapi.channel.spi.CurlRenderer"
+                            serviceImplementation="com.itangcent.easyapi.channel.curl.CurlRendererService"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.internal.EasyApiProjectService"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.internal.event.EventBus"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.util.storage.SessionStorage"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.rule.engine.RuleEngine"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.http.HttpClientProvider"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.logging.IdeaConsoleProvider"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.ai.AiAssistantService"/>
+        <projectService serviceInterface="com.itangcent.easyapi.core.config.ConfigReader"
+                        serviceImplementation="com.itangcent.easyapi.core.config.DefaultConfigReader"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.config.ConfigSyncService"/>
+        <projectService serviceInterface="com.itangcent.easyapi.core.settings.SettingBinder"
+                        serviceImplementation="com.itangcent.easyapi.core.settings.DefaultSettingBinder"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.settings.state.ProjectSettingsState"/>
         <!-- Unified project-level settings state (replaces all per-module *ProjectSettingsState classes) -->
-        <projectService serviceImplementation="com.itangcent.easyapi.settings.state.UnifiedProjectSettingsState"/>
-        <projectService serviceInterface="com.itangcent.easyapi.exporter.channel.yapi.YapiSettingsHelper"
-                        serviceImplementation="com.itangcent.easyapi.exporter.channel.yapi.DefaultYapiSettingsHelper"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.settings.state.UnifiedProjectSettingsState"/>
+        <projectService serviceInterface="com.itangcent.easyapi.channel.yapi.YapiSettingsHelper"
+                        serviceImplementation="com.itangcent.easyapi.channel.yapi.DefaultYapiSettingsHelper"/>
+        <projectService serviceInterface="com.itangcent.easyapi.channel.yapi.markdown.MarkdownRender"
+                        serviceImplementation="com.itangcent.easyapi.channel.yapi.markdown.BundledMarkdownRender"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.grpc.GrpcMethodResolver"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.grpc.CompositeDescriptorResolver"/>
 
-        <projectService serviceInterface="com.itangcent.easyapi.exporter.channel.yapi.markdown.MarkdownRender"
-                        serviceImplementation="com.itangcent.easyapi.exporter.channel.yapi.markdown.BundledMarkdownRender"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.exporter.grpc.GrpcMethodResolver"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.grpc.CompositeDescriptorResolver"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.export.EndpointBuilder"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.export.ClassExporterRegistry"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.channel.spi.ChannelRegistry"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.framework.spi.FrameworkRegistry"/>
+        <!-- Decision CO7: register EnvironmentSyncSupport SPI → Postman impl.
+             core.* callers look up via EnvironmentSyncSupport.getInstance(project);
+             never import the concrete EnvironmentSyncService from core (DAG rule CO3). -->
+        <projectService serviceInterface="com.itangcent.easyapi.channel.spi.EnvironmentSyncSupport"
+                        serviceImplementation="com.itangcent.easyapi.channel.postman.sync.EnvironmentSyncService"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.psi.helper.DocMetadataResolver"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.cache.VcsBranchChangeListener"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.ide.PropertiesService"/>
 
-        <projectService serviceImplementation="com.itangcent.easyapi.exporter.EndpointBuilder"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.exporter.ClassExporterRegistry"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.exporter.channel.ChannelRegistry"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.psi.helper.DocMetadataResolver"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.cache.VcsBranchChangeListener"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.ide.PropertiesService"/>
-
-        <postStartupActivity implementation="com.itangcent.easyapi.ide.ApiIndexStartupActivity"/>
-        <postStartupActivity implementation="com.itangcent.easyapi.ide.action.ChannelActionInitActivity"/>
-        <postStartupActivity implementation="com.itangcent.easyapi.logging.EasyApiConsoleToolWindowActivity"/>
-        <postStartupActivity implementation="com.itangcent.easyapi.settings.migration.SettingsMigrationActivity"/>
+        <postStartupActivity implementation="com.itangcent.easyapi.core.ide.ApiIndexStartupActivity"/>
+        <postStartupActivity implementation="com.itangcent.easyapi.core.ide.action.ChannelActionInitActivity"/>
+        <postStartupActivity implementation="com.itangcent.easyapi.core.logging.EasyApiConsoleToolWindowActivity"/>
+        <postStartupActivity implementation="com.itangcent.easyapi.core.settings.migration.SettingsMigrationActivity"/>
 
         <projectConfigurable groupId="null"
-                             displayName="EasyApi"
+                             displayName="EasyYapi"
                              id="easyapi.settings.EasyApiConfigurable"
-                             instance="com.itangcent.easyapi.settings.ui.EasyApiSettingsConfigurable"/>
+                             instance="com.itangcent.easyapi.core.settings.ui.EasyApiSettingsConfigurable"/>
         <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
                              displayName="Rules"
                              id="easyapi.settings.EasyApiConfigurable.Rules"
-                             instance="com.itangcent.easyapi.settings.ui.EasyApiRulesConfigurable"
+                             instance="com.itangcent.easyapi.core.settings.ui.EasyApiRulesConfigurable"
                              weight="10"/>
         <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
                              displayName="Backup"
                              id="easyapi.settings.EasyApiConfigurable.Backup"
-                             instance="com.itangcent.easyapi.settings.ui.EasyApiBackupConfigurable"/>
+                             instance="com.itangcent.easyapi.core.settings.ui.EasyApiBackupConfigurable"/>
         <toolWindow
                 id="API Dashboard"
                 icon="AllIcons.Toolwindows.WebToolWindow"
                 anchor="bottom"
-                factoryClass="com.itangcent.easyapi.dashboard.ApiDashboardToolWindowFactory"/>
+                factoryClass="com.itangcent.easyapi.core.dashboard.ApiDashboardToolWindowFactory"/>
         <toolWindow
                 id="EasyAPI"
                 icon="/icons/easyApiConsole.svg"
                 anchor="bottom"
-                factoryClass="com.itangcent.easyapi.logging.EasyApiConsoleToolWindowFactory"/>
+                factoryClass="com.itangcent.easyapi.core.logging.EasyApiConsoleToolWindowFactory"/>
         <notificationGroup id="EasyApi Notifications" displayType="BALLOON"/>
-        <codeInsight.lineMarkerProvider language="JAVA" implementationClass="com.itangcent.easyapi.ide.linemarker.ApiMethodLineMarkerProvider"/>
-        <searchEverywhereContributor implementation="com.itangcent.easyapi.ide.search.ApiSearchEverywhereContributorFactory"/>
+        <codeInsight.lineMarkerProvider language="JAVA" implementationClass="com.itangcent.easyapi.core.ide.linemarker.ApiMethodLineMarkerProvider"/>
+        <searchEverywhereContributor implementation="com.itangcent.easyapi.core.ide.search.ApiSearchEverywhereContributorFactory"/>
     </extensions>
 
     <actions>
         <group id="EasyApiExportFromFileGroup" text="Export" description="Export apis">
             <action id="com.itangcent.idea.easy_api.actions.ApiCallAction"
-                    class="com.itangcent.easyapi.ide.action.ApiCallAction" text="Call"
+                    class="com.itangcent.easyapi.core.ide.action.ApiCallAction" text="Call"
                     description="Call">
                 <keyboard-shortcut first-keystroke="alt shift C" keymap="$default"/>
                 <keyboard-shortcut first-keystroke="control C" keymap="Mac OS X" replace-all="true"/>
                 <keyboard-shortcut first-keystroke="control C" keymap="Mac OS X 10.5+" replace-all="true"/>
             </action>
             <action id="com.itangcent.idea.easy_api.actions.MultipleExportAction"
-                    class="com.itangcent.easyapi.ide.action.ExportApiAction" text="Export"
+                    class="com.itangcent.easyapi.core.ide.action.ExportApiAction" text="Export"
                     description="Export">
                 <keyboard-shortcut first-keystroke="alt shift E" keymap="$default"/>
                 <keyboard-shortcut first-keystroke="control E" keymap="Mac OS X" replace-all="true"/>
@@ -134,13 +161,13 @@
         </group>
 
         <group id="com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"
-                class="com.itangcent.easyapi.ide.action.ChannelQuickActionGroup"
+                class="com.itangcent.easyapi.core.ide.action.ChannelQuickActionGroup"
                 text="Export to..."
                 description="Export to channel"
                 popup="true"/>
 
         <group id="com.itangcent.idea.easy_api.actions.FieldFormatGroup"
-                class="com.itangcent.easyapi.ide.fieldformat.FieldFormatActionGroup"
+                class="com.itangcent.easyapi.format.spi.FieldFormatActionGroup"
                 text="FieldsTo*"
                 description="Convert fields to various formats"
                 popup="true"/>
@@ -148,7 +175,7 @@
         <group id="EasyApiCodeMenu" text="EasyApi" description="EasyApiCodeMenu" popup="true">
             <add-to-group group-id="CodeMenu" anchor="last"/>
             <action id="com.itangcent.idea.easy_api.actions.ScriptExecutorAction"
-                    class="com.itangcent.easyapi.ide.action.OpenScriptExecutorAction" text="ScriptExecutor"
+                    class="com.itangcent.easyapi.core.ide.action.OpenScriptExecutorAction" text="ScriptExecutor"
                     description="ScriptExecutor">
             </action>
         </group>
@@ -175,7 +202,7 @@
 
         <action
                 id="com.itangcent.idea.easy_api.actions.OpenDashboardAction"
-                class="com.itangcent.easyapi.ide.action.OpenApiDashboardAction"
+                class="com.itangcent.easyapi.core.ide.action.OpenApiDashboardAction"
                 text="Open API Dashboard"
                 description="Open API Dashboard tool window">
             <add-to-group group-id="ToolsMenu" anchor="last"/>

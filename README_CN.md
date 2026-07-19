@@ -222,12 +222,12 @@ npx skills add tangcent/easy-yapi -g -y
 
 ## 架构
 
-插件采用分层架构：
+插件采用分层、扩展点驱动的架构：
 
 ```mermaid
 graph TB
-    IDE["IDE 集成层<br/>(Actions, Dashboard, Line Markers, Search)"]
-    Export["导出层<br/>(ExportOrchestrator → ClassExporter → ApiExporter)"]
+    IDE["IDE 集成层<br/>(Actions, Dashboard, Line Markers, Search, AI Assistant)"]
+    Export["导出层<br/>(ExportOrchestrator → ClassExporter EP + Channel EP)"]
     Core["核心服务<br/>(RuleEngine, ConfigReader, ApiIndex, HttpClient)"]
     PSI["PSI 分析<br/>(TypeResolver, DocHelper, AnnotationHelper)"]
 
@@ -236,11 +236,97 @@ graph TB
     Core --> PSI
 ```
 
-- **ClassExporter** — 从 PSI 类中提取 `ApiEndpoint` 模型（Spring MVC、JAX-RS、Feign、gRPC）
-- **ApiExporter** — 将 `ApiEndpoint` 模型转换为输出格式（YApi、Postman、Markdown、cURL、HTTP Client）
-- **ExportOrchestrator** — 协调从扫描到输出的完整导出流程
+- **ExportOrchestrator** — 协调完整的导出流水线：通过 `ApiScanner` 扫描接口，然后交给选定的 `Channel` 进行输出
+- **ClassExporter** *(扩展点)* — 从 PSI 类中提取 `ApiEndpoint` 模型；内置实现：Spring MVC、Spring Cloud OpenFeign、JAX-RS、Spring Actuator、gRPC
+- **Channel** *(扩展点)* — 将 `ApiEndpoint` 模型转换为输出格式并处理文件写入 / 远程上传；内置通道：YApi、Postman、Markdown、cURL、HTTP Client、Hoppscotch *(Beta)*。添加新的输出目标只需实现 `Channel` ——无需修改核心代码
 - **ApiIndex** — 缓存已发现的接口，用于快速搜索和仪表盘访问
-- **RuleEngine** — 评估规则表达式以自定义解析行为
+- **RuleEngine** — 评估规则表达式（Groovy、正则、注解、标签）以自定义解析行为
+- **AI Assistant** — 可选的内置 agent，通过 PSI 工具检查项目并编写规则文件；外部 skill 等价物见 [Skills](#skills) 章节
+
+### 项目结构
+
+插件的源码树在 `src/main/kotlin/com/itangcent/easyapi/` 下组织为四个顶层桶：
+
+```
+com.itangcent.easyapi/
+├── channel/      # 输出 —— 导出目标（YApi、Postman、Markdown、cURL、Hoppscotch、HTTP Client）
+│   ├── spi/      #   Channel EP 契约：Channel、ChannelConfig、ChannelRegistry、…
+│   ├── curl/
+│   ├── hoppscotch/  (+ model/)
+│   ├── httpclient/
+│   ├── markdown/    (+ template/)
+│   ├── postman/     (+ model/)
+│   └── yapi/        (+ markdown/)  # 仅 easy-yapi
+│
+├── format/       # 字段/对象序列化（JSON、JSON5、YAML、Properties）
+│   ├── spi/      #   FieldFormatChannel EP + FieldFormatExtensions（toJson/toJson5/toYaml/toProperties）
+│   ├── json/
+│   ├── json5/
+│   ├── yaml/
+│   └── properties/
+│
+├── framework/    # 输入 —— 源框架导出器（Spring MVC、JAX-RS、Feign、gRPC）
+│   ├── springmvc/   # Spring MVC + Actuator
+│   ├── jaxrs/
+│   ├── feign/
+│   └── grpc/        # 仅 class exporter —— 运行时管道位于 core/grpc
+│
+└── core/         # 共享基础设施（伞形包）
+    ├── internal/    # 迁移后的窄 core/（EasyApiApplicationService、EasyApiProjectService、event/、threading/）
+    ├── export/      # 中性流水线：ClassExporter、ClassExporterRegistry、EndpointBuilder、ExportOrchestrator、ExportContext、…  (+ recognizer/)
+    ├── psi/         # (+ adapter/ doc/ helper/ model/ type/) —— ObjectModel 位于此处；format/ 消费它
+    ├── config/      # (+ model/ parser/ resource/ source/)
+    ├── rule/        # (+ context/ engine/ parser/)
+    ├── http/        # HttpClientProvider + Apache/IntelliJ/UrlConnection 实现
+    ├── logging/     # IdeaConsole、IdeaLog、IdeaConsoleProvider
+    ├── ide/         # (+ action/ dialog/ linemarker/ script/ search/ support/) —— 无 fieldformat/（已移至 format/）
+    ├── dashboard/   # API 仪表盘工具窗口
+    ├── script/      # (+ env/ pm/) —— 脚本执行支持
+    ├── util/        # (+ file/ ide/ json/ storage/ text/) —— FormatterHelper 留在此处（决策 F1）
+    ├── cache/       # (+ api/ http/ json/)
+    ├── settings/    # (+ migration/ module/ state/ ui/)
+    ├── ai/          # (+ agent/ credentials/ tools/ ui/)
+    ├── grpc/        # 运行时管道（描述符反射、proto）—— framework/grpc 消费者的对等物
+    ├── repository/
+    └── extension/
+```
+
+四个桶构成有向无环依赖图：`channel` 可以导入 `format`、`framework` 和 `core`；`format` 和 `framework` 可以导入 `core`；`core` 只从兄弟包导入扩展点契约接缝（`channel.spi.*`、`format.spi.*`、`core.export.*`）—— 禁止从 `core.*` 导入具体的 per-id 实现（`channel.<id>.*`、`format.<id>.*`、`framework.<id>.*`）。原始的窄 `core/` 包（服务、事件、线程）被重命名为 `core/internal/`，以便 `core/` 可以作为所有共享基础设施的伞形包。
+
+### 如何添加新支持
+
+插件围绕三个 IntelliJ 扩展点（EP）构建。添加对新输出目标、字段格式或源框架的支持，只需一个包操作加一行 `plugin.xml`。每个 EP 的**分步指南** —— SPI 参考、可选的 config/settings/rule-keys、示例、导入规则和测试 —— 见 [`docs/developer/`](docs/developer/README.md)。
+
+#### 添加新 channel（输出目标）
+
+channel 将 `ApiEndpoint` 模型转换为特定输出格式并处理文件写入或远程上传（例如 Postman 变体，或 Insomnia 等新目标）。创建一个 `channel/<id>/` 包，包含 `Channel` 实现，并注册到 `channel` EP：
+
+```xml
+<channel implementation="com.itangcent.easyapi.channel.<id>.<ChannelClass>" />
+```
+
+→ 完整指南：[docs/developer/channels.md](docs/developer/channels.md)（SPI 接口、选项面板、设置标签页、rule keys、`handleResult`、示例、导入规则）。
+
+#### 添加新 format（字段序列化）
+
+format 将 `ObjectModel` 序列化为特定表示（例如 TOML、XML）。创建一个 `format/<id>/` 包，包含一个纯渲染器加上 `FieldFormatChannel` 实现，并注册到 `fieldFormatChannel` EP：
+
+```xml
+<fieldFormatChannel implementation="com.itangcent.easyapi.format.<id>.<FieldFormatChannelClass>" />
+```
+
+→ 完整指南：[docs/developer/formats.md](docs/developer/formats.md)（两层架构、`ObjectModel` 输入、循环安全、入口扩展、示例、导入规则）。
+
+#### 添加新 framework recognizer（源框架）
+
+framework 扫描 PSI 中以特定框架注解声明的接口（例如 Micronaut）。创建一个 `framework/<id>/` 包，包含 `ClassExporter` 和 `ApiClassRecognizer`，并注册到**两个** EP（recognizer 驱动行标记、索引扫描、AI 发现和启用 —— 仅注册 exporter 会静默破坏它们）：
+
+```xml
+<classExporter implementation="com.itangcent.easyapi.framework.<id>.<ClassExporterClass>" />
+<apiClassRecognizer implementation="com.itangcent.easyapi.framework.<id>.<RecognizerClass>" />
+```
+
+→ 完整指南：[docs/developer/frameworks.md](docs/developer/frameworks.md)（双 EP 概述、两个 SPI、4 步指南、rule 生命周期钩子、`ApiEndpoint` 结构、示例、导入规则）。
 
 ## 文档
 
