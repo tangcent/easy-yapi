@@ -5,6 +5,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.export.ApiEndpoint
+import com.itangcent.easyapi.core.internal.PluginInfo
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.settings.SettingBinder
 import com.itangcent.easyapi.core.settings.module.GeneralSettings
@@ -47,7 +48,7 @@ class ChannelRegistry(private val project: Project) : IdeaLog {
         fun getInstance(project: Project): ChannelRegistry = project.service()
 
         // IV: this EP-name string differs between easy-api and easy-yapi
-        private val EP = ExtensionPointName.create<Channel>("com.itangcent.idea.plugin.easy-yapi.channel")
+        private val EP = ExtensionPointName.create<Channel>("${PluginInfo.PLUGIN_ID}.channel")
 
         /**
          * Pure resolution rule for a channel's effective enabled state, extracted

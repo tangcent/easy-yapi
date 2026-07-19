@@ -1,8 +1,10 @@
 package com.itangcent.easyapi.core.ide.action
 
-import com.itangcent.easyapi.format.spi.FieldFormatChannel
 import com.intellij.openapi.extensions.ExtensionPointName
-import org.junit.Assert.*
+import com.itangcent.easyapi.core.internal.PluginInfo.PLUGIN_ID
+import com.itangcent.easyapi.format.spi.FieldFormatChannel
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ActionExistenceTest {
@@ -16,7 +18,7 @@ class ActionExistenceTest {
     @Test
     fun testFieldFormatChannelsRegistered() {
         val ep = ExtensionPointName.create<FieldFormatChannel>(
-            "com.itangcent.idea.plugin.easy-yapi.fieldFormatChannel"
+            "$PLUGIN_ID.fieldFormatChannel"
         )
         val channels = ep.extensionList
         val ids = channels.map { it.id }.toSet()

@@ -4,6 +4,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
+import com.itangcent.easyapi.core.internal.PluginInfo.PLUGIN_ID
 import com.itangcent.easyapi.core.logging.IdeaLog
 
 /**
@@ -29,7 +30,7 @@ class ClassExporterRegistry(private val project: Project) : IdeaLog {
         fun getInstance(project: Project): ClassExporterRegistry = project.service()
 
         private val CLASS_EXPORTER_EP =
-            ExtensionPointName.create<ClassExporter>("com.itangcent.idea.plugin.easy-yapi.classExporter")
+            ExtensionPointName.create<ClassExporter>("$PLUGIN_ID.classExporter")
     }
 
     /**

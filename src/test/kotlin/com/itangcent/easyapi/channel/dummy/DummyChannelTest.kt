@@ -2,6 +2,7 @@ package com.itangcent.easyapi.channel.dummy
 
 import com.itangcent.easyapi.channel.spi.Channel
 import com.itangcent.easyapi.channel.spi.ChannelRegistry
+import com.itangcent.easyapi.core.internal.PluginInfo.PLUGIN_ID
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 /**
@@ -22,7 +23,7 @@ class DummyChannelTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testDummyChannelIsDiscoverableViaChannelEP() {
         // The channel EP is project-scoped (area="IDEA_PROJECT").
         project.extensionArea
-            .getExtensionPoint<Channel>("com.itangcent.idea.plugin.easy-yapi.channel")
+            .getExtensionPoint<Channel>("$PLUGIN_ID.channel")
             .registerExtension(DummyChannel(), testRootDisposable)
 
         val channels = ChannelRegistry.getInstance(project).allChannels()
@@ -34,7 +35,7 @@ class DummyChannelTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testDummyChannelSettingsSurfaceIsDiscoverable() {
         // The single channel EP now also covers the former channelSettings surface.
         project.extensionArea
-            .getExtensionPoint<Channel>("com.itangcent.idea.plugin.easy-yapi.channel")
+            .getExtensionPoint<Channel>("${PLUGIN_ID}.channel")
             .registerExtension(DummyChannel(), testRootDisposable)
 
         val channel = ChannelRegistry.getInstance(project).getChannel("dummy")

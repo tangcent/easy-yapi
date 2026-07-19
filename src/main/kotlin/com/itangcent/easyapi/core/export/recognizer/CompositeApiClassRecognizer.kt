@@ -6,6 +6,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
+import com.itangcent.easyapi.core.internal.PluginInfo.PLUGIN_ID
 import com.itangcent.easyapi.core.settings.onSettingsChanged
 import com.itangcent.easyapi.framework.spi.FrameworkRegistry
 
@@ -115,7 +116,7 @@ class CompositeApiClassRecognizer(private val project: Project) : Disposable {
          * `<apiClassRecognizer implementation="..."/>`.
          */
         private val EP_NAME: ExtensionPointName<ApiClassRecognizer> =
-            ExtensionPointName.create("com.itangcent.idea.plugin.easy-api.apiClassRecognizer")
+            ExtensionPointName.create("$PLUGIN_ID.apiClassRecognizer")
 
         fun getInstance(project: Project): CompositeApiClassRecognizer = project.service()
     }

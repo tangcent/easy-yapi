@@ -4,6 +4,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
+import com.itangcent.easyapi.core.internal.PluginInfo
+import com.itangcent.easyapi.core.internal.PluginInfo.PLUGIN_ID
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.settings.SettingBinder
 import com.itangcent.easyapi.core.settings.module.GeneralSettings
@@ -49,7 +51,7 @@ class FieldFormatChannelRegistry(private val project: Project) : IdeaLog {
 
         // IV: this EP-name string differs between easy-api and easy-yapi
         private val EP = ExtensionPointName.create<FieldFormatChannel>(
-            "com.itangcent.idea.plugin.easy-api.fieldFormatChannel"
+            "$PLUGIN_ID.fieldFormatChannel"
         )
 
         /**
@@ -70,7 +72,7 @@ class FieldFormatChannelRegistry(private val project: Project) : IdeaLog {
             disabledIds: Array<String>
         ): Boolean =
             channel.id in enabledIds ||
-                (channel.enabledByDefault && channel.id !in disabledIds)
+                    (channel.enabledByDefault && channel.id !in disabledIds)
     }
 
     /**
