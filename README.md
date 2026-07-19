@@ -297,44 +297,38 @@ The four buckets form a directed-acyclic dependency graph: `channel` may import 
 
 ### How to add new support
 
-The plugin is built around three IntelliJ extension points (EPs). Adding support for a new output target, field format, or source framework is a one-package operation plus one `plugin.xml` line.
+The plugin is built around three IntelliJ extension points (EPs). Adding support for a new output target, field format, or source framework is a one-package operation plus one `plugin.xml` line. **Step-by-step guides** for each — SPI reference, optional config/settings/rule-keys, worked examples, import rules, and testing — live in [`docs/developer/`](docs/developer/README.md).
 
 #### Adding a new channel (output destination)
 
-A channel converts `ApiEndpoint` models into a specific output format and handles file write or remote upload (e.g. a Postman variant, or a new target like Insomnia).
+A channel converts `ApiEndpoint` models into a specific output format and handles file write or remote upload (e.g. a Postman variant, or a new target like Insomnia). Create a `channel/<id>/` package with a `Channel` implementation and register it against the `channel` EP:
 
-1. Create a `channel/<id>/` package with a `Channel` implementation.
-2. Register it against the `<extensionPoint name="channel">` EP (interface FQN `com.itangcent.easyapi.channel.spi.Channel`):
-   ```xml
-   <channel implementation="com.itangcent.easyapi.channel.<id>.<ChannelClass>" />
-   ```
-3. The contract surface lives in `channel/spi/` — `Channel`, `ChannelConfig`, `ChannelOptionsPanel`, `ChannelRegistry`, `PlaceholderSyntaxConverter`.
-4. Channels may import from `core.export.*`, `core.psi.model.*`, `core.format.*` (via `format.spi.*`), `core.util.*`, etc. They **MUST NOT** import from `framework.*` or sibling `channel.<id>.*` packages.
+```xml
+<channel implementation="com.itangcent.easyapi.channel.<id>.<ChannelClass>" />
+```
+
+→ Full guide: [docs/developer/channels.md](docs/developer/channels.md) (SPI surface, options panel, settings tab, rule keys, `handleResult`, worked example, import rules).
 
 #### Adding a new format (field serialization)
 
-A format serializes `ObjectModel` to a specific representation (e.g. TOML, XML).
+A format serializes an `ObjectModel` to a specific representation (e.g. TOML, XML). Create a `format/<id>/` package with a pure renderer plus a `FieldFormatChannel` implementation, and register it against the `fieldFormatChannel` EP:
 
-1. Create a `format/<id>/` package with a `FieldFormatChannel` implementation and a serializer.
-2. Register it against the `<extensionPoint name="fieldFormatChannel">` EP (interface FQN `com.itangcent.easyapi.format.spi.FieldFormatChannel`):
-   ```xml
-   <fieldFormatChannel implementation="com.itangcent.easyapi.format.<id>.<FieldFormatChannelClass>" />
-   ```
-3. Add the format's `ObjectModel.to<Format>()` extension function to `format/spi/FieldFormatExtensions.kt` so callers can use the same ergonomic entry point as the built-in formats (`toJson()`, `toJson5()`, `toYaml()`, `toProperties()`).
-4. The contract surface lives in `format/spi/` — `FieldFormatChannel`, `FieldFormatChannelRegistry`, `FieldFormatAction`, `FieldFormatActionGroup`, `FieldFormatExtensions`.
-5. Formats may import from `core.psi.model.*`, `core.util.*`, and the IntelliJ SDK only. They **MUST NOT** import from `channel.*`, `framework.*`, or `core.export.*`.
+```xml
+<fieldFormatChannel implementation="com.itangcent.easyapi.format.<id>.<FieldFormatChannelClass>" />
+```
+
+→ Full guide: [docs/developer/formats.md](docs/developer/formats.md) (two-layer architecture, `ObjectModel` input, cycle safety, entry extension, worked example, import rules).
 
 #### Adding a new framework recognizer (source framework)
 
-A framework recognizer scans PSI for endpoints declared with a specific framework's annotations (e.g. Micronaut).
+A framework scans PSI for endpoints declared with a specific framework's annotations (e.g. Micronaut). Create a `framework/<id>/` package with a `ClassExporter` and an `ApiClassRecognizer`, and register them against **both** EPs (the recognizer drives line markers, index scanning, AI discovery, and enablement — registering only the exporter silently breaks them):
 
-1. Create a `framework/<id>/` package with a `ClassExporter` implementation plus any framework-specific recognizers/resolvers.
-2. Register it against the `<extensionPoint name="classExporter">` EP (interface FQN `com.itangcent.easyapi.core.export.ClassExporter`):
-   ```xml
-   <classExporter implementation="com.itangcent.easyapi.framework.<id>.<ClassExporterClass>" />
-   ```
-3. The contract surface for the pipeline lives in `core/export/` — `ClassExporter`, `ClassExporterRegistry`, `EndpointBuilder`, `ExportOrchestrator`, plus `core.export.recognizer.{ApiClassRecognizer, CompositeApiClassRecognizer, MetaAnnotationResolver}`. To make the framework's recognizer visible to AI/agent code that iterates all recognizers, register it via `CompositeApiClassRecognizer` rather than hard-coding the import (see Decision CO5).
-4. Frameworks may import from `core.export.*`, `core.psi.*`, `core.config.*`, `core.rule.*`, `core.grpc.*` (for `framework.grpc` only), `core.util.*`, `core.logging.*`. They **MUST NOT** import from `channel.*` or `format.*`.
+```xml
+<classExporter implementation="com.itangcent.easyapi.framework.<id>.<ClassExporterClass>" />
+<apiClassRecognizer implementation="com.itangcent.easyapi.framework.<id>.<RecognizerClass>" />
+```
+
+→ Full guide: [docs/developer/frameworks.md](docs/developer/frameworks.md) (two-EP overview, the two SPIs, 4-step guide, rule lifecycle hooks, `ApiEndpoint` shape, worked example, import rules).
 
 ## Documentation
 

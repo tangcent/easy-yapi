@@ -295,6 +295,8 @@ The four top-level buckets are named explicitly: `channel`, `format`, `framework
 
 **EP-contract sub-packages.** Each input/output bucket owns a `spi/` sub-package for its EP contract surfaces, which `core.*` may legitimately import (the only sibling imports `core.*` allows): `channel.spi.*` (Channel + ChannelRegistry), `format.spi.*` (FieldFormatChannel + FieldFormatChannelRegistry), `framework.spi.*` (FrameworkRegistry — added by the package-restructure-patch under the broadened CO3 rule). Concrete per-id implementations (`channel.<id>.*`, `format.<id>.*`, `framework.<id>.*`) imported from `core.*` remain forbidden.
 
+Step-by-step guides for adding a new channel/format/framework live in `docs/developer/`.
+
 ## Testing
 
 Tests use JUnit 4 + Mockito/Mockito-Kotlin + the IntelliJ Platform Test Framework. **Always invoke the `write-test-case` skill before writing tests** — it guides test-pattern selection (simple unit, IDE fixture, ResultLoader, action mock, parity test) based on the target class. The brief notes below are only a reminder; the skill is the authoritative guide.
