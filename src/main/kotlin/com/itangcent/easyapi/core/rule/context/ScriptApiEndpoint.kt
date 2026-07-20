@@ -50,20 +50,24 @@ class ScriptApiEndpoint(
         endpoint.description = desc
     }
 
-    fun setParam(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
-        endpoint.setParam(name, defaultValue, required, desc)
+    @JvmOverloads
+    fun setParam(name: String?, defaultValue: String?, required: Boolean, desc: String?, example: String? = null) {
+        endpoint.setParam(name, defaultValue, required, desc, example)
     }
 
-    fun setFormParam(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
-        endpoint.setFormParam(name, defaultValue, required, desc)
+    @JvmOverloads
+    fun setFormParam(name: String?, defaultValue: String?, required: Boolean, desc: String?, example: String? = null) {
+        endpoint.setFormParam(name, defaultValue, required, desc, example)
     }
 
-    fun setPathParam(name: String?, defaultValue: String?, desc: String?) {
-        endpoint.setPathParam(name, defaultValue, desc)
+    @JvmOverloads
+    fun setPathParam(name: String?, defaultValue: String?, desc: String?, example: String? = null) {
+        endpoint.setPathParam(name, defaultValue, desc, example)
     }
 
-    fun setHeader(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
-        endpoint.setHeader(name, defaultValue, required, desc)
+    @JvmOverloads
+    fun setHeader(name: String?, defaultValue: String?, required: Boolean, desc: String?, example: String? = null) {
+        endpoint.setHeader(name, defaultValue, required, desc, example)
     }
 
     fun setResponseCode(code: Int) {
@@ -74,8 +78,9 @@ class ScriptApiEndpoint(
         endpoint.appendResponseBodyDesc(desc)
     }
 
-    fun setResponseHeader(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
-        endpoint.setResponseHeader(name, defaultValue, required, desc)
+    @JvmOverloads
+    fun setResponseHeader(name: String?, defaultValue: String?, required: Boolean, desc: String?, example: String? = null) {
+        endpoint.setResponseHeader(name, defaultValue, required, desc, example)
     }
 
     fun setResponseBodyClass(className: String?) {

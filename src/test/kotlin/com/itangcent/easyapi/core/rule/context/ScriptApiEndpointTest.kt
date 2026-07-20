@@ -3,6 +3,8 @@ package com.itangcent.easyapi.core.rule.context
 import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.HttpMetadata
 import com.itangcent.easyapi.core.export.HttpMethod
+import com.itangcent.easyapi.core.export.ParameterBinding
+import com.itangcent.easyapi.core.export.httpMetadata
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -88,8 +90,28 @@ class ScriptApiEndpointTest {
     }
 
     @Test
+    fun testSetParamWithExample() {
+        scriptEndpoint.setParam("userId", "123", true, "User ID", "user-001")
+        val param = endpoint.httpMetadata?.parameters?.last()
+        assertNotNull("Should add a parameter", param)
+        assertEquals(ParameterBinding.Query, param?.binding)
+        assertEquals("user-001", param?.example)
+        // 4-arg call (no example) keeps example null — backward compatible
+        scriptEndpoint.setParam("other", null, false, null)
+        assertNull(endpoint.httpMetadata?.parameters?.last()?.example)
+    }
+
+    @Test
     fun testSetFormParam() {
         scriptEndpoint.setFormParam("username", "john", true, "Username")
+    }
+
+    @Test
+    fun testSetFormParamWithExample() {
+        scriptEndpoint.setFormParam("username", "john", true, "Username", "jdoe")
+        val param = endpoint.httpMetadata?.parameters?.last()
+        assertEquals(ParameterBinding.Form, param?.binding)
+        assertEquals("jdoe", param?.example)
     }
 
     @Test
@@ -98,8 +120,23 @@ class ScriptApiEndpointTest {
     }
 
     @Test
+    fun testSetPathParamWithExample() {
+        scriptEndpoint.setPathParam("id", "123", "Path ID", "42")
+        val param = endpoint.httpMetadata?.parameters?.last()
+        assertEquals(ParameterBinding.Path, param?.binding)
+        assertEquals("42", param?.example)
+    }
+
+    @Test
     fun testSetHeader() {
         scriptEndpoint.setHeader("X-Custom", "value", true, "Custom header")
+    }
+
+    @Test
+    fun testSetHeaderWithExample() {
+        scriptEndpoint.setHeader("X-Custom", "value", true, "Custom header", "abc")
+        val header = endpoint.httpMetadata?.headers?.last()
+        assertEquals("abc", header?.example)
     }
 
     @Test

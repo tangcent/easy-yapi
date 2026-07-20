@@ -42,7 +42,7 @@ data class ApiEndpoint(
     val metadata: ApiMetadata,
     val extensions: Extension = Extension.EMPTY
 ) {
-    fun setParam(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
+    fun setParam(name: String?, defaultValue: String?, required: Boolean, desc: String?, example: String? = null) {
         val meta = metadata as? HttpMetadata ?: return
         meta.parameters.add(
             ApiParameter(
@@ -50,12 +50,13 @@ data class ApiEndpoint(
                 defaultValue = defaultValue,
                 required = required,
                 description = desc,
-                binding = ParameterBinding.Query
+                binding = ParameterBinding.Query,
+                example = example
             )
         )
     }
 
-    fun setFormParam(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
+    fun setFormParam(name: String?, defaultValue: String?, required: Boolean, desc: String?, example: String? = null) {
         val meta = metadata as? HttpMetadata ?: return
         meta.parameters.add(
             ApiParameter(
@@ -63,12 +64,13 @@ data class ApiEndpoint(
                 defaultValue = defaultValue,
                 required = required,
                 description = desc,
-                binding = ParameterBinding.Form
+                binding = ParameterBinding.Form,
+                example = example
             )
         )
     }
 
-    fun setPathParam(name: String?, defaultValue: String?, desc: String?) {
+    fun setPathParam(name: String?, defaultValue: String?, desc: String?, example: String? = null) {
         val meta = metadata as? HttpMetadata ?: return
         meta.parameters.add(
             ApiParameter(
@@ -76,18 +78,20 @@ data class ApiEndpoint(
                 defaultValue = defaultValue,
                 required = true,
                 description = desc,
-                binding = ParameterBinding.Path
+                binding = ParameterBinding.Path,
+                example = example
             )
         )
     }
 
-    fun setHeader(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
+    fun setHeader(name: String?, defaultValue: String?, required: Boolean, desc: String?, example: String? = null) {
         val meta = metadata as? HttpMetadata ?: return
         meta.headers.add(
             ApiHeader(
                 name = name ?: "",
                 value = defaultValue,
                 description = desc,
+                example = example,
                 required = required
             )
         )
@@ -101,13 +105,14 @@ data class ApiEndpoint(
         // kept for script compatibility
     }
 
-    fun setResponseHeader(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
+    fun setResponseHeader(name: String?, defaultValue: String?, required: Boolean, desc: String?, example: String? = null) {
         val meta = metadata as? HttpMetadata ?: return
         meta.headers.add(
             ApiHeader(
                 name = name ?: "",
                 value = defaultValue,
                 description = desc,
+                example = example,
                 required = required
             )
         )

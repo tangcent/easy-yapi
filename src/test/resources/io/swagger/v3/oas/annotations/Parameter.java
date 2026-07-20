@@ -14,4 +14,5 @@ public @interface Parameter {
     boolean required() default false;
     boolean hidden() default false;
     boolean deprecated() default false;
+    String example() default "";
 }
