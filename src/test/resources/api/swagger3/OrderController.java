@@ -35,8 +35,8 @@ public class OrderController {
     @Operation(summary = "List all orders")
     @GetMapping("/list")
     public java.util.List<OrderDTO> listOrders(
-            @Parameter(description = "page number", required = true) Integer page,
-            @Parameter(description = "page size") Integer size) {
+            @Parameter(description = "page number", required = true, example = "1") Integer page,
+            @Parameter(description = "page size", example = "10") Integer size) {
         return java.util.Collections.emptyList();
     }
 

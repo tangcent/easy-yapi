@@ -138,6 +138,39 @@ class Swagger3ConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    // ── @Parameter: param.demo (example) ────────────────────────
+
+    fun testParameterExtractsExample() = runTest {
+        val psiClass = findClass("com.itangcent.swagger3.OrderController")
+        assertNotNull("Should find OrderController", psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+        val listEndpoint = endpoints.find {
+            it.httpMetadata?.method == HttpMethod.GET &&
+            it.httpMetadata?.path?.contains("list") == true
+        }
+        assertNotNull("Should find GET /order/list endpoint", listEndpoint)
+
+        val params = listEndpoint?.httpMetadata?.parameters ?: emptyList()
+        // @Parameter on a method argument is resolved via param.demo (buildSingleParameter),
+        // not via the export.after script — so it must not duplicate the Spring-resolved param.
+        val pageParams = params.filter { it.name == "page" }
+        assertEquals("page parameter should not be duplicated", 1, pageParams.size)
+        assertEquals(
+            "Parameter example should be extracted from @Parameter#example",
+            "1",
+            pageParams.first().example
+        )
+
+        val sizeParam = params.find { it.name == "size" }
+        assertNotNull("Should find size parameter", sizeParam)
+        assertEquals(
+            "size parameter example should be extracted from @Parameter#example",
+            "10",
+            sizeParam?.example
+        )
+    }
+
     // ── @Hidden: ignore, field.ignore, param.ignore ──────────────
 
     fun testHiddenExcludesEndpoint() = runTest {

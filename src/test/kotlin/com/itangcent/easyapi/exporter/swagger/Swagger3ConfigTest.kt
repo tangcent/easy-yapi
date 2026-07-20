@@ -312,6 +312,11 @@ class Swagger3ConfigTest {
         assertNotNull("param.doc should have values", paramDocValues)
         assertTrue("param.doc should have Parameter#description",
                 paramDocValues?.any { it.contains("@io.swagger.v3.oas.annotations.Parameter#description") } == true)
+
+        val paramDemoValues = config["param.demo"]
+        assertNotNull("param.demo should have values", paramDemoValues)
+        assertTrue("param.demo should read Parameter#example",
+                paramDemoValues?.any { it.contains("io.swagger.v3.oas.annotations.Parameter") && it.contains("example") } == true)
     }
 
     @Test
@@ -321,6 +326,7 @@ class Swagger3ConfigTest {
         assertNotNull("resolve_parameter script should exist", resolveScript)
         assertTrue("Script should contain map.description", resolveScript!!.value.contains("map.description"))
         assertTrue("Script should contain api.setParam", resolveScript.value.contains("api.setParam"))
+        assertTrue("Script should pass map.example", resolveScript.value.contains("map.example"))
     }
 
     @Test
