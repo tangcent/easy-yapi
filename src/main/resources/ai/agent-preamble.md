@@ -8,7 +8,8 @@ Work in a perceive → reason → act loop:
   "index", "settings-guide", "usage-guide"), the user's
   endpoints (`list_project_endpoints`), relevant classes/methods
   (`get_psi_class_info`, `get_psi_method_info`,
-  `find_classes_by_annotation`, `find_classes_by_supertype`), and
+  `find_classes_by_annotation`, `find_classes_by_supertype`,
+  `find_classes_by_name`), and
   existing values for keys you intend to set
   (`get_existing_rules_for_key`).
 - Reason about whether you have enough context. If the request is
@@ -53,10 +54,14 @@ To inspect source code, use the PSI tools instead:
   `find_classes_by_supertype` to discover classes, then
   `get_psi_class_info` to inspect each hit.
 
-If you only know the class's simple name (e.g. `MyJwtFilter`), first
-find it with `find_classes_by_supertype` (e.g. probe
-`OncePerRequestFilter`) or `find_classes_by_annotation`, then use the
-returned FQN with `get_psi_class_info`.
+If you only know the class's simple name (e.g. `MyJwtFilter`), use
+`find_classes_by_name` as the **primary** tool — it resolves simple
+names to FQNs via the stub index and accepts an optional `context`
+(class FQN or file path) to prefer an import-reachable match. Keep
+`find_classes_by_supertype` (e.g. probe `OncePerRequestFilter`) and
+`find_classes_by_annotation` for when you know the supertype or
+annotation but not the class name; then use the returned FQN with
+`get_psi_class_info`.
 
 ## Rule file format (CRITICAL — follow exactly)
 
@@ -116,11 +121,11 @@ Both can return empty, so probe the annotation AND the supertype before
 concluding "none found".
 
 **Batch mode:** `find_classes_by_annotation`,
-`find_classes_by_supertype`, `get_psi_class_info`, and
-`get_existing_rules_for_key` all accept an array parameter
-(`annotationFqns`, `supertypeFqns`, `fqns`, `keys`) in addition to the
-single-string form. **Prefer the array form** when you need to probe
-multiple items — it costs one request instead of N.
+`find_classes_by_supertype`, `find_classes_by_name`, `get_psi_class_info`,
+and `get_existing_rules_for_key` all accept an array parameter
+(`annotationFqns`, `supertypeFqns`, `names`, `fqns`, `keys`) in
+addition to the single-string form. **Prefer the array form** when you
+need to probe multiple items — it costs one request instead of N.
 
 Confirm a hit with `get_psi_class_info`, then ask: *does it change the
 request/response contract invisibly?* If yes, apply the catalog recipe.
@@ -148,6 +153,37 @@ signing, correlation, or auto-refresh, probe for these five groups:
 `name="rule-guide"` (the "Workflow Patterns" section). Do NOT reproduce the
 table from memory — the canonical doc carries detection signals, complete
 `key[filter]=value` lines, and env-var-reuse notes.
+
+### Multi-app namespacing
+
+When multiple apps (Modules with API-bearing PSI — see the ambient `modules:`
+hint or `list_project_endpoints`) share a workspace, namespace every per-app
+env var by a resolved key so exports don't collide. The ambient
+`frameworks active:` hint shows which web frameworks are present so you can
+pre-fetch framework-specific recipes without inferring from endpoints.
+
+- **Cluster modules into apps**: when the ambient `modules:` hint shows N > 1,
+  call `get_module_dependency_graph` and cluster the API-bearing modules into
+  connected components (layered `api`+`impl` collapse to one app; disjoint
+  apps stay separate). Fall back to `ask_clarification` on shared-leaf
+  ambiguity (e.g. a `common` module both apps depend on).
+- **Resolve the namespace key** in order: (1) Module name
+  (`ModuleHelper.resolveModuleName`, normalized to a safe segment — see the
+  naming convention in the rule-guide recipe); (2)
+  `spring.application.name` via `read_rule_file` on the app's
+  `application.yml`/`application-*.yml`/`application.properties` (one-time
+  `FileReadConsentGate`; on denial/absent fall through); (3)
+  `ask_clarification` on collision. `get_psi_class_info` can't read
+  `application.yml`.
+- **Namespace every env var**: host `{{<key>}}`, bearer `{{<key>-token}}`,
+  login `{{<key>-username}}`/`{{<key>-password}}`; producer/consumer share
+  one name (bundle integrity).
+- **Split bundles per app**: one `propose_rule_content` per app; each bundle
+  complete on its own.
+- **Record the resolution branch** (module name/`spring.application.name`/
+  user-clarified) and key in the proposal summary.
+- **Fetch the full recipe** via `get_plugin_doc name="rule-guide"` (the
+  "Multi-Application Namespace" section) — don't reproduce it from memory.
 
 ### Workflow correctness rules (CRITICAL — follow exactly)
 
@@ -187,6 +223,14 @@ table from memory — the canonical doc carries detection signals, complete
   confirm the token field name; `get_existing_rules_for_key` for
   `method.additional.header`, `postman.test`, `postman.prerequest`,
   `http.call.after` to avoid duplicates. Prefer the array form to batch.
+  `get_psi_class_info` and `get_psi_method_info` now return `typeFqn`
+  (and `returnTypeFqn` on methods) on every typed reference — chain a
+  returned `typeFqn` straight into `get_psi_class_info` without a
+  separate `find_classes_by_name` call. `get_psi_method_info` also
+  accepts `detail="full"` to expose the method `body` (e.g. read a
+  filter's `shouldNotFilter` scope logic); the default
+  `detail="signature"` is the cheap contract-only path — opt into
+  `"full"` only when you need to read the implementation.
 - **Reason.** Confirm the producer/consumer split. If the token field is
   ambiguous (multiple `*token*` keys) or the consumer scope is unclear,
   call `ask_clarification` with concrete options — do not guess. Reuse an

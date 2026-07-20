@@ -1,0 +1,51 @@
+package com.itangcent.easyapi.framework.feign
+
+import com.itangcent.easyapi.core.psi.helper.DocHelper
+import com.itangcent.easyapi.core.psi.helper.UnifiedDocHelper
+import com.itangcent.easyapi.core.psi.type.ResolvedType
+import com.itangcent.easyapi.core.psi.type.searchAnnotation
+import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
+import com.itangcent.easyapi.testFramework.TestConfigReader
+
+class FeignAnnotationInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
+
+    override fun setUp() {
+        super.setUp()
+        loadFile("spring/FeignClient.java")
+        loadFile("spring/GetMapping.java")
+        loadFile("spring/PostMapping.java")
+        loadFile("spring/RequestMapping.java")
+        loadFile("spring/RequestParam.java")
+        loadFile("spring/PathVariable.java")
+        loadFile("spring/RequestBody.java")
+        loadFile("spring/RestController.java")
+        loadFile("model/Result.java")
+        loadFile("model/UserInfo.java")
+        loadFile("api/feign/BaseUserApi.java")
+        loadFile("api/feign/UserFeignClient.java")
+    }
+
+    override fun createConfigReader() = TestConfigReader.empty(project)
+
+
+    fun testOverrideMethodInheritsGetMappingFromSuperInterface() = runTest {
+        val psiClass = findClass("com.itangcent.api.feign.UserFeignClient")!!
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val getUserById = classType.suitableMethods().first { it.name == "getUserById" }
+
+        // searchAnnotation walks super methods — the correct way to check inherited annotations
+        val ann = getUserById.searchAnnotation("org.springframework.web.bind.annotation.GetMapping")
+        assertNotNull(
+            "Override without @GetMapping should inherit it from BaseUserApi via searchAnnotation",
+            ann
+        )
+    }
+
+    fun testDeclaredMethodsIncludeOverride() = runTest {
+        val psiClass = findClass("com.itangcent.api.feign.UserFeignClient")!!
+        val methodNames = psiClass.methods.map { it.name }
+
+        assertTrue("getUserById override should be declared in UserFeignClient", "getUserById" in methodNames)
+        assertTrue("getUserList should be declared in UserFeignClient", "getUserList" in methodNames)
+    }
+}

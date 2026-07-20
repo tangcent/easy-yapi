@@ -1,0 +1,76 @@
+package com.itangcent.easyapi.channel.yapi
+
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.project.Project
+import com.intellij.ide.BrowserUtil
+import com.itangcent.easyapi.core.internal.threading.swing
+import com.itangcent.easyapi.channel.spi.Channel
+import com.itangcent.easyapi.channel.spi.ChannelConfig
+import com.itangcent.easyapi.channel.spi.ChannelOptionsPanel
+import com.itangcent.easyapi.core.export.ExportContext
+import com.itangcent.easyapi.core.export.ExportResult
+import com.itangcent.easyapi.channel.yapi.YapiExporter
+import com.itangcent.easyapi.channel.yapi.YapiExportMetadata
+import com.itangcent.easyapi.core.ide.support.NotificationUtils
+import com.itangcent.easyapi.core.logging.IdeaLog
+import com.itangcent.easyapi.core.rule.RuleKey
+import kotlin.reflect.KClass
+
+class YapiChannel : Channel, IdeaLog {
+
+    override val id: String = "yapi"
+    override val displayName: String = "Yapi"
+    override val supportsGrpc: Boolean = false
+    override val exposeAsAction: Boolean = true
+    override val actionText: String = "Export to YAPI"
+    override val settingsType: KClass<out com.itangcent.easyapi.core.settings.Settings> = YapiSettings::class
+
+    override fun createOptionsPanel(project: Project): ChannelOptionsPanel {
+        return YapiOptionsPanel(project)
+    }
+
+    override fun createSettingsPanel(project: Project): com.itangcent.easyapi.core.settings.ui.SettingsPanel<*>? =
+        YapiSettingsPanel(project)
+
+    override fun configFiles(): List<String> = listOf("yapi", "yapi-mock", "yapi.project", "yapi-swagger")
+
+    override fun ruleKeys(): List<RuleKey<*>> =
+        RuleKey.collectFrom(YapiRuleKeys) + RuleKey.collectFrom(YapiMetaRuleKeys)
+
+    override suspend fun export(context: ExportContext): ExportResult {
+        LOG.info("YapiChannel.export: endpoints=${context.endpointsToExport.size}")
+        val yapiConfig = context.channelConfig as? YapiConfig
+        val exporter = YapiExporter.getInstance(context.project)
+        return exporter.export(context, yapiConfig?.selectedToken)
+    }
+
+    override suspend fun handleResult(
+        project: Project,
+        result: ExportResult.Success,
+        config: ChannelConfig
+    ): Boolean {
+        val metadata = result.metadata as? YapiExportMetadata ?: return false
+        swing {
+            // Route through NotificationUtils so the group id and mirror policy are centralized.
+            NotificationUtils.notifyInfoWithConfig(
+                project = project,
+                title = "Export to YAPI",
+                content = "Exported ${result.count} endpoints to YAPI"
+            ) {
+                for ((cartName, cartUrl) in metadata.cartLinks) {
+                    addAction(object : NotificationAction(cartName) {
+                        override fun actionPerformed(
+                            e: AnActionEvent,
+                            notification: Notification
+                        ) {
+                            BrowserUtil.browse(cartUrl)
+                        }
+                    })
+                }
+            }
+        }
+        return true
+    }
+}

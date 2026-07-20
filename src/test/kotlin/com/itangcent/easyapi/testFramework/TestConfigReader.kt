@@ -1,9 +1,9 @@
 package com.itangcent.easyapi.testFramework
 
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.config.ConfigReloadListener
-import com.itangcent.easyapi.extension.ExtensionConfigParser
+import com.itangcent.easyapi.core.config.ConfigReader
+import com.itangcent.easyapi.core.config.ConfigReloadListener
+import com.itangcent.easyapi.core.extension.ExtensionConfigParser
 
 class TestConfigReader(
     private var entries: List<Pair<String, String>> = emptyList(),

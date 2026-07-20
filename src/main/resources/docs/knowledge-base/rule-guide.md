@@ -1,6 +1,6 @@
-# EasyApi Rule Authoring Guide
+# EasyYapi Rule Authoring Guide
 
-This guide describes the **rule file format** used by EasyApi to customize API documentation extraction — naming, descriptions, type conversion, filtering, and lifecycle hooks. Rules are plain text files (`.rules` or `.properties`-style) loaded by the [Config Reader](#) at startup and reloaded when settings change.
+This guide describes the **rule file format** used by EasyYapi to customize API documentation extraction — naming, descriptions, type conversion, filtering, and lifecycle hooks. Rules are plain text files (`.rules` or `.properties`-style) loaded by the [Config Reader](#) at startup and reloaded when settings change.
 
 > **AI-assisted authoring:** Open the **Rules** tab and click **Chat** or **Magic** (bottom action bar) to reveal the inline AI assistant. Describe what you want in natural language; the assistant reads your existing rules, proposes new content, and saves it. See [AI-assisted rule creation](#ai-assisted-rule-creation).
 
@@ -371,7 +371,7 @@ it.hasAnn("java.lang.Deprecated")
 
 ## When do you need a custom rule?
 
-**Most projects do not need custom rules.** EasyApi understands standard HTTP
+**Most projects do not need custom rules.** EasyYapi understands standard HTTP
 frameworks out of the box — Spring MVC (`@RestController`, `@RequestMapping`,
 `@GetMapping`, …), Spring WebFlux, JAX-RS (`@Path`, `@GET`, …), and Feign
 clients. If your project uses one of these, export works without any rule
@@ -394,12 +394,12 @@ the same catalog when scanning your project.
 | **WebFilter (Spring WebFlux)** | `org.springframework.web.server.WebFilter` — `filter()` that inspects `ServerHttpRequest`. | Same as above — `method.additional.header={…}`. |
 | **Response wrapper (`@ControllerAdvice` + `ResponseBodyAdvice`)** | `org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice` — implementations wrap the body in `{ code, data, msg }`. Search for implementors; check the `beforeBodyWrite` return type. | Unwrap the response for documentation: `json.rule.convert[#regex:com\.example\.common\.ApiResult<(.*?)>]=${1}` (repeat for each wrapper type). |
 | **Custom argument resolver (injects hidden param)** | `org.springframework.web.method.support.HandlerMethodArgumentResolver` — `supportsParameter` checks for a custom annotation or type; `resolveArgument` returns the value. The parameter is **not** declared in the source signature. | Inject the param into the docs: `api.param.parse.before[groovy: it.containingClass()?.name()?.startsWith("com.example.web.")]=com.example.CurrentUser:current_user:the current user`. Or use `api.param.parse.before[@com.example.CurrentUser]=…` if annotated. |
-| **Meta-annotations (composed `@RequestMapping`)** | A custom annotation like `@GetRestApi` that is itself annotated `@GetMapping`. Search for annotations meta-annotated with `@org.springframework.web.bind.annotation.RequestMapping`. | Tell EasyApi to treat the custom annotation as a controller method marker: `class.is.spring.ctrl=groovy: it.hasAnn("com.example.GetRestApi")`. |
+| **Meta-annotations (composed `@RequestMapping`)** | A custom annotation like `@GetRestApi` that is itself annotated `@GetMapping`. Search for annotations meta-annotated with `@org.springframework.web.bind.annotation.RequestMapping`. | Tell EasyYapi to treat the custom annotation as a controller method marker: `class.is.spring.ctrl=groovy: it.hasAnn("com.example.GetRestApi")`. |
 | **Field naming convention (snake_case / camelCase mismatch)** | The DTO uses `camelCase`, but the API contract is `snake_case` (or vice-versa). Often visible in Jackson `@JsonNaming` or a `PropertyNamingStrategy`. | `field.name[groovy: it.containingClass()?.name()?.startsWith("com.example.dto.")]=groovy: it.name().replaceAll("([A-Z])") { "_" + it[1].toLowerCase() }` |
 | **Field ignores (sensitive fields)** | Specific fields that should never appear in exports. **Never blanket-ignore by name pattern** (e.g. `.*password.*`) — `password`/`secret`/`token` are often legitimate API inputs. | `field.ignore[groovy: it.name() == "internalCache" && it.containingClass()?.name() == "com.example.UserDto"]=true` |
 | **Required / mock / default for a field** | A field is always required by the API but has no `@NotNull` in source, or needs a mock value for the exported example. | `field.required[groovy: it.containingClass()?.name()?.startsWith("com.example.dto.")]=name,email` · `field.mock[$class:com.example.dto.User]=groovy: it.name()=="age" ? 18 : null` |
 | **Path prefix per module / package** | Every controller in `com.example.admin` should be prefixed `/admin` in the docs, even if `@RequestMapping` doesn't declare it. | `class.prefix.path[groovy: it.name()?.startsWith("com.example.admin.")]=/admin` |
-| **Enum representation** | The API exposes an enum as `{ "name": "ACTIVE", "value": 1 }` but EasyApi exports just the name. | `json.rule.convert[$class:com.example.Status]={"name":"${it.name()}","value":${it.ann("com.example.Code")?.value()}}` |
+| **Enum representation** | The API exposes an enum as `{ "name": "ACTIVE", "value": 1 }` but EasyYapi exports just the name. | `json.rule.convert[$class:com.example.Status]={"name":"${it.name()}","value":${it.ann("com.example.Code")?.value()}}` |
 | **Status / version tag** | Every endpoint in `v2` package should carry `api.status=v2` or an `api.tag=v2`. | `api.tag[groovy: it.containingClass()?.name()?.startsWith("com.example.v2.")]=v2` |
 | **`@RequirePermission("admin")` → tag / header** | A custom security annotation that should become an `api.tag` or a Postman header. Search the codebase for `@com.example.RequirePermission` (resolve imports to confirm the FQN). | `api.tag[@com.example.RequirePermission]=admin` · `method.additional.header[@com.example.RequirePermission]={"name":"X-Permission","value":"\${it.ann(\"com.example.RequirePermission\")?.value()}","desc":"","required":true}` |
 
@@ -477,7 +477,7 @@ the same catalog when scanning your project.
 | **Static Auth (API Key / Basic)** | Security filter/interceptor calling `request.getHeader("X-API-Key")` / `"Authorization"` starting `Basic `; or custom `@ApiKeyAuth` annotation. Discover via `find_classes_by_annotation` + `get_psi_class_info` (read filter body for `getHeader(...)`). | **API-key-in-header:**<br>`method.additional.header={"name":"X-API-Key","value":"${apiKey}","desc":"api key","required":true}`<br>**API-key-in-query:**<br>`method.additional.param={"name":"key","type":"String","value":"${apiKey}","required":true,"desc":"api key"}`<br>**Basic auth:**<br>`method.additional.header={"name":"Authorization","value":"Basic ${basicAuth}","desc":"http basic credentials","required":true}`<br>**No script** — the user supplies the credential once in the Environments panel (base64-encode `user:pass` for Basic). |
 | **Per-Request Injection (Correlation / Idempotency)** | Filter/interceptor reading `request.getHeader("X-Request-Id")` / `"X-Correlation-Id"` / `"X-Trace-Id"`; or `Idempotency-Key` header on POST/PUT methods. | **Correlation ID** (global, pre-request):<br>`postman.prerequest=pm.request.headers.upsert("X-Request-Id", java.util.UUID.randomUUID().toString())`<br>**Idempotency key** (scoped to mutating methods — never unscoped):<br>`postman.prerequest[groovy: it.methodType().name() == "POST" || it.methodType().name() == "PUT"]=pm.request.headers.upsert("Idempotency-Key", java.util.UUID.randomUUID().toString())`<br>Uses `pm.request.headers.upsert(...)` (add-or-replace, case-insensitive), not `.add(...)` (which would duplicate). |
 | **Request Signing (HMAC)** | Filter/interceptor using `javax.crypto.Mac` / `HmacSHA256` / `Sha256.hmac`; reads `appSecret`/`appKey`/`accessKeyId`; or custom `@SignedRequest` annotation. | **Pre-request signing script** (computes HMAC, attaches signature header):<br>`postman.prerequest[groovy: it.containingClass().name().startsWith("com.example.api.")]=def mac = javax.crypto.Mac.getInstance("HmacSHA256"); mac.init(new javax.crypto.spec.SecretKeySpec("${appSecret}".getBytes("UTF-8"), "HmacSHA256")); def stringToSign = pm.request.url + "\n" + pm.request.body; def raw = mac.doFinal(stringToSign.getBytes("UTF-8")); def sig = raw.collect { String.format("%02x", it) }.join(); pm.request.headers.upsert("X-Signature", sig)`<br>**No hardcoded secret** — `${appSecret}` is always an env-var reference.<br>⚠ For non-trivial signing (AWS SigV4, etc.) treat as a scaffold + call `ask_clarification` for the canonical-string / algorithm variant. |
-| **401-Refresh** | Refresh endpoint at `/refresh`, `/token/refresh`; OR user explicitly asks for auto-refresh; OR documented "if 401, call /refresh" convention. | **Post-call rule** (detects 401, calls refresh, sets new header, forces retry):<br>`http.call.after=groovy: if (response.code() == 401) { def refreshReq = new com.itangcent.easyapi.http.HttpRequest("https://api.example.com/refresh", "POST", java.util.Collections.emptyList(), java.util.Collections.emptyList(), "grant_type=refresh_token", java.util.Collections.emptyList(), java.util.Collections.emptyList(), null); def resp = httpClient.executeSync(refreshReq); def newToken = new groovy.json.JsonSlurper().parseText(resp.body).access_token; if (newToken) { request.setHeader("Authorization", "Bearer " + newToken); response.discard() } }`<br>**Retry limit:** up to 3 (enforced by `HttpClientScriptInterceptor`). The retry re-sends the mutated request wrapper, so `request.setHeader(...)` + `response.discard()` is sufficient — `pm` is NOT available in `http.call.after` (use `session.set(...)` for cross-request persistence if needed).<br>⚠ Keep the refresh endpoint itself script-free (recursion guard limits sub-request hooks to depth < 2). Wrap in `try/catch`. |
+| **401-Refresh** | Refresh endpoint at `/refresh`, `/token/refresh`; OR user explicitly asks for auto-refresh; OR documented "if 401, call /refresh" convention. | **Post-call rule** (detects 401, calls refresh, sets new header, forces retry):<br>`http.call.after=groovy: if (response.code() == 401) { def refreshReq = new com.itangcent.easyapi.core.http.HttpRequest("https://api.example.com/refresh", "POST", java.util.Collections.emptyList(), java.util.Collections.emptyList(), "grant_type=refresh_token", java.util.Collections.emptyList(), java.util.Collections.emptyList(), null); def resp = httpClient.executeSync(refreshReq); def newToken = new groovy.json.JsonSlurper().parseText(resp.body).access_token; if (newToken) { request.setHeader("Authorization", "Bearer " + newToken); response.discard() } }`<br>**Retry limit:** up to 3 (enforced by `HttpClientScriptInterceptor`). The retry re-sends the mutated request wrapper, so `request.setHeader(...)` + `response.discard()` is sufficient — `pm` is NOT available in `http.call.after` (use `session.set(...)` for cross-request persistence if needed).<br>⚠ Keep the refresh endpoint itself script-free (recursion guard limits sub-request hooks to depth < 2). Wrap in `try/catch`. |
 
 > **Detection tip for the AI assistant:** before proposing a workflow bundle,
 > probe endpoints with `list_project_endpoints`; confirm the producer/consumer
@@ -485,6 +485,206 @@ the same catalog when scanning your project.
 > use `ask_clarification` at ambiguous points (token field name, consumer
 > scope). **Propose the bundle, not half of it** — a consumer header without
 > the producer script (or vice versa) is a broken chain.
+
+---
+
+## Multi-Application Namespace
+
+> **Per-app namespacing for workspaces that host more than one service.** Real
+> workspaces frequently contain several applications / modules — an
+> `order-service` + a `payment-service` + an `admin-portal` — each with its own
+> authorization filter, login endpoint, and host. Without namespacing, two apps
+> in one workspace both write `Authorization` and the second export silently
+> overwrites the first app's token in the Postman environment; every endpoint
+> points at `{{host}}` so all apps share one host; and app A's login captures
+> into `username` / `password` collide with app B's. Namespacing disambiguates
+> every per-app env var by the application identity, baked as a literal into the
+> rule at **authoring time** (the agent has PSI + file access; the runtime does
+> not).
+
+> **Bundle integrity still holds.** A workflow bundle is a producer script +
+> consumer header (+ env var) proposed together (see [Workflow Patterns](#workflow-patterns)).
+> Namespacing does not relax this: within one bundle the producer's stored
+> env-var name and the consumer's referenced env-var name MUST be identical,
+> and both MUST carry the same namespace key. Either half alone is still broken.
+
+### Namespace-key resolution order
+
+The agent resolves the namespace key for a target app in this order, and records
+which branch it used so the user can correct a wrong guess before saving:
+
+1. **IntelliJ Module name** of the target endpoints' source classes, via
+   `ModuleHelper.resolveModuleName(psiElement)` (always available, no framework
+   dependency). The raw module name is normalized through the canonical
+   `NamespaceKeyNormalizer` (see the naming-convention table below) so
+   `OrderService` → `order-service`, `order_service` → `order-service`,
+   `admin portal` → `admin-portal`. The normalized key uses only the
+   character class `[a-z0-9-]` (lower-case ASCII letters, digits, hyphens);
+   every other character is stripped or replaced. This is the same value `runtime.module()`
+   returns at export time, so the agent's literal key and the runtime module
+   name agree whenever this branch is taken.
+
+2. **`spring.application.name`** read at **authoring time** via `read_rule_file`
+   (the ONLY file-reading tool the agent has). Call it with the app's
+   `application.yml` / `application-*.yml` / `application.properties` path —
+   this triggers a one-time `FileReadConsentGate` consent prompt the user must
+   approve. Use this branch only when the module name is absent, empty, or a
+   generic placeholder (`<unnamed>`, the project name, etc.). If the user denies
+   consent or the file is absent, fall back to branch (3).
+   **Do NOT attempt `get_psi_class_info` for this purpose** — it is
+   class-signature only (name, modifiers, annotations, field/method signatures)
+   and cannot read `application.yml` or any non-class file.
+
+3. **`ask_clarification`** (`single_choice`) when both branches above are
+   ambiguous, or when two target apps would resolve to the same key (collision).
+   Offer concrete disambiguation options (the original names + the normalized
+   candidates) before writing any rule — never let the second app silently
+   overwrite the first.
+
+> **Authoring-time vs runtime split is hard.** The namespace key is resolved by
+> the agent (PSI + file access) and baked as a literal into the rule value. The
+> runtime host rule uses `runtime.module()` (the runtime mirror of branch 1); it
+> cannot read `spring.application.name` — `ConfigReader` / `config.get(...)`
+> sees only `.easy.api.config*` plugin rule files, never the project's
+> `application.yml`. If the app name is needed at runtime, it must be a literal
+> the agent baked in at authoring time.
+
+### Per-app env-var naming convention
+
+Every per-app env var in a workflow/host bundle is namespaced by the resolved
+key. The canonical transform is `NamespaceKeyNormalizer.normalize(input)` — the
+same pure utility the agent invokes — so users can predict the result:
+
+| Slot | Placeholder | Notes |
+|------|-------------|-------|
+| Host | `{{<key>}}` | Proposed as `postman.host={{<key>}}` / `hopp.host={{<key>}}`. The Hoppscotch formatter rewrites unresolved `${...}` in header values to `<<key>>` at export time. |
+| Bearer token | `{{<key>-token}}` | Lower-case `-token` suffix by default (matches the lowercase workflow-recipe convention). Allow `-TOKEN` (UPPER) when an existing rule already uses it — reuse the existing casing via `get_existing_rules_for_key` rather than renaming. |
+| Login username | `{{<key>-username}}` | Same casing rule as the token. |
+| Login password | `{{<key>-password}}` | Same casing rule as the token. |
+
+In rule values the namespaced var is written as `${<key>-token}` (e.g.
+`Bearer ${order-service-token}`); the Postman/Hoppscotch formatters convert
+**unresolved** `${...}` in header values to the platform syntax
+(`{{order-service-token}}` / `<<order-service-token>>`) at export time.
+**Resolved** `${...}` (config-backed) and regex-capture `${1}` are left
+untouched.
+
+### Multi-app bundle-split rule
+
+When the ambient `modules:` hint shows more than one API-bearing module (N > 1),
+call `get_module_dependency_graph` and cluster the API-bearing modules into
+connected components (layered modules like `admin-api` + `admin-impl` collapse
+to one app; disjoint apps stay separate). Each connected component is one app
+group. When `list_project_endpoints` / the ambient `moduleNames` set reveals
+more than one app group, propose **one namespaced bundle per app** — one
+`propose_rule_content` call per bundle. Each bundle must still be complete on
+its own (producer script + consumer header + host + env var, all carrying the
+same namespace key) per the bundle-integrity rule above.
+
+For consumers the agent cannot confidently assign to an app group (shared /
+common modules consumed by several apps — e.g. a `common` or `dto` module both
+apps depend on), call `ask_clarification` (`single_choice`, concrete app
+options) rather than guess.
+
+Before proposing any bundle, call `get_existing_rules_for_key` for each key in
+the bundle and skip rules already present in any source (project / global /
+extension / remote) scoped to the same namespace key — the same
+anti-duplication rule from [Workflow Patterns](#workflow-patterns) applies
+per-app.
+
+### Known limitation — body-level namespacing
+
+The v1 runtime enabler converts unresolved `${...}` placeholders **only in
+header values** (the `method.additional.header` value surface, where
+`Authorization: Bearer ${<key>-token}` lives). Conversion of `${...}` in
+`method.additional.param` values and the request body is **deferred** — the
+request body has JSON-structure / JSON5-mode / `ObjectModel` serialization
+concerns that make symmetric conversion riskier and out of scope for v1.
+
+**Do NOT promise body-level namespacing** in your proposals. If a namespaced
+token is needed in a body, propose it as `${<key>-token}` and note that the user
+must wire the env var in the Environments panel until param/body conversion
+ships.
+
+### Resolution-branch recording
+
+The agent's proposal summary MUST state which resolution branch was used
+(module name / `spring.application.name` / user-clarified via
+`ask_clarification`) and the resulting namespace key, so the user can correct a
+wrong guess before saving. For example:
+
+> *Namespacing* — `order-service` resolved from **module name** (branch 1);
+> `payment-service` resolved from **spring.application.name** (branch 2, read
+> via `read_rule_file` from `application.yml`); the admin portal was
+> **user-clarified** (branch 3) after colliding with `payment-service` on the
+> normalized `admin` candidate.
+
+### Single-app still namespaced
+
+Namespacing applies **even when only one app is currently exported**. A
+single-app workspace does not imply a single-app user — the user may export a
+different app later into the same Postman environment, and bare `{{host}}` /
+`${Authorization}` would then collide. Default to the namespaced form
+(`{{<key>-token}}`, etc.) silently; only call `ask_clarification` on genuine
+collision or unresolved ambiguity, not on the single-app case.
+
+### Worked example — two apps in one workspace
+
+A workspace contains `order-service` (IntelliJ module `order-service`, Spring
+Boot app with `spring.application.name=order-service`) and `payment-service`
+(module `payment-service`, `spring.application.name=payment-service`). Each has
+its own `/login` producer and a set of secured consumers.
+
+**Detection.** `list_project_endpoints` + the ambient `moduleNames` set reveal
+two app groups. The agent resolves the key for each via branch 1 (module name) —
+both normalize cleanly (`order-service`, `payment-service`), no collision, no
+clarification needed.
+
+**Bundle 1 — `order-service`** (one `propose_rule_content`):
+
+```
+# Host — namespaced per app
+postman.host={{order-service}}
+
+# Producer (post-response — extracts token, stores in namespaced env var)
+postman.test[groovy: it.containingClass().name() == "com.example.order.AuthController"]=def token = pm.response.json().token; if (token) { pm.environment.set("order-service-token", token) }
+
+# Consumer (attaches namespaced Bearer header to order-service secured endpoints)
+method.additional.header[groovy: it.containingClass().name().startsWith("com.example.order.api.")]={"name":"Authorization","value":"Bearer ${order-service-token}","desc":"bearer token from order-service login","required":true}
+```
+
+**Bundle 2 — `payment-service`** (a second `propose_rule_content`):
+
+```
+# Host — namespaced per app
+postman.host={{payment-service}}
+
+# Producer (post-response — extracts token, stores in namespaced env var)
+postman.test[groovy: it.containingClass().name() == "com.example.payment.AuthController"]=def token = pm.response.json().token; if (token) { pm.environment.set("payment-service-token", token) }
+
+# Consumer (attaches namespaced Bearer header to payment-service secured endpoints)
+method.additional.header[groovy: it.containingClass().name().startsWith("com.example.payment.api.")]={"name":"Authorization","value":"Bearer ${payment-service-token}","desc":"bearer token from payment-service login","required":true}
+```
+
+**Env vars** (user creates in the Environments panel): `order-service` (host),
+`order-service-token`, `payment-service` (host), `payment-service-token`. The
+two apps never overwrite each other — each token lives in its own namespaced
+slot.
+
+**Proposal summary.** State the branch used per app: `order-service` — module
+name (branch 1); `payment-service` — module name (branch 1). No clarification
+was needed (no collision). Each bundle is complete on its own (producer +
+consumer + host + env var, all carrying the same key).
+
+> **Detection tip for the AI assistant:** before proposing any namespaced
+> bundle, run `list_project_endpoints` and read the ambient `moduleNames` set
+> to detect multi-app workspaces; resolve the key per app via the order above
+> (module name → `spring.application.name` via `read_rule_file` + consent gate
+> → `ask_clarification`); call `get_existing_rules_for_key` for each key to
+> avoid duplicate host / header rules scoped to the same namespace; record the
+> resolution branch per app in the proposal summary. **Propose one complete
+> bundle per app** — a namespaced consumer header without its matching producer
+> script (or vice versa) is still a broken chain.
 
 ---
 
@@ -558,7 +758,7 @@ http.call.before=groovy: logger.info("HTTP ${it.method()} ${it.path()}")
 
 ## Migrating from the Built-in Tab
 
-Before EasyApi 3.0, rule editing happened in a dedicated "Built-in" tab inside the Rules settings. That tab has been **removed**. Migration steps:
+Before EasyYapi 3.0, rule editing happened in a dedicated "Built-in" tab inside the Rules settings. That tab has been **removed**. Migration steps:
 
 1. **Locate your built-in rules.** In 3.0, all rules live in rule files registered under **Settings → Rules → Project** or **Global**. Create a new rule file (e.g., `my-team.rules`) and add it to the list.
 2. **Paste your rules** into the new file using the format above.
@@ -575,7 +775,7 @@ Before EasyApi 3.0, rule editing happened in a dedicated "Built-in" tab inside t
 
 ## AI-assisted rule creation
 
-EasyApi 3.0 includes an AI assistant that can author rules for you. The assistant:
+EasyYapi 3.0 includes an AI assistant that can author rules for you. The assistant:
 
 1. **Reads your existing rules** via perception tools (`list_rule_keys`, `get_existing_rules`, `read_rule_file`).
 2. **Proposes new rule content** via the `propose_rule_content` action tool.
@@ -584,7 +784,7 @@ EasyApi 3.0 includes an AI assistant that can author rules for you. The assistan
 
 ### Getting started
 
-1. Configure an AI provider in **Settings → EasyApi → AI** (the dedicated AI tab).
+1. Configure an AI provider in **Settings → EasyYapi → AI** (the dedicated AI tab).
 2. Click **Test Connection** to verify the provider works.
 3. Open the **Rules** tab and click **Chat** (bottom action bar) to reveal the inline AI panel, or **Magic** to run a built-in review-and-detect instruction.
 4. Describe what you want (e.g., "Rename all endpoints in `UserController` to start with `fetch_`").

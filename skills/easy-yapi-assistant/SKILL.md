@@ -1,13 +1,13 @@
 ---
 name: "easy-yapi-assistant"
-description: "Help author EasyApi rule files (.easyapi/ folder). Invoke when the user is editing an EasyApi rule file or asks to add/modify EasyApi rules (annotations, field rename, custom headers, etc.)."
+description: "Help author EasyYapi rule files (.easyapi/ folder). Invoke when the user is editing an EasyYapi rule file or asks to add/modify EasyYapi rules (annotations, field rename, custom headers, etc.)."
 ---
 
-# EasyApi Rule Authoring Assistant
+# EasyYapi Rule Authoring Assistant
 
-This skill is the **external mirror of EasyApi's built-in rule-authoring
-agent**. It helps you write or modify EasyApi rule files (`.rules` /
-`.properties` files in `.easyapi/`) that the EasyApi IntelliJ plugin reads to
+This skill is the **external mirror of EasyYapi's built-in rule-authoring
+agent**. It helps you write or modify EasyYapi rule files (`.rules` /
+`.properties` files in `.easyapi/`) that the EasyYapi IntelliJ plugin reads to
 customise API export (YApi/Postman/Markdown), field naming, annotations, and
 more.
 
@@ -23,8 +23,8 @@ Invoke this skill when:
 - The user opens or edits any file in the project's `.easyapi/` folder or
   the global `~/.easyapi/` folder.
 - The user asks to "add a rule", "rename a field", "ignore a class", "add a
-  header to every POST", etc. in the EasyApi context.
-- The user mentions `easy.api`, `EasyApi`, or `easyapi` in a request about
+  header to every POST", etc. in the EasyYapi context.
+- The user mentions `easy.api`, `EasyApi`, `EasyYapi`, or `easyapi` in a request about
   config or rule authoring.
 
 ## Bundled Knowledge Base (read these first — they ARE the built-in agent's docs)
@@ -40,7 +40,7 @@ page first — do **not** rely on memory or guess syntax.
 |--------------|--------------------------------|----------------|
 | `docs/rule-guide.md` | `rule-guide` | **The source of truth.** Rule file format, filter syntax, expression prefixes, Groovy binding reference, recipes, the Custom-Pattern Catalog, and the Workflow-Pattern Catalog (cross-endpoint auth/signing/refresh recipes). |
 | `docs/index.md` | `index` | Knowledge-base index / topic map. |
-| `docs/README.md` | `overview` | Overview of EasyApi concepts. |
+| `docs/README.md` | `overview` | Overview of EasyYapi concepts. |
 | `docs/settings-guide.md` | `settings-guide` | Plugin settings reference. |
 | `docs/usage-guide.md` | `usage-guide` | Usage guidance. |
 | `docs/easyapi-script-reference.md` | `easyapi-script-reference` | Scripting reference. |
@@ -52,9 +52,9 @@ The built-in agent has a fixed set of perception/action tools. You provide
 equivalent capability by reading files and searching the codebase. Use the
 mapping below so your workflow tracks the built-in agent's.
 
-### EasyApi-domain tools (bundled as `scripts/`)
+### EasyYapi-domain tools (bundled as `scripts/`)
 
-These mirror the EasyApi-specific perception tools. Run them from the project
+These mirror the EasyYapi-specific perception tools. Run them from the project
 root (the CWD when the assistant is invoked). They auto-detect the project
 root and `~/.easyapi/` so you never hard-code paths.
 
@@ -158,7 +158,7 @@ Before proposing changes, read any existing rule files in:
 - `<project>/.easyapi/` (project-scoped rules — the 3.0 model).
 - `~/.easyapi/` (global rules — applied to every project on the machine).
 - Legacy `.easy.api.config*` files in the project root (and parent
-  directories — EasyApi walks up the tree for backwards compatibility).
+  directories — EasyYapi walks up the tree for backwards compatibility).
 
 **Use the bundled scripts** to inspect rules without guessing paths:
 
@@ -173,12 +173,12 @@ scripts/read_rule_file.sh security.properties
 scripts/get_existing_rules_for_key.sh field.name api.tag
 ```
 
-EasyApi merges rules in priority order; the project folder overrides the
+EasyYapi merges rules in priority order; the project folder overrides the
 global folder, which overrides the built-in rules.
 
 ### Step 4: Perceive — detect custom framework patterns
 
-**Most projects do not need custom rules.** EasyApi understands standard HTTP
+**Most projects do not need custom rules.** EasyYapi understands standard HTTP
 frameworks (Spring MVC, WebFlux, JAX-RS, Feign) out of the box. Before
 proposing a rule, scan the project for the **Custom-Pattern Catalog** signals
 documented in the bundled `docs/rule-guide.md` (section "Custom-Pattern Catalog").
@@ -214,11 +214,45 @@ Propose new rule content in the rule file format documented in the guide:
 ### Step 7: Act — insert and show the diff
 
 Insert the new rules into a file in `.easyapi/` (project) or `~/.easyapi/`
-(global). **Always show the user the diff before applying** — EasyApi rules
+(global). **Always show the user the diff before applying** — EasyYapi rules
 affect API export across the whole project, so the user must confirm the
 change. This mirrors the built-in agent's `propose_rule_content` →
 user-confirmed "Save…" flow; the only difference is you write the file
 directly instead of staging it through a UI.
+
+### Multi-app namespacing
+
+When a workspace hosts more than one app (each IntelliJ Module /
+`spring.application.name` is a candidate app — detect by scanning the
+project's module structure and `application.yml` files), namespace every
+per-app env var by a resolved key so exports don't collide. Apply this
+**even for a single-app workspace** — a single app today doesn't mean a
+single app forever, and bare `{{host}}` / `${Authorization}` would collide
+if the user exports a different app later into the same Postman environment.
+
+- **Resolve the namespace key** in order: (1) Module name (inferred from
+  the source file's IntelliJ module / directory), normalized lower-case
+  with spaces/underscores → hyphens, characters outside `[a-z0-9-]`
+  stripped, capped at 40 chars; (2) `spring.application.name` read
+  directly from the app's `application.yml`/`application-*.yml`/
+  `application.properties` (fall through if absent); (3) ask the user a
+  short clarifying question on collision or unresolved ambiguity.
+- **Namespace every env var**: host `{{<key>}}`, bearer `{{<key>-token}}`,
+  login `{{<key>-username}}`/`{{<key>-password}}` (lower-case by default;
+  UPPER when an existing rule already uses it — reuse the existing casing
+  rather than renaming). The producer's stored name and the consumer's
+  referenced name MUST be identical (bundle integrity still holds).
+- **Split bundles per app**: propose one bundle per app, each complete on
+  its own (producer script + consumer header + host + env var, all sharing
+  the same key); for consumers you can't confidently assign to an app
+  (shared/common modules), ask the user with concrete app options.
+- **Record the resolution branch** (module name / `spring.application.name` /
+  user-clarified) and the resulting key in the proposal shown to the user,
+  so they can correct a wrong guess before saving.
+- **Fetch the full recipe** from the bundled `docs/rule-guide.md` (the
+  "Multi-Application Namespace" section) — don't reproduce it from memory.
+  Note: the v1 runtime converts unresolved `${...}` placeholders in
+  **header values** only; do not promise body-level namespacing.
 
 ## Critical Rule File Format (follow exactly — inlined from the agent preamble)
 
@@ -340,8 +374,8 @@ objects** (one per line):
 If the user is unsure how to invoke this skill versus the plugin's built-in
 AI assistant, briefly explain:
 
-- **Built-in AI assistant (Settings → EasyApi → Rules → Chat / Magic)** — In
-  IntelliJ with EasyApi installed, open Settings → EasyApi → Rules, edit a
+- **Built-in AI assistant (Settings → EasyYapi → Rules → Chat / Magic)** — In
+  IntelliJ with EasyYapi installed, open Settings → EasyYapi → Rules, edit a
   rule file, and click **Chat** (reveals the inline AI panel) or **Magic**
   (runs a built-in review-and-detect instruction). The plugin's agent runs a
   perceive→reason→act loop, calls its PSI perception tools to inspect the
@@ -369,8 +403,8 @@ they produce is consistent.
   which only exists inside a running IntelliJ. You don't need it: rules are
   about contracts detectable from source.
 - It does not configure or test AI providers. The built-in assistant's
-  configuration lives in IntelliJ Settings → EasyApi → AI.
-- It does not modify the EasyApi plugin itself or its bundled config.
+  configuration lives in IntelliJ Settings → EasyYapi → AI.
+- It does not modify the EasyYapi plugin itself or its bundled config.
 
 ## Reference Pointers
 
@@ -381,7 +415,7 @@ they produce is consistent.
 - `docs/index.md`, `docs/README.md`, `docs/settings-guide.md`, `docs/usage-guide.md`,
   `docs/easyapi-script-reference.md` — the rest of the knowledge base.
 - `scripts/` — CLI tools mirroring the built-in AI perception tools (see
-  "EasyApi-domain tools" above).
+  "EasyYapi-domain tools" above).
 
 Plugin home: https://github.com/tangcent/easy-yapi
 

@@ -245,6 +245,91 @@ graph TB
 - **RuleEngine** — Evaluates rule expressions (Groovy, regex, annotation, tag) to customize parsing behavior
 - **AI Assistant** — Optional built-in agent that inspects the project via PSI tools and authors rule files; see the [Skills](#skills) section for the external-skill equivalent
 
+### Project Structure
+
+The plugin's source tree is organized into four top-level buckets under `src/main/kotlin/com/itangcent/easyapi/`:
+
+```
+com.itangcent.easyapi/
+├── channel/      # OUTPUT — export destinations (YApi, Postman, Markdown, cURL, Hoppscotch, HTTP Client)
+│   ├── spi/      #   Channel EP contract: Channel, ChannelConfig, ChannelRegistry, …
+│   ├── curl/
+│   ├── hoppscotch/  (+ model/)
+│   ├── httpclient/
+│   ├── markdown/    (+ template/)
+│   ├── postman/     (+ model/)
+│   └── yapi/        (+ markdown/)  # easy-yapi only
+│
+├── format/       # FIELD/OBJECT SERIALIZATION (JSON, JSON5, YAML, Properties)
+│   ├── spi/      #   FieldFormatChannel EP + FieldFormatExtensions (toJson/toJson5/toYaml/toProperties)
+│   ├── json/
+│   ├── json5/
+│   ├── yaml/
+│   └── properties/
+│
+├── framework/    # INPUT — source framework exporters (Spring MVC, JAX-RS, Feign, gRPC)
+│   ├── springmvc/   # Spring MVC + Actuator
+│   ├── jaxrs/
+│   ├── feign/
+│   └── grpc/        # class exporter only — runtime plumbing is core/grpc
+│
+└── core/         # SHARED INFRASTRUCTURE (the umbrella)
+    ├── internal/    # relocated narrow core/ (EasyApiApplicationService, EasyApiProjectService, event/, threading/)
+    ├── export/      # the neutral pipeline: ClassExporter, ClassExporterRegistry, EndpointBuilder, ExportOrchestrator, ExportContext, …  (+ recognizer/)
+    ├── psi/         # (+ adapter/ doc/ helper/ model/ type/) — ObjectModel lives here; format/ consumes it
+    ├── config/      # (+ model/ parser/ resource/ source/)
+    ├── rule/        # (+ context/ engine/ parser/)
+    ├── http/        # HttpClientProvider + Apache/IntelliJ/UrlConnection implementations
+    ├── logging/     # IdeaConsole, IdeaLog, IdeaConsoleProvider
+    ├── ide/         # (+ action/ dialog/ linemarker/ script/ search/ support/) — NO fieldformat/ (moved to format/)
+    ├── dashboard/   # API Dashboard tool window
+    ├── script/      # (+ env/ pm/) — script execution support
+    ├── util/        # (+ file/ ide/ json/ storage/ text/) — FormatterHelper stays here (Decision F1)
+    ├── cache/       # (+ api/ http/ json/)
+    ├── settings/    # (+ migration/ module/ state/ ui/)
+    ├── ai/          # (+ agent/ credentials/ tools/ ui/)
+    ├── grpc/        # runtime plumbing (descriptor reflection, proto) — peer of framework/grpc's consumer
+    ├── repository/
+    └── extension/
+```
+
+The four buckets form a directed-acyclic dependency graph: `channel` may import from `format`, `framework`, and `core`; `format` and `framework` may import from `core`; `core` imports only extension-point contract seams (`channel.spi.*`, `format.spi.*`, `core.export.*`) from its siblings — concrete per-id implementations (`channel.<id>.*`, `format.<id>.*`, `framework.<id>.*`) imported from `core.*` are forbidden. The original narrow `core/` package (services, events, threading) was renamed to `core/internal/` so `core/` could serve as the umbrella for all shared infrastructure.
+
+### How to add new support
+
+The plugin is built around three IntelliJ extension points (EPs). Adding support for a new output target, field format, or source framework is a one-package operation plus one `plugin.xml` line. **Step-by-step guides** for each — SPI reference, optional config/settings/rule-keys, worked examples, import rules, and testing — live in [`docs/developer/`](docs/developer/README.md).
+
+#### Adding a new channel (output destination)
+
+A channel converts `ApiEndpoint` models into a specific output format and handles file write or remote upload (e.g. a Postman variant, or a new target like Insomnia). Create a `channel/<id>/` package with a `Channel` implementation and register it against the `channel` EP:
+
+```xml
+<channel implementation="com.itangcent.easyapi.channel.<id>.<ChannelClass>" />
+```
+
+→ Full guide: [docs/developer/channels.md](docs/developer/channels.md) (SPI surface, options panel, settings tab, rule keys, `handleResult`, worked example, import rules).
+
+#### Adding a new format (field serialization)
+
+A format serializes an `ObjectModel` to a specific representation (e.g. TOML, XML). Create a `format/<id>/` package with a pure renderer plus a `FieldFormatChannel` implementation, and register it against the `fieldFormatChannel` EP:
+
+```xml
+<fieldFormatChannel implementation="com.itangcent.easyapi.format.<id>.<FieldFormatChannelClass>" />
+```
+
+→ Full guide: [docs/developer/formats.md](docs/developer/formats.md) (two-layer architecture, `ObjectModel` input, cycle safety, entry extension, worked example, import rules).
+
+#### Adding a new framework recognizer (source framework)
+
+A framework scans PSI for endpoints declared with a specific framework's annotations (e.g. Micronaut). Create a `framework/<id>/` package with a `ClassExporter` and an `ApiClassRecognizer`, and register them against **both** EPs (the recognizer drives line markers, index scanning, AI discovery, and enablement — registering only the exporter silently breaks them):
+
+```xml
+<classExporter implementation="com.itangcent.easyapi.framework.<id>.<ClassExporterClass>" />
+<apiClassRecognizer implementation="com.itangcent.easyapi.framework.<id>.<RecognizerClass>" />
+```
+
+→ Full guide: [docs/developer/frameworks.md](docs/developer/frameworks.md) (two-EP overview, the two SPIs, 4-step guide, rule lifecycle hooks, `ApiEndpoint` shape, worked example, import rules).
+
 ## Documentation
 
 - [Guide](https://easyyapi.github.io/guide/) — Overview and features

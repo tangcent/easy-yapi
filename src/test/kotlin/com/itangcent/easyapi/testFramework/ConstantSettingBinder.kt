@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.testFramework
 
-import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.core.settings.SettingBinder
+import com.itangcent.easyapi.core.settings.Settings
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor

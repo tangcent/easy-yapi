@@ -1,12 +1,12 @@
 package com.itangcent.easyapi.gap
 
-import com.itangcent.easyapi.exporter.feign.FeignClientRecognizer
-import com.itangcent.easyapi.exporter.jaxrs.JaxRsContentTypeResolver
-import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
-import com.itangcent.easyapi.exporter.springmvc.ContentTypeResolver
-import com.itangcent.easyapi.exporter.springmvc.SpringControllerRecognizer
-import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
-import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.framework.feign.FeignClientRecognizer
+import com.itangcent.easyapi.framework.jaxrs.JaxRsContentTypeResolver
+import com.itangcent.easyapi.framework.jaxrs.JaxRsResourceRecognizer
+import com.itangcent.easyapi.framework.springmvc.ContentTypeResolver
+import com.itangcent.easyapi.framework.springmvc.SpringControllerRecognizer
+import com.itangcent.easyapi.core.psi.helper.UnifiedAnnotationHelper
+import com.itangcent.easyapi.core.rule.engine.RuleEngine
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import org.junit.Assert.*

@@ -1,11 +1,11 @@
 package com.itangcent.easyapi.integration
 
-import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.httpMetadata
-import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
-import com.itangcent.easyapi.psi.helper.DocHelper
-import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
+import com.itangcent.easyapi.core.config.ConfigReader
+import com.itangcent.easyapi.core.export.ApiEndpoint
+import com.itangcent.easyapi.core.export.httpMetadata
+import com.itangcent.easyapi.framework.springmvc.SpringMvcClassExporter
+import com.itangcent.easyapi.core.psi.helper.DocHelper
+import com.itangcent.easyapi.core.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 

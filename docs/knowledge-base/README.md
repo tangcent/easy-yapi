@@ -1,12 +1,12 @@
-# EasyApi Knowledge Base
+# EasyYapi Knowledge Base
 
-Welcome to the EasyApi knowledge base. This is the canonical documentation the
+Welcome to the EasyYapi knowledge base. This is the canonical documentation the
 in-IDE AI assistant reads via its `get_plugin_doc` tool, and the page the Rules
 tab's **Help** button opens.
 
 ## When do you need a custom rule?
 
-**Most projects do not need custom rules.** EasyApi understands standard HTTP
+**Most projects do not need custom rules.** EasyYapi understands standard HTTP
 frameworks out of the box — Spring MVC (`@RestController`, `@RequestMapping`,
 `@GetMapping`, …), Spring WebFlux, JAX-RS (`@Path`, `@GET`, …), and Feign
 clients. If your project uses one of these, export works without any rule
@@ -34,13 +34,13 @@ each.
 |------|----------------|
 | [Index](index.md) | A flat map of every topic → page. Start here when you don't know which page to read. |
 | [Rule Authoring Guide](rule-guide.md) | Rule file format, the full rule-key catalog, filter syntax, expression prefixes, recipes, the Custom-Pattern Catalog, and AI-assisted authoring. |
-| [Settings Guide](settings-guide.md) | Every field in Settings → EasyApi, grouped by tab, with the underlying `Settings` property name. |
+| [Settings Guide](settings-guide.md) | Every field in Settings → EasyYapi, grouped by tab, with the underlying `Settings` property name. |
 | [Usage Guide](usage-guide.md) | End-user workflows: install, first export, API Dashboard, search, field conversion, pre/post scripts, AI-assisted rule creation. |
 | [Script Reference](easyapi-script-reference.md) | The Postman-compatible `pm.*` Groovy API for pre-request / post-response scripts. |
 
 ## Where rules live (3.0 model)
 
-EasyApi 3.0 discovers rule files by **folder**, not by an explicit list:
+EasyYapi 3.0 discovers rule files by **folder**, not by an explicit list:
 
 - **Project rules** — `<project>/.easyapi/*.rules` (or `*.properties`). Every
   regular file in this folder is loaded. Legacy `.easy.api.config*` files in

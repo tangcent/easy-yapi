@@ -3,7 +3,7 @@ package com.itangcent.easyapi.property
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.search.GlobalSearchScope
-import com.itangcent.easyapi.rule.context.*
+import com.itangcent.easyapi.core.rule.context.*
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class ScriptContextPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {

@@ -2,21 +2,21 @@ package com.itangcent.easyapi.property
 
 import com.intellij.psi.PsiClass
 import com.intellij.testFramework.registerServiceInstance
-import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.exporter.feign.FeignClientRecognizer
-import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
-import com.itangcent.easyapi.exporter.springmvc.RequestMappingResolver
-import com.itangcent.easyapi.exporter.springmvc.ReturnTypeUnwrapper
-import com.itangcent.easyapi.exporter.springmvc.SpringControllerRecognizer
-import com.itangcent.easyapi.exporter.springmvc.SpringParameterBindingResolver
-import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
-import com.itangcent.easyapi.psi.type.GenericContext
-import com.itangcent.easyapi.psi.type.ResolvedType
-import com.itangcent.easyapi.psi.type.TypeResolver
-import com.itangcent.easyapi.rule.RuleKey
-import com.itangcent.easyapi.rule.RuleKeys
-import com.itangcent.easyapi.rule.StringRuleMode
-import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.core.config.ConfigReader
+import com.itangcent.easyapi.framework.feign.FeignClientRecognizer
+import com.itangcent.easyapi.framework.jaxrs.JaxRsResourceRecognizer
+import com.itangcent.easyapi.framework.springmvc.RequestMappingResolver
+import com.itangcent.easyapi.framework.springmvc.ReturnTypeUnwrapper
+import com.itangcent.easyapi.framework.springmvc.SpringControllerRecognizer
+import com.itangcent.easyapi.framework.springmvc.SpringParameterBindingResolver
+import com.itangcent.easyapi.core.psi.helper.UnifiedAnnotationHelper
+import com.itangcent.easyapi.core.psi.type.GenericContext
+import com.itangcent.easyapi.core.psi.type.ResolvedType
+import com.itangcent.easyapi.core.psi.type.TypeResolver
+import com.itangcent.easyapi.core.rule.RuleKey
+import com.itangcent.easyapi.core.rule.RuleKeys
+import com.itangcent.easyapi.core.rule.StringRuleMode
+import com.itangcent.easyapi.core.rule.engine.RuleEngine
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.runBlocking
@@ -145,13 +145,13 @@ class PsiAndExporterPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
             val b = resolver.resolve(p)
             if (b != null) p.name to b else null
         }.toMap()
-        assertEquals(com.itangcent.easyapi.exporter.model.ParameterBinding.Body, bindings["body"])
-        assertEquals(com.itangcent.easyapi.exporter.model.ParameterBinding.Query, bindings["q"])
-        assertEquals(com.itangcent.easyapi.exporter.model.ParameterBinding.Path, bindings["p"])
-        assertEquals(com.itangcent.easyapi.exporter.model.ParameterBinding.Header, bindings["h"])
-        assertEquals(com.itangcent.easyapi.exporter.model.ParameterBinding.Cookie, bindings["c"])
+        assertEquals(com.itangcent.easyapi.core.export.ParameterBinding.Body, bindings["body"])
+        assertEquals(com.itangcent.easyapi.core.export.ParameterBinding.Query, bindings["q"])
+        assertEquals(com.itangcent.easyapi.core.export.ParameterBinding.Path, bindings["p"])
+        assertEquals(com.itangcent.easyapi.core.export.ParameterBinding.Header, bindings["h"])
+        assertEquals(com.itangcent.easyapi.core.export.ParameterBinding.Cookie, bindings["c"])
         assertEquals(
-            com.itangcent.easyapi.exporter.model.ParameterBinding.Ignored,
+            com.itangcent.easyapi.core.export.ParameterBinding.Ignored,
             resolver.resolve(method.parameterList.parameters.last())
         )
     }
@@ -227,7 +227,7 @@ class PsiAndExporterPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("demo.Dto")!!
         val field = psiClass.allFields.first { it.name == "name" }
         project.registerServiceInstance(
-            serviceInterface = com.itangcent.easyapi.config.ConfigReader::class.java,
+            serviceInterface = com.itangcent.easyapi.core.config.ConfigReader::class.java,
             instance = TestConfigReader.fromRules(project, "field.name" to "@com.fasterxml.jackson.annotation.JsonProperty#value")
         )
         val engine = RuleEngine.getInstance(project)

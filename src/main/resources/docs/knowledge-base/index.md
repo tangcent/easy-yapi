@@ -1,4 +1,4 @@
-# EasyApi Knowledge Base — Index
+# EasyYapi Knowledge Base — Index
 
 A flat map of every topic → page. When you don't know which page to read,
 search this list.

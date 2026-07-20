@@ -87,18 +87,13 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 - Use `mockito-kotlin` for mocking
 - Aim for good test coverage
 
+### Extensions
+
+- Adding a new channel, format, or framework? See [`docs/developer/`](docs/developer/README.md) for step-by-step guides (SPI contracts, `plugin.xml` wiring, threading/logging conventions, worked examples).
+
 ## Project Structure
 
-```
-easy-api/
-├── src/main/kotlin/com/itangcent/easyapi/
-│   ├── core/          # Core infrastructure
-│   ├── psi/           # PSI utilities
-│   ├── exporter/      # Export functionality
-│   ├── settings/      # Plugin settings
-│   └── ide/           # IDE integration
-└── src/test/kotlin/   # Tests
-```
+The codebase is organized into four top-level buckets under `src/main/kotlin/com/itangcent/easyapi/`: `channel/` (output destinations), `format/` (field serialization), `framework/` (source framework exporters), and `core/` (shared infrastructure). The four buckets form a directed-acyclic dependency graph — see the [Project Structure section in README](README.md#project-structure) and [AGENTS.md §"Project Structure"](AGENTS.md#project-structure) for the authoritative layout, dependency rules, and package-placement decision rule. Step-by-step guides for adding a new extension live in [`docs/developer/`](docs/developer/README.md).
 
 ## Commit Message Guidelines
 
