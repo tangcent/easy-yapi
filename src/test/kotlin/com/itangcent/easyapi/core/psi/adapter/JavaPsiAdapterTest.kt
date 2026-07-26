@@ -54,6 +54,11 @@ class JavaPsiAdapterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val doc = adapter.resolveDocComment(repo!!)
         assertNotNull("Should resolve Javadoc for generic interface", doc)
         assertTrue("Should contain description", doc!!.text.contains("Generic repository interface"))
+        assertNotNull("Should extract Javadoc description body", doc.description)
+        assertTrue(
+            "Description should contain interface summary",
+            doc.description!!.contains("Generic repository interface")
+        )
         assertTrue("Should have @param tags for type params",
             doc.tags.any { it.name == "param" && it.value.contains("<T>") })
     }

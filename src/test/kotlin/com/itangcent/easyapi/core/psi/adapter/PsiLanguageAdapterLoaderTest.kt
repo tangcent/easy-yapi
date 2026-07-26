@@ -28,6 +28,20 @@ class PsiLanguageAdapterLoaderTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue("Should be JavaPsiAdapter for Java element", adapter is JavaPsiAdapter)
     }
 
+    fun testFindAdapterPrefersKotlinForLightClass() {
+        loadFile("adapter/ComplexKotlinSource.kt")
+        val psiClass = findClass("com.test.adapter.ApiResponse")
+        assertNotNull("Should find the Kotlin class", psiClass)
+        // KtLightClass may report language as JAVA; both adapters can match.
+        // Prefer Kotlin so class-level KDoc (folder name) can be resolved.
+        val adapter = PsiLanguageAdapterLoader.findAdapter(psiClass!!)
+        assertNotNull("Should find an adapter for Kotlin light class", adapter)
+        assertTrue(
+            "Should prefer KotlinPsiAdapter when light PSI also matches Java",
+            adapter is KotlinPsiAdapter
+        )
+    }
+
     fun testFindAdapterReturnsNullForUnsupportedElement() {
         val adapters = PsiLanguageAdapterLoader.loadAdapters()
         assertNotNull("Adapters list should not be null", adapters)

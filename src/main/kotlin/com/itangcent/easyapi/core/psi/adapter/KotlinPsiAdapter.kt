@@ -124,7 +124,10 @@ class KotlinPsiAdapter : PsiLanguageAdapter {
             }
         }
 
-        return DocComment(text = text, tags = tags)
+        val description = kDoc.getDefaultSection().getContent()
+            .trim()
+            .takeIf { it.isNotEmpty() }
+        return DocComment(text = text, tags = tags, description = description)
     }
 
     private fun KDocTag.contentOrLink(): String? {

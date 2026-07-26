@@ -2,6 +2,7 @@ package com.itangcent.easyapi.core.psi.helper
 
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
+import org.junit.AssumptionViolatedException
 
 class UnifiedDocHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -432,6 +433,56 @@ class UnifiedDocHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
         val desc = docHelper.getAttrOfDocComment(method)
         assertNotNull("Should find method doc description", desc)
         assertTrue("Method description should contain 'Gets the user name'", desc!!.contains("Gets the user name"))
+    }
+
+    // --- Kotlin KDoc getAttrOfDocComment (light PSI is not PsiDocCommentOwner) ---
+
+    fun testGetAttrOfDocCommentOnKotlinClass() = runBlocking {
+        assumeKotlinPluginAvailable()
+        loadFile("helper/UnifiedKtDocAttrClass.kt", """
+            package com.test.helper
+            /**
+             * Shipping location APIs.
+             */
+            class UnifiedKtDocAttrClass
+        """.trimIndent())
+        val psiClass = findClass("com.test.helper.UnifiedKtDocAttrClass")!!
+        val desc = docHelper.getAttrOfDocComment(psiClass)
+        assertNotNull("Should find Kotlin class KDoc description", desc)
+        assertTrue(
+            "Class description should come from KDoc body",
+            desc!!.contains("Shipping location APIs")
+        )
+    }
+
+    fun testGetAttrOfDocCommentOnKotlinMethod() = runBlocking {
+        assumeKotlinPluginAvailable()
+        loadFile("helper/UnifiedKtDocAttrMethod.kt", """
+            package com.test.helper
+            class UnifiedKtDocAttrMethod {
+                /**
+                 * List shipping locations.
+                 * @return location list
+                 */
+                fun listShippingLocations(): List<String> = emptyList()
+            }
+        """.trimIndent())
+        val psiClass = findClass("com.test.helper.UnifiedKtDocAttrMethod")!!
+        val method = findMethod(psiClass, "listShippingLocations")!!
+        val desc = docHelper.getAttrOfDocComment(method)
+        assertNotNull("Should find Kotlin method KDoc description", desc)
+        assertTrue(
+            "Method description should come from KDoc body",
+            desc!!.contains("List shipping locations")
+        )
+    }
+
+    private fun assumeKotlinPluginAvailable() {
+        try {
+            Class.forName("org.jetbrains.kotlin.idea.KotlinLanguage")
+        } catch (e: ClassNotFoundException) {
+            throw AssumptionViolatedException("Kotlin plugin not available")
+        }
     }
 
     // --- getInstance ---

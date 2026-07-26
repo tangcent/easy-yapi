@@ -59,6 +59,8 @@ class KotlinPsiAdapterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val doc = adapter.resolveDocComment(apiResponse!!)
         assertNotNull("Should resolve KDoc for data class", doc)
         assertTrue("Should contain description", doc!!.text.contains("Represents an API response"))
+        assertEquals("Should extract KDoc description body",
+            "Represents an API response.", doc.description)
         assertTrue("Should have @property tags",
             doc.tags.any { it.name == "property" })
         assertTrue("Should have @param T tag",
@@ -117,7 +119,9 @@ class KotlinPsiAdapterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find fetchById", fetchById)
         val doc = adapter.resolveDocComment(fetchById!!)
         assertNotNull("Should resolve KDoc for interface method", doc)
-        assertTrue("Should have @param tag", doc!!.tags.any { it.name == "param" })
+        assertEquals("Should extract method KDoc description",
+            "Fetches data by ID.", doc!!.description)
+        assertTrue("Should have @param tag", doc.tags.any { it.name == "param" })
         assertTrue("Should have @return tag", doc.tags.any { it.name == "return" })
         assertTrue("Should have @throws tag", doc.tags.any { it.name == "throws" })
     }

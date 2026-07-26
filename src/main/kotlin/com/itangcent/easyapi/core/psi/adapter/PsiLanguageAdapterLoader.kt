@@ -45,9 +45,9 @@ object PsiLanguageAdapterLoader {
     /**
      * Registry of all supported language adapters.
      *
-     * Order matters: adapters are checked in registration order by [findAdapter].
-     * More specific adapters (Kotlin, Scala, Groovy) should come after
-     * the general Java adapter, as [findAdapter] returns the first match.
+     * [findAdapter] does not simply take the first registration match: when multiple
+     * adapters support an element (e.g. Kotlin light PSI reporting language as JAVA),
+     * non-[JavaPsiAdapter] adapters are preferred so KDoc / Scaladoc can be resolved.
      */
     private val registry = listOf(
         AdapterEntry(onClass = null, factory = { JavaPsiAdapter() }),
@@ -76,13 +76,19 @@ object PsiLanguageAdapterLoader {
     fun loadAdapters(): List<PsiLanguageAdapter> = adapters
 
     /**
-     * Finds the first adapter that supports the given [element].
+     * Finds an adapter that supports the given [element].
+     *
+     * When several adapters match (common for Kotlin light classes whose language
+     * id is reported as JAVA), prefers a non-[JavaPsiAdapter] so language-native
+     * documentation (KDoc, Scaladoc, …) can be read.
      *
      * @param element The PSI element to find an adapter for
-     * @return The first supporting adapter, or `null` if none matches
+     * @return A supporting adapter, or `null` if none matches
      */
     fun findAdapter(element: PsiElement): PsiLanguageAdapter? {
-        return adapters.firstOrNull { it.supportsElement(element) }
+        val matching = adapters.filter { it.supportsElement(element) }
+        if (matching.isEmpty()) return null
+        return matching.firstOrNull { it !is JavaPsiAdapter } ?: matching.first()
     }
 
     /**

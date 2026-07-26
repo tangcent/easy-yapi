@@ -8,6 +8,7 @@ import com.intellij.psi.PsiEnumConstant
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.javadoc.PsiDocComment
 import com.intellij.psi.javadoc.PsiDocTag
 import com.itangcent.easyapi.core.psi.doc.DocComment
 import com.itangcent.easyapi.core.psi.doc.DocTag
@@ -73,8 +74,26 @@ class JavaPsiAdapter : PsiLanguageAdapter {
                 null
             }
         }
+        val description = extractDescription(psiDocComment)
 
-        return DocComment(text = text, tags = tags)
+        return DocComment(text = text, tags = tags, description = description)
+    }
+
+    /**
+     * Extracts the free-form description body from a Javadoc comment
+     * (content before `@` tags), mirroring [com.itangcent.easyapi.core.psi.helper.UnifiedDocHelper.getDocCommentContent].
+     */
+    private fun extractDescription(psiDocComment: PsiDocComment): String? {
+        val text = psiDocComment.descriptionElements
+            .joinToString(separator = "") { it.text?.trimEnd() ?: "" }
+            .trim()
+        if (text.isEmpty()) return null
+        return text.lines()
+            .asSequence()
+            .map { it.removePrefix(" ").trimEnd() }
+            .joinToString(separator = "\n")
+            .trim()
+            .takeIf { it.isNotEmpty() }
     }
 
     override fun resolveEnumConstants(psiClass: PsiClass): List<String> {

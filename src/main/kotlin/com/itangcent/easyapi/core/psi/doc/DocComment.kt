@@ -23,18 +23,21 @@ package com.itangcent.easyapi.core.psi.doc
  *     tags = [
  *         DocTag("param", "id the user ID"),
  *         DocTag("return", "the user")
- *     ]
+ *     ],
+ *     description = "Gets user by ID."
  * )
  * ```
  *
  * @param text The raw comment text
  * @param tags The parsed documentation tags
+ * @param description The free-form description body (before tags), used as API title / folder name
  * @see DocTag for tag representation
  * @see com.itangcent.easyapi.core.psi.adapter.PsiLanguageAdapter for comment parsing
  */
 data class DocComment(
     val text: String,
-    val tags: List<DocTag> = emptyList()
+    val tags: List<DocTag> = emptyList(),
+    val description: String? = null
 )
 
 /**

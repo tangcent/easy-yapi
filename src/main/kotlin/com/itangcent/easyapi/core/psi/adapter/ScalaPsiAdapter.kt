@@ -6,6 +6,7 @@ import com.intellij.psi.PsiDocCommentOwner
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.javadoc.PsiDocComment
 import com.itangcent.easyapi.core.psi.doc.DocComment
 import com.itangcent.easyapi.core.psi.doc.DocTag
 
@@ -142,7 +143,26 @@ class ScalaPsiAdapter : PsiLanguageAdapter {
             }
         }
 
-        return DocComment(text = text, tags = tags)
+        val description = extractDescription(scDocComment as? PsiDocComment)
+        return DocComment(text = text, tags = tags, description = description)
+    }
+
+    /**
+     * Extracts the free-form description body from a Scaladoc comment
+     * (content before `@` tags) via the standard [PsiDocComment] API.
+     */
+    private fun extractDescription(psiDocComment: PsiDocComment?): String? {
+        if (psiDocComment == null) return null
+        val text = psiDocComment.descriptionElements
+            .joinToString(separator = "") { it.text?.trimEnd() ?: "" }
+            .trim()
+        if (text.isEmpty()) return null
+        return text.lines()
+            .asSequence()
+            .map { it.removePrefix(" ").trimEnd() }
+            .joinToString(separator = "\n")
+            .trim()
+            .takeIf { it.isNotEmpty() }
     }
 
     /**

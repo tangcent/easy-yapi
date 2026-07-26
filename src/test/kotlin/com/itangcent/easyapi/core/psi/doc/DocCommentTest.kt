@@ -10,6 +10,7 @@ class DocCommentTest {
         val comment = DocComment("/** Hello */")
         assertEquals("/** Hello */", comment.text)
         assertEquals(emptyList<DocTag>(), comment.tags)
+        assertNull(comment.description)
     }
 
     @Test
@@ -18,20 +19,35 @@ class DocCommentTest {
             DocTag("param", "id the user ID"),
             DocTag("return", "the user")
         )
-        val comment = DocComment("/** Gets user by ID. */", tags)
+        val comment = DocComment("/** Gets user by ID. */", tags, description = "Gets user by ID.")
         assertEquals("/** Gets user by ID. */", comment.text)
         assertEquals(2, comment.tags.size)
         assertEquals("param", comment.tags[0].name)
         assertEquals("id the user ID", comment.tags[0].value)
         assertEquals("return", comment.tags[1].name)
+        assertEquals("Gets user by ID.", comment.description)
+    }
+
+    @Test
+    fun testWithDescriptionOnly() {
+        val comment = DocComment("/** Hello */", description = "Hello")
+        assertEquals("Hello", comment.description)
+        assertEquals(emptyList<DocTag>(), comment.tags)
     }
 
     @Test
     fun testEquality() {
         val tags = listOf(DocTag("param", "id"))
-        val c1 = DocComment("/** text */", tags)
-        val c2 = DocComment("/** text */", tags)
+        val c1 = DocComment("/** text */", tags, description = "text")
+        val c2 = DocComment("/** text */", tags, description = "text")
         assertEquals(c1, c2)
+    }
+
+    @Test
+    fun testInequality_differentDescription() {
+        val c1 = DocComment("/** text */", description = "a")
+        val c2 = DocComment("/** text */", description = "b")
+        assertNotEquals(c1, c2)
     }
 
     @Test

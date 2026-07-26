@@ -107,7 +107,8 @@ class UnifiedDocHelper(private val project: Project) : DocHelper {
                     return@read getDocCommentContent(sourceOwner.docComment!!)
                 }
             }
-            null
+            // Kotlin light PSI is not PsiDocCommentOwner; fall back to language-adapter description (KDoc).
+            resolveDocComment(psiElement)?.description
         }
     }
 
@@ -179,27 +180,36 @@ class UnifiedDocHelper(private val project: Project) : DocHelper {
     }
 
     private fun resolveDocComment(psiElement: PsiElement): DocComment? {
-        val adapter = findAdapter(psiElement)
-        val docComment = adapter?.resolveDocComment(psiElement)
-        if (docComment != null) return docComment
+        resolveDocCommentWithAdapters(psiElement)?.let { return it }
 
         val sourceElement = sourceHelper.getSourceElementSync(psiElement)
         if (sourceElement !== psiElement) {
-            val sourceAdapter = findAdapter(sourceElement)
-            return sourceAdapter?.resolveDocComment(sourceElement)
+            return resolveDocCommentWithAdapters(sourceElement)
         }
 
         return null
     }
 
     /**
-     * Finds the first language adapter that supports the given element.
+     * Tries every matching language adapter until one returns a [DocComment].
      *
-     * @param element The PSI element to find an adapter for
-     * @return The supporting adapter, or `null` if none matches
+     * Uses [PsiLanguageAdapterLoader.findAdapter] ordering (prefer non-Java) so
+     * Kotlin light classes that report language as JAVA still resolve KDoc.
      */
-    private fun findAdapter(element: PsiElement): PsiLanguageAdapter? {
-        return adapters.firstOrNull { it.supportsElement(element) }
+    private fun resolveDocCommentWithAdapters(element: PsiElement): DocComment? {
+        val matching = adapters.filter { it.supportsElement(element) }
+        if (matching.isEmpty()) return null
+        val preferred = PsiLanguageAdapterLoader.findAdapter(element)
+        val ordered = buildList {
+            if (preferred != null) add(preferred)
+            for (adapter in matching) {
+                if (adapter !== preferred) add(adapter)
+            }
+        }
+        for (adapter in ordered) {
+            adapter.resolveDocComment(element)?.let { return it }
+        }
+        return null
     }
 
     // ========== EOL Comment Extraction Utilities ==========

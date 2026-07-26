@@ -37,10 +37,6 @@ import com.itangcent.easyapi.core.psi.adapter.PsiLanguageAdapterLoader
  */
 class UnifiedAnnotationHelper : AnnotationHelper, com.itangcent.easyapi.core.logging.IdeaLog {
 
-    private val adapters: List<PsiLanguageAdapter> by lazy {
-        PsiLanguageAdapterLoader.loadAdapters()
-    }
-
     override suspend fun hasAnn(element: PsiElement, annFqn: String): Boolean {
         return read {
             findPsiAnnotations(element, annFqn).isNotEmpty()
@@ -78,7 +74,7 @@ class UnifiedAnnotationHelper : AnnotationHelper, com.itangcent.easyapi.core.log
     }
 
     private fun findPsiAnnotations(element: PsiElement, annFqn: String): List<PsiAnnotation> {
-        val adapter = adapters.firstOrNull { it.supportsElement(element) } ?: return emptyList()
+        val adapter = PsiLanguageAdapterLoader.findAdapter(element) ?: return emptyList()
         return adapter.resolveAnnotations(element).filter { it.qualifiedName == annFqn }
     }
 
