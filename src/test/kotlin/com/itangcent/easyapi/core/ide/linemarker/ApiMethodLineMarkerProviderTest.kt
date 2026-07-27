@@ -130,6 +130,7 @@ class ApiMethodLineMarkerProviderTest : EasyApiLightCodeInsightFixtureTestCase()
 
     fun testLineMarkerWhenGutterIconEnabled() = runTest {
         settingBinder.update(GeneralSettings::class) {
+            apiScanEnabled = true
             gutterIconEnabled = true
         }
 
@@ -154,5 +155,40 @@ class ApiMethodLineMarkerProviderTest : EasyApiLightCodeInsightFixtureTestCase()
             "Should show gutter icon on at least one API method when gutterIconEnabled is true",
             foundMarker
         )
+    }
+
+    fun testNoLineMarkerWhenApiScanDisabled() = runTest {
+        // Master toggle off should suppress gutter icons even if
+        // gutterIconEnabled is true, because the gutter icon navigates via
+        // the API index that scanning produces.
+        settingBinder.update(GeneralSettings::class) {
+            apiScanEnabled = false
+            gutterIconEnabled = true
+        }
+
+        try {
+            val file = myFixture.configureByFile("api/UserCtrl.java")
+            val classes = PsiTreeUtil.getChildrenOfType(file, PsiClass::class.java) ?: emptyArray()
+            assertTrue("Should have classes in test file", classes.isNotEmpty())
+
+            val methods = classes.flatMap { it.methods.toList() }
+            assertTrue("Should have methods in test file", methods.isNotEmpty())
+
+            methods.forEach { method ->
+                val identifier = method.nameIdentifier
+                if (identifier != null) {
+                    val marker = lineMarkerProvider.getLineMarkerInfo(identifier)
+                    assertNull(
+                        "Should not show gutter icon when apiScanEnabled is false",
+                        marker
+                    )
+                }
+            }
+        } finally {
+            // Reset master toggle so subsequent tests are not affected.
+            settingBinder.update(GeneralSettings::class) {
+                apiScanEnabled = true
+            }
+        }
     }
 }

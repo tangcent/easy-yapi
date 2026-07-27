@@ -95,6 +95,7 @@ class GeneralSettingsPanelLogicTest {
         assertFalse(settings.enabledFrameworks.contains("Feign"))
         assertFalse(settings.disabledFrameworks.contains("JAX-RS"))
         assertFalse(settings.enabledFrameworks.contains("SpringActuator"))
+        assertTrue(settings.apiScanEnabled)
         assertTrue(settings.autoScanEnabled)
         assertFalse(settings.concurrentScanEnabled)
         assertTrue(settings.gutterIconEnabled)
@@ -108,6 +109,7 @@ class GeneralSettingsPanelLogicTest {
         val settings = GeneralSettings(
             enabledFrameworks = arrayOf("Feign", "SpringActuator"),
             disabledFrameworks = arrayOf("JAX-RS"),
+            apiScanEnabled = false,
             autoScanEnabled = false,
             concurrentScanEnabled = true,
             gutterIconEnabled = false,
@@ -118,6 +120,7 @@ class GeneralSettingsPanelLogicTest {
         assertTrue(settings.enabledFrameworks.contains("Feign"))
         assertTrue(settings.disabledFrameworks.contains("JAX-RS"))
         assertTrue(settings.enabledFrameworks.contains("SpringActuator"))
+        assertFalse(settings.apiScanEnabled)
         assertFalse(settings.autoScanEnabled)
         assertTrue(settings.concurrentScanEnabled)
         assertFalse(settings.gutterIconEnabled)
@@ -139,6 +142,19 @@ class GeneralSettingsPanelLogicTest {
         val s1 = GeneralSettings()
         val s2 = GeneralSettings(enabledFrameworks = arrayOf("Feign"))
         assertNotEquals(s1, s2)
+    }
+
+    @Test
+    fun testSettingsApiScanEnabledInequality() {
+        // Specifically exercise the `apiScanEnabled` branch of equals() —
+        // the field was added in this PR and Codecov flagged it as a partial.
+        val s1 = GeneralSettings(apiScanEnabled = true)
+        val s2 = GeneralSettings(apiScanEnabled = false)
+        assertNotEquals(s1, s2)
+        assertNotEquals(s2, s1)
+        // Same apiScanEnabled value should still be equal on this field.
+        assertEquals(GeneralSettings(apiScanEnabled = true), GeneralSettings(apiScanEnabled = true))
+        assertEquals(GeneralSettings(apiScanEnabled = false), GeneralSettings(apiScanEnabled = false))
     }
 
     @Test

@@ -113,6 +113,10 @@ interface SettingsPanel<T : Settings> {
  * mirroring the cross-module pattern used by [FeaturesSettingsPanel].
  */
 class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel<GeneralSettings> {
+    private val apiScanEnabled = JBCheckBox("Enable API scanning", true).apply {
+        toolTipText = "Master toggle for API scanning. When off, auto-scan, concurrent scan, " +
+            "and the gutter icon (which navigates via the API index produced by scanning) are all disabled."
+    }
     private val autoScanEnabled = JBCheckBox("Enable automatic API scanning on file changes", true).apply {
         toolTipText = "Automatically re-scan APIs when source files are modified"
     }
@@ -160,6 +164,23 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
     private val repositoryTable = TableView(repositoryTableModel)
 
     init {
+        // Master toggle: when API scanning is disabled, cascade-disable and
+        // uncheck the dependent checkboxes — auto-scan & concurrent scan (which
+        // drive scanning) and the gutter icon (which navigates via the API index
+        // that scanning produces). The gutter icon lives in the "Editor" panel
+        // but is cascaded here because it depends on the index.
+        apiScanEnabled.addActionListener {
+            val enabled = apiScanEnabled.isSelected
+            autoScanEnabled.isEnabled = enabled
+            concurrentScanEnabled.isEnabled = enabled
+            gutterIconEnabled.isEnabled = enabled
+            if (!enabled) {
+                autoScanEnabled.isSelected = false
+                concurrentScanEnabled.isSelected = false
+                gutterIconEnabled.isSelected = false
+            }
+        }
+
         val projectRow = JPanel(FlowLayout(FlowLayout.LEFT, 4, 0)).apply {
             add(JLabel("Project Cache:"))
             add(projectCacheSizeLabel)
@@ -381,7 +402,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         .addComponent(
             SettingsUiKit.titledPanel(
                 "Scanning", listOf(
-                    autoScanEnabled, concurrentScanEnabled
+                    apiScanEnabled, autoScanEnabled, concurrentScanEnabled
                 )
             )
         )
@@ -412,9 +433,16 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         .panel
 
     override fun resetFrom(settings: GeneralSettings?) {
-        autoScanEnabled.isSelected = settings?.autoScanEnabled ?: true
-        concurrentScanEnabled.isSelected = settings?.concurrentScanEnabled ?: false
-        gutterIconEnabled.isSelected = settings?.gutterIconEnabled ?: true
+        apiScanEnabled.isSelected = settings?.apiScanEnabled ?: true
+        // Apply cascading enabled/disabled state based on master toggle. When
+        // the master is off, dependents are forced off visually.
+        val scanEnabled = apiScanEnabled.isSelected
+        autoScanEnabled.isEnabled = scanEnabled
+        concurrentScanEnabled.isEnabled = scanEnabled
+        gutterIconEnabled.isEnabled = scanEnabled
+        autoScanEnabled.isSelected = if (scanEnabled) (settings?.autoScanEnabled ?: true) else false
+        concurrentScanEnabled.isSelected = if (scanEnabled) (settings?.concurrentScanEnabled ?: false) else false
+        gutterIconEnabled.isSelected = if (scanEnabled) (settings?.gutterIconEnabled ?: true) else false
         switchNotice.isSelected = settings?.switchNotice ?: true
         logLevelCombo.selectedItem = CommonSettingsHelper.VerbosityLevel.toLevel(settings?.logLevel ?: 0)
         outputCharsetCombo.selectedItem = settings?.outputCharset ?: "UTF-8"
@@ -436,9 +464,12 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
     }
 
     override fun applyTo(settings: GeneralSettings) {
-        settings.autoScanEnabled = autoScanEnabled.isSelected
-        settings.concurrentScanEnabled = concurrentScanEnabled.isSelected
-        settings.gutterIconEnabled = gutterIconEnabled.isSelected
+        val scanEnabled = apiScanEnabled.isSelected
+        settings.apiScanEnabled = scanEnabled
+        // When the master toggle is off, dependent features are forced off.
+        settings.autoScanEnabled = if (scanEnabled) autoScanEnabled.isSelected else false
+        settings.concurrentScanEnabled = if (scanEnabled) concurrentScanEnabled.isSelected else false
+        settings.gutterIconEnabled = if (scanEnabled) gutterIconEnabled.isSelected else false
         settings.switchNotice = switchNotice.isSelected
         settings.logLevel = (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level ?: 0
         settings.outputCharset = outputCharsetCombo.selectedItem?.toString() ?: "UTF-8"
@@ -456,7 +487,8 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
 
     override fun isModified(settings: GeneralSettings?): Boolean {
         val s = settings ?: return false
-        return autoScanEnabled.isSelected != s.autoScanEnabled ||
+        return apiScanEnabled.isSelected != s.apiScanEnabled ||
+                autoScanEnabled.isSelected != s.autoScanEnabled ||
                 concurrentScanEnabled.isSelected != s.concurrentScanEnabled ||
                 gutterIconEnabled.isSelected != s.gutterIconEnabled ||
                 switchNotice.isSelected != s.switchNotice ||
@@ -1798,6 +1830,7 @@ class BackupSettingsPanel(private val project: com.intellij.openapi.project.Proj
 
         binder.update(com.itangcent.easyapi.core.settings.module.GeneralSettings::class) {
             obj.get("autoScanEnabled")?.asBoolean?.let { autoScanEnabled = it }
+            obj.get("apiScanEnabled")?.asBoolean?.let { apiScanEnabled = it }
             obj.get("concurrentScanEnabled")?.asBoolean?.let { concurrentScanEnabled = it }
             obj.get("gutterIconEnabled")?.asBoolean?.let { gutterIconEnabled = it }
             obj.get("switchNotice")?.asBoolean?.let { switchNotice = it }
@@ -1884,6 +1917,7 @@ class BackupSettingsPanel(private val project: com.intellij.openapi.project.Proj
 
         val general = binder.read(com.itangcent.easyapi.core.settings.module.GeneralSettings::class)
         obj.addProperty("autoScanEnabled", general.autoScanEnabled)
+        obj.addProperty("apiScanEnabled", general.apiScanEnabled)
         obj.addProperty("concurrentScanEnabled", general.concurrentScanEnabled)
         obj.addProperty("gutterIconEnabled", general.gutterIconEnabled)
         obj.addProperty("switchNotice", general.switchNotice)

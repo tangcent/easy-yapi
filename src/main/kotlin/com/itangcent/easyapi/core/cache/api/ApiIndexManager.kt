@@ -13,6 +13,8 @@ import com.itangcent.easyapi.core.dashboard.ApiScanner
 import com.itangcent.easyapi.core.export.recognizer.CompositeApiClassRecognizer
 import com.itangcent.easyapi.core.ide.DumbModeHelper
 import com.itangcent.easyapi.core.logging.IdeaLog
+import com.itangcent.easyapi.core.settings.module.GeneralSettings
+import com.itangcent.easyapi.core.settings.settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
@@ -65,6 +67,12 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
     @Volatile
     private var started = false
 
+    /**
+     * `true` once [start] has successfully initialized the scan consumers.
+     * Test-visible for lifecycle assertions in [ApiScanStartupControllerTest].
+     */
+    internal fun isStarted(): Boolean = started
+
     fun start(triggerInitialScan: Boolean = true) {
         if (started) {
             if (triggerInitialScan) {
@@ -106,8 +114,28 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
 
     /**
      * Requests a full scan. Returns immediately.
+     *
+     * Defense-in-depth: if the index services were never started (e.g. the
+     * project was opened with `apiScanEnabled=false` and the settings-changed
+     * listener somehow didn't fire), start them now so the dashboard's Refresh
+     * action still triggers a scan rather than silently dropping the request
+     * on a closed [fullScanChannel]. The scan is dispatched immediately rather
+     * than via [start]'s delayed initial-scan path, so the user sees results
+     * without the normal 5-second startup delay.
      */
     fun requestScan() {
+        if (!started) {
+            val apiScanEnabled = project.settings<GeneralSettings>().apiScanEnabled
+            if (apiScanEnabled) {
+                LOG.info("requestScan called before start — starting API index services on demand")
+                // Skip the delayed initial scan; we'll dispatch the request
+                // ourselves immediately below once the consumer is running.
+                start(triggerInitialScan = false)
+            } else {
+                LOG.info("Full scan requested while apiScanEnabled=false — ignoring")
+                return
+            }
+        }
         LOG.info("Full scan requested")
         val sent = fullScanChannel.trySend(Unit)
         LOG.info("Full scan request sent: ${sent.isSuccess}")

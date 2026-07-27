@@ -77,6 +77,32 @@ class SettingsDefaultsTest {
     }
 
     @Test
+    fun `test GeneralSettings default apiScanEnabled is true`() {
+        val settings = GeneralSettings()
+        assertTrue("apiScanEnabled should default to true", settings.apiScanEnabled)
+    }
+
+    @Test
+    fun `test ApplicationSettingsState State default apiScanEnabled is true`() {
+        val state = ApplicationSettingsState.State()
+        assertTrue(
+            "ApplicationSettingsState default apiScanEnabled should be true",
+            state.apiScanEnabled
+        )
+    }
+
+    @Test
+    fun `test GeneralSettings and ApplicationSettingsState have matching apiScanEnabled defaults`() {
+        val settings = GeneralSettings()
+        val appState = ApplicationSettingsState.State()
+        assertEquals(
+            "apiScanEnabled defaults should match between GeneralSettings and ApplicationSettingsState",
+            settings.apiScanEnabled,
+            appState.apiScanEnabled
+        )
+    }
+
+    @Test
     fun `test ParsingOutputSettings default enumFieldAutoInferEnabled is false`() {
         val settings = ParsingOutputSettings()
         assertFalse(

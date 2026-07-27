@@ -80,6 +80,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         var outputCharset: String = "UTF-8",
         var builtInConfig: String? = null,
         var remoteConfig: Array<String> = emptyArray(),
+        var apiScanEnabled: Boolean = true,
         var autoScanEnabled: Boolean = true,
         var grpcArtifactConfigs: Array<String> = emptyArray(),
         var grpcAdditionalJars: Array<String> = emptyArray(),
@@ -125,6 +126,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             if (outputCharset != other.outputCharset) return false
             if (builtInConfig != other.builtInConfig) return false
             if (!remoteConfig.contentEquals(other.remoteConfig)) return false
+            if (apiScanEnabled != other.apiScanEnabled) return false
             if (autoScanEnabled != other.autoScanEnabled) return false
             if (!grpcArtifactConfigs.contentEquals(other.grpcArtifactConfigs)) return false
             if (!grpcAdditionalJars.contentEquals(other.grpcAdditionalJars)) return false
@@ -168,6 +170,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             result = 31 * result + outputCharset.hashCode()
             result = 31 * result + (builtInConfig?.hashCode() ?: 0)
             result = 31 * result + remoteConfig.contentHashCode()
+            result = 31 * result + apiScanEnabled.hashCode()
             result = 31 * result + autoScanEnabled.hashCode()
             result = 31 * result + grpcArtifactConfigs.contentHashCode()
             result = 31 * result + grpcAdditionalJars.contentHashCode()
@@ -210,6 +213,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             target.outputCharset = outputCharset
             target.builtInConfig = builtInConfig
             target.remoteConfig = remoteConfig
+            target.apiScanEnabled = apiScanEnabled
             target.autoScanEnabled = autoScanEnabled
             target.grpcArtifactConfigs = grpcArtifactConfigs
             target.grpcAdditionalJars = grpcAdditionalJars

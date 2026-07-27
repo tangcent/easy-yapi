@@ -56,4 +56,24 @@ class ApiFileChangeListenerTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.settings<GeneralSettings>().autoScanEnabled = true
         SettingBinder.getInstance(project).save(project.settings<GeneralSettings>())
     }
+
+    fun testApiScanMasterToggleDisabled() {
+        // When the API scanning master toggle is off, the listener must skip
+        // all processing — even if autoScanEnabled is true.
+        val settings = project.settings<GeneralSettings>()
+        settings.apiScanEnabled = false
+        settings.autoScanEnabled = true
+        SettingBinder.getInstance(project).save(settings)
+
+        listener.start()
+        listener.after(mutableListOf())
+
+        runBlocking {
+            delay(100)
+        }
+
+        // Reset
+        settings.apiScanEnabled = true
+        SettingBinder.getInstance(project).save(settings)
+    }
 }

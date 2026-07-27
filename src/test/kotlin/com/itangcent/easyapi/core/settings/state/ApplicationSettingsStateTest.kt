@@ -34,6 +34,7 @@ class ApplicationSettingsStateTest {
         assertEquals("UTF-8", s.outputCharset)
         assertNull(s.builtInConfig)
         assertArrayEquals(emptyArray(), s.remoteConfig)
+        assertTrue(s.apiScanEnabled)
         assertTrue(s.autoScanEnabled)
         assertTrue(s.gutterIconEnabled)
     }
@@ -84,6 +85,13 @@ class ApplicationSettingsStateTest {
     }
 
     @Test
+    fun testState_inequality_apiScanEnabled() {
+        val s1 = ApplicationSettingsState.State(apiScanEnabled = true)
+        val s2 = ApplicationSettingsState.State(apiScanEnabled = false)
+        assertNotEquals(s1, s2)
+    }
+
+    @Test
     fun testState_equalityWithArrays() {
         val s1 = ApplicationSettingsState.State(remoteConfig = arrayOf("http://a.com"))
         val s2 = ApplicationSettingsState.State(remoteConfig = arrayOf("http://a.com"))
@@ -120,6 +128,15 @@ class ApplicationSettingsStateTest {
         assertTrue("target gutterIconEnabled should default to true", target.gutterIconEnabled)
         source.copyTo(target)
         assertFalse("gutterIconEnabled should be copied as false", target.gutterIconEnabled)
+    }
+
+    @Test
+    fun testState_copyTo_apiScanEnabled() {
+        val source = ApplicationSettingsState.State(apiScanEnabled = false)
+        val target = ApplicationSettingsState.State()
+        assertTrue("target apiScanEnabled should default to true", target.apiScanEnabled)
+        source.copyTo(target)
+        assertFalse("apiScanEnabled should be copied as false", target.apiScanEnabled)
     }
 
     @Test

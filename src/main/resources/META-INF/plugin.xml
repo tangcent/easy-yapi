@@ -107,6 +107,8 @@
                         serviceImplementation="com.itangcent.easyapi.channel.postman.sync.EnvironmentSyncService"/>
         <projectService serviceImplementation="com.itangcent.easyapi.core.psi.helper.DocMetadataResolver"/>
         <projectService serviceImplementation="com.itangcent.easyapi.core.cache.VcsBranchChangeListener"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.cache.api.ApiScanStartupController"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.cache.api.ApiScanSettingsListener"/>
         <projectService serviceImplementation="com.itangcent.easyapi.core.ide.PropertiesService"/>
 
         <postStartupActivity implementation="com.itangcent.easyapi.core.ide.ApiIndexStartupActivity"/>

@@ -52,7 +52,13 @@ class ApiFileChangeListener(private val project: Project) : BulkFileListener, Di
     }
 
     override fun after(events: MutableList<out VFileEvent>) {
-        if (!project.settings<GeneralSettings>().autoScanEnabled) {
+        val settings = project.settings<GeneralSettings>()
+        // Master toggle: when API scanning is off, skip all processing.
+        if (!settings.apiScanEnabled) {
+            return
+        }
+
+        if (!settings.autoScanEnabled) {
             return
         }
 

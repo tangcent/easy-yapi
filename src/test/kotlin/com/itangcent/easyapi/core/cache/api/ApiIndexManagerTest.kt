@@ -3,6 +3,8 @@ package com.itangcent.easyapi.core.cache.api
 import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.HttpMethod
 import com.itangcent.easyapi.core.export.httpMetadata
+import com.itangcent.easyapi.core.settings.module.GeneralSettings
+import com.itangcent.easyapi.core.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import com.itangcent.easyapi.testFramework.waitUntil
@@ -196,5 +198,73 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         assertTrue("Cache should be valid after scan", apiIndex.isValid())
         assertTrue("Should have endpoints", endpoints.isNotEmpty())
+    }
+
+    /**
+     * Reproduces the bug: project opened with `apiScanEnabled=false`, so the
+     * startup activity never calls `ApiIndexManager.start()`. The user then
+     * enables the toggle in Settings and clicks Refresh in the API Dashboard.
+     *
+     * `requestScan()` must auto-start the index services on demand (defense
+     * in depth) so the scan actually runs without a project restart.
+     */
+    fun testRequestScanAutoStartsServicesWhenNotStarted() = runTest {
+        // Tear down the manager started in setUp() to simulate "services never
+        // started because apiScanEnabled was false at project open".
+        apiIndexManager.stop()
+        runBlocking { apiIndex.invalidate() }
+        assertFalse("Index should be invalid after invalidate", apiIndex.isValid())
+
+        // apiScanEnabled defaults to true in GeneralSettings, so requestScan
+        // must auto-start services and dispatch the scan immediately.
+        apiIndexManager.requestScan()
+
+        val endpoints = waitForEndpoints()
+        assertTrue("Cache should be valid after auto-start scan", apiIndex.isValid())
+        assertTrue("Auto-start scan should populate endpoints", endpoints.isNotEmpty())
+    }
+
+    /**
+     * When `apiScanEnabled=false`, `requestScan()` must remain a no-op even
+     * if the index services were never started. This guards against scans
+     * running while the master toggle is off.
+     */
+    fun testRequestScanNoOpWhenApiScanDisabledAndNotStarted() = runTest {
+        apiIndexManager.stop()
+        runBlocking { apiIndex.invalidate() }
+
+        settingBinder.update(GeneralSettings::class) {
+            apiScanEnabled = false
+        }
+
+        try {
+            apiIndexManager.requestScan()
+            // Give the background dispatcher a brief window to prove the
+            // negative — if a scan were dispatched, the cache would become
+            // valid shortly. Polling for a short timeout keeps the test fast.
+            val settledInvalid = waitUntilSettledInvalid(timeoutMs = 1500)
+            assertTrue(
+                "Cache should remain invalid when apiScanEnabled is false",
+                settledInvalid
+            )
+        } finally {
+            settingBinder.update(GeneralSettings::class) {
+                apiScanEnabled = true
+            }
+        }
+    }
+
+    /**
+     * Polls briefly to confirm the cache stays invalid. Returns `true` if the
+     * cache remained invalid for the entire [timeoutMs] window, `false` if it
+     * became valid (indicating a scan ran despite expectations).
+     */
+    private suspend fun waitUntilSettledInvalid(timeoutMs: Long): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (apiIndex.isValid()) return false
+            kotlinx.coroutines.delay(50)
+        }
+        return !apiIndex.isValid()
     }
 }

@@ -43,6 +43,16 @@ class ApiIndexStartupActivity : ProjectActivity {
             if (project.isDisposed) return@backgroundAsync
 
             ConfigSyncService.getInstance(project).start()
+
+            val settings = project.settings<GeneralSettings>()
+            // When the API scanning master toggle is off, skip all scanning-related
+            // services (file change listener, VCS branch listener, index manager).
+            // The gutter icon and API Dashboard both depend on the index that
+            // scanning produces, so they are effectively disabled too.
+            if (!settings.apiScanEnabled) {
+                return@backgroundAsync
+            }
+
             ApiFileChangeListener.getInstance(project).start()
             VcsBranchChangeListener.getInstance(project).start()
 
@@ -50,7 +60,7 @@ class ApiIndexStartupActivity : ProjectActivity {
 
             if (project.isDisposed) return@backgroundAsync
 
-            val autoScan = project.settings<GeneralSettings>().autoScanEnabled
+            val autoScan = settings.autoScanEnabled
 
             ApiIndexManager.getInstance(project).start(triggerInitialScan = autoScan)
         }

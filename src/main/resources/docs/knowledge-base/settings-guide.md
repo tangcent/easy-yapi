@@ -37,7 +37,8 @@ Framework recognition and output formatting.
 | Form Expanded | `true` | Expand form parameters in the exported tree | `formExpanded` |
 | Output Charset | `UTF-8` | Character encoding for exported files | `outputCharset` |
 | Log Level | `100` (SILENT) | Console verbosity. Lower = more verbose. `100`=SILENT, `50`=WARN, `20`=INFO, `10`=DEBUG, `0`=TRACE | `logLevel` |
-| Gutter Icon | `true` | Show gutter icons for API endpoints in the editor | `gutterIconEnabled` |
+| API Scanning | `true` | Master toggle for API scanning. When `false`, auto-scan, concurrent scan, and the gutter icon (which navigates via the API index) are all forced off. | `apiScanEnabled` |
+| Gutter Icon | `true` | Show gutter icons for API endpoints in the editor (only effective when API scanning is enabled) | `gutterIconEnabled` |
 | Switch Notice | `true` | Show a notification when switching settings scope | `switchNotice` |
 
 ---
@@ -92,8 +93,8 @@ Smart inference and auto-detection.
 
 | Field | Default | Effect | Property |
 |-------|---------|--------|----------|
-| Auto Scan Enabled | `true` | Automatically scan the project for API endpoints | `autoScanEnabled` |
-| Concurrent Scan | `false` | Use parallel scanning for faster discovery | `concurrentScanEnabled` |
+| Auto Scan Enabled | `true` | Automatically scan the project for API endpoints (only effective when API scanning is enabled) | `autoScanEnabled` |
+| Concurrent Scan | `false` | Use parallel scanning for faster discovery (only effective when API scanning is enabled) | `concurrentScanEnabled` |
 | Enum Field Auto Infer | `false` | Automatically infer enum field values | `enumFieldAutoInferEnabled` |
 
 ---

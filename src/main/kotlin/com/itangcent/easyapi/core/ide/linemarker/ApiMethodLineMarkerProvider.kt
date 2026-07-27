@@ -69,7 +69,10 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
     }
 
     private fun isGutterIconEnabled(project: Project): Boolean {
-        return project.settings<GeneralSettings>().gutterIconEnabled
+        val settings = project.settings<GeneralSettings>()
+        // The gutter icon navigates via the API index that scanning produces,
+        // so it is suppressed when the API scanning master toggle is off.
+        return settings.apiScanEnabled && settings.gutterIconEnabled
     }
 
     private fun isApiMethod(method: PsiMethod): Boolean {

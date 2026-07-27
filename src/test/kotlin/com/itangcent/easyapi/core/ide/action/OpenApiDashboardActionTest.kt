@@ -4,6 +4,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ActionUiKind
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.Presentation
+import com.itangcent.easyapi.core.settings.module.GeneralSettings
+import com.itangcent.easyapi.core.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class OpenApiDashboardActionTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -62,6 +64,35 @@ class OpenApiDashboardActionTest : EasyApiLightCodeInsightFixtureTestCase() {
             action.actionPerformed(event)
         } catch (e: Exception) {
             fail("actionPerformed should not throw with project: ${e.message}")
+        }
+    }
+
+    fun testActionPerformedDoesNotThrowWhenApiScanDisabled() {
+        // When apiScanEnabled is false, the action should no-op (bail out
+        // early) without throwing — the tool window is hidden via
+        // setAvailable(false) and activating it would be a no-op anyway.
+        settingBinder.update(GeneralSettings::class) {
+            apiScanEnabled = false
+        }
+
+        val presentation = Presentation()
+        val event = AnActionEvent.createEvent(
+            DataContext { project },
+            presentation,
+            "test",
+            ActionUiKind.NONE,
+            null
+        )
+
+        try {
+            action.actionPerformed(event)
+        } catch (e: Exception) {
+            fail("actionPerformed should not throw when apiScanEnabled is false: ${e.message}")
+        } finally {
+            // Reset for subsequent tests
+            settingBinder.update(GeneralSettings::class) {
+                apiScanEnabled = true
+            }
         }
     }
 }

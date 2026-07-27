@@ -12,6 +12,13 @@ import com.itangcent.easyapi.core.settings.StorageScope
  * Persisted at APPLICATION scope via the unified [com.itangcent.easyapi.core.settings.state.UnifiedAppSettingsState].
  */
 data class GeneralSettings(
+    /**
+     * Master toggle for API scanning. When `false`, all scanning features
+     * (auto-scan, concurrent scan) and index-dependent features (gutter icon,
+     * which navigates via the API index) are disabled. The API Dashboard and
+     * gutter icon both depend on the API index that scanning produces.
+     */
+    @StorageScope(Scope.APPLICATION) var apiScanEnabled: Boolean = true,
     @StorageScope(Scope.APPLICATION) var autoScanEnabled: Boolean = true,
     @StorageScope(Scope.APPLICATION) var concurrentScanEnabled: Boolean = false,
     @StorageScope(Scope.APPLICATION) var gutterIconEnabled: Boolean = true,
@@ -29,6 +36,7 @@ data class GeneralSettings(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         other as GeneralSettings
+        if (apiScanEnabled != other.apiScanEnabled) return false
         if (autoScanEnabled != other.autoScanEnabled) return false
         if (concurrentScanEnabled != other.concurrentScanEnabled) return false
         if (gutterIconEnabled != other.gutterIconEnabled) return false
@@ -45,7 +53,8 @@ data class GeneralSettings(
     }
 
     override fun hashCode(): Int {
-        var result = autoScanEnabled.hashCode()
+        var result = apiScanEnabled.hashCode()
+        result = 31 * result + autoScanEnabled.hashCode()
         result = 31 * result + concurrentScanEnabled.hashCode()
         result = 31 * result + gutterIconEnabled.hashCode()
         result = 31 * result + switchNotice.hashCode()

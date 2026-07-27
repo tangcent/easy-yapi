@@ -98,6 +98,7 @@ class SettingsMigrationActivity : StartupActivity {
         // below. The legacy booleans are read from `legacy` (ApplicationSettingsState.State)
         // which retains them as @Deprecated read-only fields for one-time migration.
         appState.setValue(generalKey, "autoScanEnabled", legacy.autoScanEnabled.toString())
+        appState.setValue(generalKey, "apiScanEnabled", legacy.apiScanEnabled.toString())
         appState.setValue(generalKey, "concurrentScanEnabled", legacy.concurrentScanEnabled.toString())
         appState.setValue(generalKey, "gutterIconEnabled", legacy.gutterIconEnabled.toString())
         appState.setValue(generalKey, "switchNotice", legacy.switchNotice.toString())
