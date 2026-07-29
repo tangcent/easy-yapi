@@ -171,6 +171,45 @@ class Swagger3ConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    // ── method-level @Parameter: resolve_parameter script path ─────────────
+    //
+    // A @Parameter placed on the METHOD (not the argument) matches the
+    // `export.after[@io.swagger.v3.oas.annotations.Parameter]` filter and runs
+    // the `resolve_parameter` Groovy script, which calls `api.setParam(...)`.
+    // This is the ONLY path that consumes the widened `setParam(..., example)`
+    // signature — the argument-level case is handled by `param.demo` above.
+    // Because `setParam` appends without dedup, the fixture uses a param name
+    // ("keyword") with no matching Spring argument so the script-added param is
+    // the sole source.
+
+    fun testMethodLevelParameterExtractsExampleViaScript() = runTest {
+        val psiClass = findClass("com.itangcent.swagger3.OrderController")
+        assertNotNull("Should find OrderController", psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+        val searchEndpoint = endpoints.find {
+            it.httpMetadata?.method == HttpMethod.GET &&
+            it.httpMetadata?.path?.contains("search") == true
+        }
+        assertNotNull("Should find GET /order/search endpoint", searchEndpoint)
+
+        val keywordParam = searchEndpoint?.httpMetadata?.parameters?.find { it.name == "keyword" }
+        assertNotNull(
+            "method-level @Parameter should add a 'keyword' param via the resolve_parameter script",
+            keywordParam
+        )
+        assertEquals(
+            "method-level @Parameter example should flow through setParam(..., example)",
+            "phone",
+            keywordParam?.example
+        )
+        assertEquals(
+            "method-level @Parameter description should flow through the script",
+            "search keyword",
+            keywordParam?.description
+        )
+    }
+
     // ── @Hidden: ignore, field.ignore, param.ignore ──────────────
 
     fun testHiddenExcludesEndpoint() = runTest {

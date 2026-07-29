@@ -40,6 +40,21 @@ public class OrderController {
         return java.util.Collections.emptyList();
     }
 
+    // @Parameter placed on the METHOD (not the argument) triggers the
+    // `export.after[@io.swagger.v3.oas.annotations.Parameter]` rule, which runs
+    // the `resolve_parameter` script and adds the param via `api.setParam(...)`.
+    // This is the path the widened `setParam(..., example)` signature serves.
+    @Operation(summary = "Search orders")
+    @io.swagger.v3.oas.annotations.Parameter(
+            name = "keyword",
+            description = "search keyword",
+            required = true,
+            example = "phone")
+    @GetMapping("/search")
+    public java.util.List<OrderDTO> searchOrders() {
+        return java.util.Collections.emptyList();
+    }
+
     @Hidden
     @GetMapping("/internal")
     public String internalEndpoint() {
