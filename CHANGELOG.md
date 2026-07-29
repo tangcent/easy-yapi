@@ -5,6 +5,31 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.2] - 2026-07-29
+
+### Added
+- feat(swagger3): export @Parameter#example as parameter example (#1422)
+- feat(ai): hybrid agent architecture with per-task sub-agent isolation
+-  add custom framework
+- feat(channel): add OpenAPI 3.0.3 export channel
+- feat(settings): per-channel/format enablement + Features tab
+
+### Fixed
+-  Features tab renders narrower than other tabs
+- fix(settings): add apiScanEnabled master toggle for API scanning (#1428)
+-  read Kotlin KDoc description as API title and folder name (#1426)
+
+### Changed
+-  use PluginInfo.PLUGIN_ID instead of local constant
+- refactor(grpc): move gRPC settings & panel into framework/grpc
+- refactor(pkg): reorganize easyapi into channel/format/framework/core buckets
+
+### Improved
+- chore: centralize plugin id in PluginInfo and update EP name references
+- docs: add developer extension guides for channel/format/framework
+
+---
+
 ## [3.2.1] - 2026-07-14
 
 ### Added
