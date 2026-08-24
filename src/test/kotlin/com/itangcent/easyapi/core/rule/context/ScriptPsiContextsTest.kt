@@ -4,7 +4,9 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
+import com.intellij.psi.util.PsiTypesUtil
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture
+import com.itangcent.easyapi.core.psi.type.ResolvedType
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class ScriptPsiContextsTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -1124,6 +1126,62 @@ class ScriptPsiContextsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         assertNotNull("toJson5 should not return null for collection type", json5)
         assertTrue("toJson5 for collection type should start with [ but got: $json5", json5.trimStart().startsWith("["))
+    }
+
+    //endregion
+
+    //region Threading regression (issue #1432)
+
+    /**
+     * Rule scripts run on the EasyAPI-background pool without a read action
+     * (Jsr223ScriptParser evaluates inside withContext(IdeDispatchers.Background)).
+     * Groovy string interpolation calls toString() implicitly, so toString() must
+     * self-protect — see AGENTS.md "Thread-contract tiers (golden rules)".
+     */
+    fun testToStringOnNonReadActionThread() {
+        val psiClass = fixture.addClass(
+            """
+            package com.test;
+            public class TypeToStringModel {
+                public String name;
+            }
+            """.trimIndent()
+        ) as PsiClass
+
+        val ruleContext = RuleContext.from(project, psiClass)
+        val typeContext = ScriptTypeContext(ruleContext, ResolvedType.ClassType(psiClass))
+
+        val classType = PsiTypesUtil.getClassType(psiClass)
+        val psiTypeContext = ScriptPsiTypeContext(
+            RuleContext.withPsiType(project, classType),
+            classType
+        )
+
+        var error: Throwable? = null
+        val thread = Thread {
+            try {
+                assertEquals(
+                    "ScriptTypeContext.toString() should return qualified name",
+                    "com.test.TypeToStringModel",
+                    typeContext.toString()
+                )
+                assertEquals(
+                    "ScriptPsiTypeContext.toString() should return qualified name",
+                    "com.test.TypeToStringModel",
+                    psiTypeContext.toString()
+                )
+            } catch (t: Throwable) {
+                error = t
+            }
+        }
+        thread.name = "EasyAPI-background-test"
+        thread.start()
+        thread.join(10_000)
+
+        assertNull(
+            "toString() must not throw on a thread without read access (issue #1432): $error",
+            error
+        )
     }
 
     //endregion

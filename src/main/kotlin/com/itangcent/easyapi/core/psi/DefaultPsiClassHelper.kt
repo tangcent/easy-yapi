@@ -119,7 +119,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         val engine = RuleEngine.getInstance(project)
 
         // Apply json.rule.convert uniformly to all ResolvedType instances
-        val qualifiedName = resolvedType.qualifiedName()
+        val qualifiedName = readSync { resolvedType.qualifiedName() }
         LOG.info("buildObjectModel(resolvedType): evaluating json.rule.convert for: $qualifiedName")
         val converted = engine.evaluate(RuleKeys.JSON_RULE_CONVERT, resolvedType, resolvedType.contextElement())
         LOG.info("buildObjectModel(resolvedType): json.rule.convert result for '$qualifiedName': ${converted ?: "(null)"}")

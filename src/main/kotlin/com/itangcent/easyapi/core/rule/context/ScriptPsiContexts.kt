@@ -649,7 +649,7 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
         Array(fields.size) { i -> ScriptResolvedFieldContext(context, fields[i]) }
     }
 
-    override fun toString(): String = resolvedType.qualifiedName()
+    override fun toString(): String = name()
 
     fun isExtend(superClass: String): Boolean = when (resolvedType) {
         is ResolvedType.ClassType -> InheritanceHelper.isInheritor(resolvedType.psiClass, superClass)
@@ -852,7 +852,7 @@ class ScriptPsiTypeContext(
 
     override fun toJson5(): String = typeContext.toJson5()
 
-    override fun toString(): String = resolvedType.qualifiedName()
+    override fun toString(): String = readSync { resolvedType.qualifiedName() }
 }
 
 /**
