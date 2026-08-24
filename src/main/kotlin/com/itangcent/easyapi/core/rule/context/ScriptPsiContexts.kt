@@ -37,6 +37,14 @@ interface ClassContext {
     fun fields(): Array<ScriptPsiFieldContext>
     fun fieldCnt(): Int
     fun type(): ScriptTypeContext
+
+    /**
+     * Checks whether this class is, or inherits from, [superClass].
+     *
+     * @param superClass the **fully qualified name** of the base class or
+     * interface, e.g. `"java.lang.Exception"`. A simple name like
+     * `"Exception"` never matches.
+     */
     fun isExtend(superClass: String): Boolean
     fun isMap(): Boolean
     fun isCollection(): Boolean
@@ -651,6 +659,13 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
 
     override fun toString(): String = name()
 
+    /**
+     * Checks whether this type is, or inherits from, [superClass].
+     *
+     * @param superClass the **fully qualified name** of the base class or
+     * interface, e.g. `"java.lang.Exception"`. A simple name like
+     * `"Exception"` never matches.
+     */
     fun isExtend(superClass: String): Boolean = when (resolvedType) {
         is ResolvedType.ClassType -> InheritanceHelper.isInheritor(resolvedType.psiClass, superClass)
         else -> false

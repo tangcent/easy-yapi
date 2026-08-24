@@ -4,8 +4,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
-import com.itangcent.easyapi.core.export.ApiHeader
-import com.itangcent.easyapi.core.export.ApiParameter
 import com.itangcent.easyapi.core.psi.PsiClassHelper
 import com.itangcent.easyapi.core.psi.helper.DocHelper
 import com.itangcent.easyapi.core.psi.helper.DocMetadataResolver
@@ -110,7 +108,7 @@ class EndpointBuilder(private val project: Project) {
      *
      * The `method.return.main` rule specifies a field name within the response type where
      * the `@return` doc comment should be placed. For example, with `Result<T>`:
-     * - Rule: `method.return.main[groovy:it.returnType().isExtend("Result")]=data`
+     * - Rule: `method.return.main[groovy:it.returnType().isExtend("com.example.Result")]=data`
      * - `@return "processed result"` is attached to the `data` field instead of the root
      *
      * If no explicit rule is set and `settings.inferReturnMain` is true, auto-detects
