@@ -97,6 +97,31 @@ IdeDispatchers.isWriteAccessAllowed  // on write thread
 IdeDispatchers.isDispatchThread      // on EDT
 ```
 
+### Thread-contract tiers (golden rules)
+
+Before writing code that touches PSI/VFS/UI, classify it by **who controls the caller** — the distinguishing question is whether the set of callers is closed (ours) or open (anyone's).
+
+| Tier | Examples | Contract |
+|------|----------|----------|
+| **Pure** | DTOs, `ObjectModelUtils`, string helpers | Callable on any thread; no threading rules |
+| **Internal pipeline** | `core/export/`, `core/psi/` helpers | `@requires ReadAction` (or WriteAction) in KDoc; the entry point acquires the action once, callees run unwrapped |
+| **Boundary (open callers)** | `ScriptXxxContext` objects handed to Groovy, EP implementations invoked by the platform | **Every public member must self-protect** — no `@requires` escape hatch |
+
+Known thread entry points:
+
+- **EDT** — `core/ide/action/` AnActions, dialogs, linemarkers, settings UI, dashboard panel
+- **`EasyAPI-background` pool** — startup activities (`ApiIndexStartupActivity`, `SettingsMigrationActivity`, …), `backgroundAsync` call sites, export orchestration
+- **Rule engine (uncontrolled)** — `Jsr223ScriptParser` evaluates Groovy rules inside `withContext(IdeDispatchers.Background)` with **no read action**. Scripts can invoke ANY public member of the bound context objects — including implicit `toString()` via string interpolation, `hashCode`, `equals`, and property access. This is where issue #1432 crashed.
+
+Golden rules:
+
+1. Pure code is callable anywhere.
+2. Internal pipeline code performing PSI/VFS reads: `suspend` + `read {}`, or sync + `readSync {}` — *unless* documented with `@requires ReadAction` AND all callers are internal. Never publish a `@requires` member on a boundary class.
+3. PSI writes / UI updates go through `write {}` / `swing {}`; never bypass.
+4. **Boundary classes self-protect unconditionally**: every public member (and implicit hooks `toString`/`hashCode`/`equals`, plus `by lazy` initializers reachable from them) wraps its own PSI access in `readSync`. `readSync` is a no-op inside an existing read action, so nesting costs nothing.
+5. Read-action granularity: fine-grained at the boundary; coarse `read {}` blocks only where the work is fast. Never wrap a whole Groovy script evaluation in one read action (slow scripts + long read action blocks writes and freezes the IDE).
+6. `runBlocking` from a boundary member is acceptable only if every suspend callee performs its own `read {}` internally; it blocks the calling thread but does not itself violate threading.
+
 ### IntelliJ context propagation warning
 
 IntelliJ wraps tasks submitted to managed executors (including `Dispatchers.Default`) with `ContextRunnable`, propagating EDT/write-intent markers across thread boundaries. **Use `IdeDispatchers.Background`** (or `actionContext.runAsync` / `backgroundAsync`) when launching from `StartupActivity` or `DumbService.runWhenSmart`, to avoid "slow operations on EDT" violations.
