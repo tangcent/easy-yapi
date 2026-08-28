@@ -20,6 +20,10 @@ class BuiltInExtensionOnClassAndNegativeConditionScenarioTest : EasyApiLightCode
         super.setUp()
         ExtensionConfigRegistry.loadExtensions()
         loadJDKClass("java.util.List")
+        loadJDKClass("java.lang.Class")
+        loadJDKClass("java.lang.ClassLoader")
+        loadJDKClass("java.lang.Thread")
+        loadJDKClass("java.lang.CharSequence")
         harness = BuiltInExtensionExecutionHarness(
             project = project,
             loadPsiFile = { path, content -> loadFile(path, content) },
@@ -290,6 +294,46 @@ class BuiltInExtensionOnClassAndNegativeConditionScenarioTest : EasyApiLightCode
             assertFalse(
                 message(scenario, "assert", condition, "inherited java.lang field"),
                 inheritedModel.fields.containsKey("traceId")
+            )
+        }
+    }
+
+    fun testFieldUtilsIgnoresCommonClassTypedFields() = runTest {
+        val scenario = scenario("field-utils")
+        harness.execute(
+            scenario,
+            fixturePlan("api/fieldutils/FieldUtilsDTO.java")
+        ) { session ->
+            val condition = "common-class type list rule"
+            assertSourceSelection(scenario, null, "no user override", condition)
+            val services = installExtension(session, RuleKeys.FIELD_IGNORE.name, condition)
+            val utilityDto = requireClass("com.itangcent.fieldutils.FieldUtilsDTO", scenario, condition)
+            val utilityModel = requireObject(
+                services.psiClassHelper.buildObjectModel(utilityDto, JsonOption.ALL),
+                scenario,
+                condition,
+                "field-utils DTO model"
+            )
+
+            assertTrue(
+                message(scenario, "assert", condition, "normal private field"),
+                utilityModel.fields.containsKey("normalField")
+            )
+            assertFalse(
+                message(scenario, "assert", condition, "Class-typed field"),
+                utilityModel.fields.containsKey("rawTypeField")
+            )
+            assertFalse(
+                message(scenario, "assert", condition, "ClassLoader-typed field"),
+                utilityModel.fields.containsKey("classLoaderField")
+            )
+            assertFalse(
+                message(scenario, "assert", condition, "Thread-typed field"),
+                utilityModel.fields.containsKey("threadField")
+            )
+            assertFalse(
+                message(scenario, "assert", condition, "CharSequence-typed field"),
+                utilityModel.fields.containsKey("charSequenceField")
             )
         }
     }

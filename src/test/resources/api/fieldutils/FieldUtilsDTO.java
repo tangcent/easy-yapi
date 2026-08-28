@@ -10,6 +10,14 @@ public class FieldUtilsDTO {
 
     public String publicField;
 
+    private Class rawTypeField;
+
+    private ClassLoader classLoaderField;
+
+    private Thread threadField;
+
+    private CharSequence charSequenceField;
+
     public String getNormalField() { return normalField; }
     public void setNormalField(String normalField) { this.normalField = normalField; }
     public String getTransientField() { return transientField; }
