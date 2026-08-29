@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.core.psi.helper
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiClass
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
@@ -262,5 +263,61 @@ class SourceHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.test.source.StandaloneClass")!!
         val result = sourceHelper.getSourceElementSync(psiClass)
         assertSame("Should handle PsiClass directly", psiClass, result)
+    }
+
+    // --- threading regression (issue #1432: helper.findClass path) ---
+
+    /**
+     * Rule scripts run on the EasyAPI-background pool without a read action
+     * (Jsr223ScriptParser evaluates inside withContext(IdeDispatchers.Background)).
+     * A Groovy script calling helper.findClass(...) reaches
+     * [SourceHelper.getSourceClassSync], which must self-protect its PSI reads
+     * (psiClass.containingClass in isLocalClass) with readSync — see AGENTS.md
+     * "Thread-contract tiers (golden rules)".
+     *
+     * Records whether read access is actually held while isLocalClass reads
+     * containingClass, so removing the readSync wrapper fails this test even
+     * though unit-test mode relaxes ThreadingAssertions.
+     */
+    fun testGetSourceClassSyncHoldsReadAccessOnBackgroundThread() {
+        loadFile("source/BackgroundAccessClass.java", """
+            package com.test.source;
+            /**
+             * A class for the background read-access regression test.
+             */
+            public class BackgroundAccessClass {}
+        """.trimIndent())
+        val psiClass = findClass("com.test.source.BackgroundAccessClass")!!
+
+        var readAccessDuringCall: Boolean? = null
+        val recordingClass = object : PsiClass by psiClass {
+            override fun getContainingClass(): PsiClass? {
+                readAccessDuringCall = ApplicationManager.getApplication().isReadAccessAllowed
+                return psiClass.containingClass
+            }
+        }
+
+        var error: Throwable? = null
+        val thread = Thread {
+            try {
+                val result = sourceHelper.getSourceClassSync(recordingClass)
+                assertSame("Should return the same class", recordingClass, result)
+            } catch (t: Throwable) {
+                error = t
+            }
+        }
+        thread.name = "EasyAPI-background-test"
+        thread.start()
+        thread.join(10_000)
+
+        assertNull(
+            "getSourceClassSync must not throw on a thread without read access (issue #1432): $error",
+            error
+        )
+        assertEquals(
+            "getSourceClassSync must hold read access while reading PSI (issue #1432 findClass path)",
+            true,
+            readAccessDuringCall
+        )
     }
 }
