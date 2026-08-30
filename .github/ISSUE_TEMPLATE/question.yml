@@ -1,0 +1,57 @@
+name: Question
+description: Ask about features or configuration of this plugin
+title: "[Question] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask away! To get a fast, accurate answer, please check the docs first:
+        - [Settings Guide](https://github.com/tangcent/easy-yapi/blob/master/src/main/resources/docs/knowledge-base/settings-guide.md)
+        - [Rule Authoring Guide](https://github.com/tangcent/easy-yapi/blob/master/src/main/resources/docs/knowledge-base/rule-guide.md)
+
+        **⚠️ Redact sensitive data** (YApi/Postman tokens, internal hostnames) before pasting.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Question
+      description: A clear and concise description of what you want to know or achieve.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Result
+      description: What you expected to get or achieve.
+    validations:
+      required: true
+
+  - type: textarea
+    id: demo-code
+    attributes:
+      label: Demo Code (if applicable)
+      description: |
+        If the question is about how the plugin interprets your code or rules, a small sample helps a lot:
+        1. Fork https://github.com/Earth-1610/spring-demo
+        2. Add code or rules that illustrate the question
+        3. Paste the URL of your fork here, or paste the snippet directly below.
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin Version (optional)
+      placeholder: "e.g. 3.0.0.252.0"
+
+  - type: input
+    id: ide-version
+    attributes:
+      label: IDE Version (optional)
+      placeholder: "e.g. IntelliJ IDEA 2025.2.1 Ultimate"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Screenshots or any other context.

@@ -12,7 +12,7 @@ scriptDir="$( cd -P "$( dirname "$SCRIPT_SOURCE" )" && pwd )"
 basedir=${scriptDir%/*}
 cd "${basedir}"
 
-last_version=$(grep '^version\s*=' build.gradle.kts | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+last_version=$(sed -n 's/^pluginBaseVersion=//p' gradle.properties | head -1 | tr -d '[:space:]')
 echo "Last version: ${last_version}"
 
 release_date=$(date +"%Y-%m-%d")
@@ -37,9 +37,9 @@ release_branch="release/v${next_version}"
 git branch "${release_branch}"
 git checkout "${release_branch}"
 
-sed -i.bak "s/^version = \".*\"/version = \"${next_version}.252.0\"/" build.gradle.kts
-rm -f build.gradle.kts.bak
-echo "Updated version in build.gradle.kts to ${next_version}.252.0"
+sed -i.bak "s/^pluginBaseVersion=.*/pluginBaseVersion=${next_version}/" gradle.properties
+rm -f gradle.properties.bak
+echo "Updated pluginBaseVersion in gradle.properties to ${next_version} (full version: ${next_version}.<since>.<until>)"
 
 last_tag="v${last_version}"
 if ! git rev-parse "${last_tag}" >/dev/null 2>&1; then
@@ -102,7 +102,7 @@ fi
 rm -f .release_temp.md
 echo "Updated CHANGELOG.md with release ${next_version}"
 
-git add build.gradle.kts CHANGELOG.md
+git add gradle.properties CHANGELOG.md
 
 commit_message="release v${next_version}"
 git commit -m "${commit_message}"

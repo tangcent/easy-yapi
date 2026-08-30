@@ -7,12 +7,24 @@ plugins {
 }
 
 group = "com.itangcent"
-version = "3.2.3.252.0"
+
+// IDEA compatibility range. Default lower bound lives in gradle.properties
+// (pluginSinceBuild); override per invocation with -PpluginSinceBuild /
+// -PpluginUntilBuild. untilBuild is unbounded when unset, blank, or "*".
+val pluginSinceBuild = providers.gradleProperty("pluginSinceBuild").orElse("252")
+val pluginUntilBuild = providers.gradleProperty("pluginUntilBuild").orNull
+    ?.takeUnless { it.isBlank() || it == "*" }
+
+// Version embeds the range: <base>.<since>.<until|0>, where "0" means unbounded.
+// e.g. 3.2.3.252.0 (since 252, unbounded) / 3.2.3.243.252 (243..252) — keeps
+// differently-ranged artifacts from overwriting each other in plugin/.
+// pluginBaseVersion lives in gradle.properties and is bumped by script/release.sh.
+val pluginBaseVersion = providers.gradleProperty("pluginBaseVersion").get()
+version = "$pluginBaseVersion.${pluginSinceBuild.get()}.${pluginUntilBuild ?: "0"}"
 
 changelog {
-    val v = project.version.toString()
-    // version is like "3.1.5.252.0", changelog uses semver "3.1.5"
-    version.set(v.substringBeforeLast(".0").substringBeforeLast("."))
+    // version is "3.2.3.<since>.<until>"; changelog uses semver "3.2.3"
+    version.set(project.version.toString().split(".").take(3).joinToString("."))
 }
 
 repositories {
@@ -176,8 +188,8 @@ intellijPlatform {
             )
         }
         ideaVersion {
-            sinceBuild = "252"
-            untilBuild = provider { null }
+            sinceBuild = pluginSinceBuild.get()
+            untilBuild = provider { pluginUntilBuild }
         }
     }
 

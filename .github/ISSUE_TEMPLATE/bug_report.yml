@@ -1,0 +1,183 @@
+name: Bug Report
+description: Report something that works incorrectly (wrong export result, upload failure, IDE error, freeze, crash)
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+
+        **Before you submit:**
+        - Make sure you can reproduce it on the **latest plugin version** (Settings → Plugins → EasyYapi).
+        - Search [existing issues](https://github.com/tangcent/easy-yapi/issues?q=is%3Aissue) to avoid duplicates.
+
+        **⚠️ Redact sensitive data before pasting:** YApi server tokens (`yapiTokens`), Postman API tokens,
+        internal hostnames/IPs, and proprietary business code. We only need the minimal relevant parts.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what went wrong.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: action
+    attributes:
+      label: What were you doing when the bug occurred?
+      options:
+        - Export to Markdown
+        - Export to YApi (upload)
+        - Export to Postman (upload)
+        - Send HTTP request (Call)
+        - API scanning / dashboard / gutter icons
+        - Settings UI
+        - IDE freeze or crash
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: framework
+    attributes:
+      label: Framework(s) used in the project
+      options:
+        - label: Spring MVC (`@RestController` / `@RequestMapping`)
+        - label: Spring Cloud Feign / OpenFeign clients
+        - label: JAX-RS (`@Path` / `@GET` / `@POST`)
+        - label: Spring Boot Actuator endpoints
+        - label: gRPC / protobuf
+        - label: Not sure
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: |
+        The exact actions you performed, in order. Example: "Right-click a controller package → EasyYapi → ExportMarkdown".
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: Include the exact text of any error message shown in a notification or dialog, if applicable.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro-code
+    attributes:
+      label: Minimal reproduction (source code)
+      description: |
+        **This is the single most helpful item for export-result bugs** (wrong/missing fields, unrecognised annotations, etc.).
+
+        Paste a *minimal, self-contained* snippet: the controller method **and** the request/response DTO classes involved
+        (including class-level/method-level annotations and javadoc/kdoc comments). Redact business logic — only the
+        structure that triggers the problem matters.
+
+        Alternatively, fork https://github.com/Earth-1610/spring-demo, add the failing code, and paste the URL of your fork here.
+      placeholder: |
+        // e.g.
+        @RestController
+        @RequestMapping("/user")
+        public class UserController {
+            /**
+             * query user
+             */
+            @GetMapping("/get")
+            public UserDTO getUser(Long id) { ... }
+        }
+      render: java
+
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Custom rules & configuration
+      description: Which of these exist in your setup? Custom rules are the most common source of unexpected behaviour.
+      options:
+        - label: Project rules — `<project>/.easyapi/*.rules` (or `*.properties`)
+        - label: Legacy config — `.easy.api.config*` in the project root or an ancestor directory
+        - label: Global rules — `~/.easyapi/*.rules`
+        - label: Remote rules — configured in Settings → EasyYapi → Remote
+        - label: None
+        - label: Not sure
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        ### How to collect diagnostic logs
+
+        > **Note:** By default the plugin's log level is **SILENT**, so there is nothing to paste unless you turn it up first.
+
+        1. **Settings → EasyYapi → General → Log Level** — set it to `DEBUG` (10) or `TRACE` (0).
+        2. Reproduce the problem.
+        3. Copy the full output from the **EasyApi Console** tool window (bottom tool window bar) into the field below.
+        4. If the IDE showed an error popup, also include the full stack trace. `warn`/`error` entries are mirrored to
+           `idea.log` — open it via **Help → Show Log in Explorer/Finder**.
+        5. For **freezes**, additionally attach the `threadDumps-freeze-*` file from the same log directory.
+
+        `idea.log` filters out `debug`/`trace` by default, so the EasyApi Console is the primary source — please copy from there.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Output from the EasyApi Console (and/or relevant `idea.log` entries), with sensitive data redacted.
+      render: shell
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin Version
+      description: Found in Settings → Plugins → EasyYapi.
+      placeholder: "e.g. 3.0.0.252.0"
+    validations:
+      required: true
+
+  - type: input
+    id: ide-version
+    attributes:
+      label: IDE Version
+      placeholder: "e.g. IntelliJ IDEA 2025.2.1 Ultimate (build 252.23892.509)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: jdk
+    attributes:
+      label: JDK Version (optional)
+      placeholder: "e.g. 17"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Screenshots, project structure, or anything else that might help.

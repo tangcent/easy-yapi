@@ -5,6 +5,14 @@ on:
     branches:
       - master
 
+env:
+  # Compatibility package range: IDEA 2022.1 (build 221) through the last
+  # build before the officially supported range (default since-build comes
+  # from gradle.properties pluginSinceBuild). Keeping the range in env
+  # avoids scattering magic numbers through the steps below.
+  COMPAT_SINCE: '221'
+  COMPAT_UNTIL: '251'
+
 jobs:
   create-release:
     runs-on: ubuntu-latest
@@ -21,13 +29,13 @@ jobs:
           FULL_VERSION=""
           VERSION=$(echo "$COMMIT_MSG" | head -1 | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')
 
-          if [ -f "build.gradle.kts" ]; then
-            FULL_VERSION=$(grep '^version\s*=' build.gradle.kts | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r' | xargs)
+          if [ -f "gradle.properties" ]; then
+            FULL_VERSION=$(sed -n 's/^pluginBaseVersion=//p' gradle.properties | head -n1 | tr -d '\r' | xargs)
           fi
 
           if [ -z "$VERSION" ]; then
             if [ -z "$FULL_VERSION" ]; then
-              echo "Error: No version found in build.gradle.kts"
+              echo "Error: No version found in gradle.properties"
               exit 1
             fi
             VERSION=$(echo "$FULL_VERSION" | sed -E 's/^v?([0-9]+\.[0-9]+\.[0-9]+).*$/\1/')
@@ -65,6 +73,19 @@ jobs:
         if: steps.check_tag.outputs.skip == 'false'
         run: ./gradlew buildPlugin
 
+      - name: Build Compatibility Package
+        # Single best-effort package covering IDEA 2022.1 through the build
+        # before the officially supported range. It is still compiled against
+        # the newest platform (see build.gradle.kts) — only the declared
+        # compatibility range changes — so runtime behaviour on older IDEs
+        # is NOT verified. Best-effort means a failure here must not block
+        # the release; only the default package is required.
+        if: steps.check_tag.outputs.skip == 'false'
+        run: |
+          echo "Building compatibility package for IDEA build ${COMPAT_SINCE}-${COMPAT_UNTIL}"
+          ./gradlew buildPlugin -PpluginSinceBuild="$COMPAT_SINCE" -PpluginUntilBuild="$COMPAT_UNTIL" \
+            || echo "::warning::Compatibility build failed — releasing the default package only"
+
       - name: Generate Release Notes
         if: steps.check_tag.outputs.skip == 'false'
         id: generate_notes
@@ -86,15 +107,37 @@ jobs:
           if [ -n "$COMMITS" ]; then
             NOTES="${NOTES}### Changes\n${COMMITS}\n\n"
           fi
-          
-          # Add the plugin support table
+
+          # Add the plugin support table — one row per built package.
+          # Version format <base>.<since>.<until|0> embeds the range; "0"
+          # means unbounded. Translate build numbers to product versions
+          # (243 -> 2024.3, 252 -> 2025.2).
           NOTES="${NOTES}---\n\n"
           NOTES="${NOTES}### Downloads\n\n"
           NOTES="${NOTES}| Plugin | IDE Support |\n"
           NOTES="${NOTES}| ------ | ----------- |\n"
-          # Use full version for the download link (e.g., easy-yapi-3.0.8.252.0.zip)
-          FULL_VERSION=${{ steps.extract_version.outputs.full_version }}
-          NOTES="${NOTES}| [easy-yapi-${FULL_VERSION}.zip](https://github.com/${{ github.repository }}/releases/download/${CURRENT_TAG}/easy-yapi-${FULL_VERSION}.zip) | IntelliJ IDEA 2023.1+ |\n"
+          DEFAULT_SINCE=$(sed -n 's/^pluginSinceBuild=//p' gradle.properties | head -n1 | tr -d '[:space:]')
+          build_to_product() {
+            local b="${1%%.*}"
+            echo "20${b:0:2}.${b:2:1}"
+          }
+          for zip in $(ls build/distributions/easy-yapi-*.zip | sort -r); do
+            ver=$(basename "$zip" .zip)
+            ver="${ver#easy-yapi-}"
+            since=$(echo "$ver" | cut -d. -f4)
+            until=$(echo "$ver" | cut -d. -f5)
+            if [[ "$until" == "0" ]]; then
+              range_label="IntelliJ IDEA $(build_to_product "$since")+"
+            else
+              range_label="IntelliJ IDEA $(build_to_product "$since") – $(build_to_product "$until")"
+            fi
+            if [[ "$since" == "$DEFAULT_SINCE" ]]; then
+              support="officially supported"
+            else
+              support="best-effort: compiled against the newest platform, not verified on older IDEs — see README to build other ranges"
+            fi
+            NOTES="${NOTES}| [easy-yapi-${ver}.zip](https://github.com/${{ github.repository }}/releases/download/${CURRENT_TAG}/easy-yapi-${ver}.zip) | ${range_label} (${support}) |\n"
+          done
           
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo -e "$NOTES" >> $GITHUB_OUTPUT

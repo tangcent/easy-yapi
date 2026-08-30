@@ -216,9 +216,26 @@ npx skills add tangcent/easy-yapi -g -y
 
 ### 兼容性
 
-| JDK | IDE | 状态 |
-|-----|-----|------|
-| 17 | 2025.2.1 | ✓ |
+只有默认版本会发布到 JetBrains 商店。
+
+| 构建产物 | IDE 兼容性 | 支持级别 |
+|---------|-----------|---------|
+| 默认版本（商店） | IntelliJ IDEA 2025.2+（JDK 17+） | 官方支持 |
+| 兼容版本 | IntelliJ IDEA 2022.1 – 2025.1 | 尽力而为（best-effort），未经验证 |
+
+如果你使用较旧版本的 IDEA：
+
+- **下载兼容版本** —— 每个 [GitHub Release](https://github.com/tangcent/easy-yapi/releases) 都会附带一个覆盖 IDEA 2022.1 至 2025.1 的兼容构建，Release 说明的 Downloads 表格中列出了每个 zip 适用的 IDE 版本范围。该构建基于最新平台编译、未在旧版 IDE 上验证：如果它在你的 IDE 上不可用，请提 issue 或自行构建。
+- **自行打包** —— `script/package.sh` 的第一个参数指定 IDEA 兼容范围（含 `*` 时请加引号，避免被 shell 展开）：
+
+```bash
+./script/package.sh              # 默认：2025.2+，不设上限（即商店发布版本）
+./script/package.sh '221-*'       # 2022.1 及更新版本，不设上限
+./script/package.sh 221-251      # 2022.1 至 2025.1
+./script/package.sh 233-242       # 任意范围；"*" 表示不设上限
+```
+
+默认范围之外的兼容性不做保证 —— 插件可能调用了旧版 IDE 中不存在的 API，此类问题不在项目支持范围内。
 
 ## 架构
 

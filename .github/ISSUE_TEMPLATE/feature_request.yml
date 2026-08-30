@@ -1,0 +1,72 @@
+name: Feature Request
+description: Suggest an idea for this project
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: A clear and concise description of the feature you'd like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What's hard or impossible to do today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How do you envision this feature working?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: area
+    attributes:
+      label: Which area does this apply to?
+      options:
+        - label: YApi export
+        - label: Postman export
+        - label: Markdown export
+        - label: Send HTTP request (Call)
+        - label: API scanning / dashboard
+        - label: Rule engine / custom rules
+        - label: Settings / UI
+        - label: Other
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Alternative solutions or workarounds you've tried.
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Specific scenarios where this feature would be beneficial.
+      placeholder: |
+        1.
+        2.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Mockups, examples, or links that illustrate the idea.
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Would you be willing to contribute this feature?
+      options:
+        - label: Yes, I can submit a PR
+        - label: No, but I can help with testing
+        - label: No, just suggesting

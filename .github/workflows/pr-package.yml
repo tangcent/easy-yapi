@@ -9,6 +9,13 @@ permissions:
   pull-requests: write
   contents: read
 
+env:
+  # Compatibility package range: IDEA 2022.1 (build 221) through the last
+  # build before the officially supported range (default since-build comes
+  # from gradle.properties pluginSinceBuild).
+  COMPAT_SINCE: '221'
+  COMPAT_UNTIL: '251'
+
 jobs:
   package-and-comment:
     runs-on: ubuntu-latest
@@ -57,31 +64,35 @@ jobs:
           fi
 
       - name: Build plugin
-        run: ./gradlew buildPlugin
+        # Builds the default package plus a best-effort compatibility package
+        # covering IDEA 2022.1 through the build before the officially
+        # supported range. Only the default range is officially supported;
+        # the compatibility build is compiled against the newest platform and
+        # is not verified on older IDEs — so a failure there must not block
+        # the default artifact upload.
+        run: |
+          ./gradlew buildPlugin
+          ./gradlew buildPlugin -PpluginSinceBuild="$COMPAT_SINCE" -PpluginUntilBuild="$COMPAT_UNTIL" \
+            || echo "::warning::Compatibility build failed — uploading the default package only"
 
       - name: Get plugin filename
         id: get_filename
         run: |
-          FILENAME=$(ls build/distributions/easy-yapi-*.zip | xargs basename)
+          FILENAME=$(ls build/distributions/easy-yapi-*.zip | sort -r | head -1 | xargs basename)
           echo "plugin_filename=${FILENAME}" >> $GITHUB_OUTPUT
           # Artifact name without the .zip extension. GitHub Actions always
           # re-zips the uploaded path and serves it as <name>.zip on download,
           # so naming the artifact without .zip yields the correct final name.
           echo "artifact_name=${FILENAME%.zip}" >> $GITHUB_OUTPUT
 
-      - name: Extract plugin distribution
-        # Unzip the built plugin so we upload its contents, not the zip itself.
-        # Uploading the .zip directly would cause GitHub to wrap it in another
-        # zip, forcing users to unzip twice to reach the real plugin.
-        run: |
-          mkdir -p build/artifact
-          unzip -q build/distributions/easy-yapi-*.zip -d build/artifact
-
       - name: Upload plugin artifact
+        # The artifact contains both the default build (IDEA 2025.2+) and the
+        # compatibility build (IDEA 2022.1–2025.1, best-effort) — downloaders
+        # pick the zip matching their IDEA version.
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.get_filename.outputs.artifact_name }}
-          path: build/artifact/
+          path: build/distributions/easy-yapi-*.zip
           if-no-files-found: error
 
       - name: Comment on target issue
@@ -99,7 +110,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
-              body: `A PR (#${pr.number}) has been opened to fix this issue. You can download the packaged plugin \`${pluginFilename}\` from the [GitHub Actions workflow run](${workflowRunUrl}) by clicking on the "Artifacts" dropdown.`
+              body: `A PR (#${pr.number}) has been opened to fix this issue. You can download the packaged plugin \`${pluginFilename}\` from the [GitHub Actions workflow run](${workflowRunUrl}) by clicking on the "Artifacts" dropdown. The artifact also contains a best-effort build for IDEA 2022.1–2025.1 — pick the zip matching your IDEA version.`
             });
 
       - name: Comment on PR
@@ -115,5 +126,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr.number,
-              body: `📦 Plugin has been packaged for this PR. You can download \`${pluginFilename}\` from the [GitHub Actions workflow run](${workflowRunUrl}) by clicking on the "Artifacts" dropdown.`
+              body: `📦 Plugin has been packaged for this PR. You can download \`${pluginFilename}\` from the [GitHub Actions workflow run](${workflowRunUrl}) by clicking on the "Artifacts" dropdown. The artifact also contains a best-effort build for IDEA 2022.1–2025.1 — pick the zip matching your IDEA version.`
             }); 
