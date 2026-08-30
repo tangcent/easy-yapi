@@ -340,6 +340,7 @@ Tests use JUnit 4 + Mockito/Mockito-Kotlin + the IntelliJ Platform Test Framewor
 
 - **Bug reports arrive as structured GitHub Issue Forms** (`.github/ISSUE_TEMPLATE/bug_report.yml`). The form captures the trigger action (export/call/scan/freeze), framework(s), custom-rule setup, minimal repro code, and logs captured with the log level raised to DEBUG/TRACE. When triaging an issue, read these fields first — they identify the entry point and rule context before you open the code. Question and feature requests have their own forms in the same folder.
 - **PRs follow `.github/pull_request_template.md`.** Its Architecture & Threading and Logging checklists mirror the rules in this document. When a checklist item does not apply to a change, state why in the PR description rather than deleting it.
+- **PR titles use the conventional-commit format** — `<type>(<scope>): <subject>`, with the same type list as the [git-commit](.skills/git-commit/SKILL.md) skill. PRs are squash-merged, so the title becomes the merge-commit subject, and `script/release.sh` groups changelog entries by the `feat`/`fix`/`refactor` prefix — an unprefixed title lands verbatim in the generic changelog section instead of its proper group.
 
 ## Skills
 
