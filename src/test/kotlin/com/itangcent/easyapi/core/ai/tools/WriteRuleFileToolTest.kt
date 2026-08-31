@@ -67,8 +67,18 @@ class WriteRuleFileToolTest : EasyApiLightCodeInsightFixtureTestCase() {
                 text.contains("written.rules")
             )
 
-            val onDisk = Files.readString(java.nio.file.Paths.get(targetPath))
-            Assert.assertEquals(content, onDisk)
+            val onDisk = java.nio.file.Paths.get(targetPath)
+            val bytes = Files.readAllBytes(onDisk)
+            Assert.assertArrayEquals(
+                "written file should start with a UTF-8 BOM (issue #755)",
+                byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()),
+                bytes.copyOfRange(0, 3)
+            )
+            Assert.assertEquals(
+                "content after the BOM should be exactly what was written",
+                content,
+                com.itangcent.easyapi.core.config.RuleFileTextIo.readUtf8StrippingBom(onDisk)
+            )
         } finally {
             easyapiDir.deleteRecursively()
         }

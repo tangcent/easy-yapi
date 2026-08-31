@@ -6,6 +6,7 @@ import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import com.itangcent.easyapi.core.config.ConfigReader
+import com.itangcent.easyapi.core.config.RuleFileTextIo
 import com.itangcent.easyapi.core.config.source.GlobalFileConfigSource
 import com.itangcent.easyapi.core.config.source.ProjectFileConfigSource
 import com.itangcent.easyapi.core.ide.support.NotificationUtils
@@ -225,7 +226,7 @@ class GlobalRulesSubTab(
         Files.createDirectories(dir)
         val baseName = RuleFileSupport.nextAvailableName(dir, ".easy.api.properties")
         val newPath = dir.resolve(baseName)
-        Files.writeString(newPath, "")
+        RuleFileTextIo.writeUtf8WithBom(newPath, "")
         val abs = newPath.toAbsolutePath().toString()
         rows.add(RuleFileRow(abs, enabled = true, size = 0L))
         rows.sortBy { it.path }
@@ -373,7 +374,7 @@ class ProjectRulesSubTab(
         Files.createDirectories(dir)
         val baseName = RuleFileSupport.nextAvailableName(dir, ".easy.api.properties")
         val newPath = dir.resolve(baseName)
-        Files.writeString(newPath, "")
+        RuleFileTextIo.writeUtf8WithBom(newPath, "")
         val abs = newPath.toAbsolutePath().toString()
         easyapiRows.add(RuleFileRow(abs, enabled = true, size = 0L))
         easyapiRows.sortBy { it.path }

@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.core.ai.tools
 
-import java.nio.file.Files
+import com.itangcent.easyapi.core.config.RuleFileTextIo
 import java.nio.file.Path
 
 /**
@@ -52,7 +52,7 @@ class WriteRuleFileTool : AiTool {
         val resolved: Path = ctx.ruleFileResolver.resolve(pathStr)
             ?: return ToolResult.Error("path outside allowed rule directories: $pathStr")
         return runCatching {
-            Files.writeString(resolved, content)
+            RuleFileTextIo.writeUtf8WithBom(resolved, content)
             // Clear any staged proposal now that the write has landed.
             ctx.workingMemory.proposal = null
             ToolResult.Text("Wrote ${content.length} chars to $resolved")

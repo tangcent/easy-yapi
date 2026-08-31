@@ -22,6 +22,7 @@ import com.itangcent.easyapi.core.ai.agent.TaskList
 import com.itangcent.easyapi.core.ai.agent.TaskStatus
 import com.itangcent.easyapi.core.ai.agent.TurnOutcome
 import com.itangcent.easyapi.core.config.ConfigReader
+import com.itangcent.easyapi.core.config.RuleFileTextIo
 import com.itangcent.easyapi.core.ide.support.NotificationUtils
 import com.itangcent.easyapi.core.logging.IdeaLog
 import kotlinx.coroutines.CoroutineScope
@@ -1384,7 +1385,7 @@ class AiChatPanel(
         val targetFile = dialog.targetFile()
         try {
             Files.createDirectories(targetFile.parentFile.toPath())
-            Files.writeString(targetFile.toPath(), content)
+            RuleFileTextIo.writeUtf8WithBom(targetFile.toPath(), content)
 
             // Folder is the source of truth — no settings-list registration needed.
 

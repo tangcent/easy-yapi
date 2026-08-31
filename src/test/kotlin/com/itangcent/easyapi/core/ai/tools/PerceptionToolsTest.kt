@@ -317,6 +317,26 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
         }
     }
 
+    fun testReadRuleFileStripsBom() {
+        // Issue #755: rule files written by the plugin carry a UTF-8 BOM so
+        // IDEA detects the encoding; read_rule_file must strip it so the
+        // agent sees clean content.
+        val basePath = project.basePath ?: throw IllegalStateException("project base path required")
+        val easyapiDir = java.io.File(basePath, ".easyapi").apply { mkdirs() }
+        try {
+            val bom = String(byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()), Charsets.UTF_8)
+            java.io.File(easyapiDir, "bombed.properties").writeText(bom + "api.name=BomFree")
+
+            val result = runBlocking {
+                ReadRuleFileTool().execute(mapOf("path" to "bombed.properties"), ctx())
+            }
+            Assert.assertTrue("result: $result", result is ToolResult.Text)
+            Assert.assertEquals("api.name=BomFree", (result as ToolResult.Text).value)
+        } finally {
+            easyapiDir.deleteRecursively()
+        }
+    }
+
     // --- GetExistingRulesForKeyTool ---
 
     fun testGetExistingRulesFallsBackToGetAll() {

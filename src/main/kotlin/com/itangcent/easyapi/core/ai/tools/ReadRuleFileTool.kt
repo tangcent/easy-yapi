@@ -1,8 +1,8 @@
 package com.itangcent.easyapi.core.ai.tools
 
 import com.itangcent.easyapi.core.ai.agent.FileReadConsentGate
+import com.itangcent.easyapi.core.config.RuleFileTextIo
 import com.itangcent.easyapi.core.logging.IdeaLog
-import java.nio.file.Files
 
 /**
  * Perception tool that reads a **rule file** by name or path.
@@ -90,7 +90,7 @@ class ReadRuleFileTool : AiTool, IdeaLog {
 
     private fun readPath(target: java.nio.file.Path, displayPath: String): ToolResult {
         return runCatching {
-            ToolResult.Text(Files.readString(target))
+            ToolResult.Text(RuleFileTextIo.readUtf8StrippingBom(target))
         }.getOrElse {
             ToolResult.Error("failed to read $displayPath: ${it.message}")
         }

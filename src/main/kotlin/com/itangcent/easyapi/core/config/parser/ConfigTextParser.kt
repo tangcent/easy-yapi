@@ -3,6 +3,7 @@ package com.itangcent.easyapi.core.config.parser
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.itangcent.easyapi.core.config.RuleFileTextIo
 import com.itangcent.easyapi.core.config.model.ConfigEntry
 import com.itangcent.easyapi.core.config.resource.ConfigResourceLoader
 import com.itangcent.easyapi.core.logging.IdeaLog
@@ -65,7 +66,10 @@ class ConfigTextParser(
     private val resourceLoader: ConfigResourceLoader get() = ConfigResourceLoader.getInstance(project)
 
     suspend fun parse(text: String, sourceId: String, baseDir: String? = null): Sequence<ConfigEntry> {
-        return parseLines(text.lines(), sourceId, baseDir, DirectiveState(), buildSettingResolver()).asSequence()
+        // Strip a leading UTF-8 BOM so rule files written by the plugin (see
+        // RuleFileTextIo) parse identically to BOM-less files.
+        val content = RuleFileTextIo.stripBom(text)
+        return parseLines(content.lines(), sourceId, baseDir, DirectiveState(), buildSettingResolver()).asSequence()
     }
 
     /**
@@ -199,7 +203,7 @@ class ConfigTextParser(
         if (loaded != null) {
             result.addAll(
                 parseLines(
-                    loaded.content.lines(),
+                    RuleFileTextIo.stripBom(loaded.content).lines(),
                     sourceId,
                     loaded.baseDir,
                     state,

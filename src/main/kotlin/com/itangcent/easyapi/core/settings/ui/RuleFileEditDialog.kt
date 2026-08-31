@@ -8,6 +8,7 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.itangcent.easyapi.core.ai.ui.AiChatPanel
 import com.itangcent.easyapi.core.config.ConfigReader
+import com.itangcent.easyapi.core.config.RuleFileTextIo
 import com.itangcent.easyapi.core.ide.support.NotificationUtils
 import com.itangcent.easyapi.core.logging.IdeaLog
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +35,8 @@ import javax.swing.JScrollPane
  *
  * On OK:
  * - If the name changed, renames the file on disk (same directory).
- * - Writes the (possibly edited) content via `Files.writeString`.
+ * - Writes the (possibly edited) content as UTF-8 with a BOM
+ *   (see [RuleFileTextIo]).
  * - Triggers `ConfigReader.getInstance(project).reload()` so new rules take
  * effect immediately.
  *
@@ -227,7 +229,7 @@ class RuleFileEditDialog(
     private fun loadContentAsync() {
         scope.launch {
             val content = withContext(Dispatchers.IO) {
-                runCatching { Files.readString(Paths.get(filePath)) }
+                runCatching { RuleFileTextIo.readUtf8StrippingBom(Paths.get(filePath)) }
                     .onFailure { LOG.warn("Failed to read rule file $filePath", it) }
                     .getOrElse { "" }
             }
@@ -312,7 +314,7 @@ class RuleFileEditDialog(
                     }
                 }
                 // Write content.
-                runCatching { Files.writeString(newPath, content) }
+                runCatching { RuleFileTextIo.writeUtf8WithBom(newPath, content) }
                     .onFailure {
                         LOG.warn("Failed to write rule file $newPath", it)
                         withContext(Dispatchers.Main) {
