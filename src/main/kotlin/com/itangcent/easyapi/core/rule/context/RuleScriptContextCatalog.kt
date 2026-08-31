@@ -304,7 +304,25 @@ object RuleScriptContextCatalog {
     }
 
     private fun itBinding(name: String, kinds: List<ItKind>, description: String): ScriptBinding =
-        ScriptBinding(name, objectTypes = kinds.map(ItKind::id), availability = "always", description = description)
+        ScriptBinding(
+            name,
+            objectTypes = kinds.map(ItKind::id),
+            availability = "always",
+            description = description + discriminatorSuffix(name, kinds)
+        )
+
+    /**
+     * Hint appended to a binding description when the binding can hold more
+     * than one context kind. The contract requires the script to tell the
+     * kinds apart, and the built-in discriminator is `contextType()`. Without
+     * the hint the model invents Groovy MOP idioms such as
+     * `it.respondsTo('containingClass')` to guess the kind (issue #756).
+     */
+    private fun discriminatorSuffix(name: String, kinds: List<ItKind>): String {
+        if (kinds.size <= 1) return ""
+        val values = kinds.map(ItKind::contextType).distinct().joinToString("/") { "'$it'" }
+        return " Discriminate with $name.contextType(), which returns $values."
+    }
 
     private fun apiBinding(name: String, description: String): ScriptBinding =
         ScriptBinding(name, objectTypes = listOf(name), availability = "key-specific", description = description)
@@ -429,13 +447,17 @@ object RuleScriptContextCatalog {
         val notes: List<String> = emptyList()
     )
 
-    private enum class ItKind(val id: String, val type: KClass<*>, val description: String) {
-        EMPTY("empty", ScriptItContext::class, "No PSI element is supplied; common helper bindings remain available."),
-        CLASS("class", ScriptPsiClassContext::class, "PSI class context."),
-        METHOD("method", ScriptPsiMethodContext::class, "PSI method context."),
-        FIELD("field", ScriptPsiFieldContext::class, "PSI field context; object-model fields may also be represented by a method context."),
-        PARAMETER("parameter", ScriptPsiParameterContext::class, "PSI parameter context."),
-        TYPE("type", ScriptPsiTypeContext::class, "PSI type context without a source element.")
+    /**
+     * The runtime `contextType()` return value for the kind, as defined by
+     * the [ScriptItContext] hierarchy — used to teach the discriminator.
+     */
+    private enum class ItKind(val id: String, val contextType: String, val type: KClass<*>, val description: String) {
+        EMPTY("empty", "unknown", ScriptItContext::class, "No PSI element is supplied; common helper bindings remain available."),
+        CLASS("class", "class", ScriptPsiClassContext::class, "PSI class context."),
+        METHOD("method", "method", ScriptPsiMethodContext::class, "PSI method context."),
+        FIELD("field", "field", ScriptPsiFieldContext::class, "PSI field context; object-model fields may also be represented by a method context."),
+        PARAMETER("parameter", "param", ScriptPsiParameterContext::class, "PSI parameter context."),
+        TYPE("type", "class", ScriptPsiTypeContext::class, "PSI type context without a source element.")
     }
 
     private val commonGroovyBindings = listOf(

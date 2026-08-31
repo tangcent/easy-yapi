@@ -88,6 +88,45 @@ class RuleScriptContextCatalogTest {
         assertNotNull(profile.summary)
     }
 
+    @Test
+    fun `multi kind it binding states the contextType discriminator`() {
+        // Issue #756: without the hint the model probes the method surface
+        // with it.respondsTo('containingClass') to guess the context kind.
+        val profile = RuleScriptContextCatalog.describe(RuleKeys.FIELD_IGNORE, "general")
+        val itBinding = profile.stages.single().binding("it")
+
+        assertTrue(
+            "it description should teach the discriminator: '${itBinding.description}'",
+            itBinding.description.contains("it.contextType()")
+        )
+        assertTrue(
+            "it description should list the runtime values: '${itBinding.description}'",
+            itBinding.description.contains("'field'/'method'")
+        )
+    }
+
+    @Test
+    fun `single kind it binding has no discriminator hint`() {
+        val profile = RuleScriptContextCatalog.describe(RuleKeys.METHOD_DOC, "general")
+        val itBinding = profile.stages.single().binding("it")
+
+        assertFalse(
+            "single-kind keys have nothing to discriminate: '${itBinding.description}'",
+            itBinding.description.contains("contextType")
+        )
+    }
+
+    @Test
+    fun `multi kind custom method keys state class and method values`() {
+        val profile = RuleScriptContextCatalog.describe("custom.method.is.api")
+        val itBinding = profile.stages.single().binding("it")
+
+        assertTrue(
+            "custom.method.* keys run with class OR method contexts: '${itBinding.description}'",
+            itBinding.description.contains("'method'/'class'")
+        )
+    }
+
     private fun RuleScriptStage.binding(name: String): ScriptBinding =
         bindings.firstOrNull { it.name == name }
             ?: throw AssertionError("missing binding '$name': $bindings")

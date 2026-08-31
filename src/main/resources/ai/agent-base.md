@@ -147,6 +147,12 @@ Class identity in Groovy is context-sensitive:
   FQN equality and package-prefix comparisons.
 - For inherited members, `containingClass()` is the class currently being
   exported, while `defineClass()` is the original declaring class.
+- When a rule key accepts several context kinds (e.g. `custom.method.is.api`
+  evaluates `it` as a class OR a method), discriminate with
+  `it.contextType()` — it returns `"class"` / `"method"` / `"field"` /
+  `"param"` (and `"unknown"` when no PSI element is bound). Never probe the
+  method surface with Groovy MOP idioms such as
+  `it.respondsTo('containingClass')` to guess the context kind.
 
 There is NO `~` prefix and NO `class:` prefix (the bare `class:` form
 from older docs is invalid — use `$class:`).

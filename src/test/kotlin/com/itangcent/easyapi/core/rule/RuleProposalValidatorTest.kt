@@ -10,7 +10,9 @@ import org.junit.Test
  *
  * Covers the v1 review-agent policy: hard errors on unknown keys, invalid
  * filter prefixes, and malformed JSON values; soft warnings for deprecated
- * filters and class-context `name()` calls that may be mistaken for FQNs.
+ * filters, class-context `name()` calls that may be mistaken for FQNs, and
+ * `respondsTo(` probes that guess the context kind instead of calling
+ * `it.contextType()` (issue #756).
  */
 class RuleProposalValidatorTest {
 
@@ -143,6 +145,62 @@ class RuleProposalValidatorTest {
     fun testClassQualifiedNameDoesNotProduceSimpleNameWarning() {
         val content =
             """field.ignore=groovy: it.defineClass()?.qualifiedName() == "com.example.dto.TraceBean"""
+        val result = RuleProposalValidator.validate(content)
+
+        assertTrue("errors: ${result.errors}", result.ok)
+        assertTrue("unexpected warnings: ${result.warnings}", result.warnings.isEmpty())
+    }
+
+    @Test
+    fun testRespondsToProbeProducesSoftWarning() {
+        // Issue #756: the model guesses the context kind from the method
+        // surface instead of calling the built-in discriminator.
+        val content =
+            """field.ignore=groovy: !it.respondsTo('containingClass').isEmpty()"""
+        val result = RuleProposalValidator.validate(content)
+
+        assertTrue("errors: ${result.errors}", result.ok)
+        assertTrue(
+            "warnings: ${result.warnings}",
+            result.warnings.any {
+                it.contains("line 1") && it.contains("respondsTo()") && it.contains("contextType()")
+            }
+        )
+    }
+
+    @Test
+    fun testRespondsToInsideGroovyBlockProducesSoftWarning() {
+        val content = """
+            field.ignore=groovy:```
+            def isMethod = !it.respondsTo('containingClass').isEmpty()
+            return isMethod
+            ```
+        """.trimIndent()
+        val result = RuleProposalValidator.validate(content)
+
+        assertTrue("errors: ${result.errors}", result.ok)
+        assertTrue(
+            "warnings: ${result.warnings}",
+            result.warnings.any { it.contains("line 2") && it.contains("respondsTo()") }
+        )
+    }
+
+    @Test
+    fun testRespondsToInCommentProducesNoWarning() {
+        val content = """
+            # it.respondsTo('containingClass') is the old workaround
+            api.name=My API
+        """.trimIndent()
+        val result = RuleProposalValidator.validate(content)
+
+        assertTrue("errors: ${result.errors}", result.ok)
+        assertTrue("unexpected warnings: ${result.warnings}", result.warnings.isEmpty())
+    }
+
+    @Test
+    fun testContextTypeDiscriminatorProducesNoWarning() {
+        val content =
+            """field.ignore=groovy: it.contextType() == "method" && it.name() == "toString""""
         val result = RuleProposalValidator.validate(content)
 
         assertTrue("errors: ${result.errors}", result.ok)

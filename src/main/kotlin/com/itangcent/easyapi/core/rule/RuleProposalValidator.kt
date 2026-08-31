@@ -24,10 +24,11 @@ import com.itangcent.easyapi.framework.spi.FrameworkRegistry
  *   malformed JSON value for the header/param keys.
  * - **Soft warnings** (never block): deprecated-but-valid filter forms such
  *   as the bare `class:` prefix; class-context `name()` calls that may be
- *   mistaken for fully-qualified names; keys whose owning channel/framework
- *   is currently disabled in Settings (design C4a / task A5c). Reported back
- *   to the drafter / surfaced on the proposal card, but the proposal still
- *   proceeds.
+ *   mistaken for fully-qualified names; `respondsTo(` probes that guess the
+ *   context kind instead of calling `it.contextType()`; keys whose owning
+ *   channel/framework is currently disabled in Settings (design C4a / task
+ *   A5c). Reported back to the drafter / surfaced on the proposal card, but
+ *   the proposal still proceeds.
  *
  * ## Key catalog
  *
@@ -66,6 +67,14 @@ object RuleProposalValidator {
     private val CLASS_CONTEXT_SIMPLE_NAME =
         Regex("""(?:containingClass|defineClass)\(\)\s*\??\.\s*name\(\)""")
 
+    /**
+     * Groovy MOP probing of the context kind, e.g.
+     * `it.respondsTo('containingClass')`. Functionally valid but fragile —
+     * the built-in discriminator `it.contextType()` states the kind directly
+     * (issue #756).
+     */
+    private val RESPONDS_TO_USAGE = Regex("""\brespondsTo\s*\(""")
+
     /** Source kind for keys declared in [RuleKeys] (mirrors [RuleKeyRegistry]). */
     private const val SOURCE_GENERAL = "general"
     /** Source kind for keys read by name only (mirrors [RuleKeyRegistry]). */
@@ -97,7 +106,8 @@ object RuleProposalValidator {
             project?.let { buildDisabledSourceMap(it) } ?: emptyMap()
         val errors = mutableListOf<String>()
         val warnings = mutableListOf<String>()
-        val classContextSimpleNameWarningLines = classContextSimpleNameWarningLines(content)
+        val classContextSimpleNameWarningLines = matchWarningLines(content, CLASS_CONTEXT_SIMPLE_NAME)
+        val respondsToWarningLines = matchWarningLines(content, RESPONDS_TO_USAGE)
         var inBlock = false
         content.lines().forEachIndexed { idx, raw ->
             val line = raw.trim()
@@ -109,6 +119,11 @@ object RuleProposalValidator {
             if (lineNo in classContextSimpleNameWarningLines) {
                 warnings += "line $lineNo: class-context name() returns a simple class name; " +
                     "use qualifiedName() for FQN/package comparisons."
+            }
+            if (lineNo in respondsToWarningLines) {
+                warnings += "line $lineNo: respondsTo() guesses the context kind from the " +
+                    "method surface; use it.contextType() (returns 'class'/'method'/" +
+                    "'field'/'param') instead."
             }
             // Multi-line groovy value-block: scan each body line for semantic
             // warnings above, but skip structural key=value validation because
@@ -163,8 +178,12 @@ object RuleProposalValidator {
         return RuleValidation(errors = errors, warnings = warnings)
     }
 
-    private fun classContextSimpleNameWarningLines(content: String): Set<Int> =
-        CLASS_CONTEXT_SIMPLE_NAME.findAll(content).mapNotNullTo(linkedSetOf()) { match ->
+    /**
+     * Maps [pattern] matches in [content] to 1-based line numbers, skipping
+     * matches on comment lines. Shared by the semantic soft warnings.
+     */
+    private fun matchWarningLines(content: String, pattern: Regex): Set<Int> =
+        pattern.findAll(content).mapNotNullTo(linkedSetOf()) { match ->
             val matchStart = match.range.first
             val lineStart = if (matchStart == 0) {
                 0
