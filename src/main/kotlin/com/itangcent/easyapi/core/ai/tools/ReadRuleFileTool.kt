@@ -14,8 +14,10 @@ import com.itangcent.easyapi.core.logging.IdeaLog
  * directories. This is the preferred form: the agent does not know the
  * user's home directory, so addressing files by name avoids guessing
  * absolute paths.
- * 2. An absolute path inside a tracked rule directory — validated by
- * [ToolContext.ruleFileResolver.resolve]. Accepted as a fallback.
+ * 2. A path inside a tracked rule directory — validated by
+ * [ToolContext.ruleFileResolver.resolve]. Relative paths resolve against
+ * the project base directory, never the process working directory.
+ * Accepted as a fallback.
  *
  * Paths that fall outside the tracked directories are **not** silently read.
  * For clearly-foreign paths (the `/etc` directory, `.java`/`.kt` files,
@@ -35,7 +37,8 @@ class ReadRuleFileTool : AiTool, IdeaLog {
             "(e.g. \"security.properties\") or a scope-prefixed name " +
             "(\"global:jwt.rules\" / \"project:custom.rules\"); the tool " +
             "resolves it against the tracked.easyapi/ rule folders. An " +
-            "absolute path inside a tracked folder is also accepted. You do " +
+            "absolute path inside a tracked folder is also accepted; a " +
+            "relative path resolves against the project root. You do " +
             "NOT know the user's home directory — never hard-code " +
             "\"/Users/<name>\" or a literal \"~\"; address files by name. " +
             "An out-of-scope path asks the user for one-time consent. NOT " +
@@ -83,7 +86,7 @@ class ReadRuleFileTool : AiTool, IdeaLog {
         // One-time consent granted — read the requested path directly.
         LOG.info("read_rule_file: user granted consent for $path")
         val target = runCatching {
-            java.nio.file.Paths.get(path).toAbsolutePath().normalize()
+            ctx.ruleFileResolver.absolutize(java.nio.file.Paths.get(path))
         }.getOrNull() ?: return buildOutsideAllowedError(path)
         return readPath(target, path)
     }

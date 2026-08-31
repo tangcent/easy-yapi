@@ -337,6 +337,27 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
         }
     }
 
+    fun testReadRuleFileRelativePathResolvesAgainstProjectDir() {
+        // Issue #754: a consented relative path must resolve against the
+        // project base directory, not the process working directory. The
+        // project root is not a tracked rule dir here, so the read goes
+        // through the consent gate; once granted, the project-root file
+        // is read.
+        val basePath = project.basePath ?: throw IllegalStateException("project base path required")
+        val rootRuleFile = java.io.File(basePath, "root-rule-754.properties")
+        try {
+            rootRuleFile.writeText("api.name=ProjectRoot")
+            val gate = com.itangcent.easyapi.core.ai.agent.FakeFileReadConsentGate(grant = true)
+            val result = runBlocking {
+                ReadRuleFileTool().execute(mapOf("path" to "root-rule-754.properties"), ctx(readConsents = gate))
+            }
+            Assert.assertTrue("result: $result", result is ToolResult.Text)
+            Assert.assertEquals("api.name=ProjectRoot", (result as ToolResult.Text).value)
+        } finally {
+            rootRuleFile.delete()
+        }
+    }
+
     // --- GetExistingRulesForKeyTool ---
 
     fun testGetExistingRulesFallsBackToGetAll() {

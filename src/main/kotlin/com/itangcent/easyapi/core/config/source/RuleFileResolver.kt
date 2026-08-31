@@ -37,12 +37,26 @@ class RuleFileResolver(private val project: Project) {
     /**
      * Resolve [requestedPath] against the allowed directories.
      *
+     * Relative paths resolve against the project base directory (see
+     * [absolutize]) before the allow-list check.
+     *
      * @return The resolved, normalised [Path] if it is inside an allowed dir,
      * or `null` if access is refused.
      */
     fun resolve(requestedPath: String): Path? {
-        val candidate = Paths.get(requestedPath).toAbsolutePath().normalize()
+        val candidate = absolutize(Paths.get(requestedPath))
         return allowedDirs().firstOrNull { candidate.startsWith(it) }?.let { candidate }
+    }
+
+    /**
+     * Absolutises [path]. Relative paths resolve against the project base
+     * directory — never the process working directory — so an agent-supplied
+     * path like `.easy.api.properties` addresses a file inside the project.
+     */
+    fun absolutize(path: Path): Path {
+        val base = project.basePath
+        val resolved = if (!path.isAbsolute && base != null) Paths.get(base).resolve(path) else path
+        return resolved.toAbsolutePath().normalize()
     }
 
     /**

@@ -76,6 +76,27 @@ class RuleFileResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals(expected, resolver.resolve(target.toString()))
     }
 
+    fun testResolveRelativePathAgainstProjectBase() {
+        // Issue #754: a relative path must resolve against the project base
+        // directory, never the process working directory.
+        val base = project.basePath ?: return
+        val expected = Paths.get(base, ".easyapi", "rule.config")
+            .toAbsolutePath().normalize()
+        assertEquals(expected, resolver().resolve(".easyapi/rule.config"))
+    }
+
+    fun testAbsolutizeRelativePathUsesProjectBase() {
+        val base = project.basePath ?: return
+        val expected = Paths.get(base, ".easy.api.properties")
+            .toAbsolutePath().normalize()
+        assertEquals(expected, resolver().absolutize(Paths.get(".easy.api.properties")))
+    }
+
+    fun testResolveRefusesRelativePathOutsideAllowedDirs() {
+        // Even project-relative, a path outside the tracked rule dirs is refused.
+        assertNull(resolver().resolve("src/main/resources/rule.config"))
+    }
+
     // --- resolveByName ---
 
     fun testResolvesByNameInGlobalDir() {
