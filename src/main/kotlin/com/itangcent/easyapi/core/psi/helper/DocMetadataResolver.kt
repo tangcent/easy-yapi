@@ -233,6 +233,17 @@ class DocMetadataResolver internal constructor(
         return engine.evaluate(RuleKeys.PARAM_REQUIRED, parameter)
     }
 
+    /**
+     * Resolves the raw `param.required` rule result for a parameter.
+     *
+     * Returns `null` when no rule is configured, so the caller can apply a
+     * framework-specific default (e.g. Spring's `@RequestHeader` is required
+     * unless `required = false` is declared).
+     */
+    suspend fun resolveParamRequired(parameter: PsiParameter): Boolean? {
+        return engine.evaluateOrNull(RuleKeys.PARAM_REQUIRED, parameter)
+    }
+
     suspend fun isParamIgnored(parameter: PsiParameter): Boolean {
         return engine.evaluate(RuleKeys.PARAM_IGNORE, parameter)
     }

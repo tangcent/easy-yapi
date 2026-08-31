@@ -431,9 +431,35 @@ class SpringMvcClassExporter(
             val name = metadataResolver.resolveParamName(p, param.name)
             val defaultValue = metadataResolver.resolveParamDefaultValue(p)
             val example = metadataResolver.resolveParamDemo(p)
-            headers.add(ApiHeader(name = name, value = defaultValue ?: example))
+            headers.add(
+                ApiHeader(
+                    name = name,
+                    value = defaultValue ?: example,
+                    // `param.required` wins when configured; otherwise fall back to
+                    // the Spring default (@RequestHeader is required unless declared
+                    // otherwise).
+                    required = metadataResolver.resolveParamRequired(p)
+                        ?: isRequestHeaderRequiredByDefault(p)
+                )
+            )
         }
         return headers
+    }
+
+    /**
+     * Spring default for `@RequestHeader`: the header is required unless
+     * `required = false` is declared explicitly. Only consulted when no
+     * `param.required` rule is configured.
+     */
+    private suspend fun isRequestHeaderRequiredByDefault(parameter: PsiParameter): Boolean {
+        if (!annotationHelper.hasAnn(parameter, SpringMvcConstants.Annotations.REQUEST_HEADER)) {
+            return false
+        }
+        return annotationHelper.findAttrAsString(
+            parameter,
+            SpringMvcConstants.Annotations.REQUEST_HEADER,
+            "required"
+        ) != "false"
     }
 
     /**

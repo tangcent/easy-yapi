@@ -203,7 +203,17 @@ class JaxRsClassExporter(
                 val resolved = parameterResolver.resolve(p)
                 for (param in resolved) {
                     if (param.binding == ParameterBinding.Header) {
-                        headers.add(ApiHeader(name = param.name, value = param.defaultValue ?: param.example))
+                        headers.add(
+                            ApiHeader(
+                                name = param.name,
+                                value = param.defaultValue ?: param.example,
+                                // Honour `param.required` for header parameters. Resolved
+                                // from the PsiParameter because the entries returned by
+                                // the parameter resolver are produced before
+                                // `param.required` is applied to the ApiParameter list.
+                                required = metadataResolver.isParamRequired(p)
+                            )
+                        )
                     }
                 }
             }
