@@ -305,4 +305,57 @@ class CustomClassExporterTest {
             assertNotNull("getByCookie should have a cookie parameter", cookieParam)
         }
     }
+
+    /** Reference ruleset + a `param.required` rule matching @RequestHeader. */
+    class WithParamRequiredRule : EasyApiLightCodeInsightFixtureTestCase() {
+
+        private lateinit var exporter: CustomClassExporter
+
+        override fun setUp() {
+            super.setUp()
+            loadTestFiles()
+            exporter = CustomClassExporter(project)
+        }
+
+        private fun loadTestFiles() {
+            loadFile("spring/Controller.java")
+            loadFile("spring/RestController.java")
+            loadFile("spring/ResponseBody.java")
+            loadFile("spring/RequestMapping.java")
+            loadFile("spring/GetMapping.java")
+            loadFile("spring/PostMapping.java")
+            loadFile("spring/PathVariable.java")
+            loadFile("spring/RequestParam.java")
+            loadFile("spring/RequestBody.java")
+            loadFile("spring/RequestHeader.java")
+            loadFile("spring/CookieValue.java")
+            loadFile("spring/ModelAttribute.java")
+            loadFile("spring/AliasFor.java")
+            loadFile("spring/Component.java")
+            loadFile("model/Result.java")
+            loadFile("model/UserInfo.java")
+            loadFile("custom/api/SpringParityCtrl.java")
+        }
+
+        override fun createConfigReader(): com.itangcent.easyapi.core.config.ConfigReader {
+            val ruleset = javaClass.getResourceAsStream("/custom/custom-spring-reference.rules")!!
+                .reader().readText()
+            return TestConfigReader.fromConfigText(
+                project,
+                ruleset + "\nparam.required=groovy:it.hasAnn(\"org.springframework.web.bind.annotation.RequestHeader\")"
+            )
+        }
+
+        fun testParamRequiredRuleReachesHeader() = runTest {
+            val psiClass = findClass("com.itangcent.custom.SpringParityCtrl")
+            assertNotNull(psiClass)
+
+            val endpoints = exporter.export(psiClass!!)
+            val getByHeader = endpoints.find { it.sourceMethod?.name == "getByHeader" }
+            assertNotNull(getByHeader)
+            val headerParam = getByHeader!!.httpMetadata!!.parameters.find { it.binding == ParameterBinding.Header }
+            assertNotNull("getByHeader should have a header parameter", headerParam)
+            assertTrue("header param should be required when param.required matches", headerParam!!.required)
+        }
+    }
 }

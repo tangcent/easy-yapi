@@ -101,6 +101,29 @@ class YapiFormatterTest {
     }
 
     @Test
+    fun testFormatEndpointPropagatesHeaderRequiredFlag() {
+        val endpoint = ApiEndpoint(
+            name = "Protected API",
+            metadata = httpMetadata(
+                path = "/api/protected",
+                method = HttpMethod.GET,
+                headers = listOf(
+                    ApiHeader(name = "x-user-id", value = "42", required = true),
+                    ApiHeader(name = "x-timezone-id", value = "UTC", required = false)
+                )
+            )
+        )
+
+        val doc = formatter.format(endpoint)
+
+        assertEquals(2, doc.reqHeaders?.size)
+        assertEquals("x-user-id", doc.reqHeaders?.get(0)?.name)
+        assertEquals(1, doc.reqHeaders?.get(0)?.required)
+        assertEquals("x-timezone-id", doc.reqHeaders?.get(1)?.name)
+        assertEquals(0, doc.reqHeaders?.get(1)?.required)
+    }
+
+    @Test
     fun testFormatEndpointWithFormParams() {
         val endpoint = ApiEndpoint(
             name = "Login",

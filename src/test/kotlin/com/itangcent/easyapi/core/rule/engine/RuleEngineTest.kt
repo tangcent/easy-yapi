@@ -187,6 +187,54 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     @Test
+    fun testEvaluateOrNullWithEmptyConfig() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.empty(project)
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluateOrNull(RuleKey.boolean("nonexistent.key"), mockElement)
+        assertNull("evaluateOrNull must return null when no rule is configured", result)
+    }
+
+    @Test
+    fun testEvaluateOrNullWithTrueValue() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "ignore" to "true"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluateOrNull(RuleKey.boolean("ignore"), mockElement)
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun testEvaluateOrNullWithFalseValue() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "ignore" to "false"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluateOrNull(RuleKey.boolean("ignore"), mockElement)
+        assertEquals(false, result)
+    }
+
+    @Test
     fun testEvaluateIntWithValue() = runTest {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,

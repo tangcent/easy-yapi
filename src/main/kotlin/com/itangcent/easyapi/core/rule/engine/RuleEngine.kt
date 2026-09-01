@@ -110,6 +110,18 @@ class RuleEngine internal constructor(
     }
 
     /**
+     * Evaluates a boolean rule and returns `null` when no rule is configured
+     * for the key, letting the caller apply a framework-specific default.
+     */
+    suspend fun evaluateOrNull(
+        key: RuleKey.BooleanKey,
+        element: PsiElement,
+        fieldContext: String? = null
+    ): Boolean? {
+        return forEachApplicable(key) { RuleContext.from(project, element, fieldContext) }
+    }
+
+    /**
      * Evaluates a member rule from the perspective of [containingClass].
      * This preserves the distinction between a member's current containing
      * class and its original declaring class for inherited members.

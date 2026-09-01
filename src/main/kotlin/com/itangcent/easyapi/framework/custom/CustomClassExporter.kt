@@ -413,7 +413,15 @@ class CustomClassExporter(
             val name = resolveParamName(p, param.name, binding)
             val defaultValue = metadataResolver.resolveParamDefaultValue(p)
             val example = metadataResolver.resolveParamDemo(p)
-            headers.add(ApiHeader(name = name, value = defaultValue ?: example))
+            headers.add(
+                ApiHeader(
+                    name = name,
+                    value = defaultValue ?: example,
+                    // Honour `param.required` for header-bound parameters instead of
+                    // always emitting false.
+                    required = metadataResolver.isParamRequired(p)
+                )
+            )
         }
         return headers
     }
