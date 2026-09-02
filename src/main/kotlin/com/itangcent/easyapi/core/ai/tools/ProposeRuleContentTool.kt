@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.core.ai.tools
 
 import com.itangcent.easyapi.core.ai.agent.Proposal
-import com.itangcent.easyapi.core.rule.RuleProposalValidator
+import com.itangcent.easyapi.core.rule.CompositeRuleValidator
 
 /**
  * Terminal staging action — fills working memory with a proposed rule file
@@ -13,12 +13,16 @@ import com.itangcent.easyapi.core.rule.RuleProposalValidator
  * "Save…" button. The disk write happens only through the user-confirmed
  * "Save…" UI flow; the agent never writes to disk directly in v1.
  *
- * Before staging, every proposal passes through [RuleProposalValidator]
- * (the v1 deterministic "review agent"). Hard errors (unknown keys, invalid
- * filters, malformed JSON values) block staging and are returned to the
- * drafter so it can correct and retry. Soft warnings are prepended to the
- * staged content as a `# Reviewer notes:` block so the user sees them on
- * the proposal card.
+ * Before staging, every proposal passes through
+ * [CompositeRuleValidator.defaultPipeline]
+ * — the v1 deterministic "review agent" (static checks via
+ * [com.itangcent.easyapi.core.rule.RuleProposalValidator]) plus a dry-run
+ * execution of every `groovy:` value against representative PSI contexts.
+ * Hard errors (unknown keys, invalid filters, malformed JSON
+ * values, scripts that throw on every context) block staging and are
+ * returned to the drafter so it can correct and retry. Soft warnings are
+ * prepended to the staged content as a `# Reviewer notes:` block so the
+ * user sees them on the proposal card.
  */
 class ProposeRuleContentTool : AiTool {
 
@@ -58,8 +62,10 @@ class ProposeRuleContentTool : AiTool {
             return ToolResult.Error("missing required parameter(s): content, suggestedFileName")
         }
 
-        // Deterministic review pass (v1 review agent).
-        val review = RuleProposalValidator.validate(content, ctx.project)
+        // Deterministic review pass (v1 review agent): every available
+        // validator (static checks + dry-run execution of every groovy value)
+        // runs through the aggregate validator.
+        val review = CompositeRuleValidator.defaultPipeline().validate(content, ctx.project)
         if (!review.ok) {
             return ToolResult.Error(
                 "Proposal rejected by review — fix these and retry:\n" +

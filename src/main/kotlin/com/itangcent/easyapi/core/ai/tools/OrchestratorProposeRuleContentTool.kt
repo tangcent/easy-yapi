@@ -2,7 +2,7 @@ package com.itangcent.easyapi.core.ai.tools
 
 import com.itangcent.easyapi.core.ai.agent.Proposal
 import com.itangcent.easyapi.core.ai.agent.mergeTaskResults
-import com.itangcent.easyapi.core.rule.RuleProposalValidator
+import com.itangcent.easyapi.core.rule.CompositeRuleValidator
 
 /**
  * The orchestrator's terminal staging action — merges collected sub-agent
@@ -40,7 +40,9 @@ import com.itangcent.easyapi.core.rule.RuleProposalValidator
  *
  * Like [ProposeRuleContentTool], this tool:
  * - `kind = ACTION`, `requiresApproval = false` (staging only — no disk write).
- * - Validates the merged content via [RuleProposalValidator] before staging.
+ * - Validates the fallback content via
+ *   [CompositeRuleValidator.defaultPipeline] (static review + dry-run
+ *   script execution) before staging.
  * - Stages the proposal in `ctx.workingMemory.proposal`.
  * - Is terminal: the agent loop exits after this tool returns (see
  *   [com.itangcent.easyapi.core.ai.agent.RuleAuthoringAgent.PROPOSE_RULE_CONTENT]).
@@ -124,7 +126,7 @@ class OrchestratorProposeRuleContentTool : AiTool {
         // applies only to the LLM-authored fallback content, which IS
         // rule-file syntax.
         if (collected.isEmpty()) {
-            val review = RuleProposalValidator.validate(mergedContent, ctx.project)
+            val review = CompositeRuleValidator.defaultPipeline().validate(mergedContent, ctx.project)
             if (!review.ok) {
                 return ToolResult.Error(
                     "Proposal rejected by review — fix these and retry:\n" +

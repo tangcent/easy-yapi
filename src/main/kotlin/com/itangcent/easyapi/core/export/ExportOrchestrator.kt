@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.easyapi.core.internal.threading.swing
 import com.itangcent.easyapi.core.dashboard.ApiScanner
+import com.itangcent.easyapi.channel.spi.Channel
 import com.itangcent.easyapi.channel.spi.ChannelConfig
 import com.itangcent.easyapi.channel.spi.ChannelRegistry
 import com.itangcent.easyapi.core.export.ApiEndpoint
@@ -14,6 +15,7 @@ import com.itangcent.easyapi.core.export.ExportResult
 import com.itangcent.easyapi.core.ide.support.NotificationUtils
 import com.itangcent.easyapi.core.ide.support.SelectionScope
 import com.itangcent.easyapi.core.logging.IdeaLog
+import com.itangcent.easyapi.core.rule.engine.RuleFailureMonitor
 
 @Service(Service.Level.PROJECT)
 class ExportOrchestrator(private val project: Project) : IdeaLog {
@@ -42,6 +44,23 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
             return ExportResult.Error("Channel '$channelId' is disabled. Enable it in Settings → EasyApi → General.")
         }
 
+        // Bracket the whole run so throwing rules surface once at the end
+        // instead of silently skipping endpoints.
+        val failureMonitor = RuleFailureMonitor.getInstance(project)
+        failureMonitor.beginRun()
+        try {
+            return orchestrate(channel, selection, channelConfig, indicator)
+        } finally {
+            failureMonitor.endRunAndNotify("Export")
+        }
+    }
+
+    private suspend fun orchestrate(
+        channel: Channel,
+        selection: SelectionScope?,
+        channelConfig: ChannelConfig,
+        indicator: ProgressIndicator?
+    ): ExportResult {
         indicator?.text = "Scanning for API endpoints..."
         indicator?.isIndeterminate = true
         val endpoints = scanEndpoints(selection, indicator)
@@ -59,7 +78,7 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            channelId = channelId,
+            channelId = channel.id,
             channelConfig = channelConfig,
             indicator = indicator
         )
@@ -77,7 +96,7 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
                 }
             }
         } else if (result is ExportResult.Error) {
-            NotificationUtils.notifyError(project, "Export", "Channel $channelId failed: ${result.message}")
+            NotificationUtils.notifyError(project, "Export", "Channel ${channel.id} failed: ${result.message}")
         }
         return result
     }
@@ -97,6 +116,21 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
             return ExportResult.Error("Channel '$channelId' is disabled. Enable it in Settings → EasyApi → General.")
         }
 
+        val failureMonitor = RuleFailureMonitor.getInstance(project)
+        failureMonitor.beginRun()
+        try {
+            return exportViaChannel(channel, endpoints, channelConfig, indicator)
+        } finally {
+            failureMonitor.endRunAndNotify("Export")
+        }
+    }
+
+    private suspend fun exportViaChannel(
+        channel: Channel,
+        endpoints: List<ApiEndpoint>,
+        channelConfig: ChannelConfig,
+        indicator: ProgressIndicator?
+    ): ExportResult {
         indicator?.text = "Exporting ${endpoints.size} endpoints via ${channel.displayName}..."
         indicator?.isIndeterminate = false
         indicator?.fraction = 0.0
@@ -104,7 +138,7 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            channelId = channelId,
+            channelId = channel.id,
             channelConfig = channelConfig,
             indicator = indicator
         )
@@ -122,7 +156,7 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
                 }
             }
         } else if (result is ExportResult.Error) {
-            LOG.warn("ExportOrchestrator.exportViaChannel: channel=$channelId failed: ${result.message}")
+            LOG.warn("ExportOrchestrator.exportViaChannel: channel=${channel.id} failed: ${result.message}")
         }
         return result
     }

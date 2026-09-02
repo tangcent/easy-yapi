@@ -149,6 +149,7 @@ class ConfigTextParser(
             val kv = KeyValueLineParser.splitKeyValue(line) ?: continue
             val key = kv.first
             var value = kv.second
+            val lineNo = i
 
             if (value == "```" || value.endsWith("```")) {
                 val prefix = if (value.endsWith("```") && value != "```") {
@@ -175,7 +176,7 @@ class ConfigTextParser(
                 continue
             }
 
-            result.add(ConfigEntry(key, value, sourceId, state.snapshot()))
+            result.add(ConfigEntry(key, value, sourceId, state.snapshot(), lineNo))
         }
 
         return result

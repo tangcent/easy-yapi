@@ -108,8 +108,8 @@ class RuleFileResolver(private val project: Project) {
         val dirs = mutableListOf<Path>()
         dirs.add(Paths.get(projectBasePath, ".easyapi").toAbsolutePath().normalize())
         ProjectFileConfigSource.legacyFiles(projectBasePath)
-.mapNotNull { it.parent }
-.forEach { parent -> dirs.add(parent.toAbsolutePath().normalize()) }
+            .mapNotNull { it.parent }
+            .forEach { parent -> dirs.add(parent.toAbsolutePath().normalize()) }
         return dirs.distinct()
     }
 
@@ -127,9 +127,9 @@ class RuleFileResolver(private val project: Project) {
                 if (!Files.isDirectory(dir)) emptyList()
                 else Files.list(dir).use { stream ->
                     stream.filter { Files.isRegularFile(it) }
-.map { it.fileName.toString() }
-.filter { it.endsWith(".properties") || it.endsWith(".rules") }
-.toList()
+                        .map { it.fileName.toString() }
+                        .filter { it.endsWith(".properties") || it.endsWith(".rules") }
+                        .toList()
                 }
             }.getOrDefault(emptyList())
         }.distinct().sorted()

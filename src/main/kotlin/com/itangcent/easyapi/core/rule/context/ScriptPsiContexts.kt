@@ -98,6 +98,7 @@ interface MethodContext {
     fun throwsExceptions(): Array<String>
     fun isDefault(): Boolean
     fun isAbstract(): Boolean
+    fun isStatic(): Boolean
     fun isSynchronized(): Boolean
     fun isNative(): Boolean
     /**
@@ -408,6 +409,9 @@ open class ScriptPsiMethodContext(context: RuleContext) : ScriptItContext(contex
     override fun isDefault(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.DEFAULT) }
 
     override fun isAbstract(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.ABSTRACT) }
+
+    override fun isStatic(): Boolean =
+        readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.STATIC) }
 
     override fun isSynchronized(): Boolean =
         readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.SYNCHRONIZED) }

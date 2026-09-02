@@ -544,6 +544,29 @@ class ScriptPsiContextsTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertFalse("Concrete method should not be abstract", concreteContext.isAbstract())
     }
 
+    /**
+     * API symmetry with ClassContext/FieldContext: `it.static`
+     * resolves through the boolean is-getter, so a method context without
+     * `isStatic()` made every AI-authored rule using `it.static` throw.
+     */
+    fun testMethodContext_IsStatic() {
+        val classSource = """
+            package com.test;
+            public class TestClass {
+                public static void staticMethod() {}
+                public void instanceMethod() {}
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+
+        val staticContext = createMethodContext("com.test.TestClass", "staticMethod")
+        assertTrue("Static method should be detected as static", staticContext.isStatic())
+
+        val instanceContext = createMethodContext("com.test.TestClass", "instanceMethod")
+        assertFalse("Instance method should not be static", instanceContext.isStatic())
+    }
+
     fun testFieldContext_IsStatic() {
         val classSource = """
             package com.test;

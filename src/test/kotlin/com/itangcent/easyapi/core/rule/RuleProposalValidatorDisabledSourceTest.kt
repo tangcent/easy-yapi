@@ -55,7 +55,7 @@ class RuleProposalValidatorDisabledSourceTest : EasyApiLightCodeInsightFixtureTe
 
     // --- postman.test: warns when Postman disabled, silent when enabled ---
 
-    fun testPostmanTestKey_warnsWhenPostmanDisabled() {
+    fun testPostmanTestKey_warnsWhenPostmanDisabled() = runTest {
         disablePostman()
         val result = RuleProposalValidator.validate("postman.test=pm.test(\"ok\")", project)
         assertTrue("proposal must still stage (soft warning only)", result.ok)
@@ -65,7 +65,7 @@ class RuleProposalValidatorDisabledSourceTest : EasyApiLightCodeInsightFixtureTe
         )
     }
 
-    fun testPostmanTestKey_noWarningWhenPostmanEnabled() {
+    fun testPostmanTestKey_noWarningWhenPostmanEnabled() = runTest {
         val result = RuleProposalValidator.validate("postman.test=pm.test(\"ok\")", project)
         assertTrue("errors: ${result.errors}", result.ok)
         assertEquals("no warning expected when Postman enabled", 0, result.warnings.size)
@@ -73,7 +73,7 @@ class RuleProposalValidatorDisabledSourceTest : EasyApiLightCodeInsightFixtureTe
 
     // --- postman.prerequest: same prefix-based ownership ---
 
-    fun testPostmanPrerequestKey_warnsWhenPostmanDisabled() {
+    fun testPostmanPrerequestKey_warnsWhenPostmanDisabled() = runTest {
         disablePostman()
         val result = RuleProposalValidator.validate("postman.prerequest=console.log(1)", project)
         assertTrue(result.ok)
@@ -85,7 +85,7 @@ class RuleProposalValidatorDisabledSourceTest : EasyApiLightCodeInsightFixtureTe
 
     // --- General key without channel prefix: never warns ---
 
-    fun testGeneralKeyNoWarningWhenPostmanDisabled() {
+    fun testGeneralKeyNoWarningWhenPostmanDisabled() = runTest {
         disablePostman()
         val result = RuleProposalValidator.validate("api.name=My API", project)
         assertTrue("errors: ${result.errors}", result.ok)
@@ -94,7 +94,7 @@ class RuleProposalValidatorDisabledSourceTest : EasyApiLightCodeInsightFixtureTe
 
     // --- Unknown-key hard-error path unchanged ---
 
-    fun testUnknownKeyHardErrorUnchanged() {
+    fun testUnknownKeyHardErrorUnchanged() = runTest {
         // The disabled-source soft-warning path must not mask the unknown-key
         // hard error. An unknown key still blocks the proposal.
         val result = RuleProposalValidator.validate("api.unknown_key=foo", project)
@@ -104,7 +104,7 @@ class RuleProposalValidatorDisabledSourceTest : EasyApiLightCodeInsightFixtureTe
 
     // --- Soft warning never blocks: mix of disabled-source key + clean key ---
 
-    fun testDisabledSourceWarningDoesNotBlockOtherValidKeys() {
+    fun testDisabledSourceWarningDoesNotBlockOtherValidKeys() = runTest {
         disablePostman()
         val content = """
             api.name=My API

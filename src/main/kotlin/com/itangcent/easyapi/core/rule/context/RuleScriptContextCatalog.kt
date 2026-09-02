@@ -63,6 +63,34 @@ object RuleScriptContextCatalog {
      */
     fun describe(keyName: String): RuleScriptProfile = profile(keyName, emptyList(), "unknown")
 
+    /**
+     * Context kinds a dry-run evaluation of [keyName]'s rule value should run
+     * against (see [com.itangcent.easyapi.core.rule.RuleDryRunValidator]),
+     * as `ItKind` id strings (`"class"`, `"method"`, `"field"`,
+     * `"parameter"`, `"empty"`).
+     *
+     * Returns an empty list when the key's evaluation stage cannot be
+     * faithfully reproduced with the standard bindings alone:
+     * - static-configuration keys are never evaluated as scripts;
+     * - keys with extra bindings (`api`, `request`/`response`, `collection`,
+     *   `item`, `document`, `a`/`b`) would fail spuriously without them;
+     * - `type`-context keys (`json.rule.convert`) need a resolved type no
+     *   representative element can supply.
+     *
+     * Keys whose rule-evaluation stage has only the common bindings keep the
+     * [itKindsFor] mapping (including two-stage Postman/Hoppscotch script
+     * keys — the first stage is a plain Groovy rule).
+     */
+    fun dryRunContextKinds(keyName: String): List<String> = when {
+        keyName in staticConfigurationKeys -> emptyList()
+        keyName in postmanCollectionKeys || keyName in hoppscotchCollectionKeys -> emptyList()
+        keyName.endsWith(".format.after") -> emptyList()
+        keyName == "http.call.before" || keyName == "http.call.after" -> emptyList()
+        keyName == "export.after" || keyName.startsWith("custom.export.") -> emptyList()
+        keyName == "field.order.with" -> emptyList()
+        else -> itKindsFor(keyName).map(ItKind::id).filter { it != ItKind.TYPE.id }
+    }
+
     private fun profile(key: String, aliases: List<String>, source: String): RuleScriptProfile {
         val definition = when {
             key in staticConfigurationKeys -> ProfileDefinition(

@@ -271,7 +271,12 @@ class RuleEngine internal constructor(
                 val shouldApply = if (filter != null) {
                     runCatching {
                         parse(filter, ruleContext, FILTER_KEY)
-                    }.onFailure { e -> ruleContext.console.warn("Filter evaluation failed for key=${key.name}", e) }
+                    }.onFailure { e ->
+                        // A throwing filter silently disables the rule (false);
+                        // record it like a throwing value.
+                        ruleContext.console.warn("Filter evaluation failed for key=${key.name}", e)
+                        RuleFailureMonitor.getInstance(project).record(key.name, e)
+                    }
                         .getOrNull()
                         ?.asBooleanOrNull()
                         ?: false
@@ -288,6 +293,12 @@ class RuleEngine internal constructor(
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
+                        // A throwing rule must not be silent: aggregation drops
+                        // failures, which would skip endpoints invisibly.
+                        // Log per occurrence and record for the
+                        // per-run aggregated notification.
+                        ruleContext.console.warn("Rule ${key.name} threw during evaluation", e)
+                        RuleFailureMonitor.getInstance(project).record(key.name, e)
                         emit(RuleResult.failure(e))
                     }
                 }
