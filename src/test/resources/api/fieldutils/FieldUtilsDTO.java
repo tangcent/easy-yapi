@@ -20,6 +20,4 @@ public class FieldUtilsDTO {
 
     public String getNormalField() { return normalField; }
     public void setNormalField(String normalField) { this.normalField = normalField; }
-    public String getTransientField() { return transientField; }
-    public void setTransientField(String transientField) { this.transientField = transientField; }
 }
