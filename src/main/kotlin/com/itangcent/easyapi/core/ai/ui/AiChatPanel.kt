@@ -1429,7 +1429,14 @@ class AiChatPanel(
         setRunning(false)
     }
 
-    private fun resetConversation() {
+    /**
+     * Discard the current conversation and reset the UI to a fresh "Ready."
+     * state. Called by the New Conversation button and by the rule-file editor
+     * ([com.itangcent.easyapi.core.settings.ui.RuleFileEditDialog]) so that
+     * opening a rule file — or clicking Magic — always starts from an empty
+     * transcript (and cancels any still-running turn first).
+     */
+    internal fun resetConversation() {
         cancelRunningTurn()
         AiAssistantService.getInstance(project).resetConversation()
         session = null

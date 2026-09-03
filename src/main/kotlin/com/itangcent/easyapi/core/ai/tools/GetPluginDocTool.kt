@@ -4,12 +4,16 @@ package com.itangcent.easyapi.core.ai.tools
  * Perception tool that reads plugin documentation from the bundled knowledge
  * base.
  *
- * Accepts `name ∈ {overview, index, rule-guide, settings-guide, usage-guide}`
- * and returns the Markdown text from `docs/knowledge-base/<name>.md` on the
- * classpath. `overview` resolves to `README.md`, `index` to `index.md`.
+ * Accepts `name ∈ {overview, index, rule-guide, settings-guide, usage-guide,
+ * postman-script-reference}` and returns the Markdown text from
+ * `docs/knowledge-base/<name>.md` on the classpath. `overview` resolves to
+ * `README.md`, `index` to `index.md`.
  *
- * Contributor internals are not exposed to the agent (they live in
- * `AGENTS.md`); `easyapi-script-reference` is still mirrored so existing
+ * `postman-script-reference` documents the Postman-compatible `pm.*` Groovy
+ * API (pre-request / post-response scripts) — the agent should fetch it only
+ * when authoring `postman.*` rule keys; the shared Groovy `it`-context object
+ * APIs come from `get_script_object_api` instead. The legacy
+ * `easyapi-script-reference` id is kept as a non-advertised alias so older
  * prompts keep working.
  */
 class GetPluginDocTool : AiTool {
@@ -20,7 +24,9 @@ class GetPluginDocTool : AiTool {
         "Read a plugin documentation page from the EasyApi knowledge base. " +
             "Parameter `name` is one of " +
             "overview | index | rule-guide | settings-guide | usage-guide | " +
-            "easyapi-script-reference. Returns the doc text (Markdown)."
+            "postman-script-reference. postman-script-reference documents the " +
+            "Postman-compatible pm.* Groovy API — use it only when authoring " +
+            "postman.* scripts. Returns the doc text (Markdown)."
 
     override val kind: ToolKind = ToolKind.PERCEPTION
 
@@ -31,7 +37,7 @@ class GetPluginDocTool : AiTool {
                 "type" to "string",
                 "enum" to listOf(
                     "overview", "index", "rule-guide", "settings-guide",
-                    "usage-guide", "easyapi-script-reference"
+                    "usage-guide", "postman-script-reference"
                 ),
                 "description" to "Which documentation page to read."
             )
@@ -47,9 +53,12 @@ class GetPluginDocTool : AiTool {
             "rule-guide" -> "/docs/knowledge-base/rule-guide.md"
             "settings-guide" -> "/docs/knowledge-base/settings-guide.md"
             "usage-guide" -> "/docs/knowledge-base/usage-guide.md"
-            // Kept for backward compatibility with older prompts; the script
-            // reference is mirrored under knowledge-base/.
-            "easyapi-script-reference" -> "/docs/knowledge-base/easyapi-script-reference.md"
+            // Postman-compatible pm.* Groovy API reference — Postman-only.
+            "postman-script-reference" -> "/docs/knowledge-base/postman-script-reference.md"
+            // Backward-compatible alias for older prompts / persisted
+            // conversations. Not listed in the schema, so the model does not
+            // discover it for unrelated (non-Postman) tasks.
+            "easyapi-script-reference" -> "/docs/knowledge-base/postman-script-reference.md"
             else -> return ToolResult.Error("unknown doc name: $name")
         }
         val text = javaClass.getResourceAsStream(resource)?.use { it.readBytes().toString(Charsets.UTF_8) }

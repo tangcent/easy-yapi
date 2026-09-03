@@ -36,7 +36,8 @@ class RuleKeyRegistryTest {
                 "max.deep",
                 "max.elements",
                 "markdown.template.url.ttl.seconds",
-                "markdown.template.url.max.bytes"
+                "markdown.template.url.max.bytes",
+                "markdown.curl.host"
             ),
             implicitNames
         )
@@ -93,9 +94,9 @@ class RuleKeyRegistryTest {
     @Test
     fun implicitKeysListIsNonEmptyAndStable() {
         // Guard against accidentally emptying the implicit list during refactors.
-        assertTrue(RuleKeyRegistry.IMPLICIT_KEYS.isNotEmpty())
-        // The 4 known implicit keys must all be there.
-        val names = RuleKeyRegistry.IMPLICIT_KEYS.map { it.name }.toSet()
+        assertTrue(ImplicitConfigKeys.all.isNotEmpty())
+        // The 5 known implicit keys must all be there.
+        val names = ImplicitConfigKeys.all.map { it.name }.toSet()
         assertTrue("max.deep missing", "max.deep" in names)
         assertTrue("max.elements missing", "max.elements" in names)
         assertTrue(
@@ -106,6 +107,10 @@ class RuleKeyRegistryTest {
             "markdown.template.url.max.bytes missing",
             "markdown.template.url.max.bytes" in names
         )
+        assertTrue(
+            "markdown.curl.host missing",
+            "markdown.curl.host" in names
+        )
     }
 
     @Test
@@ -114,12 +119,12 @@ class RuleKeyRegistryTest {
         // implicit entry is dropped (general takes precedence). Verify the
         // dedup guard works for the implicit stage too by constructing a
         // scenario with a fake general-key collisions — but since
-        // IMPLICIT_KEYS is fixed and doesn't collide with RuleKeys today,
+        // ImplicitConfigKeys is fixed and doesn't collide with RuleKeys today,
         // we just assert the implicit keys are all present (no collision).
         val keys = RuleKeyRegistry.assembleKeys(emptyList())
         val implicitCount = keys.count { it.source == "implicit" }
         assertEquals(
-            RuleKeyRegistry.IMPLICIT_KEYS.size,
+            ImplicitConfigKeys.all.size,
             implicitCount
         )
     }

@@ -99,6 +99,9 @@ class ToolRegistry(private val tools: List<AiTool>) : IdeaLog {
                 is ToolResult.Error -> LOG.info(
                     "tool result: $name -> error in ${elapsed}ms msg=${result.message}"
                 )
+                is ToolResult.Stateful -> LOG.info(
+                    "tool result: $name -> stateful(${result.section}, n=${result.entries.size}) in ${elapsed}ms"
+                )
             }
         }
     }
@@ -120,4 +123,5 @@ class ToolRegistry(private val tools: List<AiTool>) : IdeaLog {
 private fun ToolResult.kindLabel(): String = when (this) {
     is ToolResult.Text -> "text(len=${value.length})"
     is ToolResult.Error -> "error"
+    is ToolResult.Stateful -> "stateful(section=${section}, n=${entries.size})"
 }

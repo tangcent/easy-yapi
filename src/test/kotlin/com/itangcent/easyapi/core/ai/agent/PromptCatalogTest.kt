@@ -113,9 +113,9 @@ class PromptCatalogTest {
             ),
             body = "body"
         )
-        val entry = PromptCatalog.buildEntry("ai/rules/postman.test.md", parsed)
+        val entry = PromptCatalog.buildEntry("ai/key-guides/postman.test.md", parsed)
         assertNotNull(entry)
-        assertEquals("rules", entry!!.category)
+        assertEquals("key-guides", entry!!.category)
         assertEquals("postman.test", entry.id)
         assertEquals("Postman test", entry.title)
         assertEquals("assertion", entry.cue)
@@ -129,7 +129,7 @@ class PromptCatalogTest {
             header = mapOf("title" to "T", "cue" to "C"),
             body = ""
         )
-        assertNull(PromptCatalog.buildEntry("ai/rules/test.md", parsed))
+        assertNull(PromptCatalog.buildEntry("ai/key-guides/test.md", parsed))
     }
 
     @Test
@@ -138,7 +138,7 @@ class PromptCatalogTest {
             header = mapOf("id" to "test", "cue" to "C"),
             body = ""
         )
-        assertNull(PromptCatalog.buildEntry("ai/rules/test.md", parsed))
+        assertNull(PromptCatalog.buildEntry("ai/key-guides/test.md", parsed))
     }
 
     @Test
@@ -147,7 +147,7 @@ class PromptCatalogTest {
             header = mapOf("id" to "test", "title" to "T"),
             body = ""
         )
-        assertNull(PromptCatalog.buildEntry("ai/rules/test.md", parsed))
+        assertNull(PromptCatalog.buildEntry("ai/key-guides/test.md", parsed))
     }
 
     @Test
@@ -157,7 +157,7 @@ class PromptCatalogTest {
             body = ""
         )
         assertEquals("detection", PromptCatalog.buildEntry("ai/detection/x.md", parsed)!!.category)
-        assertEquals("rules", PromptCatalog.buildEntry("ai/rules/x.md", parsed)!!.category)
+        assertEquals("key-guides", PromptCatalog.buildEntry("ai/key-guides/x.md", parsed)!!.category)
     }
 
     @Test
@@ -172,7 +172,7 @@ class PromptCatalogTest {
     @Test
     fun deriveCategory_validPaths() {
         assertEquals("detection", PromptCatalog.deriveCategory("ai/detection/foo.md"))
-        assertEquals("rules", PromptCatalog.deriveCategory("ai/rules/bar.md"))
+        assertEquals("key-guides", PromptCatalog.deriveCategory("ai/key-guides/bar.md"))
     }
 
     @Test
@@ -212,13 +212,13 @@ class PromptCatalogTest {
     }
 
     @Test
-    fun list_rulesCategory_returnsSeededEntries() {
-        val entries = PromptCatalog.list("rules")
-        assertTrue("rules list should not be empty", entries.isNotEmpty())
+    fun list_keyGuidesCategory_returnsSeededEntries() {
+        val entries = PromptCatalog.list("key-guides")
+        assertTrue("key-guides list should not be empty", entries.isNotEmpty())
         val ids = entries.map { it.id }.toSet()
         assertTrue("postman.test missing", "postman.test" in ids)
-        assertTrue("field.ignore missing", "field.ignore" in ids)
         assertTrue("method.additional.header missing", "method.additional.header" in ids)
+        assertTrue("json.additional.field missing", "json.additional.field" in ids)
     }
 
     @Test
@@ -228,7 +228,7 @@ class PromptCatalogTest {
 
     @Test
     fun entry_existingId_returnsEntry() {
-        val entry = PromptCatalog.entry("rules", "postman.test")
+        val entry = PromptCatalog.entry("key-guides", "postman.test")
         assertNotNull(entry)
         assertEquals("postman.test", entry!!.id)
         assertEquals("Postman test script", entry.title)
@@ -238,12 +238,12 @@ class PromptCatalogTest {
 
     @Test
     fun entry_unknownId_returnsNull() {
-        assertNull(PromptCatalog.entry("rules", "does.not.exist"))
+        assertNull(PromptCatalog.entry("key-guides", "does.not.exist"))
     }
 
     @Test
     fun body_existingId_returnsNonEmptyBody() {
-        val body = PromptCatalog.body("rules", "postman.test")
+        val body = PromptCatalog.body("key-guides", "postman.test")
         assertNotNull(body)
         assertTrue("body should be non-empty", body!!.isNotBlank())
         // The postman.test body mentions "pm.response" in its recipe.
@@ -252,7 +252,7 @@ class PromptCatalogTest {
 
     @Test
     fun body_unknownId_returnsNull() {
-        assertNull(PromptCatalog.body("rules", "does.not.exist"))
+        assertNull(PromptCatalog.body("key-guides", "does.not.exist"))
     }
 
     @Test
@@ -265,9 +265,9 @@ class PromptCatalogTest {
 
     @Test
     fun listFor_filtersByChannelScope() {
-        // A channel: postman rule file should appear with postman active...
+        // A channel: postman key-guide file should appear with postman active...
         val withPostman = PromptCatalog.listFor(
-            "rules",
+            "key-guides",
             activeChannels = setOf("postman"),
             activeFormats = emptySet(),
             activeFrameworks = emptySet()
@@ -280,7 +280,7 @@ class PromptCatalogTest {
 
         // ...and be absent when postman is not active.
         val withoutPostman = PromptCatalog.listFor(
-            "rules",
+            "key-guides",
             activeChannels = emptySet(),
             activeFormats = emptySet(),
             activeFrameworks = emptySet()
@@ -296,16 +296,16 @@ class PromptCatalogTest {
     fun listFor_unscopedEntriesAlwaysAppear() {
         // Entries with no scope fields should appear regardless of active sets.
         val unscoped = PromptCatalog.listFor(
-            "rules",
+            "key-guides",
             activeChannels = emptySet(),
             activeFormats = emptySet(),
             activeFrameworks = emptySet()
         )
         val unscopedIds = unscoped.map { it.id }.toSet()
-        // field.ignore has no scope fields (no channel/format/framework).
+        // json.additional.field has no scope fields (no channel/format/framework).
         assertTrue(
-            "field.ignore (unscoped) should always appear",
-            "field.ignore" in unscopedIds
+            "json.additional.field (unscoped) should always appear",
+            "json.additional.field" in unscopedIds
         )
     }
 

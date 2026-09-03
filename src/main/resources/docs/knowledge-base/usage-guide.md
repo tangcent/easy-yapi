@@ -2,7 +2,7 @@
 
 This guide walks through the most common EasyYapi workflows — installation, first export, the API Dashboard, search, field conversion, pre/post scripts, and AI-assisted rule creation.
 
-> For the full rule key catalog and filter syntax, see the [Rule Authoring Guide](rule-guide.md). For settings reference, see the [Settings Guide](settings-guide.md). For Postman-compatible Groovy scripting, see the [Script Reference](easyapi-script-reference.md).
+> For the full rule key catalog and filter syntax, see the [Rule Authoring Guide](rule-guide.md). For settings reference, see the [Settings Guide](settings-guide.md). For Postman-compatible Groovy scripting, see the [Postman Script Reference](postman-script-reference.md).
 
 ---
 
@@ -149,7 +149,7 @@ pm.test("Status is 200") {
 - **Per-class** — use `postman.class.prerequest` / `postman.class.test`.
 - **Collection-level** — use `postman.collection.prerequest` / `postman.collection.test`.
 
-For the full `pm.*` API reference, see the [Script Reference](easyapi-script-reference.md).
+For the full `pm.*` API reference, see the [Postman Script Reference](postman-script-reference.md).
 
 ---
 

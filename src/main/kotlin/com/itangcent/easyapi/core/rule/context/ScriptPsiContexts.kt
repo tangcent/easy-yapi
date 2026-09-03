@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.core.rule.context
 
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiEnumConstant
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
@@ -22,6 +23,44 @@ import kotlinx.coroutines.runBlocking
 //region Context Type Interfaces
 
 /**
+ * Common contract shared by every script context.
+ *
+ * Implemented by [ScriptItContext] and extended by [ClassContext],
+ * [MethodContext], [FieldContext] and [ParameterContext]. Declares the
+ * universal operations every script can call regardless of element type:
+ * name/doc access, annotation and modifier queries, source-text access, and
+ * the `contextType()` discriminator.
+ *
+ * Script authors program against these context interfaces — never against a
+ * concrete PSI wrapper — so this is the contract the AI tooling reflects over.
+ */
+interface ItContext {
+    fun psi(): PsiElement?
+    fun getName(): String?
+    fun name(): String
+    fun doc(): String?
+    fun doc(tag: String): String?
+    fun docs(tag: String): List<String>?
+    fun hasDoc(tag: String): Boolean
+    fun doc(tag: String, subTag: String): String?
+    fun hasModifier(modifier: String): Boolean
+    fun modifiers(): List<String>
+    fun hasAnn(name: String): Boolean
+    fun ann(name: String): String?
+    fun ann(name: String, attr: String): String?
+    fun annValue(name: String): Any?
+    fun annValue(name: String, attr: String): Any?
+    fun annMap(name: String): Map<String, Any?>?
+    fun annMaps(name: String): List<Map<String, Any?>>?
+    fun sourceCode(): String?
+    fun defineCode(): String?
+    fun contextType(): String
+    fun canonicalText(): String
+    fun getExt(name: String): Any?
+    fun setExt(name: String, value: Any?)
+}
+
+/**
  * Interface defining the contract for contextType "class".
  *
  * Implemented by [ScriptPsiClassContext] and its subclasses.
@@ -31,7 +70,7 @@ import kotlinx.coroutines.runBlocking
  * - Inheritance queries (extends, implements, superClass)
  * - JSON serialization (toJson, toJson5)
  */
-interface ClassContext {
+interface ClassContext : ItContext {
     fun methods(): Array<ScriptPsiMethodContext>
     fun methodCnt(): Int
     fun fields(): Array<ScriptPsiFieldContext>
@@ -80,7 +119,7 @@ interface ClassContext {
  * - Containing class access
  * - Method modifier checks
  */
-interface MethodContext {
+interface MethodContext : ItContext {
     fun returnType(): ScriptTypeContext?
     fun type(): ScriptTypeContext?
     fun isVarArgs(): Boolean
@@ -123,7 +162,7 @@ interface MethodContext {
  * - Containing class access
  * - Field modifier checks
  */
-interface FieldContext {
+interface FieldContext : ItContext {
     fun type(): ScriptTypeContext
     fun jsonType(): ScriptTypeContext
     fun containingClass(): ScriptPsiClassContext?
@@ -146,7 +185,7 @@ interface FieldContext {
  * - Varargs detection
  * - Declaring method access
  */
-interface ParameterContext {
+interface ParameterContext : ItContext {
     fun type(): ScriptTypeContext
     fun jsonType(): ScriptTypeContext
     fun isVarArgs(): Boolean

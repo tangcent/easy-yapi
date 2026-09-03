@@ -25,7 +25,7 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
  *     `api.tag[#tag]=...` (and kotlin variants)
  *   - [YapiMetaRuleKeys.API_STATUS]: `api.status[#undone]=undone`, `api.status[#todo]=undone`
  *   - [YapiMetaRuleKeys.API_OPEN]: `api.open[#open]=true`
- *   - [YapiMetaRuleKeys.FIELD_MOCK]: `field.mock=#mock`
+ *   - [RuleKeys.FIELD_MOCK]: `field.mock=#mock`
  */
 class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -166,7 +166,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     /**
      * The core rule: a field with `@mock 123` doc tag should resolve
-     * [YapiMetaRuleKeys.FIELD_MOCK] to `"123"`.
+     * [RuleKeys.FIELD_MOCK] to `"123"`.
      */
     fun testFieldMockRuleForFieldWithMockTag() = runTest {
         val psiClass = findClass("com.itangcent.yapi.ItemDTO")
@@ -176,7 +176,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find id field", idField)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val mock = ruleEngine.evaluate(YapiMetaRuleKeys.FIELD_MOCK, idField!!)
+        val mock = ruleEngine.evaluate(RuleKeys.FIELD_MOCK, idField!!)
         assertEquals(
             "FIELD_MOCK should be '123' for field with @mock 123 doc tag",
             "123",
@@ -186,7 +186,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     /**
      * The core rule: a field without `@mock` doc tag should resolve
-     * [YapiMetaRuleKeys.FIELD_MOCK] to `null`.
+     * [RuleKeys.FIELD_MOCK] to `null`.
      */
     fun testFieldMockRuleForFieldWithoutMockTag() = runTest {
         val psiClass = findClass("com.itangcent.yapi.ItemDTO")
@@ -196,7 +196,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find description field", descField)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val mock = ruleEngine.evaluate(YapiMetaRuleKeys.FIELD_MOCK, descField!!)
+        val mock = ruleEngine.evaluate(RuleKeys.FIELD_MOCK, descField!!)
         assertNull(
             "FIELD_MOCK should be null for field without @mock doc tag",
             mock

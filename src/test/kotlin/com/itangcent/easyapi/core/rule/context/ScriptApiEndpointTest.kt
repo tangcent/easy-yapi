@@ -84,9 +84,14 @@ class ScriptApiEndpointTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun testSetParam() {
+        // Legacy 4-arg form (pre-example rules, commit 7127d9d2) — deprecated
+        // but must keep resolving for historical .rules; example stays null.
         scriptEndpoint.setParam("userId", "123", true, "User ID")
-        // Verify no exception thrown
+        val param = endpoint.httpMetadata?.parameters?.last()
+        assertNotNull("Should add a parameter", param)
+        assertNull("Legacy call leaves example null", param?.example)
     }
 
     @Test
@@ -96,14 +101,14 @@ class ScriptApiEndpointTest {
         assertNotNull("Should add a parameter", param)
         assertEquals(ParameterBinding.Query, param?.binding)
         assertEquals("user-001", param?.example)
-        // 4-arg call (no example) keeps example null — backward compatible
-        scriptEndpoint.setParam("other", null, false, null)
-        assertNull(endpoint.httpMetadata?.parameters?.last()?.example)
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun testSetFormParam() {
+        // Legacy 4-arg form — kept for historical rules, example stays null.
         scriptEndpoint.setFormParam("username", "john", true, "Username")
+        assertEquals(ParameterBinding.Form, endpoint.httpMetadata?.parameters?.last()?.binding)
     }
 
     @Test
@@ -115,8 +120,11 @@ class ScriptApiEndpointTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun testSetPathParam() {
+        // Legacy 3-arg form — kept for historical rules, example stays null.
         scriptEndpoint.setPathParam("id", "123", "Path ID")
+        assertEquals(ParameterBinding.Path, endpoint.httpMetadata?.parameters?.last()?.binding)
     }
 
     @Test
@@ -128,8 +136,11 @@ class ScriptApiEndpointTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun testSetHeader() {
+        // Legacy 4-arg form — kept for historical rules, example stays null.
         scriptEndpoint.setHeader("X-Custom", "value", true, "Custom header")
+        assertEquals("X-Custom", endpoint.httpMetadata?.headers?.last()?.name)
     }
 
     @Test
@@ -150,7 +161,9 @@ class ScriptApiEndpointTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun testSetResponseHeader() {
+        // Legacy 4-arg form — kept for historical rules, example stays null.
         scriptEndpoint.setResponseHeader("X-Request-Id", "abc", false, "Request ID")
     }
 

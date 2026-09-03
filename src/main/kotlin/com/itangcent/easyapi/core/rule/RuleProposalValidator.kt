@@ -46,17 +46,6 @@ import com.itangcent.easyapi.framework.spi.FrameworkRegistry
 object RuleProposalValidator : RuleValidator {
 
     /**
-     * The keys whose values are single-line JSON objects, validated by
-     * attempting a JSON parse. Mirrors the preamble's contract.
-     */
-    private val JSON_VALUE_KEYS = setOf(
-        "method.additional.header",
-        "method.additional.param",
-        "method.additional.response.header",
-        "json.additional.field",
-    )
-
-    /**
      * Valid filter prefixes inside `[...]`, mirroring the preamble's
      * "Valid filter prefixes (and ONLY these)" list.
      */
@@ -83,10 +72,6 @@ object RuleProposalValidator : RuleValidator {
      */
     private val PARAM_CANONICAL_TEXT = Regex("""\bit\.canonicalText\(\)""")
 
-    /** Keys evaluated against parameter contexts (mirrors [RuleScriptContextCatalog]). */
-    private fun isParamContextKey(key: String): Boolean =
-        key.startsWith("param.") || key.startsWith("custom.param.") || key.startsWith("api.param.")
-
     /** Source kind for keys declared in [RuleKeys] (mirrors [RuleKeyRegistry]). */
     private const val SOURCE_GENERAL = "general"
     /** Source kind for keys read by name only (mirrors [RuleKeyRegistry]). */
@@ -111,6 +96,10 @@ object RuleProposalValidator : RuleValidator {
         // A5c: precompute key-name → disabled-source-id lookup (unfiltered
         // allKeys() view, mirroring findKey) so per-entry warnings are O(1).
         val disabledSourceByName: Map<String, String> = buildDisabledSourceMap(project)
+        // Scheme lookup: key-name (primary + alias) → the self-describing
+        // RuleKeyScheme, so JSON-value and parameter-context checks read the
+        // declared contract instead of guessing from the key name.
+        val schemeByName: Map<String, RuleKeyScheme> = buildSchemeMap(project)
         val entries = ConfigTextParser.getInstance(project).parse(content, "proposal")
         val errors = mutableListOf<String>()
         val warnings = mutableListOf<String>()
@@ -165,7 +154,7 @@ object RuleProposalValidator : RuleValidator {
                 }
             }
             val value = entry.value
-            if (key in JSON_VALUE_KEYS && value.isNotBlank()) {
+            if (schemeByName[key]?.jsonValue == true && value.isNotBlank()) {
                 val v = value.trim()
                 // A groovy value starts with `groovy:` and is script, not JSON.
                 if (!v.startsWith("groovy:") && !isParsableJson(v)) {
@@ -174,7 +163,7 @@ object RuleProposalValidator : RuleValidator {
                 }
             }
             if (value.startsWith("groovy:")) {
-                warnCanonicalTextOnParam(key, value, lineNo, warnings)
+                warnCanonicalTextOnParam(key, value, lineNo, schemeByName[key], warnings)
             }
         }
         return RuleValidation(errors = errors, warnings = warnings)
@@ -184,13 +173,31 @@ object RuleProposalValidator : RuleValidator {
      * Soft warning when a parameter-context rule's script calls
      * `it.canonicalText()` — the element path, not the parameter's type.
      */
-    private fun warnCanonicalTextOnParam(key: String, script: String, lineNo: Int?, warnings: MutableList<String>) {
-        if (!isParamContextKey(key)) return
+    private fun warnCanonicalTextOnParam(
+        key: String,
+        script: String,
+        lineNo: Int?,
+        scheme: RuleKeyScheme?,
+        warnings: MutableList<String>
+    ) {
+        // A parameter-context key is declared by its scheme, not guessed from
+        // the name. A key with no scheme (unmigrated) falls back to no warning.
+        if (scheme?.contextKinds?.contains(ContextKind.PARAMETER) != true) return
         if (!PARAM_CANONICAL_TEXT.containsMatchIn(script)) return
         val where = lineNo?.let { "line $it: " } ?: ""
         warnings += "${where}canonicalText() on a parameter context returns the element " +
             "path (class#method.param), not the parameter's type — use type().name() for type checks."
     }
+
+    /**
+     * Builds a key-name (primary + alias) → [RuleKeyScheme] lookup from the
+     * registry's full catalog, so JSON-value and parameter-context checks are
+     * O(1) per entry and read the key's declared contract.
+     */
+    private fun buildSchemeMap(project: Project): Map<String, RuleKeyScheme> =
+        RuleKeyRegistry.getInstance(project).allKeys()
+            .flatMap { info -> info.key.allNames.map { it to info.key.scheme } }
+            .toMap()
 
     /**
      * Maps [pattern] matches in [content] to 1-based line numbers, skipping

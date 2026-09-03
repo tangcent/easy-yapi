@@ -42,13 +42,33 @@ class AgentMemory {
      */
     val collectedSubAgentResults: MutableList<Pair<Task, TaskResult>> = mutableListOf()
 
+    /**
+     * External knowledge state for rule-key catalogs, script-context profiles,
+     * and script-object API signatures. Updated by [ToolResult.Stateful] tool
+     * results; rendered as a system message block injected at request time.
+     *
+     * Reset by [reset] so a new conversation starts fresh.
+     */
+    val knowledgeState: KnowledgeState = KnowledgeState()
+
+    /**
+     * How many leading [AiMessage.System] messages were produced by
+     * [SystemPromptBuilder.build] for this conversation. The L0 indexes are
+     * enablement-filtered, so [com.itangcent.easyapi.core.ai.agent.RuleAuthoringAgent]
+     * replaces exactly these messages when the enabled channel/format/framework
+     * sets change mid-conversation.
+     */
+    var openingSystemCount: Int = 0
+
     /** Clear all state — invoked on "New Conversation". */
     fun reset() {
         messages.clear()
         proposal = null
         ambient = null
         taskList = null
+        openingSystemCount = 0
         collectedSubAgentResults.clear()
+        knowledgeState.clear()
     }
 }
 

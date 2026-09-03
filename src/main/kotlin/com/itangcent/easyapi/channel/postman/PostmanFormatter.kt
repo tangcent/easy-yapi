@@ -15,7 +15,6 @@ import com.itangcent.easyapi.core.export.isHttp
 import com.itangcent.easyapi.channel.postman.model.*
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.format.json.ObjectModelJsonConverter
-import com.itangcent.easyapi.core.rule.RuleKeys
 import com.itangcent.easyapi.core.rule.engine.RuleEngine
 import com.itangcent.easyapi.core.settings.PostmanJson5FormatType
 import com.itangcent.easyapi.core.util.json.GsonUtils
@@ -195,24 +194,24 @@ class PostmanFormatter(
             val psiMethod = ctx.psiElement as? PsiMethod
 
             if (psiMethod != null) {
-                ruleEngine.evaluate(RuleKeys.POSTMAN_PREREQUEST, psiMethod)
+                ruleEngine.evaluate(PostmanRuleKeys.POSTMAN_PREREQUEST, psiMethod)
                     ?.takeIf { it.isNotBlank() }?.let { preRequestScripts.add(it) }
-                ruleEngine.evaluate(RuleKeys.POSTMAN_TEST, psiMethod)
+                ruleEngine.evaluate(PostmanRuleKeys.POSTMAN_TEST, psiMethod)
                     ?.takeIf { it.isNotBlank() }?.let { testScripts.add(it) }
             }
 
             if (psiClass != null) {
-                ruleEngine.evaluate(RuleKeys.POSTMAN_CLASS_PREREQUEST, psiClass)
+                ruleEngine.evaluate(PostmanRuleKeys.POSTMAN_CLASS_PREREQUEST, psiClass)
                     ?.takeIf { it.isNotBlank() }?.let { preRequestScripts.add(it) }
-                ruleEngine.evaluate(RuleKeys.POSTMAN_CLASS_TEST, psiClass)
+                ruleEngine.evaluate(PostmanRuleKeys.POSTMAN_CLASS_TEST, psiClass)
                     ?.takeIf { it.isNotBlank() }?.let { testScripts.add(it) }
             }
         }
 
-        ruleEngine.evaluate(RuleKeys.POSTMAN_COLLECTION_PREREQUEST) { ctx ->
+        ruleEngine.evaluate(PostmanRuleKeys.POSTMAN_COLLECTION_PREREQUEST) { ctx ->
             ctx.setExt("collection", contexts)
         }
-        ruleEngine.evaluate(RuleKeys.POSTMAN_COLLECTION_TEST) { ctx ->
+        ruleEngine.evaluate(PostmanRuleKeys.POSTMAN_COLLECTION_TEST) { ctx ->
             ctx.setExt("collection", contexts)
         }
 
@@ -299,10 +298,10 @@ class PostmanFormatter(
     private suspend fun resolveHost(context: PostmanEndpointContext): String {
         val psiClass = context.psiClass ?: (context.psiElement as? PsiClass)
         val hostByRule = if (psiClass != null) {
-            ruleEngine.evaluate(RuleKeys.POSTMAN_HOST, psiClass)
+            ruleEngine.evaluate(PostmanRuleKeys.POSTMAN_HOST, psiClass)
         } else {
             // Fallback: evaluate without element context for global/builtin rules
-            ruleEngine.evaluate(RuleKeys.POSTMAN_HOST)
+            ruleEngine.evaluate(PostmanRuleKeys.POSTMAN_HOST)
         }
         if (!hostByRule.isNullOrBlank()) {
             return hostByRule
@@ -317,11 +316,11 @@ class PostmanFormatter(
         val explicitTest = context.testScript?.takeIf { it.isNotBlank() }
 
         val rulePreRequest = context.psiElement?.let { element ->
-            ruleEngine.evaluate(RuleKeys.POSTMAN_PREREQUEST, element)
+            ruleEngine.evaluate(PostmanRuleKeys.POSTMAN_PREREQUEST, element)
         }?.takeIf { it.isNotBlank() }
 
         val ruleTest = context.psiElement?.let { element ->
-            ruleEngine.evaluate(RuleKeys.POSTMAN_TEST, element)
+            ruleEngine.evaluate(PostmanRuleKeys.POSTMAN_TEST, element)
         }?.takeIf { it.isNotBlank() }
 
         val preRequestScripts = mutableListOf<String>()
@@ -357,7 +356,7 @@ class PostmanFormatter(
 
     private suspend fun fireEvent(context: PostmanEndpointContext, item: PostmanItem) {
         context.psiElement?.let { element ->
-            ruleEngine.evaluate(RuleKeys.POSTMAN_FORMAT_AFTER, element) { ctx ->
+            ruleEngine.evaluate(PostmanRuleKeys.POSTMAN_FORMAT_AFTER, element) { ctx ->
                 ctx.setExt("item", item)
                 ctx.setExt("endpoint", context.endpoint)
             }

@@ -3,6 +3,7 @@ package com.itangcent.easyapi.core.ai.tools
 import com.itangcent.easyapi.core.ai.AiRuntimeConfig
 import com.itangcent.easyapi.core.ai.agent.AgentEvent
 import com.itangcent.easyapi.core.ai.agent.AgentMemory
+import com.itangcent.easyapi.core.ai.agent.KnowledgeState
 import com.itangcent.easyapi.core.ai.agent.ApprovalGate
 import com.itangcent.easyapi.core.config.ConfigReader
 import com.itangcent.easyapi.core.config.SourceValue
@@ -46,99 +47,123 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
     // --- ListRuleKeysTool ---
 
     fun testListRuleKeysReturnsKnownKeys() {
-        val result = runBlocking { ListRuleKeysTool().execute(emptyMap(), ctx()) }
-        val text = (result as ToolResult.Text).value
-        Assert.assertTrue("should contain api.name", text.contains("api.name"))
-        Assert.assertTrue("should contain field.ignore", text.contains("field.ignore"))
-        Assert.assertTrue("should contain postman.test", text.contains("postman.test"))
+        val entries = stateEntries(runBlocking { ListRuleKeysTool().execute(emptyMap(), ctx()) })
+        Assert.assertTrue("should contain api.name", entries.containsKey("api.name"))
+        Assert.assertTrue("should contain field.ignore", entries.containsKey("field.ignore"))
+        Assert.assertTrue("should contain postman.test", entries.containsKey("postman.test"))
     }
 
-    fun testListRuleKeysIncludesCompactScriptContext() {
-        val result = runBlocking { ListRuleKeysTool().execute(emptyMap(), ctx()) }
-        val keys: List<Map<String, Any?>> =
-            com.itangcent.easyapi.core.util.json.GsonUtils.fromJson((result as ToolResult.Text).value)
-        val fieldIgnore = keys.first { it["name"] == "field.ignore" }
-        val context = fieldIgnore["scriptContext"] as? Map<*, *>
-        Assert.assertNotNull("field.ignore should expose a context summary", context)
-        Assert.assertEquals("groovy-rule", context!!["executionMode"])
-        Assert.assertEquals("get_rule_context", context["detailTool"])
+    fun testListRuleKeysRendersCompactStateEntries() {
+        // Every key's directory line is self-describing: name | source |
+        // summary | outputShape | [contexts]. It goes to §keys, never into the
+        // transcript as a full JSON blob.
+        val stateful = stateful(runBlocking { ListRuleKeysTool().execute(emptyMap(), ctx()) })
+        Assert.assertEquals("§keys", stateful.section)
+        val line = stateful.entries.first { it.id == "field.ignore" }.renderedLine
+        Assert.assertTrue("line should lead with the key name: $line", line.startsWith("field.ignore | "))
+        Assert.assertTrue("line should carry the source: $line", line.contains("general"))
+        Assert.assertTrue("receipt should report the catalog size", stateful.receiptNote.contains("keys catalogued"))
     }
 
-    fun testListRuleKeysAttachesCatalogMetadataForKeysWithRecipeFile() {
-        // A5 catalog join: keys that have a per-key recipe file in
-        // ai/rules/<key>.md get `description` + `detailPromptId` attached.
-        // `field.ignore` has ai/rules/field.ignore.md.
-        val result = runBlocking { ListRuleKeysTool().execute(emptyMap(), ctx()) }
-        Assert.assertTrue(result is ToolResult.Text)
-        val text = (result as ToolResult.Text).value
-        val keys: List<Map<String, Any?>> =
-            com.itangcent.easyapi.core.util.json.GsonUtils.fromJson(text)
-        val fieldIgnore = keys.firstOrNull { it["name"] == "field.ignore" }
-        Assert.assertNotNull("field.ignore should be in the list", fieldIgnore)
+    fun testListRuleKeysIncludesKeysWithRecipeFile() {
+        // `json.additional.field` has ai/key-guides/json.additional.field.md —
+        // it is still listed like any other key (guide discovery is served by
+        // the enablement-filtered L0 index, not by the directory line).
+        val entries = stateEntries(runBlocking { ListRuleKeysTool().execute(emptyMap(), ctx()) })
         Assert.assertTrue(
-            "field.ignore should have a description (catalog cue)",
-            fieldIgnore!!.containsKey("description")
+            "json.additional.field should be in the list",
+            entries.containsKey("json.additional.field")
         )
         Assert.assertTrue(
-            "field.ignore should have a detailPromptId",
-            fieldIgnore.containsKey("detailPromptId")
-        )
-        Assert.assertEquals("field.ignore", fieldIgnore["detailPromptId"])
-    }
-
-    fun testListRuleKeysLeavesNonCoveredKeysAtBaseShape() {
-        // Keys without a per-key recipe file (e.g. `api.name`) still return
-        // {name, type, source} — no description/detailPromptId attached.
-        val result = runBlocking { ListRuleKeysTool().execute(emptyMap(), ctx()) }
-        Assert.assertTrue(result is ToolResult.Text)
-        val text = (result as ToolResult.Text).value
-        val keys: List<Map<String, Any?>> =
-            com.itangcent.easyapi.core.util.json.GsonUtils.fromJson(text)
-        val apiName = keys.firstOrNull { it["name"] == "api.name" }
-        Assert.assertNotNull("api.name should be in the list", apiName)
-        Assert.assertFalse(
-            "api.name should NOT have a description (no catalog file)",
-            apiName!!.containsKey("description")
-        )
-        Assert.assertFalse(
-            "api.name should NOT have a detailPromptId (no catalog file)",
-            apiName.containsKey("detailPromptId")
+            "json.additional.field should carry a self-describing summary",
+            entries["json.additional.field"]!!.split(" | ").size >= 3
         )
     }
 
-    fun testListRuleKeysCatalogJoinDoesNotThrowOnMissingCatalog() {
-        // The catalog join is best-effort: even if the catalog is empty or
-        // missing, the tool must return the basic {name, type, source} shape
-        // for every key (no throw). This test verifies the tool runs without
-        // throwing; the actual catalog is present in the test classpath, so
-        // we just assert the result is Text (not Error).
+    fun testListRuleKeysIncludesKeysWithoutRecipeFile() {
+        // Keys without a per-key recipe file (e.g. `api.name`) are still
+        // self-describing — they carry `summary` from their scheme.
+        val entries = stateEntries(runBlocking { ListRuleKeysTool().execute(emptyMap(), ctx()) })
+        Assert.assertTrue("api.name should be in the list", entries.containsKey("api.name"))
+    }
+
+    fun testListRuleKeysDoesNotThrowOnMissingCatalog() {
         val result = runBlocking { ListRuleKeysTool().execute(emptyMap(), ctx()) }
-        Assert.assertTrue("result: $result", result is ToolResult.Text)
-        val text = (result as ToolResult.Text).value
-        // Every key should at least have name + type + source.
-        Assert.assertTrue("should contain api.name", text.contains("api.name"))
-        Assert.assertTrue("should contain \"source\"", text.contains("source"))
+        Assert.assertTrue("result: $result", result is ToolResult.Stateful)
+        val entries = stateEntries(result)
+        Assert.assertTrue("should contain api.name", entries.containsKey("api.name"))
+        Assert.assertTrue("every line should carry a source", entries.values.all { it.contains(" | ") })
+    }
+
+    // --- ListRuleKeysTool (continued) ---
+
+    fun testListRuleKeysIncludesImplicitKey() {
+        // markdown.curl.host is read by name via ConfigReader.getFirst(...) and
+        // registered as an implicit key — so list_rule_keys surfaces it too.
+        val entries = stateEntries(runBlocking { ListRuleKeysTool().execute(emptyMap(), ctx()) })
+        val curlHost = entries["markdown.curl.host"]
+        Assert.assertNotNull("markdown.curl.host should be in list_rule_keys", curlHost)
+        Assert.assertTrue(
+            "markdown.curl.host should be tagged implicit: $curlHost",
+            curlHost!!.startsWith("markdown.curl.host | implicit | ")
+        )
     }
 
     // --- GetRuleContextTool ---
 
-    fun testGetRuleContextReturnsKeySpecificObjectApi() {
-        val result = runBlocking {
+    fun testGetRuleContextReturnsStatefulKeyContext() {
+        val stateful = stateful(runBlocking {
             GetRuleContextTool().execute(mapOf("key" to "http.call.after"), ctx())
-        }
-        Assert.assertTrue("result: $result", result is ToolResult.Text)
-        val text = (result as ToolResult.Text).value
-        Assert.assertTrue(text.contains("HttpRequestWrapper"))
-        Assert.assertTrue(text.contains("HttpResponseWrapper"))
-        Assert.assertTrue(text.contains("discard"))
+        })
+        Assert.assertEquals("§keyContexts", stateful.section)
+        val entry = stateful.entries.single()
+        Assert.assertEquals("http.call.after", entry.id)
+        Assert.assertTrue("line: ${entry.renderedLine}", entry.renderedLine.startsWith("http.call.after | "))
+        Assert.assertTrue(
+            "receipt should point at get_script_object_api: ${stateful.receiptNote}",
+            stateful.receiptNote.contains("get_script_object_api")
+        )
     }
 
-    fun testGetRuleContextAcceptsAliasesAndRejectsUnknownKeys() {
-        val aliasResult = runBlocking {
+    fun testGetRuleContextDoesNotWriteObjectsSection() {
+        // §objects has exactly one writer (get_script_object_api). If
+        // get_rule_context also wrote it, its method-count-only rendering
+        // would overwrite the full signatures.
+        val memory = AgentMemory()
+        runBlocking { GetRuleContextTool().execute(mapOf("key" to "http.call.after"), ctx(workingMemory = memory)) }
+        Assert.assertTrue(
+            "get_rule_context must not touch §objects",
+            memory.knowledgeState.entries("§objects").isEmpty()
+        )
+    }
+
+    fun testGetScriptObjectApiWritesFullSignaturesIntoObjectsSection() {
+        val stateful = stateful(runBlocking {
+            GetScriptObjectApiTool().execute(mapOf("ids" to listOf("logger")), ctx())
+        })
+        Assert.assertEquals("§objects", stateful.section)
+        val line = stateful.entries.single().renderedLine
+        Assert.assertTrue("line should start with the object id: $line", line.startsWith("logger | "))
+        Assert.assertTrue(
+            "line should carry method signatures, not just a count: $line",
+            line.contains("(")
+        )
+    }
+
+    fun testGetRuleContextResolvesAliasToCanonicalKey() {
+        // An alias must be filed under the canonical key, otherwise a later
+        // call with the canonical name appends a second, identical line.
+        val aliasResult = stateful(runBlocking {
             GetRuleContextTool().execute(mapOf("key" to "doc.field"), ctx())
-        }
-        Assert.assertTrue("result: $aliasResult", aliasResult is ToolResult.Text)
-        Assert.assertTrue((aliasResult as ToolResult.Text).value.contains("field.doc"))
+        })
+        val entry = aliasResult.entries.single()
+        Assert.assertEquals("field.doc", entry.id)
+        Assert.assertTrue("line: ${entry.renderedLine}", entry.renderedLine.startsWith("field.doc | "))
+        Assert.assertTrue(
+            "receipt should tell the model to author the canonical key: ${aliasResult.receiptNote}",
+            aliasResult.receiptNote.contains("field.doc") &&
+                aliasResult.receiptNote.contains("alias")
+        )
 
         val unknownResult = runBlocking {
             GetRuleContextTool().execute(mapOf("key" to "not.a.real.key"), ctx())
@@ -146,11 +171,37 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
         Assert.assertTrue(unknownResult is ToolResult.Error)
     }
 
+    fun testGetRuleContextAliasThenCanonicalAddsOneEntry() {
+        val memory = AgentMemory()
+        val alias = stateful(runBlocking {
+            GetRuleContextTool().execute(mapOf("key" to "doc.field"), ctx(workingMemory = memory))
+        })
+        val canonical = stateful(runBlocking {
+            GetRuleContextTool().execute(mapOf("key" to "field.doc"), ctx(workingMemory = memory))
+        })
+        Assert.assertEquals("both calls must target the same id", alias.entries.single().id, canonical.entries.single().id)
+
+        memory.knowledgeState.upsert(alias.section, alias.entries)
+        val second = memory.knowledgeState.upsert(canonical.section, canonical.entries)
+        Assert.assertTrue("second upsert must be a no-op, was $second", second is KnowledgeState.UpsertResult.NoChange)
+        Assert.assertEquals(1, memory.knowledgeState.entries("§keyContexts").size)
+    }
+
     fun testGetRuleContextRejectsMissingKey() {
         val result = runBlocking { GetRuleContextTool().execute(emptyMap(), ctx()) }
         Assert.assertTrue(result is ToolResult.Error)
         Assert.assertTrue((result as ToolResult.Error).message.contains("missing required parameter"))
     }
+
+    // --- helpers ---
+
+    private fun stateful(result: ToolResult): ToolResult.Stateful =
+        result as? ToolResult.Stateful
+            ?: error("expected a Stateful tool result, got ${result::class.simpleName}: $result")
+
+    /** id → renderedLine for a [ToolResult.Stateful] catalog/context result. */
+    private fun stateEntries(result: ToolResult): Map<String, String> =
+        stateful(result).entries.associate { it.id to it.renderedLine }
 
     // --- GetPluginDocTool ---
 
@@ -177,10 +228,10 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetPluginDocReturnsScriptReference() {
-        // The easyapi-script-reference doc IS wired (task 2.7) — the tool
+        // The postman-script-reference doc IS wired — the tool
         // should return its content.
         val result = runBlocking {
-            GetPluginDocTool().execute(mapOf("name" to "easyapi-script-reference"), ctx())
+            GetPluginDocTool().execute(mapOf("name" to "postman-script-reference"), ctx())
         }
         Assert.assertTrue("expected Text result, got $result", result is ToolResult.Text)
         val text = (result as ToolResult.Text).value
@@ -514,6 +565,9 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
         val names = tools.map { it.name }.toSet()
         Assert.assertTrue("list_rule_keys", names.contains("list_rule_keys"))
         Assert.assertTrue("get_rule_context", names.contains("get_rule_context"))
+        Assert.assertTrue("get_script_object_api", names.contains("get_script_object_api"))
+        // D2.3: list_key_guides was folded into list_rule_keys and removed.
+        Assert.assertFalse("list_key_guides must be gone", names.contains("list_key_guides"))
         Assert.assertTrue("get_plugin_doc", names.contains("get_plugin_doc"))
         Assert.assertTrue("get_detection_prompt", names.contains("get_detection_prompt"))
         Assert.assertTrue("get_rule_detail", names.contains("get_rule_detail"))
@@ -535,7 +589,7 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
             "write_rule_file must NOT be registered in v1",
             names.contains("write_rule_file")
         )
-        Assert.assertEquals("exactly 18 tools (16 + 2 task-list tools)", 18, tools.size)
+        Assert.assertEquals("exactly 19 tools (17 + 2 task-list tools)", 19, tools.size)
     }
 
     // --- GetDetectionPromptTool ---
@@ -594,16 +648,45 @@ class PerceptionToolsTest : EasyApiLightCodeInsightFixtureTestCase() {
         // When both `key` and `channel` are supplied, `key` wins.
         val result = runBlocking {
             GetRuleDetailTool().execute(
-                mapOf("key" to "field.ignore", "channel" to "postman"),
+                mapOf("key" to "method.additional.header", "channel" to "postman"),
                 ctx()
             )
         }
         Assert.assertTrue("result: $result", result is ToolResult.Text)
         val text = (result as ToolResult.Text).value
-        // field.ignore recipe content — not a postman-scoped recipe.
+        // method.additional.header guide content — not a postman-scoped guide.
         Assert.assertTrue(
-            "should return field.ignore recipe (key wins over scope)",
-            text.contains("field.ignore") || text.contains("blanket")
+            "should return method.additional.header guide (key wins over scope)",
+            text.contains("method.additional.header") || text.contains("JSON object")
+        )
+    }
+
+    fun testGetRuleDetailByKeyFallsBackToSchemeProfile() {
+        // A registered key with no key-guide file (e.g. field.ignore) falls
+        // back to its self-describing scheme profile instead of Error.
+        val result = runBlocking {
+            GetRuleDetailTool().execute(mapOf("key" to "field.ignore"), ctx())
+        }
+        Assert.assertTrue("result: $result", result is ToolResult.Text)
+        val text = (result as ToolResult.Text).value
+        Assert.assertTrue(
+            "scheme fallback should name the key",
+            text.contains("field.ignore")
+        )
+        Assert.assertTrue(
+            "scheme fallback should carry the self-describing description",
+            text.contains("Source") || text.contains("Execution mode")
+        )
+        // The no-guide fallback must stay a *reference*, not a full dump:
+        // full method signatures belong to get_script_object_api (§objects).
+        // Guard against regressions that re-inline tens of KB per key.
+        Assert.assertTrue(
+            "scheme fallback should point at get_script_object_api for method signatures",
+            text.contains("get_script_object_api") || !text.contains("Object APIs:")
+        )
+        Assert.assertTrue(
+            "scheme fallback must stay compact (was ${text.length} chars)",
+            text.length < 8_000
         )
     }
 

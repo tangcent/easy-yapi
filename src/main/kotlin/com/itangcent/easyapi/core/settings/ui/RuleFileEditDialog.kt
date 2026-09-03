@@ -110,6 +110,11 @@ class RuleFileEditDialog(
     }
 
     init {
+        // A fresh editor session starts a fresh AI conversation: the project-scoped
+        // session (memory) otherwise survives dialog close/reopen and would replay
+        // stale transcripts into the next Chat/Magic run (observed as step-1
+        // message counts growing across reopens).
+        aiChatPanel.resetConversation()
         val file = Paths.get(filePath)
         title = "Edit Rule File: ${file.fileName}"
         init()
@@ -125,6 +130,10 @@ class RuleFileEditDialog(
 
     private fun onMagic() {
         aiPanelHolder.isVisible = true
+        // Magic always starts from scratch: cancel any still-running (possibly
+        // stuck) turn and drop the previous conversation so each run begins with
+        // a fresh, small transcript instead of accumulating history.
+        aiChatPanel.resetConversation()
         aiChatPanel.refreshConfiguredState()
         revalidateDialog()
         val name = nameField.text.trim().ifBlank { Paths.get(filePath).fileName.toString() }

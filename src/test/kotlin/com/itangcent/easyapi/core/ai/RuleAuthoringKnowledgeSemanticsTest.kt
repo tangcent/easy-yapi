@@ -11,7 +11,7 @@ class RuleAuthoringKnowledgeSemanticsTest {
     fun testClassIdentityExamplesUseQualifiedName() {
         val sources = buildList {
             add(File("src/main/resources/ai/agent-base.md"))
-            addAll(markdownFiles(File("src/main/resources/ai/rules")))
+            addAll(markdownFiles(File("src/main/resources/ai/key-guides")))
             addAll(markdownFiles(File("docs/knowledge-base")))
             add(File("skills/easy-yapi-assistant/SKILL.md"))
         }
@@ -37,7 +37,7 @@ class RuleAuthoringKnowledgeSemanticsTest {
 
     @Test
     fun testScriptReferenceDocumentsClassIdentitySemantics() {
-        val reference = File("docs/knowledge-base/easyapi-script-reference.md").readText()
+        val reference = File("docs/knowledge-base/postman-script-reference.md").readText()
         assertTrue(
             "Script reference must document name() as a simple class name",
             reference.contains("simple class name")

@@ -33,28 +33,28 @@ class RuleDryRunValidatorTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testValidScriptPassesDryRun() = runTest {
-        val review = RuleDryRunValidator.dryRun("class.name=groovy:it.name()", project)
+        val review = RuleDryRunValidator.dryRun("class.doc=groovy:it.name()", project)
 
         assertTrue("errors: ${review.errors}", review.errors.isEmpty())
         assertTrue("warnings: ${review.warnings}", review.warnings.isEmpty())
     }
 
     /**
-     * The exact regression this pass covers: `it.static` resolves through the
-     * boolean is-getter, which was missing from method contexts — the dry
-     * run must accept it now that
+     * The exact regression this pass covers: the `isStatic()` method was
+     * missing from method contexts. `api.name` is evaluated against both
+     * method and class contexts, so the dry run must accept `it.isStatic()`
+     * on both without error now that
      * [com.itangcent.easyapi.core.rule.context.MethodContext.isStatic] exists.
      */
-    fun testItStaticOnMethodAndClassContextsPasses() = runTest {
-        // `api.name` is evaluated against both method and class contexts.
-        val review = RuleDryRunValidator.dryRun("api.name=groovy:it.static", project)
+    fun testIsStaticOnMethodAndClassContextsPasses() = runTest {
+        val review = RuleDryRunValidator.dryRun("api.name=groovy:it.isStatic()", project)
 
         assertTrue("errors: ${review.errors}", review.errors.isEmpty())
         assertTrue("warnings: ${review.warnings}", review.warnings.isEmpty())
     }
 
     fun testNonCompilingScriptIsAnError() = runTest {
-        val review = RuleDryRunValidator.dryRun("class.name=groovy:it.name(((", project)
+        val review = RuleDryRunValidator.dryRun("class.doc=groovy:it.name(((", project)
 
         assertFalse("errors: ${review.errors}", review.ok)
         assertTrue(
@@ -65,7 +65,7 @@ class RuleDryRunValidatorTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testMissingContextApiIsAnError() = runTest {
         val review = RuleDryRunValidator.dryRun(
-            "class.name=groovy:it.nonExistentContextApi123()",
+            "class.doc=groovy:it.nonExistentContextApi123()",
             project
         )
 
@@ -79,7 +79,7 @@ class RuleDryRunValidatorTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testOtherExceptionIsOnlyAWarning() = runTest {
         // NPE is classified RUNTIME: often an artifact of the representative
         // element, so it must not block the proposal.
-        val review = RuleDryRunValidator.dryRun("class.name=groovy:null.foo()", project)
+        val review = RuleDryRunValidator.dryRun("class.doc=groovy:null.foo()", project)
 
         assertTrue("errors: ${review.errors}", review.errors.isEmpty())
         assertTrue(
@@ -103,16 +103,22 @@ class RuleDryRunValidatorTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
-    fun testTypeContextKeysAreSkipped() = runTest {
-        // `json.rule.convert` needs a resolved type no representative element
-        // can supply — a dry run would fail spuriously, so the key is skipped.
+    fun testJsonRuleConvertRunsAgainstClassContext() = runTest {
+        // `json.rule.convert` was previously a TYPE context and therefore
+        // skipped by the dry run. CLASS and TYPE are the same for scripts —
+        // a resolved type already behaves as a class (contextType() ==
+        // "class") — so the key now declares CLASS and is dry-run against a
+        // representative class. An API miss is now an error.
         val review = RuleDryRunValidator.dryRun(
             "json.rule.convert=groovy:it.nonExistentContextApi123()",
             project
         )
 
-        assertTrue("errors: ${review.errors}", review.errors.isEmpty())
-        assertTrue("warnings: ${review.warnings}", review.warnings.isEmpty())
+        assertFalse("errors: ${review.errors}", review.ok)
+        assertTrue(
+            "errors: ${review.errors}",
+            review.errors.any { it.contains("context API that does not exist") }
+        )
     }
 
     fun testExtraBindingKeysAreSkipped() = runTest {
@@ -127,19 +133,19 @@ class RuleDryRunValidatorTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGroovyFilterIsDryRun() = runTest {
-        val content = "class.name[groovy:it.nonExistentContextApi123()]=whatever"
+        val content = "class.doc[groovy:it.nonExistentContextApi123()]=whatever"
         val review = RuleDryRunValidator.dryRun(content, project)
 
         assertFalse("errors: ${review.errors}", review.ok)
         assertTrue(
             "errors: ${review.errors}",
-            review.errors.any { it.contains("filter") && it.contains("class.name") }
+            review.errors.any { it.contains("filter") && it.contains("class.doc") }
         )
     }
 
     fun testMultiLineGroovyBlockIsDryRun() = runTest {
         val content = """
-            class.name=groovy:```
+            class.doc=groovy:```
             return it.name()
             ```
         """.trimIndent()
@@ -182,7 +188,7 @@ class RuleDryRunValidatorTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testReviewWithDryRunMergesBothPasses() = runTest {
         val content = """
             unknown.rule.key=value
-            class.name=groovy:it.nonExistentContextApi123()
+            class.doc=groovy:it.nonExistentContextApi123()
         """.trimIndent()
         val review = CompositeRuleValidator.defaultPipeline().validate(content, project)
 

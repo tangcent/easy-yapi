@@ -75,8 +75,8 @@ class RuleKeyTest {
         assertTrue("PostmanRuleKeys returned no keys", keys.isNotEmpty())
         val names = keys.map { it.name }
         assertTrue(
-            "POST_PRE_REQUEST missing: $names",
-            com.itangcent.easyapi.channel.postman.PostmanRuleKeys.POST_PRE_REQUEST.name in names
+            "POSTMAN_PREREQUEST missing: $names",
+            com.itangcent.easyapi.channel.postman.PostmanRuleKeys.POSTMAN_PREREQUEST.name in names
         )
     }
 }

@@ -3,20 +3,25 @@ package com.itangcent.easyapi.core.ai.tools
 import com.itangcent.easyapi.core.ai.agent.Ambient
 import com.itangcent.easyapi.core.ai.agent.AmbientPerception
 import com.itangcent.easyapi.core.ai.agent.PromptCatalog
+import com.itangcent.easyapi.core.rule.RuleKeyRegistry
+import com.itangcent.easyapi.core.rule.context.RuleKeyScriptProfiler
+import com.itangcent.easyapi.core.rule.context.RuleScriptProfile
 
 /**
- * Perception tool that fetches per-key rule recipes from the catalog
- * (design C3 / task A4).
+ * Perception tool that fetches per-key rule detail from the key-guide
+ * catalog (design C3 / task A4).
  *
  * Two access patterns:
  *
  * - **By key** — `get_rule_detail(key="postman.test")` returns the single
- *   per-key recipe. `key` takes precedence over any scope args; this is the
- *   pattern to use when the agent knows which key it is about to set.
+ *   per-key guide. `key` takes precedence over any scope args; this is the
+ *   pattern to use when the agent knows which key it is about to set. When no
+ *   guide file exists for the key, the key's self-describing scheme profile is
+ *   returned instead — every registered key is describable.
  *
  * - **By scope** — `get_rule_detail(channel="postman")` returns the
- *   concatenated recipes of every rule file whose `CatalogScope` matches the
- *   supplied args **and** the ambient-enabled features. Use this when the
+ *   concatenated guides of every key-guide file whose `CatalogScope` matches
+ *   the supplied args **and** the ambient-enabled features. Use this when the
  *   agent wants a tour of what a channel/format/framework supports (e.g.
  *   before proposing a Postman workflow bundle).
  *
@@ -32,10 +37,11 @@ class GetRuleDetailTool : AiTool {
     override val name: String = "get_rule_detail"
 
     override val description: String =
-        "Fetch the full recipe for one rule key (by `key`) or every rule " +
-            "file matching a scope (by `channel` / `format` / `framework`). " +
+        "Fetch the full detail for one rule key (by `key`) or every key " +
+            "matching a scope (by `channel` / `format` / `framework`). " +
             "At least one argument is required. `key` takes precedence over " +
-            "scope args. Returns Markdown."
+            "scope args. Returns Markdown; a key with no guide file returns " +
+            "its self-describing scheme profile."
 
     override val kind: ToolKind = ToolKind.PERCEPTION
 
@@ -74,9 +80,15 @@ class GetRuleDetailTool : AiTool {
 
         // 1. By-key lookup — key wins over scope args.
         if (!key.isNullOrBlank()) {
-            val body = PromptCatalog.body("rules", key)
-                ?: return ToolResult.Error("unknown rule key (no catalog file): $key")
-            return ToolResult.Text(body)
+            val guide = PromptCatalog.body("key-guides", key)
+            if (guide != null) {
+                return ToolResult.Text(guide)
+            }
+            // No guide file → fall back to the key's self-describing scheme
+            // profile so every registered key stays describable.
+            val info = RuleKeyRegistry.getInstance(ctx.project).findKey(key)
+                ?: return ToolResult.Error("unknown rule key: $key")
+            return ToolResult.Text(profileToMarkdown(RuleKeyScriptProfiler.describe(info.key, info.source)))
         }
 
         // 2. Scope query — at least one scope arg is required.
@@ -85,14 +97,14 @@ class GetRuleDetailTool : AiTool {
         }
 
         // The ambient-enabled features gate the scope match so a disabled
-        // channel's recipes are not surfaced (mirrors the index message
+        // channel's guides are not surfaced (mirrors the index message
         // filtering). Reuse the ambient cached on working memory by the agent
         // loop; fall back to a fresh capture when no turn has run yet (e.g.
         // ad-hoc tool unit tests that build their own ToolContext).
         val amb: Ambient = ctx.workingMemory.ambient
             ?: AmbientPerception.capture(ctx.project)
         val entries = PromptCatalog.listFor(
-            "rules",
+            "key-guides",
             activeChannels = amb.enabledChannels.toSet(),
             activeFormats = amb.enabledFormats.toSet(),
             activeFrameworks = amb.frameworkHints.toSet()
@@ -109,16 +121,60 @@ class GetRuleDetailTool : AiTool {
             return ToolResult.Text("(no rule-detail files match the given scope)")
         }
         // Concatenate bodies with a clear separator so the agent can
-        // distinguish multiple recipes in one response.
+        // distinguish multiple guides in one response.
         val sb = StringBuilder()
         for ((idx, entry) in entries.withIndex()) {
             if (idx > 0) sb.append("\n\n---\n\n")
-            val body = PromptCatalog.body("rules", entry.id)
+            val body = PromptCatalog.body("key-guides", entry.id)
             if (body != null) {
                 sb.append("# ").append(entry.title).append("\n\n")
                 sb.append(body)
             }
         }
         return ToolResult.Text(sb.toString())
+    }
+
+    private fun profileToMarkdown(profile: RuleScriptProfile): String {
+        val sb = StringBuilder()
+        sb.append("# ").append(profile.key).append("\n\n")
+        sb.append("**Source:** `").append(profile.source).append("`  \n")
+        sb.append("**Execution mode:** `").append(profile.executionMode).append("`\n\n")
+        sb.append(profile.description).append("\n\n")
+        if (profile.aliases.isNotEmpty()) {
+            sb.append("**Aliases:** ").append(profile.aliases.joinToString(", ") { "`$it`" }).append("\n\n")
+        }
+        if (profile.notes.isNotEmpty()) {
+            sb.append("**Notes:**\n")
+            profile.notes.forEach { sb.append("- ").append(it).append("\n") }
+            sb.append("\n")
+        }
+        if (profile.bindings.isNotEmpty()) {
+            sb.append("**Bindings:**\n")
+            profile.bindings.forEach { b ->
+                sb.append("- `").append(b.name)
+                if (b.aliases.isNotEmpty()) {
+                    sb.append("` (aliases: ").append(b.aliases.joinToString(", ") { "`$it`" }).append(")")
+                } else {
+                    sb.append("`")
+                }
+                sb.append(" — ").append(b.description)
+                sb.append(" (availability: ").append(b.availability).append(")\n")
+            }
+            sb.append("\n")
+        }
+        if (profile.objectRefs.isNotEmpty()) {
+            // Keep this fallback compact: full method signatures are NOT inlined
+            // here. They are the §objects knowledge block's content, whose single
+            // writer is `get_script_object_api` — re-rendering them per key would
+            // duplicate tens of KB into every request. List the referenced object
+            // ids and point the model at the dedicated tool instead.
+            sb.append("**Object APIs:**\n")
+            profile.objectRefs.distinct().forEach { ref ->
+                sb.append("- `").append(ref).append("` — fetch method signatures via ")
+                    .append("`get_script_object_api(ids=[\"").append(ref).append("\"])`\n")
+            }
+            sb.append("\n")
+        }
+        return sb.toString()
     }
 }

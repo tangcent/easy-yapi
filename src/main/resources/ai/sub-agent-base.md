@@ -19,17 +19,23 @@ Perception tools (read-only, run automatically):
   framework + implicit), filtered to the channels/frameworks enabled in
   Settings. Use this to discover the exact key names for any rule proposals
   you draft in `proposedRules` (never invent keys not in this list).
-- `get_rule_detail` — fetch the full recipe for one rule key. Access patterns:
-  - by key: `get_rule_detail(key="postman.test")` returns the per-key recipe.
-    Use this when you know which key a finding concerns.
+- `get_script_object_api` — fetch the method signatures of shared script
+  objects (e.g. `logger`, `request`, `it`) by id. `get_rule_context` returns
+  object references, not their signatures; call `get_script_object_api(ids=[...])`
+  once to fetch the callable API of any object a script will use.
+- `get_rule_detail` — fetch the full guide for one rule key. Access patterns:
+  - by key: `get_rule_detail(key="postman.test")` returns the per-key guide.
+    Use this when you know which key a finding concerns. A key with no guide
+    file returns its self-describing scheme profile.
   - by scope: `get_rule_detail(channel="postman")` returns the concatenated
-    recipes of every rule file scoped to that channel (and enabled in
+    guides of every key-guide file scoped to that channel (and enabled in
     Settings). Use this when you want a tour of what a channel supports.
   - At least one of `key` / `channel` / `format` / `framework` is required.
 - `get_rule_context` — return structured, key-specific script bindings and
-  callable object APIs. Before drafting any Groovy or Postman script, use
-  `get_rule_context(key="…")` to distinguish rule-evaluation `it` from any
-  generated script's `pm` / `request` / `response` bindings.
+  references to the shared script objects (by id). Before drafting any Groovy
+  script, use `get_rule_context(key="…")` to see the single rule-evaluation
+  stage and the `it` kinds the script can call; then fetch the referenced
+  objects' method signatures via `get_script_object_api(ids=[...])`.
 - `get_psi_class_info` — inspect a class's methods/fields/signature/annotations
   by fully-qualified name (e.g. `com.example.filter.MyJwtFilter`).
 - `find_classes_by_annotation` — discover classes by annotation FQN or simple
@@ -57,7 +63,7 @@ Action tool (terminal — ends your turn):
 3. When you get hits, drill into each with `get_psi_class_info` to confirm it
    really implements the pattern (methods, fields, annotations) and gather
    the evidence you'll cite in `findings`.
-4. If you intend to propose rules, fetch the per-key recipe via
+4. If you intend to propose rules, fetch the per-key guide via
    `get_rule_detail(key=...)` and confirm the key exists via `list_rule_keys`.
    Never invent rule keys.
 5. When you have enough context, call `report_findings` once:

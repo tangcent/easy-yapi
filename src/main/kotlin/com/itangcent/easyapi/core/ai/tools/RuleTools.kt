@@ -22,13 +22,14 @@ import com.itangcent.easyapi.core.ai.AIService
  *
  * Catalog detail tools (Phase A — design C3):
  * - [GetDetectionPromptTool] — full detection recipe by family id.
- * - [GetRuleDetailTool] — per-key recipe lookup or scope-query concatenation.
+ * - [GetRuleDetailTool] — per-key guide lookup or scope-query concatenation.
  * Both are perception tools; the Reactive path's seed prompt lists the
  * available catalog ids so the agent knows what to fetch.
  */
 fun standardRuleTools(): List<AiTool> = listOf(
     ListRuleKeysTool(),
     GetRuleContextTool(),
+    GetScriptObjectApiTool(),
     GetPluginDocTool(),
     GetDetectionPromptTool(),
     GetRuleDetailTool(),
@@ -96,11 +97,11 @@ fun orchestratorToolRegistry(
  * The sub-agent's tool set for a Magic detection turn (Phase 3 —
  * design §3.5 / FR-3.2, FR-3.3).
  *
- * Six perception tools + one terminal action:
+ * Seven perception tools + one terminal action:
  * - [FindClassesByAnnotationTool] / [FindClassesBySupertypeTool] — locate
  *   candidate classes by annotation or supertype.
  * - [GetPsiClassInfoTool] — drill into a class's methods/fields/signature.
- * - [GetRuleDetailTool] — fetch the per-key rule recipe so the sub-agent
+ * - [GetRuleDetailTool] — fetch the per-key guide so the sub-agent
  *   can draft concrete rule proposals.
  * - [GetRuleContextTool] — fetch key-specific bindings and callable script
  *   APIs before drafting a Groovy or Postman rule.
@@ -127,6 +128,7 @@ fun subAgentToolRegistry(): List<AiTool> = listOf(
     GetPsiClassInfoTool(),
     GetRuleDetailTool(),
     GetRuleContextTool(),
+    GetScriptObjectApiTool(),
     ListRuleKeysTool(),
     ReportFindingsTool()
 )

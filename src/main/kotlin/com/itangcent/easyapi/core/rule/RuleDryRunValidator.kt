@@ -18,7 +18,6 @@ import com.itangcent.easyapi.core.internal.threading.read
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.psi.helper.AnnotatedElementsHelper
 import com.itangcent.easyapi.core.rule.context.RuleContext
-import com.itangcent.easyapi.core.rule.context.RuleScriptContextCatalog
 import com.itangcent.easyapi.core.rule.engine.RuleEngine
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -28,8 +27,8 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  * [RuleProposalValidator] catches mechanical mistakes (unknown keys, invalid
  * filters, malformed JSON) but never executes the proposed scripts, so a
- * script calling context API that does not exist — `it.static` on a method
- * context, `it.args` as a property — passed review and then made every
+ * script calling context API that does not exist — `it.isStatic()` on a
+ * method context, `it.args` as a property — passed review and then made every
  * export silently skip endpoints. This pass evaluates each script through
  * the real [RuleEngine] so the exact exception surfaces at proposal time,
  * while the drafter can still fix and retry.
@@ -50,9 +49,8 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  * The pass is best-effort: keys whose evaluation stage needs bindings a dry
  * run cannot supply (`api`, `request`, `response`, `collection`, …) are
- * skipped (see [RuleScriptContextCatalog.dryRunContextKinds]), and a dry-run
- * infrastructure failure is logged and swallowed — it must never block a
- * proposal on its own.
+ * skipped (see [RuleKeyScheme.dryRunnable]), and a dry-run infrastructure
+ * failure is logged and swallowed — it must never block a proposal on its own.
  */
 object RuleDryRunValidator : RuleValidator, IdeaLog {
 
@@ -89,12 +87,19 @@ object RuleDryRunValidator : RuleValidator, IdeaLog {
 
         val engine = RuleEngine.getInstance(project)
         val representatives = findRepresentatives(project)
+        val registry = RuleKeyRegistry.getInstance(project)
         val errors = mutableListOf<String>()
         val warnings = mutableListOf<String>()
 
         for (entry in groovyRules) {
             val key = entry.bareKey()
-            val kinds = RuleScriptContextCatalog.dryRunContextKinds(key)
+            val scheme = registry.findKey(key)?.key?.scheme
+            // Dry-run context kinds come from the key's self-describing scheme;
+            // a key marked non-dry-runnable (extra bindings a dry run cannot
+            // supply, or static config) is skipped. An unresolvable key is
+            // skipped too — it cannot be dry-run against a representative element.
+            if (scheme == null || !scheme.dryRunnable) continue
+            val kinds = scheme.dryRunKindIds
             if (kinds.isEmpty()) continue
             val failures = LinkedHashMap<String, Throwable>()
             for (kind in kinds) {

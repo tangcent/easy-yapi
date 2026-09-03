@@ -40,15 +40,15 @@ data class CatalogScope(
 }
 
 /**
- * One catalog entry parsed from a file under `ai/detection/` or `ai/rules/`.
+ * One catalog entry parsed from a file under `ai/detection/` or `ai/key-guides/`.
  *
- * @param category `"detection"` or `"rules"` (derived from the resource path)
- * @param id unique within `category`; for rule files, equals `key` by convention
+ * @param category `"detection"` or `"key-guides"` (derived from the resource path)
+ * @param id unique within `category`; for key-guide files, equals `key` by convention
  * @param title one-line human title
  * @param cue one-line "when to use"
- * @param key the rule key this file documents (rule files only; `null` for detection)
+ * @param key the rule key this file documents (key-guide files only; `null` for detection)
  * @param scope optional channel/format/framework constraint
- * @param resourcePath classpath path of the source file (e.g. `ai/rules/postman.test.md`)
+ * @param resourcePath classpath path of the source file (e.g. `ai/key-guides/postman.test.md`)
  */
 data class CatalogEntry(
     val category: String,
@@ -61,13 +61,13 @@ data class CatalogEntry(
 )
 
 /**
- * File-based catalog of detection and rule-detail prompts under
+ * File-based catalog of detection and key-guide prompts under
  * `src/main/resources/ai/`.
  *
  * Each catalog file begins with a YAML front-matter header (delimited by
- * `---` lines) carrying `id`, `title`, `cue` (required), `key` (rules only),
- * and optional `channel`/`format`/`framework` scope. The header is parsed
- * via SnakeYAML; the markdown body follows the closing `---`.
+ * `---` lines) carrying `id`, `title`, `cue` (required), `key` (key-guides
+ * only), and optional `channel`/`format`/`framework` scope. The header is
+ * parsed via SnakeYAML; the markdown body follows the closing `---`.
  *
  * Discovery is driven by `ai/catalog-manifest.txt` (one file path per line,
  * relative to `src/main/resources/`). This avoids any JarFile/Path coupling
@@ -195,9 +195,9 @@ object PromptCatalog : IdeaLog {
     }
 
     /**
-     * Derives the category (`"detection"` or `"rules"`) from a resource path
-     * like `ai/detection/spring-filters-interceptors.md`. Returns `null` if
-     * the path doesn't follow the `ai/<category>/...` pattern.
+     * Derives the category (`"detection"` or `"key-guides"`) from a resource
+     * path like `ai/detection/spring-filters-interceptors.md`. Returns `null`
+     * if the path doesn't follow the `ai/<category>/...` pattern.
      */
     internal fun deriveCategory(resourcePath: String): String? {
         val parts = resourcePath.split("/")

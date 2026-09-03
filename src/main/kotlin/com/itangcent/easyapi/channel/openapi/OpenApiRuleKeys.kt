@@ -1,7 +1,11 @@
 package com.itangcent.easyapi.channel.openapi
 
+import com.itangcent.easyapi.core.rule.ContextKind
 import com.itangcent.easyapi.core.rule.EventRuleMode
+import com.itangcent.easyapi.core.rule.OutputShape
 import com.itangcent.easyapi.core.rule.RuleKey
+import com.itangcent.easyapi.core.rule.RuleKeyScheme
+import com.itangcent.easyapi.core.rule.binding
 
 /**
  * OpenAPI channel-specific rule keys.
@@ -44,7 +48,14 @@ object OpenApiRuleKeys {
      * (the OAS-spec-aligned name). `OpenApiChannel.export` consults this key
      * as a fallback when [OPENAPI_SERVER_URL] is blank.
      */
-    val OPENAPI_HOST = RuleKey.string("openapi.host")
+    val OPENAPI_HOST = RuleKey.string(
+        "openapi.host",
+        scheme = RuleKeyScheme(
+            summary = "Base URL override for the OpenAPI servers array (legacy).",
+            contextKinds = listOf(ContextKind.CLASS, ContextKind.EMPTY),
+            outputShape = OutputShape.STRING
+        )
+    )
 
     /**
      * Base URL override for the OpenAPI `servers` array (preferred OAS name).
@@ -54,7 +65,14 @@ object OpenApiRuleKeys {
      * settings/options-panel values, then to the built-in default (no
      * `servers` array emitted).
      */
-    val OPENAPI_SERVER_URL = RuleKey.string("openapi.server.url")
+    val OPENAPI_SERVER_URL = RuleKey.string(
+        "openapi.server.url",
+        scheme = RuleKeyScheme(
+            summary = "Base URL override for the OpenAPI servers array.",
+            contextKinds = listOf(ContextKind.EMPTY),
+            outputShape = OutputShape.STRING
+        )
+    )
 
     /**
      * Document `info.title` override.
@@ -63,7 +81,14 @@ object OpenApiRuleKeys {
      * First non-blank result wins. Precedence: options-panel > this rule >
      * persistent settings > project name > `"API"` default.
      */
-    val OPENAPI_INFO_TITLE = RuleKey.string("openapi.info.title")
+    val OPENAPI_INFO_TITLE = RuleKey.string(
+        "openapi.info.title",
+        scheme = RuleKeyScheme(
+            summary = "OpenAPI document info.title override.",
+            contextKinds = listOf(ContextKind.EMPTY),
+            outputShape = OutputShape.STRING
+        )
+    )
 
     /**
      * Document `info.version` override.
@@ -72,7 +97,14 @@ object OpenApiRuleKeys {
      * First non-blank result wins. Precedence: options-panel > this rule >
      * persistent settings > `"1.0.0"` default.
      */
-    val OPENAPI_INFO_VERSION = RuleKey.string("openapi.info.version")
+    val OPENAPI_INFO_VERSION = RuleKey.string(
+        "openapi.info.version",
+        scheme = RuleKeyScheme(
+            summary = "OpenAPI document info.version override.",
+            contextKinds = listOf(ContextKind.EMPTY),
+            outputShape = OutputShape.STRING
+        )
+    )
 
     /**
      * Document `info.description` override.
@@ -81,7 +113,14 @@ object OpenApiRuleKeys {
      * First non-blank result wins. Precedence: options-panel > this rule >
      * persistent settings > `null` (omitted on the wire).
      */
-    val OPENAPI_INFO_DESCRIPTION = RuleKey.string("openapi.info.description")
+    val OPENAPI_INFO_DESCRIPTION = RuleKey.string(
+        "openapi.info.description",
+        scheme = RuleKeyScheme(
+            summary = "OpenAPI document info.description override.",
+            contextKinds = listOf(ContextKind.EMPTY),
+            outputShape = OutputShape.STRING
+        )
+    )
 
     /**
      * Post-format hook.
@@ -95,5 +134,14 @@ object OpenApiRuleKeys {
      * the exception instead of being silently swallowed (matches the
      * `hopp.format.after` / `postman.format.after` semantics).
      */
-    val OPENAPI_FORMAT_AFTER = RuleKey.event("openapi.format.after", EventRuleMode.THROW_IN_ERROR)
+    val OPENAPI_FORMAT_AFTER = RuleKey.event(
+        "openapi.format.after", EventRuleMode.THROW_IN_ERROR,
+        scheme = RuleKeyScheme(
+            summary = "Runs after the OpenAPI document is built and before it is serialized.",
+            contextKinds = listOf(ContextKind.METHOD),
+            additionalBindings = listOf(binding("document")),
+            outputShape = OutputShape.EVENT,
+            dryRunnable = false
+        )
+    )
 }

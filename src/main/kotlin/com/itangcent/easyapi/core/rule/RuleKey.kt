@@ -3,7 +3,9 @@ package com.itangcent.easyapi.core.rule
 import kotlin.reflect.full.memberProperties
 
 /**
- * A typed rule key that carries the expected return type and aggregation mode.
+ * A typed rule key that carries the expected return type, aggregation mode,
+ * and a self-describing [RuleKeyScheme] capturing how it is evaluated, what
+ * input it expects, and what output it is expected to produce.
  *
  * Use [RuleKeys] for pre-defined keys, or the factory methods to create custom ones:
  * ```kotlin
@@ -15,11 +17,15 @@ import kotlin.reflect.full.memberProperties
  * @param name the primary config key name
  * @param mode the aggregation mode
  * @param aliases alternative config key names that map to this key
+ * @param scheme the self-describing contract of this key (evaluation scheme,
+ *     expected input, expected output). May be empty; consumers then fall
+ *     back to legacy name-based resolution.
  */
 sealed class RuleKey<T>(
     val name: String,
     val mode: RuleMode<T>,
-    val aliases: List<String> = emptyList()
+    val aliases: List<String> = emptyList(),
+    val scheme: RuleKeyScheme = RuleKeyScheme()
 ) {
     /** All config key names (primary + aliases) that should be looked up. */
     val allNames: List<String> get() = listOf(name) + aliases
@@ -27,45 +33,62 @@ sealed class RuleKey<T>(
     class StringKey(
         name: String,
         mode: StringRuleMode = StringRuleMode.SINGLE,
-        aliases: List<String> = emptyList()
-    ) : RuleKey<String>(name, mode, aliases) {
+        aliases: List<String> = emptyList(),
+        scheme: RuleKeyScheme = RuleKeyScheme()
+    ) : RuleKey<String>(name, mode, aliases, scheme) {
         val stringMode: StringRuleMode get() = mode as StringRuleMode
     }
 
     class BooleanKey(
         name: String,
         mode: BooleanRuleMode = BooleanRuleMode.ANY,
-        aliases: List<String> = emptyList()
-    ) : RuleKey<Boolean>(name, mode, aliases) {
+        aliases: List<String> = emptyList(),
+        scheme: RuleKeyScheme = RuleKeyScheme()
+    ) : RuleKey<Boolean>(name, mode, aliases, scheme) {
         val booleanMode: BooleanRuleMode get() = mode as BooleanRuleMode
     }
 
     class IntKey(
         name: String,
-        aliases: List<String> = emptyList()
-    ) : RuleKey<Int>(name, IntRuleMode, aliases)
+        aliases: List<String> = emptyList(),
+        scheme: RuleKeyScheme = RuleKeyScheme()
+    ) : RuleKey<Int>(name, IntRuleMode, aliases, scheme)
 
     class EventKey(
         name: String,
         mode: EventRuleMode = EventRuleMode.IGNORE_ERROR,
-        aliases: List<String> = emptyList()
-    ) : RuleKey<Unit>(name, mode, aliases) {
+        aliases: List<String> = emptyList(),
+        scheme: RuleKeyScheme = RuleKeyScheme()
+    ) : RuleKey<Unit>(name, mode, aliases, scheme) {
         val eventMode: EventRuleMode get() = mode as EventRuleMode
     }
 
     override fun toString(): String = name
 
     companion object {
-        fun string(name: String, mode: StringRuleMode = StringRuleMode.SINGLE, aliases: List<String> = emptyList()) =
-            StringKey(name, mode, aliases)
+        fun string(
+            name: String,
+            mode: StringRuleMode = StringRuleMode.SINGLE,
+            aliases: List<String> = emptyList(),
+            scheme: RuleKeyScheme = RuleKeyScheme()
+        ) = StringKey(name, mode, aliases, scheme)
 
-        fun boolean(name: String, mode: BooleanRuleMode = BooleanRuleMode.ANY, aliases: List<String> = emptyList()) =
-            BooleanKey(name, mode, aliases)
+        fun boolean(
+            name: String,
+            mode: BooleanRuleMode = BooleanRuleMode.ANY,
+            aliases: List<String> = emptyList(),
+            scheme: RuleKeyScheme = RuleKeyScheme()
+        ) = BooleanKey(name, mode, aliases, scheme)
 
-        fun int(name: String, aliases: List<String> = emptyList()) = IntKey(name, aliases)
+        fun int(name: String, aliases: List<String> = emptyList(), scheme: RuleKeyScheme = RuleKeyScheme()) =
+            IntKey(name, aliases, scheme)
 
-        fun event(name: String, mode: EventRuleMode = EventRuleMode.IGNORE_ERROR, aliases: List<String> = emptyList()) =
-            EventKey(name, mode, aliases)
+        fun event(
+            name: String,
+            mode: EventRuleMode = EventRuleMode.IGNORE_ERROR,
+            aliases: List<String> = emptyList(),
+            scheme: RuleKeyScheme = RuleKeyScheme()
+        ) = EventKey(name, mode, aliases, scheme)
 
         /**
          * Reflects over [instance]'s Kotlin properties and returns every value

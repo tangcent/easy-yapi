@@ -6,6 +6,7 @@ import com.itangcent.easyapi.core.ai.agent.AgentEvent
 import com.itangcent.easyapi.core.ai.agent.AgentMemory
 import com.itangcent.easyapi.core.ai.agent.ApprovalGate
 import com.itangcent.easyapi.core.ai.agent.ClarificationGate
+import com.itangcent.easyapi.core.ai.agent.KnowledgeState
 import com.itangcent.easyapi.core.ai.agent.TaskResult
 import com.itangcent.easyapi.core.config.ConfigReader
 import com.itangcent.easyapi.core.config.source.RuleFileResolver
@@ -117,4 +118,22 @@ sealed class ToolResult {
 
     /** Recoverable error — the agent may retry or choose another approach. */
     data class Error(val message: String) : ToolResult()
+
+    /**
+     * Stateful output that feeds into [KnowledgeState] instead of appending
+     * full content to the conversation history.
+     *
+     * The agent loop calls `memory.knowledgeState.upsert(section, entries)`
+     * and replaces the full result with a short receipt JSON in the transcript.
+     * The rendered state block is injected as a system message at request time.
+     *
+     * @param section The [KnowledgeState] section name (e.g. `"§keys"`).
+     * @param entries Entries to upsert into the section.
+     * @param receiptNote Human-readable note for the receipt (e.g. "n keys catalogued").
+     */
+    data class Stateful(
+        val section: String,
+        val entries: List<KnowledgeState.Entry>,
+        val receiptNote: String
+    ) : ToolResult()
 }

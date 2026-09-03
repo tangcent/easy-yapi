@@ -56,12 +56,6 @@ class RuleKeysTest2 {
     }
 
     @Test
-    fun testPostmanFormatAfter_throwInError() {
-        val key = RuleKeys.POSTMAN_FORMAT_AFTER as RuleKey.EventKey
-        assertEquals(EventRuleMode.THROW_IN_ERROR, key.eventMode)
-    }
-
-    @Test
     fun testClassIsCtrl_aliases() {
         assertEquals("class.is.spring.ctrl", RuleKeys.CLASS_IS_CTRL.name)
         assertTrue(RuleKeys.CLASS_IS_CTRL.aliases.contains("class.is.ctrl"))
@@ -77,10 +71,5 @@ class RuleKeysTest2 {
     fun testMethodReturnMain() {
         assertEquals("method.return.main", RuleKeys.METHOD_RETURN_MAIN.name)
         assertTrue(RuleKeys.METHOD_RETURN_MAIN is RuleKey.StringKey)
-    }
-
-    @Test
-    fun testPostmanPrerequest_merge() {
-        assertEquals(StringRuleMode.MERGE, (RuleKeys.POSTMAN_PREREQUEST as RuleKey.StringKey).stringMode)
     }
 }

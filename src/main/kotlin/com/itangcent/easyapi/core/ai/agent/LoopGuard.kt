@@ -309,6 +309,10 @@ internal fun normalizeArgs(arguments: String): Int {
 internal fun resultFingerprint(result: ToolResult): Int = when (result) {
     is ToolResult.Text -> canonicalizeResultContent(result.value).hashCode()
     is ToolResult.Error -> (ERROR_SENTINEL + result.message.trim()).hashCode()
+    is ToolResult.Stateful -> {
+        val content = "${result.section}:${result.entries.map { it.id }.sorted().joinToString(",")}"
+        content.hashCode()
+    }
 }
 
 /**

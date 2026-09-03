@@ -22,6 +22,7 @@ import com.itangcent.easyapi.channel.postman.model.PostmanGson
 import com.itangcent.easyapi.channel.postman.model.PostmanItem
 import com.itangcent.easyapi.core.http.HttpClientProvider
 import com.itangcent.easyapi.core.logging.IdeaLog
+import com.itangcent.easyapi.core.rule.RuleKey
 import com.itangcent.easyapi.core.settings.PostmanExportMode
 import com.itangcent.easyapi.core.settings.settings
 import com.itangcent.easyapi.core.util.ide.ModuleHelper
@@ -61,6 +62,8 @@ class PostmanChannel : Channel, IdeaLog {
         PostmanSettingsPanel()
 
     override fun configFiles(): List<String> = emptyList()
+
+    override fun ruleKeys(): List<RuleKey<*>> = RuleKey.collectFrom(PostmanRuleKeys)
 
     override suspend fun export(context: ExportContext): ExportResult {
         LOG.info("PostmanChannel.export: endpoints=${context.endpointsToExport.size}")

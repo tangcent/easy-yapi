@@ -5,7 +5,7 @@ title: Markdown template & locale
 cue: markdown.template (local file or remote URL) and markdown.template.language (BCP-47 locale tag)
 ---
 
-## When to use
+## Value shape
 
 Two related keys drive Markdown export:
 
@@ -34,8 +34,3 @@ request touches Markdown export or asks for localized docs, propose
   a localized copy as a starting point.
 - This proposal flows through `propose_rule_content` like any other
   rule — the user reviews and saves. Never write the rule silently.
-
-## Check existing rules first
-
-Call `get_existing_rules_for_key` for `markdown.template.language` to
-avoid duplicates before proposing.

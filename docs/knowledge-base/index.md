@@ -80,7 +80,7 @@ search this list.
 - **Path multi** → [settings-guide §General](settings-guide.md#general)
 - **`postman.*` rule keys** → [rule-guide §Postman rules](rule-guide.md#postman-rules)
 - **Postman settings** → [settings-guide §Postman](settings-guide.md#postman)
-- **Pre/post scripts** → [usage-guide §Pre/Post Scripts](usage-guide.md#prepost-scripts) · [script reference](easyapi-script-reference.md)
+- **Pre/post scripts** → [usage-guide §Pre/Post Scripts](usage-guide.md#prepost-scripts) · [pm script reference](postman-script-reference.md)
 - **Project rules (`.easyapi/`)** → [README §Where rules live](README.md#where-rules-live-30-model)
 
 ## R
@@ -92,7 +92,7 @@ search this list.
 
 ## S
 
-- **Script reference (`pm.*`)** → [easyapi-script-reference.md](easyapi-script-reference.md)
+- **Postman script reference (`pm.*`)** → [postman-script-reference.md](postman-script-reference.md)
 - **Search** → [usage-guide §Search](usage-guide.md#search)
 - **Settings reference** → [settings-guide.md](settings-guide.md)
 - **`@ControllerAdvice` + `ResponseBodyAdvice` (response wrapper)** → [rule-guide §Custom-Pattern Catalog](rule-guide.md#custom-pattern-catalog)

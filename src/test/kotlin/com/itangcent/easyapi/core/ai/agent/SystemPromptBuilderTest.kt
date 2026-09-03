@@ -9,7 +9,7 @@ import org.junit.Test
  * Covers three concerns (design C2 / task A3):
  * - The base prompt (`build()`) carries identity, loop contract, tool index,
  *   rule-file format, and writing-quality rules — but NOT the detection/recipe
- *   prose (which moved to `ai/detection/` and `ai/rules/` catalog files).
+ *   prose (which moved to `ai/detection/` and `ai/key-guides/` catalog files).
  * - The entry-path overload (`build(entryPath, amb)`) composes the right seed
  *   messages per path: 3 for REACTIVE (base + detection index + rule index),
  *   1 for both Task-List variants.
@@ -134,7 +134,7 @@ class SystemPromptBuilderTest {
         )
         Assert.assertTrue(
             "base prompt should require context lookup before scripts",
-            text.contains("before writing a Groovy or Postman")
+            text.contains("writing a Groovy script")
         )
         Assert.assertTrue(
             "base prompt should document get_rule_detail",
@@ -174,8 +174,8 @@ class SystemPromptBuilderTest {
     // ── build(entryPath, amb) — message counts per path (A3) ──
 
     @Test
-    fun `build reactive returns three messages`() {
-        // REACTIVE → base + detection index + rule index.
+    fun `build reactive returns four messages`() {
+        // REACTIVE → base + detection index + rule index + L0 rule-key menu.
         val amb = Ambient(
             projectName = "demo",
             editingRuleFile = null,
@@ -184,7 +184,7 @@ class SystemPromptBuilderTest {
             enabledFormats = listOf("json")
         )
         val msgs = SystemPromptBuilder.build(EntryPath.REACTIVE, amb)
-        Assert.assertEquals("REACTIVE should return 3 seed messages", 3, msgs.size)
+        Assert.assertEquals("REACTIVE should return 4 seed messages", 4, msgs.size)
     }
 
     @Test
@@ -245,11 +245,11 @@ class SystemPromptBuilderTest {
 
     @Test
     fun `sub-agent base prompt advertises its registered tools`() {
-        // The 6 tools in subAgentToolRegistry() — the prompt's tool index is
-        // the only menu the sub-agent LLM should trust.
+        // The 7 perception + 1 terminal tools in subAgentToolRegistry() — the
+        // prompt's tool index is the only menu the sub-agent LLM should trust.
         val text = SystemPromptBuilder.buildSubAgent().content
         for (tool in listOf(
-            "list_rule_keys", "get_rule_detail", "get_rule_context", "get_psi_class_info",
+            "list_rule_keys", "get_script_object_api", "get_rule_detail", "get_rule_context", "get_psi_class_info",
             "find_classes_by_annotation", "find_classes_by_supertype",
             "report_findings"
         )) {
@@ -295,10 +295,10 @@ class SystemPromptBuilderTest {
                 forbidden in advertisedToolNames
             )
         }
-        // And the 6 registered tools MUST be advertised.
+        // And the registered tools MUST be advertised.
         for (registered in listOf(
-            "list_rule_keys", "get_rule_detail", "get_rule_context", "get_psi_class_info",
-            "find_classes_by_annotation", "find_classes_by_supertype",
+            "list_rule_keys", "get_script_object_api", "get_rule_detail", "get_rule_context",
+            "get_psi_class_info", "find_classes_by_annotation", "find_classes_by_supertype",
             "report_findings"
         )) {
             Assert.assertTrue(
@@ -395,10 +395,10 @@ class SystemPromptBuilderTest {
         )
         val msgs = SystemPromptBuilder.build(EntryPath.REACTIVE, amb)
         val ruleIndex = msgs[2].content
-        // Unscoped entries always appear (field.ignore has no channel/format/framework).
+        // Unscoped entries always appear (json.additional.field has no channel/format/framework).
         Assert.assertTrue(
-            "rule index should include unscoped entry field.ignore when all features are disabled: $ruleIndex",
-            ruleIndex.contains("field.ignore")
+            "rule index should include unscoped entry json.additional.field when all features are disabled: $ruleIndex",
+            ruleIndex.contains("json.additional.field")
         )
         // Scoped entries (channel: postman) are filtered out when their channel is disabled.
         Assert.assertFalse(
@@ -693,9 +693,16 @@ class SystemPromptBuilderTest {
         // preamble now documents `find_classes_by_name` as the primary simple-name
         // resolver, `typeFqn` chaining, and `detail="full"` opt-in. Actual ~18.2k
         // + ~1k headroom.
+        // Ceiling raised 19_200 → 21_600 for the key-guides catalog update: preamble
+        // now documents `list_key_guides` and the key-guide access patterns. Actual
+        // ~20.6k + ~1k headroom.
+        // Ceiling raised 21_600 → 23_200 for the Knowledge State protocol update:
+        // the preamble now documents the stateful-tool receipt protocol and the
+        // `get_rule_context` objectRefs + `get_script_object_api` split. Actual
+        // ~22.0k + ~1.2k headroom.
         val msg = SystemPromptBuilder.build()
         val content = msg.content
-        val ceiling = 19_200 // raised for agent-psi-resolution preamble update: actual ~18.2k + ~1k headroom
+        val ceiling = 23_200 // raised for the Knowledge State protocol update: actual ~22.0k + ~1.2k headroom
         Assert.assertTrue(
             "Preamble content length (${content.length} chars) must stay under $ceiling chars " +
                 "to stay within the token budget. If a future section is added, raise the " +

@@ -92,14 +92,14 @@ class PostmanCollectionHelperPureLogicTest {
 
     @Test
     fun `PostmanRuleKeys has all expected keys`() {
-        assertNotNull(PostmanRuleKeys.POST_PRE_REQUEST)
-        assertNotNull(PostmanRuleKeys.POST_TEST)
-        assertNotNull(PostmanRuleKeys.POST_MAN_HOST)
-        assertNotNull(PostmanRuleKeys.CLASS_POST_PRE_REQUEST)
-        assertNotNull(PostmanRuleKeys.CLASS_POST_TEST)
-        assertNotNull(PostmanRuleKeys.COLLECTION_POST_PRE_REQUEST)
-        assertNotNull(PostmanRuleKeys.COLLECTION_POST_TEST)
-        assertNotNull(PostmanRuleKeys.AFTER_FORMAT)
+        assertNotNull(PostmanRuleKeys.POSTMAN_PREREQUEST)
+        assertNotNull(PostmanRuleKeys.POSTMAN_TEST)
+        assertNotNull(PostmanRuleKeys.POSTMAN_HOST)
+        assertNotNull(PostmanRuleKeys.POSTMAN_CLASS_PREREQUEST)
+        assertNotNull(PostmanRuleKeys.POSTMAN_CLASS_TEST)
+        assertNotNull(PostmanRuleKeys.POSTMAN_COLLECTION_PREREQUEST)
+        assertNotNull(PostmanRuleKeys.POSTMAN_COLLECTION_TEST)
+        assertNotNull(PostmanRuleKeys.POSTMAN_FORMAT_AFTER)
     }
 
     // ==================== PostmanExportMetadata tests ====================

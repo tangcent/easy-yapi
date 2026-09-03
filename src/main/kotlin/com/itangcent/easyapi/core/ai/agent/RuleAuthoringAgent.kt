@@ -72,13 +72,20 @@ class RuleAuthoringAgent(
         // caller-supplied perception, or capture an editing-file-less one
         // for this project.
         val amb = ambient ?: AmbientPerception.capture(ctx.project)
+        val previousAmbient = memory.ambient
         memory.ambient = amb
 
         // First-turn setup: the role/policy preamble (and entry-path-specific
         // indexes for the Reactive path) is added once at the start of a
         // conversation (and re-asserted after a reset()).
         if (memory.messages.isEmpty()) {
-            SystemPromptBuilder.build(entryPath, amb).forEach { memory.messages.add(it) }
+            val opening = SystemPromptBuilder.build(entryPath, amb)
+            opening.forEach { memory.messages.add(it) }
+            memory.openingSystemCount = opening.size
+        } else {
+            // Later turns: re-capture the enablement-sensitive knowledge when
+            // the enabled channel/format/framework sets changed (spec §3.5).
+            refreshStaleKnowledge(memory, previousAmbient, amb, entryPath)
         }
 
         memory.messages.add(SystemPromptBuilder.ambient(amb))
@@ -97,13 +104,21 @@ class RuleAuthoringAgent(
         val tokenBudget = contextWindowToBudget(ctx.aiSettings.contextWindow)
         while (step < ctx.aiSettings.maxRequests) {
             events.emit(AgentEvent.Thinking(step + 1))
-            trimToTokenBudget(memory, tokenBudget)
+            // Reserve tokens for the knowledge state block injected at request
+            // time. The state block is NOT in memory.messages, so trim the
+            // history budget accordingly.
+            val effectiveBudget = tokenBudget - memory.knowledgeState.estimatedTokens()
+            trimToTokenBudget(memory, effectiveBudget)
             LOG.info("agent step ${step + 1}/${ctx.aiSettings.maxRequests}: " +
                 "messages=${memory.messages.size} tools=${tools.schemas().size}")
 
+            // Inject the knowledge state block as a System message at request
+            // time. This is NOT stored in memory.messages — it is rendered fresh
+            // from memory.knowledgeState before each chat call.
+            val chatMessages = buildChatMessages(memory)
             val resp = try {
                 retry.chatWithRetry(
-                    { aiService.chat(AiChatRequest(memory.messages, tools.schemas())) },
+                    { aiService.chat(AiChatRequest(chatMessages, tools.schemas())) },
                     onFailure = { a, e ->
                         LOG.warn("agent chat attempt $a failed: ${e::class.simpleName}", e)
                         // Emit a non-terminal retry-progress signal only for
@@ -225,13 +240,16 @@ class RuleAuthoringAgent(
                 }
 
                 val result = tools.dispatch(tc.name, args, ctx)
-                memory.messages.add(AiMessage.ToolResult(tc.id, tc.name, result.toJson()))
-                events.emit(AgentEvent.Observed(tc.name, result.summary()))
+                // Stateful results update the KnowledgeState and are replaced
+                // with a short receipt in the transcript.
+                val finalResult = result.toReceiptIfStateful(memory)
+                memory.messages.add(AiMessage.ToolResult(tc.id, tc.name, finalResult.toJson()))
+                events.emit(AgentEvent.Observed(tc.name, finalResult.summary()))
                 // Log only the result kind + a size hint — never the body.
-                LOG.info("agent tool result: ${tc.name} -> ${result.resultKind()}")
+                LOG.info("agent tool result: ${tc.name} -> ${finalResult.resultKind()}")
 
                 // Loop detection: consecutive duplicate / call cycle / output stagnation.
-                when (val post = guard.observeResult(tc, result)) {
+                when (val post = guard.observeResult(tc, finalResult)) {
                     is LoopGuard.Verdict.Terminate -> {
                         fillSkippedToolResults(calls, i + 1, memory)
                         return endLoopDetected(guard, post.reason, memory)
@@ -254,6 +272,51 @@ class RuleAuthoringAgent(
         LOG.info("agent turn ended: request budget exhausted (${ctx.aiSettings.maxRequests})")
         return logOutcome(TurnOutcome.StepLimitHit)
     }
+
+    /**
+     * Drop the knowledge cached under the previous ambient when the enabled
+     * channel/format/framework sets changed between turns (spec §3.5).
+     *
+     * `§keys` is filtered by enablement and the L0 indexes are too, so both go
+     * stale together: a channel switched off in Settings would otherwise keep
+     * its key lines in the state block while every turn's ambient line says the
+     * channel is disabled. `§keyContexts` is invalidated alongside it — a
+     * disabled key's context is equally stale. `§objects` is reflected from
+     * code and never invalidated.
+     */
+    private fun refreshStaleKnowledge(
+        memory: AgentMemory,
+        previous: Ambient?,
+        current: Ambient,
+        entryPath: EntryPath
+    ) {
+        if (previous == null || enablementSignature(previous) == enablementSignature(current)) return
+
+        LOG.info("agent knowledge invalidated: enablement changed " +
+            "(${enablementSignature(previous)} -> ${enablementSignature(current)})")
+        memory.knowledgeState.invalidate(KnowledgeState.SECTION_KEYS)
+        memory.knowledgeState.invalidate(KnowledgeState.SECTION_KEY_CONTEXTS)
+
+        // Rebuild the L0 indexes in place — they are the leading System block.
+        val opening = SystemPromptBuilder.build(entryPath, current)
+        var removable = 0
+        while (removable < memory.openingSystemCount &&
+            removable < memory.messages.size &&
+            memory.messages[removable] is AiMessage.System
+        ) {
+            removable++
+        }
+        repeat(removable) { memory.messages.removeAt(0) }
+        memory.messages.addAll(0, opening)
+        memory.openingSystemCount = opening.size
+    }
+
+    /** Enablement fingerprint used to detect staleness across turns. */
+    private fun enablementSignature(amb: Ambient): String = listOf(
+        amb.enabledChannels.sorted(),
+        amb.enabledFormats.sorted(),
+        amb.frameworkHints.sorted()
+    ).joinToString("|")
 
     /**
      * Terminate the turn abnormally because the [LoopGuard] detected a loop.
@@ -387,12 +450,18 @@ sealed class TurnOutcome {
 private fun ToolResult.toJson(): String = when (this) {
     is ToolResult.Text -> GsonUtils.toJson(mapOf("value" to value))
     is ToolResult.Error -> GsonUtils.toJson(mapOf("error" to message))
+    is ToolResult.Stateful ->
+        // Stateful results are converted to receipts before serialization,
+        // so this path is unreachable under normal operation. Return a
+        // placeholder for completeness.
+        GsonUtils.toJson(mapOf("error" to "internal: Stateful result not converted to receipt"))
 }
 
 /** Short summary for the chat UI's `Observed` card. */
 private fun ToolResult.summary(): String = when (this) {
     is ToolResult.Text -> if (value.length > 200) value.take(200) + "…" else value
     is ToolResult.Error -> "Error: $message"
+    is ToolResult.Stateful -> "Stateful: $receiptNote"
 }
 
 /**
@@ -403,6 +472,7 @@ private fun ToolResult.summary(): String = when (this) {
 private fun ToolResult.resultKind(): String = when (this) {
     is ToolResult.Text -> "text(len=${value.length})"
     is ToolResult.Error -> "error($message)"
+    is ToolResult.Stateful -> "stateful($section, n=${entries.size})"
 }
 
 /** Stable name for a [TurnOutcome] in log lines. */
@@ -411,4 +481,75 @@ private fun TurnOutcome.outcomeName(): String = when (this) {
     TurnOutcome.Answered -> "answered"
     TurnOutcome.StepLimitHit -> "step_limit_hit"
     TurnOutcome.LoopDetected -> "loop_detected"
+}
+
+/**
+ * Build the final chat message list by injecting the rendered knowledge state
+ * block after the leading System messages and before the conversation history.
+ *
+ * This keeps the state block near the head where the model sees it first,
+ * and preserves the invariant that the history is pure User/Assistant/
+ * ToolResult with no System state block appended on every turn.
+ */
+private fun buildChatMessages(memory: AgentMemory): List<AiMessage> {
+    val stateRendered = memory.knowledgeState.render()
+    if (stateRendered.isEmpty()) return memory.messages
+
+    val messages = memory.messages
+    val idxFirstNonSystem = messages.indexOfFirst { it !is AiMessage.System }
+
+    return when {
+        idxFirstNonSystem < 0 -> {
+            // All messages are System → append the state
+            messages + AiMessage.System(stateRendered)
+        }
+        idxFirstNonSystem == 0 -> {
+            // No leading System → prepend the state
+            listOf(AiMessage.System(stateRendered)) + messages
+        }
+        else -> {
+            // Leading System → insert state between leading System and history
+            val leading = messages.subList(0, idxFirstNonSystem)
+            val history = messages.subList(idxFirstNonSystem, messages.size)
+            leading + AiMessage.System(stateRendered) + history
+        }
+    }
+}
+
+/**
+ * If the result is [ToolResult.Stateful], apply it to [memory.knowledgeState]
+ * and return a short [ToolResult.Text] receipt for the transcript.
+ *
+ * If it is not Stateful, return it unchanged. This preserves the required
+ * tool_call_id → ToolResult pairing invariant.
+ */
+private fun ToolResult.toReceiptIfStateful(memory: AgentMemory): ToolResult = when (this) {
+    is ToolResult.Stateful -> {
+        val upsertResult = memory.knowledgeState.upsert(section, entries)
+        val receiptJson = when (upsertResult) {
+            is KnowledgeState.UpsertResult.Changed -> GsonUtils.toJson(mapOf(
+                "knowledge" to mapOf(
+                    "section" to section,
+                    "version" to memory.knowledgeState.sectionVersion(section),
+                    "added" to upsertResult.added,
+                    "updated" to upsertResult.updated,
+                    "unchanged" to upsertResult.unchanged,
+                    "note" to receiptNote
+                )
+            ))
+            is KnowledgeState.UpsertResult.NoChange -> GsonUtils.toJson(mapOf(
+                "knowledge" to mapOf(
+                    "section" to section,
+                    "version" to memory.knowledgeState.sectionVersion(section),
+                    "noChange" to true,
+                    "unchanged" to upsertResult.unchanged,
+                    "note" to "All ${upsertResult.unchanged} entries are already up-to-date; " +
+                        "content is already in the Knowledge State block at the top of the " +
+                        "conversation. Do not re-request these entries."
+                )
+            ))
+        }
+        ToolResult.Text(receiptJson)
+    }
+    else -> this
 }

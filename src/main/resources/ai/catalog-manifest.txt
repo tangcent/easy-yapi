@@ -8,10 +8,10 @@ ai/detection/auth-token-chaining.md
 ai/detection/static-auth.md
 ai/detection/correlation-idempotency.md
 ai/detection/hmac-signing.md
-ai/rules/postman.test.md
-ai/rules/postman.prerequest.md
-ai/rules/method.additional.header.md
-ai/rules/method.additional.response.header.md
-ai/rules/json.additional.field.md
-ai/rules/markdown.template.md
-ai/rules/field.ignore.md
+ai/key-guides/postman.test.md
+ai/key-guides/postman.prerequest.md
+ai/key-guides/method.additional.header.md
+ai/key-guides/method.additional.response.header.md
+ai/key-guides/json.additional.field.md
+ai/key-guides/markdown.template.md
+ai/key-guides/markdown.curl.host.md

@@ -2,6 +2,7 @@ package com.itangcent.easyapi.core.ai.agent
 
 import com.itangcent.easyapi.core.ai.AiMessage
 import com.itangcent.easyapi.core.logging.IdeaLog
+import com.itangcent.easyapi.core.rule.RuleKeyCatalog
 
 /**
  * Builds the system-prompt pieces consumed by [RuleAuthoringAgent].
@@ -69,8 +70,9 @@ object SystemPromptBuilder : IdeaLog {
     /**
      * Compose opening system messages based on [entryPath].
      *
-     * - [EntryPath.REACTIVE] → base prompt + detection index + rule index.
-     *   Agent has a menu to browse; pulls detail on demand.
+     * - [EntryPath.REACTIVE] → base prompt + detection index + rule index +
+     *   L0 rule-key name menu. Agent has a menu to browse; pulls detail on
+     *   demand.
      * - [EntryPath.TASK_LIST_MAGIC] / [EntryPath.TASK_LIST_PROGRAMMATIC]
      *   → base prompt only. Detection/rule detail is pulled inside tasks
      *   as needed.
@@ -80,7 +82,7 @@ object SystemPromptBuilder : IdeaLog {
      *   never invokes a tool not in its registry. No detection/rule index —
      *   the assigned detection's recipe is embedded in the sub-agent's user
      *   instruction by [com.itangcent.easyapi.core.ai.tools.RunSubAgentTool],
-     *   and per-key recipes are pulled via `get_rule_detail` as needed.
+     *   and per-key guides are pulled via `get_rule_detail` as needed.
      *
      * The indexes are derived from [PromptCatalog] and filtered by the
      * ambient-enabled features (channels/formats/frameworks). The body of an
@@ -95,7 +97,8 @@ object SystemPromptBuilder : IdeaLog {
         EntryPath.REACTIVE -> listOf(
             build(),
             indexMessage("detection", amb),
-            indexMessage("rules", amb)
+            indexMessage("key-guides", amb),
+            keyIndexMessage()
         )
         EntryPath.TASK_LIST_MAGIC, EntryPath.TASK_LIST_PROGRAMMATIC -> listOf(build())
         EntryPath.SUB_AGENT -> listOf(buildSubAgent())
@@ -149,10 +152,10 @@ object SystemPromptBuilder : IdeaLog {
 
     /**
      * Enablement-aware index message for one catalog [category]
-     * (`"detection"` or `"rules"`).
+     * (`"detection"` or `"key-guides"`).
      *
      * Lists each matching catalog entry as `- `id` — title: cue`, prefixed
-     * by a header that names the tool used to fetch the full recipe. When no
+     * by a header that names the tool used to fetch the full guide. When no
      * entries match the ambient-enabled features, the body becomes
      * `(none for the currently enabled features)` so the agent knows the
      * catalog is empty for this turn rather than missing entirely.
@@ -166,7 +169,7 @@ object SystemPromptBuilder : IdeaLog {
         )
         val header = when (category) {
             "detection" -> "Available detection prompts (fetch with `get_detection_prompt(id)` when relevant):"
-            "rules" -> "Available rule-detail prompts (fetch with `get_rule_detail(key=...)` when relevant):"
+            "key-guides" -> "Available key guides (fetch with `get_rule_detail(key=...)` when relevant):"
             else -> "Available $category prompts:"
         }
         val body = if (entries.isEmpty()) {
@@ -175,6 +178,31 @@ object SystemPromptBuilder : IdeaLog {
             entries.joinToString("\n") { "- `${it.id}` — ${it.title}: ${it.cue}" }
         }
         return AiMessage.System("$header\n$body")
+    }
+
+    /**
+     * The L0 rule-key name menu (spec D2.5) — a compact, source-grouped list
+     * of every known rule key, rendered by [RuleKeyCatalog.renderKeyMenu].
+     *
+     * Unlike the detection/key-guide indexes, this menu is **not**
+     * enablement-filtered: it enumerates the full static catalog ([RuleKeyCatalog.SOURCES],
+     * also used to build the external skill's `rule-keys.json`), because the
+     * agent needs to know which keys *could* apply before deciding what to
+     * fetch. The full self-describing scheme is pulled on demand via
+     * `list_rule_keys` (which files entries into the Knowledge State block),
+     * so this menu stays cheap (~1K tokens).
+     *
+     * [RuleKeyCatalog.SOURCES] is pure-static (reflection over `RuleKey`
+     * objects; `RuleKeyCatalog.FRAMEWORK_NAME` is a `const val` inlined at
+     * compile time), so this adds no IntelliJ [Project] dependency to the
+     * builder.
+     */
+    private fun keyIndexMessage(): AiMessage.System {
+        val infos = RuleKeyCatalog.SOURCES.flatMap { (source, supplier) ->
+            supplier().map { RuleKeyCatalog.RuleKeyInfo(it, source) }
+        }
+        val entries = RuleKeyCatalog.schemeEntries(infos)
+        return AiMessage.System(RuleKeyCatalog.renderKeyMenu(entries))
     }
 
     private fun loadBase(): String {

@@ -340,8 +340,9 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
      * transcript (design C9). The agent loop is shared; only the seed-prompt
      * shape differs.
      *
-     * - [EntryPath.REACTIVE] → 3 seed System messages (base + detection
-     *   index + rule index) — the agent has a menu to browse.
+     * - [EntryPath.REACTIVE] → 4 seed System messages (base + detection
+     *   index + rule index + L0 rule-key menu) — the agent has a menu to
+     *   browse.
      * - [EntryPath.TASK_LIST_MAGIC] → 1 seed System message (base only)
      *   — detection/rule detail is pulled inside tasks as needed.
      *
@@ -353,7 +354,7 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testEntryPathControlsPromptAssembly() = runBlocking {
         val tools = ToolRegistry(listOf(ListRuleKeysFakeTool()))
 
-        // --- REACTIVE path: 3 seed messages ---
+        // --- REACTIVE path: 4 seed messages ---
         val reactiveMemory = AgentMemory()
         aiService.enqueueText("reactive answer")
         val reactiveEvents = captureEvents()
@@ -365,8 +366,8 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
             .filterIsInstance<AiMessage.System>()
             .filter { !it.content.startsWith("Context: project") }
         assertEquals(
-            "REACTIVE path should seed 3 system messages (base + detection + rules): ${reactiveSeeds.size}",
-            3, reactiveSeeds.size
+            "REACTIVE path should seed 4 system messages (base + detection + rules + L0 key menu): ${reactiveSeeds.size}",
+            4, reactiveSeeds.size
         )
 
         // --- TASK_LIST_MAGIC path: 1 seed message ---

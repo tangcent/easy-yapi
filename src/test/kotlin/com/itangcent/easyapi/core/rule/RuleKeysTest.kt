@@ -44,13 +44,6 @@ class RuleKeysTest {
     }
 
     @Test
-    fun testPostmanKeys() {
-        assertEquals("postman.prerequest", RuleKeys.POSTMAN_PREREQUEST.name)
-        assertTrue(RuleKeys.POSTMAN_PREREQUEST.mode is StringRuleMode.MERGE)
-        assertEquals(listOf("class.postman.prerequest"), RuleKeys.POSTMAN_CLASS_PREREQUEST.aliases)
-    }
-
-    @Test
     fun testClassRecognizerKeys() {
         assertEquals("class.is.spring.ctrl", RuleKeys.CLASS_IS_CTRL.name)
         assertEquals(listOf("class.is.ctrl"), RuleKeys.CLASS_IS_CTRL.aliases)

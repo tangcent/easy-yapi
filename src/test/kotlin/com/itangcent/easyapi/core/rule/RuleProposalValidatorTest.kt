@@ -40,6 +40,20 @@ class RuleProposalValidatorTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     @Test
+    fun testImplicitKeyReadViaGetFirstIsAccepted() = runTest {
+        // markdown.curl.host is read by name via ConfigReader.getFirst(...) and
+        // registered as an implicit key — the validator must NOT reject it as
+        // an unknown rule key.
+        val content = "markdown.curl.host=https://api.example.com"
+        val result = RuleProposalValidator.validate(content, project)
+        assertTrue("errors: ${result.errors}", result.ok)
+        assertTrue(
+            "no unknown-key error expected: ${result.errors}",
+            result.errors.none { it.contains("unknown rule key") }
+        )
+    }
+
+    @Test
     fun testBareClassFilterIsOnlyAWarning() = runTest {
         val content = "method.doc[class:com.example.web.UserController]=user"
         val result = RuleProposalValidator.validate(content, project)

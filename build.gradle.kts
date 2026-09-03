@@ -262,7 +262,7 @@ val syncKnowledgeBase by tasks.registering {
             val name = source.name
             // Plugin resources: every knowledge-base doc ships in the JAR
             // (the get_plugin_doc tool exposes overview/index/rule-guide/
-            // settings-guide/usage-guide/easyapi-script-reference).
+            // settings-guide/usage-guide/postman-script-reference).
             copyFileIfDifferent(source, File(pluginDestDir, name))
             // Skill folder: all canonical knowledge-base pages are bundled so
             // the external skill mirrors the built-in agent's `get_plugin_doc`
@@ -287,12 +287,12 @@ fun copyFileIfDifferent(source: File, target: File) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Agent catalog sync (R3-C3)
 //
-// `src/main/resources/ai/{detection,rules}/*.md` are the canonical prompt
+// `src/main/resources/ai/{detection,key-guides}/*.md` are the canonical prompt
 // catalog the in-plugin agent loads at runtime via `PromptCatalog`. The
 // external `easy-yapi-assistant` skill ships a verbatim copy under
 // `skills/easy-yapi-assistant/ai/` so the external assistant has the same
-// per-detection / per-key recipe surface (mirrored by the
-// `get_detection_prompt.sh` / `get_rule_detail.sh` CLI scripts).
+// per-detection / per-key guide surface (mirrored by the
+// `get_detection_prompt.sh` / `get_key_guide.sh` CLI scripts).
 //
 // This task is the catalog counterpart of `syncKnowledgeBase` — same
 // content-equality-checked / idempotent contract. It does NOT sync
@@ -305,11 +305,11 @@ val agentCatalogSkillDir = file("skills/easy-yapi-assistant/ai")
 
 val syncAgentCatalog by tasks.registering {
     group = "documentation"
-    description = "Sync src/main/resources/ai/{detection,rules}/*.md into the easy-yapi-assistant skill folder."
+    description = "Sync src/main/resources/ai/{detection,key-guides}/*.md into the easy-yapi-assistant skill folder."
 
     val sourceFiles = fileTree(agentCatalogSourceDir) {
         include("detection/*.md")
-        include("rules/*.md")
+        include("key-guides/*.md")
     }
     inputs.files(sourceFiles)
     outputs.files(fileTree(agentCatalogSkillDir) { include("**/*.md") })
@@ -319,15 +319,124 @@ val syncAgentCatalog by tasks.registering {
         val sources = sourceFiles.files.sortedBy { it.path }
         logger.lifecycle("Syncing ${sources.size} agent-catalog file(s) into the easy-yapi-assistant skill folder:")
         sources.forEach { source ->
-            val rel = source.relativeTo(agentCatalogSourceDir).path   // detection/<id>.md / rules/<key>.md
+            val rel = source.relativeTo(agentCatalogSourceDir).path   // detection/<id>.md / key-guides/<key>.md
             copyFileIfDifferent(source, File(agentCatalogSkillDir, rel))
             logger.lifecycle("  - $rel")
         }
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Rule-key scheme catalog sync (auto-export)
+//
+// `RuleKeySchemeExporter` reflects every `*RuleKeys` object (general, channel,
+// framework) plus the implicit keys in `RuleKeyRegistry` and emits the FULL
+// self-describing scheme of each key — the same information the in-plugin
+// `list_rule_keys` tool exposes to the built-in agent. The external
+// `easy-yapi-assistant` skill ships these two generated files under
+// `skills/easy-yapi-assistant/rule-keys.json|.md` so it gets scheme-equivalent
+// coverage of every rule key, present and future.
+//
+// Because each source is enumerated by reflection, any new key added to an
+// existing `*RuleKeys` object is picked up automatically on re-run. A brand
+// new source object (a new channel/framework) must be registered in
+// `RuleKeyCatalog.SOURCES` — the guard tests
+// (`RuleKeySchemeExporterTest`, `EasyApiAssistantSkillTest`) fail if a
+// `RuleKeyRegistry` source is missing there.
+// ─────────────────────────────────────────────────────────────────────────────
+val ruleKeySchemeSkillDir = file("skills/easy-yapi-assistant")
+
+val syncRuleKeySchemes by tasks.registering(JavaExec::class) {
+    group = "documentation"
+    description = "Reflect every *RuleKeys object + implicit keys and write the full scheme catalog into the easy-yapi-assistant skill (rule-keys.json / rule-keys.md)."
+
+    dependsOn("classes", "testClasses")
+    // intellijPlatform supplies Kotlin stdlib via the IDE at runtime, not on
+    // main's runtimeClasspath — add it explicitly for the plain JVM run.
+    val kotlinRuntime = configurations.detachedConfiguration(
+        dependencies.create("org.jetbrains.kotlin:kotlin-stdlib:2.1.0"),
+        // RuleKey.collectFrom uses kotlin-reflect's memberProperties
+        dependencies.create("org.jetbrains.kotlin:kotlin-reflect:2.1.0")
+    )
+    // The exporters live in the test source set (build-time tools, not shipped
+    // in the plugin JAR), so the exec runs off the test output + test classpath.
+    classpath = sourceSets.test.get().output + sourceSets.test.get().runtimeClasspath + kotlinRuntime
+    mainClass.set("com.itangcent.easyapi.tooling.RuleKeySchemeExporter")
+    args(ruleKeySchemeSkillDir.absolutePath)
+
+    // Re-run whenever the exporter or any rule-key source object changes.
+    inputs.file(file("src/test/kotlin/com/itangcent/easyapi/tooling/RuleKeySchemeExporter.kt"))
+    inputs.dir(file("src/main/kotlin/com/itangcent/easyapi/core/rule"))
+    inputs.dir(file("src/main/kotlin/com/itangcent/easyapi/channel"))
+    inputs.dir(file("src/main/kotlin/com/itangcent/easyapi/framework"))
+    outputs.files(fileTree(ruleKeySchemeSkillDir) { include("rule-keys.json", "rule-keys.md") })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rule-key script-context catalog sync (get_rule_context mirror)
+//
+// `RuleContextExporter` reuses the same key assembly as `syncRuleKeySchemes`
+// and, for every rule key, reflects the runtime script-context profile that the
+// in-plugin `get_rule_context` tool returns to the built-in agent: execution
+// mode, per-key bindings, and the callable script-object method signatures
+// (`it`/`request`/`response`/`api`/…). The external `easy-yapi-assistant` skill
+// ships these as `rule-contexts.json` + `rule-contexts.md` (read by
+// `scripts/get_key_context.sh`), so it authors scripts against the same real,
+// reflected object API the built-in agent sees — covering rule keys and the
+// implicit keys read by name, through one interface.
+//
+// This is a runtime-reflective pass (needs the IntelliJ classes on the
+// classpath to load the script wrapper types), so it runs standalone — not wired
+// into `processResources`.
+// ─────────────────────────────────────────────────────────────────────────────
+val syncRuleContexts by tasks.registering(JavaExec::class) {
+    group = "documentation"
+    description = "Reflect each rule key's runtime script-context and write rule-contexts.json / rule-contexts.md into the easy-yapi-assistant skill."
+
+    dependsOn("classes", "testClasses")
+    val kotlinRuntime = configurations.detachedConfiguration(
+        dependencies.create("org.jetbrains.kotlin:kotlin-stdlib:2.1.0"),
+        dependencies.create("org.jetbrains.kotlin:kotlin-reflect:2.1.0")
+    )
+    // The script-context profiler loads IntelliJ/PSI script-wrapper types, so
+    // the exec needs the IDE platform — compileClasspath carries it. (RuleKeySchemeExporter
+    // avoids IntelliJ types and runs off runtimeClasspath alone.) The exporters
+    // live in the test source set, so run off the test output + test classpath.
+    classpath = sourceSets.test.get().output + sourceSets.test.get().compileClasspath + kotlinRuntime
+    mainClass.set("com.itangcent.easyapi.tooling.RuleContextExporter")
+    args(ruleKeySchemeSkillDir)
+
+    inputs.file(file("src/test/kotlin/com/itangcent/easyapi/tooling/RuleKeySchemeExporter.kt"))
+    inputs.file(file("src/test/kotlin/com/itangcent/easyapi/tooling/RuleContextExporter.kt"))
+    inputs.dir(file("src/main/kotlin/com/itangcent/easyapi/core/rule"))
+    inputs.dir(file("src/main/kotlin/com/itangcent/easyapi/channel"))
+    inputs.dir(file("src/main/kotlin/com/itangcent/easyapi/framework"))
+    inputs.dir(file("src/main/kotlin/com/itangcent/easyapi/core/http"))
+    outputs.files(fileTree(ruleKeySchemeSkillDir) { include("rule-contexts.json", "rule-contexts.md") })
+}
+
 // Ensure the JAR always ships docs synced from the canonical source.
+// `syncRuleKeySchemes` is intentionally NOT wired into the build: it depends on
+// `classes` (to run the exporter) and only needs to re-run before committing a
+// change to any rule-key source (like the git-tracked docs/knowledge-base copy).
 tasks.named("processResources") {
     dependsOn("syncKnowledgeBase")
     dependsOn("syncAgentCatalog")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Aggregated skill sync (D4.4)
+//
+// One command to refresh the entire `skills/easy-yapi-assistant` mirror: the
+// knowledge base, the agent catalog (detection + key-guides), the rule-key
+// scheme catalog, and the rule script-context catalog. `syncRuleKeySchemes`
+// and `syncRuleContexts` depend on `classes` (they run a reflective exporter),
+// so they are kept out of `processResources` and run here on demand — trigger
+// them by hand (or let the content-guard tests fail) before committing any
+// rule-key / scheme / renderer change.
+// ─────────────────────────────────────────────────────────────────────────────
+tasks.register("syncSkill") {
+    group = "documentation"
+    description = "Refresh the entire easy-yapi-assistant skill mirror (knowledge base, agent catalog, rule-key schemes, rule contexts)."
+    dependsOn("syncKnowledgeBase", "syncAgentCatalog", "syncRuleKeySchemes", "syncRuleContexts")
 }
