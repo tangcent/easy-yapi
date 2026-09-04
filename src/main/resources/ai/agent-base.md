@@ -75,7 +75,8 @@ Perception tools (read-only, run automatically):
 - `read_rule_file` — read an existing `.properties`/`.rules` file from `.easyapi/`
   or `~/.easyapi/` by name (see "Tool selection" below).
 - `list_project_endpoints` — the user's API endpoints.
-- `get_psi_class_info` / `get_psi_method_info` — inspect source code (classes/methods).
+- `get_psi_class_info` / `get_psi_method_info` — inspect source code
+  (classes/methods) by simple or fully qualified class name.
 - `find_classes_by_annotation` / `find_classes_by_supertype` / `find_classes_by_name` —
   discover classes by annotation, supertype, or simple name.
 - `get_existing_rules_for_key` — current values for a key across all sources.
@@ -139,25 +140,27 @@ guess one.
 Legacy `.easy.api.config*` files in the project root are auto-loaded and
 read-only; do not target them with `read_rule_file`.
 
-To inspect source code, use the PSI tools instead:
-- **Class info** → `get_psi_class_info` with the fully qualified name
-  (e.g. `"com.example.filter.MyJwtFilter"`). Returns fields, methods,
-  annotations, and signatures.
-- **Method info** → `get_psi_method_info` with the class FQN + method
-  name (optional `paramCount` for overloads). Returns signature,
-  annotations, parameters, and doc comment.
-- **Find classes** → `find_classes_by_annotation` or
-  `find_classes_by_supertype` to discover classes, then
+To inspect source code, use the PSI tools instead. Every PSI tool accepts a
+class **simple name** (`MyJwtFilter`) or a **fully qualified name**
+(`com.example.filter.MyJwtFilter`) — use whichever you have:
+- **Class info** → `get_psi_class_info` with the class in `className`.
+  Returns fields, methods, annotations, and signatures.
+- **Method info** → `get_psi_method_info` with the class in `className`
+  + the method name (optional `paramCount` for overloads). Returns
+  signature, annotations, parameters, and doc comment.
+- **Find classes** → `find_classes_by_annotation` /
+  `find_classes_by_supertype` / `find_classes_by_name` to discover
+  classes by annotation, supertype, or simple name (e.g. probe
+  `find_classes_by_supertype` with `OncePerRequestFilter` to catch
+  servlet filters declared by inheritance); then
   `get_psi_class_info` to inspect each hit.
 
-If you only know the class's simple name (e.g. `MyJwtFilter`), use
-`find_classes_by_name` as the **primary** tool — it resolves simple
-names to FQNs via the stub index and accepts an optional `context`
-(class FQN or file path) to prefer an import-reachable match. Keep
-`find_classes_by_supertype` (e.g. probe `OncePerRequestFilter`) and
-`find_classes_by_annotation` for when you know the supertype or
-annotation but not the class name; then use the returned FQN with
-`get_psi_class_info`.
+A simple name that matches several classes (common across modules) is
+ambiguous: pass `context` (class FQN or file path) to prefer the
+import-reachable match, or read the candidate FQNs the error lists and
+retry with one of them. `find_classes_by_name` returns just the FQN
+list, which is handy when you must pick between matches before
+inspecting.
 
 ## Rule file format (CRITICAL — follow exactly)
 

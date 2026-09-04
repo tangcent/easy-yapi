@@ -304,7 +304,7 @@ class GetPsiClassInfoToolTest : EasyApiLightCodeInsightFixtureTestCase() {
         }
         val result = runBlocking {
             GetPsiClassInfoTool().execute(
-                mapOf("fqn" to "User"),
+                mapOf("className" to "User"),
                 ctx()
             )
         }
@@ -313,25 +313,29 @@ class GetPsiClassInfoToolTest : EasyApiLightCodeInsightFixtureTestCase() {
         Assert.assertEquals("com.example.User", map["fqn"])
     }
 
-    fun testAmbiguousSimpleNameReturnsErrorGuidingToFindClassesByName() {
+    fun testAmbiguousSimpleNameErrorListsCandidateFqns() {
         addClassesForTolerance()
         // Two User classes (com.example.User + com.example.dto.User), no
-        // context → ambiguous → error guiding to find_classes_by_name.
+        // context → ambiguous → error lists both candidate FQNs.
         val result = runBlocking {
             GetPsiClassInfoTool().execute(
-                mapOf("fqn" to "User"),
+                mapOf("className" to "User"),
                 ctx()
             )
         }
         Assert.assertTrue("expected Error result, got $result", result is ToolResult.Error)
         val msg = (result as ToolResult.Error).message
         Assert.assertTrue(
-            "error should mention find_classes_by_name: $msg",
-            msg.contains("find_classes_by_name")
-        )
-        Assert.assertTrue(
             "error should mention ambiguous: $msg",
             msg.contains("ambiguous")
+        )
+        Assert.assertTrue(
+            "error should list the first candidate FQN: $msg",
+            msg.contains("com.example.User")
+        )
+        Assert.assertTrue(
+            "error should list the second candidate FQN: $msg",
+            msg.contains("com.example.dto.User")
         )
     }
 
@@ -384,7 +388,7 @@ class GetPsiClassInfoToolTest : EasyApiLightCodeInsightFixtureTestCase() {
         addClasses()
         val result = runBlocking {
             GetPsiClassInfoTool().execute(
-                mapOf("fqn" to "com.example.User"),
+                mapOf("className" to "com.example.User"),
                 ctx()
             )
         }
@@ -510,11 +514,11 @@ class GetPsiClassInfoToolTest : EasyApiLightCodeInsightFixtureTestCase() {
         Assert.assertEquals(ToolKind.PERCEPTION, GetPsiClassInfoTool().kind)
     }
 
-    fun testSchemaDeclaresFqnAndFqnsProperties() {
+    fun testSchemaDeclaresClassNameAndClassNamesProperties() {
         val schema = GetPsiClassInfoTool().parametersSchema
         val props = schema["properties"] as Map<*, *>
-        Assert.assertTrue("should declare fqn", props.containsKey("fqn"))
-        Assert.assertTrue("should declare fqns", props.containsKey("fqns"))
+        Assert.assertTrue("should declare className", props.containsKey("className"))
+        Assert.assertTrue("should declare classNames", props.containsKey("classNames"))
     }
 
     private class NoOpApprovalGate : ApprovalGate {

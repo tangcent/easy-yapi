@@ -18,14 +18,15 @@ import com.itangcent.easyapi.core.util.json.GsonUtils
  * `OncePerRequestFilter` and interceptors implement `HandlerInterceptor`,
  * with no annotation marking them as such. This tool closes that gap.
  *
- * Resolves the supertype by FQN (or simple name with optional `context`) via
- * [PsiNameResolver.resolveAllClasses], then searches its inheritors in the
- * project scope via [ClassInheritorsSearch]. The supertype itself is excluded
- * from the result so the agent gets only the concrete implementations it
- * cares about.
+ * Resolves the supertype by name — fully qualified or simple, with an optional
+ * `context` — via [PsiNameResolver.resolveAllClasses], then searches its
+ * inheritors in the project scope via [ClassInheritorsSearch]. A simple
+ * supertype name is probed against every matching type. The supertype itself
+ * is excluded from the result so the agent gets only the concrete
+ * implementations it cares about.
  *
- * Supports batch: pass `supertypeFqns` (array) to probe multiple supertypes
- * in one call. Returns a JSON object mapping each supertype FQN to its results.
+ * Supports batch: pass `supertypes` (array) to probe multiple supertypes
+ * in one call. Returns a JSON object mapping each supertype to its results.
  */
 class FindClassesBySupertypeTool : AiTool, IdeaLog {
 
@@ -33,13 +34,13 @@ class FindClassesBySupertypeTool : AiTool, IdeaLog {
 
     override val description: String =
         "Find project classes that extend or implement the given supertype(s) " +
-            "(class or interface). Pass `supertypeFqn` (string) for one, or " +
-            "`supertypeFqns` (array) to batch-probe multiple. Returns a JSON " +
-            "array of FQNs (excluding the supertype itself) for a single " +
-            "supertype, or a JSON object mapping each to its array for batch. " +
-            "Use for inheritance-declared components — e.g. servlet filters " +
-            "extending OncePerRequestFilter, interceptors implementing " +
-            "HandlerInterceptor, or argument resolvers implementing " +
+            "(class or interface) — each by simple or fully qualified name " +
+            "(e.g. \"OncePerRequestFilter\"). Pass `supertype` for one or " +
+            "`supertypes` (array) for batch. Returns FQNs of inheritors, " +
+            "excluding the supertype itself (JSON array for one; name-to-array " +
+            "map for batch). Use for inheritance-declared components: servlet " +
+            "filters extending OncePerRequestFilter, interceptors implementing " +
+            "HandlerInterceptor, argument resolvers implementing " +
             "HandlerMethodArgumentResolver."
 
     override val kind: ToolKind = ToolKind.PERCEPTION
@@ -47,50 +48,53 @@ class FindClassesBySupertypeTool : AiTool, IdeaLog {
     override val parametersSchema: Map<String, Any?> = mapOf(
         "type" to "object",
         "properties" to mapOf(
-            "supertypeFqn" to mapOf(
+            "supertype" to mapOf(
                 "type" to "string",
-                "description" to "Fully qualified name of the class or interface " +
-                    "(or simple name when `context` is supplied) whose " +
-                    "subclasses/implementations to find " +
-                    "(e.g. \"org.springframework.web.filter.OncePerRequestFilter\" " +
-                    "or \"org.springframework.web.servlet.HandlerInterceptor\")."
+                "description" to "Supertype class/interface name — simple or fully " +
+                    "qualified — whose subclasses/implementations to find."
             ),
-            "supertypeFqns" to mapOf(
+            "supertypes" to mapOf(
                 "type" to "array",
                 "items" to mapOf("type" to "string"),
-                "description" to "Multiple supertype FQNs to probe in one call (batch mode)."
+                "description" to "Multiple supertype names to probe (batch mode)."
             ),
             "context" to mapOf(
                 "type" to "string",
-                "description" to "Optional: file path or class FQN whose import scope " +
-                    "is used to resolve simple-name supertype entries."
+                "description" to "Optional: file path or class FQN whose import " +
+                    "scope narrows simple supertype names."
             )
         )
     )
 
     override suspend fun execute(args: Map<String, Any?>, ctx: ToolContext): ToolResult {
-        val fqns = PsiNameResolver.extractStringList(args, "supertypeFqn", "supertypeFqns")
-        if (fqns.isEmpty()) return ToolResult.Error("missing parameter: provide `supertypeFqn` (string) or `supertypeFqns` (array)")
+        val names = PsiNameResolver.extractStringList(
+            args, "supertype", "supertypes", "supertypeFqn", "supertypeFqns"
+        )
+        if (names.isEmpty()) {
+            return ToolResult.Error(
+                "missing parameter: provide `supertype` (string) or `supertypes` (array)"
+            )
+        }
 
         val contextElement = PsiNameResolver.resolveContextArg(args, ctx.project)
 
-        if (fqns.size == 1) {
-            return ToolResult.Text(GsonUtils.toJson(searchOne(fqns[0], ctx, contextElement)))
+        if (names.size == 1) {
+            return ToolResult.Text(GsonUtils.toJson(searchOne(names[0], ctx, contextElement)))
         }
-        val result = fqns.associateWith { searchOne(it, ctx, contextElement) }
+        val result = names.associateWith { searchOne(it, ctx, contextElement) }
         return ToolResult.Text(GsonUtils.toJson(result))
     }
 
     private suspend fun searchOne(
-        supertypeFqn: String,
+        supertypeName: String,
         ctx: ToolContext,
         contextElement: PsiElement?
     ): List<String> = read {
         val supertypes = PsiNameResolver.resolveAllClasses(
-            supertypeFqn, ctx.project, contextElement
+            supertypeName, ctx.project, contextElement
         )
         if (supertypes.isEmpty()) {
-            LOG.info("supertype not resolvable in scope: $supertypeFqn")
+            LOG.info("supertype not resolvable in scope: $supertypeName")
             return@read emptyList<String>()
         }
         val scope = GlobalSearchScope.projectScope(ctx.project)
@@ -99,11 +103,11 @@ class FindClassesBySupertypeTool : AiTool, IdeaLog {
                 .findAll()
                 .filterIsInstance<PsiClass>()
                 .mapNotNull { it.qualifiedName }
-                .filter { it != supertypeFqn }
+                .filter { it != supertypeName }
         }
             .distinct()
             .sorted()
-        LOG.info("found ${inheritors.size} inheritor(s) of $supertypeFqn")
+        LOG.info("found ${inheritors.size} inheritor(s) of $supertypeName")
         inheritors
     }
 }

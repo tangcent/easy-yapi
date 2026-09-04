@@ -201,7 +201,7 @@ class GetPsiMethodInfoToolTest : EasyApiLightCodeInsightFixtureTestCase() {
         val result = runBlocking {
             GetPsiMethodInfoTool().execute(
                 mapOf(
-                    "fqn" to "com.example.Calculator",
+                    "className" to "com.example.Calculator",
                     "methodName" to "multiply"
                 ),
                 ctx()
@@ -264,7 +264,7 @@ class GetPsiMethodInfoToolTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testSchemaDeclaresRequiredParameters() {
         val schema = GetPsiMethodInfoTool().parametersSchema
         val required = schema["required"] as List<*>
-        Assert.assertTrue("fqn must be required", required.contains("fqn"))
+        Assert.assertTrue("className must be required", required.contains("className"))
         Assert.assertTrue("methodName must be required", required.contains("methodName"))
     }
 
@@ -668,7 +668,7 @@ class GetPsiMethodInfoToolTest : EasyApiLightCodeInsightFixtureTestCase() {
         val result = runBlocking {
             GetPsiMethodInfoTool().execute(
                 mapOf(
-                    "fqn" to "Calculator",
+                    "className" to "Calculator",
                     "methodName" to "multiply"
                 ),
                 ctx()
@@ -702,12 +702,12 @@ class GetPsiMethodInfoToolTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
-    fun testAmbiguousSimpleNameReturnsError() {
+    fun testAmbiguousSimpleNameErrorListsCandidateFqns() {
         addClassesForTolerance()
         val result = runBlocking {
             GetPsiMethodInfoTool().execute(
                 mapOf(
-                    "fqn" to "Calculator",
+                    "className" to "Calculator",
                     "methodName" to "multiply"
                 ),
                 ctx()
@@ -716,8 +716,12 @@ class GetPsiMethodInfoToolTest : EasyApiLightCodeInsightFixtureTestCase() {
         Assert.assertTrue("expected Error result, got $result", result is ToolResult.Error)
         val msg = (result as ToolResult.Error).message
         Assert.assertTrue(
-            "error should mention find_classes_by_name: $msg",
-            msg.contains("find_classes_by_name")
+            "error should mention ambiguous: $msg",
+            msg.contains("ambiguous")
+        )
+        Assert.assertTrue(
+            "error should list the candidate FQNs: $msg",
+            msg.contains("com.example.Calculator") && msg.contains("com.example.dto.Calculator")
         )
     }
 

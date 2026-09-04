@@ -103,7 +103,7 @@ class FindClassesByAnnotationToolTest : EasyApiLightCodeInsightFixtureTestCase()
         addClasses()
         val result = runBlocking {
             FindClassesByAnnotationTool().execute(
-                mapOf("annotationFqn" to "com.example.Marker"),
+                mapOf("annotation" to "com.example.Marker"),
                 ctx()
             )
         }
@@ -167,7 +167,7 @@ class FindClassesByAnnotationToolTest : EasyApiLightCodeInsightFixtureTestCase()
         }
         Assert.assertTrue(result is ToolResult.Error)
         Assert.assertTrue(
-            (result as ToolResult.Error).message.contains("annotationFqn")
+            (result as ToolResult.Error).message.contains("provide `annotation`")
         )
     }
 
@@ -259,12 +259,12 @@ class FindClassesByAnnotationToolTest : EasyApiLightCodeInsightFixtureTestCase()
     // tolerance + context parameter
     // ------------------------------------------------------------------
 
-    fun testAcceptsSimpleNameForAnnotationFqn() {
+    fun testAcceptsSimpleNameForAnnotation() {
         addClasses()
         // "Marker" is a simple name — resolveAllClasses finds com.example.Marker.
         val result = runBlocking {
             FindClassesByAnnotationTool().execute(
-                mapOf("annotationFqn" to "Marker"),
+                mapOf("annotation" to "Marker"),
                 ctx()
             )
         }

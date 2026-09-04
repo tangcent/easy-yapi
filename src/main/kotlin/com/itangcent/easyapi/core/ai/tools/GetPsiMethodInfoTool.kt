@@ -8,9 +8,10 @@ import com.itangcent.easyapi.core.util.json.GsonUtils
 /**
  * Perception tool that returns info about a single PSI method.
  *
- * Resolves the class by FQN (or simple name with optional `context`), then
- * walks its methods matching by name + (optional) parameter count. Returns
- * the signature, annotations, parameters (with additive `typeFqn` — the
+ * Resolves the class by name — fully qualified or simple, with an optional
+ * `context` for import-scope disambiguation — then walks its methods matching
+ * by name + (optional) parameter count. Returns the signature, annotations,
+ * parameters (with additive `typeFqn` — the
  * [com.itangcent.easyapi.core.psi.type.ResolvedType.qualifiedName] with type args
  * encoded inline), return type info (`returnType` / `returnTypeFqn`), the
  * doc-comment text, and — when `detail="full"` — the method body (truncated
@@ -31,20 +32,21 @@ class GetPsiMethodInfoTool : AiTool, IdeaLog {
     override val name: String = "get_psi_method_info"
 
     override val description: String =
-        "Get info about a method in a class. Returns JSON {className, name, " +
+        "Get info about a method in a class. Class name — simple or fully " +
+            "qualified — in `className`; method name in `methodName` (optional " +
+            "`paramCount` narrows overloads). Returns JSON {className, name, " +
             "signature, annotations, parameters, docComment, returnType, " +
-            "returnTypeFqn}. `paramCount` is optional and narrows the match " +
-            "when a class overloads the method name. Pass `detail=\"full\"` " +
-            "to include the method `body` (truncated to `maxBodyChars`)."
+            "returnTypeFqn}. detail=\"full\" includes the method `body` " +
+            "(truncated to `maxBodyChars`)."
 
     override val kind: ToolKind = ToolKind.PERCEPTION
 
     override val parametersSchema: Map<String, Any?> = mapOf(
         "type" to "object",
         "properties" to mapOf(
-            "fqn" to mapOf(
+            "className" to mapOf(
                 "type" to "string",
-                "description" to "Fully qualified class name (or simple name when `context` is supplied)."
+                "description" to "Simple or fully qualified class name."
             ),
             "methodName" to mapOf(
                 "type" to "string",
@@ -57,28 +59,32 @@ class GetPsiMethodInfoTool : AiTool, IdeaLog {
             "detail" to mapOf(
                 "type" to "string",
                 "enum" to listOf("signature", "full"),
-                "description" to "Optional: level of detail. \"signature\" (default) " +
-                    "omits the body; \"full\" includes a truncated `body` field."
+                "description" to "Optional: \"signature\" (default) or \"full\" " +
+                    "(includes a truncated `body`)."
             ),
             "maxBodyChars" to mapOf(
                 "type" to "integer",
-                "description" to "Optional: max characters for the `body` field " +
-                    "(only when detail=\"full\"). Defaults to $DEFAULT_MAX_BODY_CHARS."
+                "description" to "Optional: max chars for `body` when detail=\"full\" " +
+                    "(default $DEFAULT_MAX_BODY_CHARS)."
             ),
             "context" to mapOf(
                 "type" to "string",
-                "description" to "Optional: file path or class FQN whose import scope " +
-                    "is used to resolve simple-name `fqn` and parameter/return type FQNs."
+                "description" to "Optional: file path or class FQN whose import " +
+                    "scope disambiguates a simple `className`."
             )
         ),
-        "required" to listOf("fqn", "methodName")
+        "required" to listOf("className", "methodName")
     )
 
     override suspend fun execute(args: Map<String, Any?>, ctx: ToolContext): ToolResult {
-        val fqn = args["fqn"] as? String
+        // `className` is the current parameter name; `fqn` is accepted as a
+        // legacy alias so older persisted conversations keep working.
+        val className = (args["className"] as? String) ?: (args["fqn"] as? String)
         val methodName = args["methodName"] as? String
-        if (fqn.isNullOrBlank() || methodName.isNullOrBlank()) {
-            return ToolResult.Error("missing required parameter(s): fqn, methodName")
+        if (className.isNullOrBlank() || methodName.isNullOrBlank()) {
+            return ToolResult.Error(
+                "missing required parameter(s): className, methodName"
+            )
         }
         val paramCount = (args["paramCount"] as? Number)?.toInt()
         val detail = (args["detail"] as? String)?.takeIf { it == "full" } ?: "signature"
@@ -91,7 +97,7 @@ class GetPsiMethodInfoTool : AiTool, IdeaLog {
         // require one. The detail="signature" fast path does NOT touch
         // psiMethod.body?.text.
         val info = read {
-            val psiClass = PsiNameResolver.resolveClass(fqn, ctx.project, contextElement)
+            val psiClass = PsiNameResolver.resolveClass(className, ctx.project, contextElement)
                 ?: return@read null
             val psiMethod = psiClass.methods.firstOrNull { m ->
                 m.name == methodName &&
@@ -102,35 +108,37 @@ class GetPsiMethodInfoTool : AiTool, IdeaLog {
             val enrichmentContext = contextElement ?: psiClass.containingFile
             PsiSignatureBuilder.methodToInfoMap(
                 psiMethod = psiMethod,
-                className = psiClass.qualifiedName ?: fqn,
+                className = psiClass.qualifiedName ?: className,
                 project = ctx.project,
                 contextElement = enrichmentContext,
                 detail = detail,
                 maxBodyChars = maxBodyChars
             )
-        } ?: return ToolResult.Error(buildNotFoundMessage(fqn, ctx, contextElement, methodName))
+        } ?: return ToolResult.Error(
+            buildNotFoundMessage(className, ctx, contextElement, methodName)
+        )
 
         return ToolResult.Text(GsonUtils.toJson(info))
     }
 
     /**
      * Builds the error message for a missing class or method. When the
-     * lookup was a simple name without context and `PsiNameResolver` found
-     * multiple matches, the message guides the agent to `find_classes_by_name`.
+     * lookup was a simple name without context and [PsiNameResolver] found
+     * multiple matches, the message lists the candidate FQNs so the agent can
+     * retry with the fully qualified name or a `context`.
      */
     private suspend fun buildNotFoundMessage(
-        fqn: String,
+        className: String,
         ctx: ToolContext,
         contextElement: PsiElement?,
         methodName: String
     ): String {
-        if (!fqn.contains('.') && contextElement == null) {
-            val matches = PsiNameResolver.resolveAllClasses(fqn, ctx.project, null)
+        if (!className.contains('.') && contextElement == null) {
+            val matches = PsiNameResolver.resolveAllClasses(className, ctx.project, null)
             if (matches.size > 1) {
-                return "ambiguous simple name '$fqn': ${matches.size} classes match, " +
-                    "use find_classes_by_name to disambiguate"
+                return PsiNameResolver.ambiguityMessage(className, matches)
             }
         }
-        return "method not found: $fqn#$methodName"
+        return "method not found: $className#$methodName"
     }
 }

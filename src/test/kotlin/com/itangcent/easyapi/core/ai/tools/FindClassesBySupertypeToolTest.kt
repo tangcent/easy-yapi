@@ -98,7 +98,7 @@ class FindClassesBySupertypeToolTest : EasyApiLightCodeInsightFixtureTestCase() 
         addClasses()
         val result = runBlocking {
             FindClassesBySupertypeTool().execute(
-                mapOf("supertypeFqn" to "org.springframework.web.filter.OncePerRequestFilter"),
+                mapOf("supertype" to "org.springframework.web.filter.OncePerRequestFilter"),
                 ctx()
             )
         }
@@ -166,7 +166,7 @@ class FindClassesBySupertypeToolTest : EasyApiLightCodeInsightFixtureTestCase() 
         }
         Assert.assertTrue(result is ToolResult.Error)
         Assert.assertTrue(
-            (result as ToolResult.Error).message.contains("supertypeFqn")
+            (result as ToolResult.Error).message.contains("provide `supertype`")
         )
     }
 
@@ -206,12 +206,12 @@ class FindClassesBySupertypeToolTest : EasyApiLightCodeInsightFixtureTestCase() 
     // tolerance + context parameter
     // ------------------------------------------------------------------
 
-    fun testAcceptsSimpleNameForSupertypeFqn() {
+    fun testAcceptsSimpleNameForSupertype() {
         addClasses()
         // "OncePerRequestFilter" is a simple name — resolveAllClasses finds it.
         val result = runBlocking {
             FindClassesBySupertypeTool().execute(
-                mapOf("supertypeFqn" to "OncePerRequestFilter"),
+                mapOf("supertype" to "OncePerRequestFilter"),
                 ctx()
             )
         }

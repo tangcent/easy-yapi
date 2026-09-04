@@ -33,6 +33,9 @@ import com.itangcent.easyapi.core.psi.type.TypeResolver
  */
 internal object PsiNameResolver : IdeaLog {
 
+    /** Maximum number of candidate FQNs listed in an ambiguity message. */
+    private const val MAX_AMBIGUITY_CANDIDATES = 8
+
     /**
      * Resolves [name] to a single [PsiClass], or `null` when the name is
      * blank, ambiguous (more than one match in the no-context simple-name
@@ -199,9 +202,31 @@ internal object PsiNameResolver : IdeaLog {
     }
 
     /**
+     * Builds the ambiguity message for a simple name that matches more than
+     * one class, listing the first [MAX_AMBIGUITY_CANDIDATES] candidate FQNs
+     * so the agent can retry with the fully qualified name or a `context`.
+     *
+     * @param name the ambiguous simple name.
+     * @param matches every class that matched the name.
+     * @return a ready-to-return error message.
+     */
+    fun ambiguityMessage(name: String, matches: List<PsiClass>): String {
+        val fqns = matches.mapNotNull { it.qualifiedName }.distinct().sorted()
+        val shown = fqns.take(MAX_AMBIGUITY_CANDIDATES).joinToString(", ")
+        val truncation = if (fqns.size > MAX_AMBIGUITY_CANDIDATES) ", ..." else ""
+        return "ambiguous simple name '$name': ${fqns.size} classes match ($shown$truncation). " +
+            "Retry with the fully qualified name or with a context (file path / class FQN)."
+    }
+
+    /**
      * Extracts a string list from a tool's argument map, supporting both
      * single-value (`[singleKey]` → string) and batch (`[batchKey]` → array)
      * modes. Blank entries are filtered out.
+     *
+     * Optional legacy keys let a renamed parameter keep accepting its
+     * historical name (e.g. `fqn` after a rename to `className`): the legacy
+     * keys are consulted only when the primary single and batch keys are both
+     * absent, so a caller that supplies the current name always wins.
      *
      * Shared by tools that accept single-or-batch name/FQN parameters
      * ([GetPsiClassInfoTool], [FindClassesByAnnotationTool],
@@ -212,18 +237,24 @@ internal object PsiNameResolver : IdeaLog {
      * @param singleKey the key for the single-value form (e.g. `"fqn"`, `"name"`).
      * @param batchKey the key for the batch form (e.g. `"fqns"`, `"names"`).
      *   When present, takes precedence over [singleKey].
+     * @param legacySingleKey optional deprecated single-value key to fall back to.
+     * @param legacyBatchKey optional deprecated batch key to fall back to.
      * @return the non-blank string list (possibly empty).
      */
     fun extractStringList(
         args: Map<String, Any?>,
         singleKey: String,
-        batchKey: String
+        batchKey: String,
+        legacySingleKey: String? = null,
+        legacyBatchKey: String? = null
     ): List<String> {
         val batch = args[batchKey] as? List<*>
+            ?: legacyBatchKey?.let { args[it] as? List<*> }
         if (batch != null) {
             return batch.mapNotNull { it?.toString()?.takeIf { s -> s.isNotBlank() } }
         }
         val single = args[singleKey] as? String
+            ?: legacySingleKey?.let { args[it] as? String }
         return if (single.isNullOrBlank()) emptyList() else listOf(single)
     }
 }

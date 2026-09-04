@@ -6,78 +6,87 @@ import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.util.json.GsonUtils
 
 /**
- * Perception tool that returns PSI class info for one or more classes
- *.
+ * Perception tool that returns PSI class info for one or more classes.
  *
- * Resolves each class by FQN (or simple name with optional `context`) inside a
- * read action and returns name, modifiers, annotations, fields (with additive
- * `typeFqn` — the [com.itangcent.easyapi.core.psi.type.ResolvedType.qualifiedName]
- * with type args encoded inline), and method signatures (with additive
- * `returnTypeFqn` and per-parameter `typeFqn`).
+ * Resolves each class by name — fully qualified or simple, with an optional
+ * `context` for import-scope disambiguation — inside a read action and returns
+ * name, modifiers, annotations, fields (with additive `typeFqn` — the
+ * [com.itangcent.easyapi.core.psi.type.ResolvedType.qualifiedName] with type
+ * args encoded inline), and method signatures (with additive `returnTypeFqn`
+ * and per-parameter `typeFqn`).
  *
  * All signature building is delegated to [PsiSignatureBuilder] — this tool
  * only resolves the PSI class and builds error messages.
  *
- * Supports batch: pass `fqns` (array) to inspect multiple classes in one call.
- * Returns a JSON object for a single class, or a JSON object mapping each FQN
- * to its info (or an error string) for batch mode.
+ * Supports batch: pass `classNames` (array) to inspect multiple classes in one
+ * call. Returns a JSON object for a single class, or a JSON object mapping
+ * each requested name to its info (or an error string) for batch mode.
  */
 class GetPsiClassInfoTool : AiTool, IdeaLog {
 
     override val name: String = "get_psi_class_info"
 
     override val description: String =
-        "Get info about Java/Kotlin class(es) by fully qualified name. Pass " +
-            "`fqn` (string) for one, or `fqns` (array) to batch-inspect multiple. " +
-            "Returns JSON {name, fqn, modifiers, annotations, fields:[{name, type}], " +
-            "methods:[{name, signature}]} for a single class, or a JSON object " +
-            "mapping each FQN to its info for batch mode."
+        "Get info about Java/Kotlin class(es) by simple or fully qualified name " +
+            "(e.g. \"AuthResponse\"). Pass `className` for one, or `classNames` " +
+            "(array) for batch. Returns JSON {name, fqn, modifiers, annotations, " +
+            "fields, methods}. An ambiguous simple name errors with the " +
+            "candidate FQNs — pass `context` (file path / class FQN) or retry " +
+            "with a listed FQN."
 
     override val kind: ToolKind = ToolKind.PERCEPTION
 
     override val parametersSchema: Map<String, Any?> = mapOf(
         "type" to "object",
         "properties" to mapOf(
-            "fqn" to mapOf(
+            "className" to mapOf(
                 "type" to "string",
-                "description" to "Fully qualified class name (or simple name when `context` is supplied)."
+                "description" to "Simple or fully qualified class name."
             ),
-            "fqns" to mapOf(
+            "classNames" to mapOf(
                 "type" to "array",
                 "items" to mapOf("type" to "string"),
-                "description" to "Multiple fully qualified class names to inspect in one call (batch mode)."
+                "description" to "Multiple class names to inspect (batch mode)."
             ),
             "context" to mapOf(
                 "type" to "string",
-                "description" to "Optional: file path or class FQN whose import scope " +
-                    "is used to resolve simple-name `fqn`/`fqns` entries and field " +
-                    "type FQNs."
+                "description" to "Optional: file path or class FQN whose import " +
+                    "scope disambiguates simple class names."
             )
         )
     )
 
     override suspend fun execute(args: Map<String, Any?>, ctx: ToolContext): ToolResult {
-        val fqns = PsiNameResolver.extractStringList(args, "fqn", "fqns")
-        if (fqns.isEmpty()) return ToolResult.Error("missing parameter: provide `fqn` (string) or `fqns` (array)")
+        val names = PsiNameResolver.extractStringList(
+            args, "className", "classNames", "fqn", "fqns"
+        )
+        if (names.isEmpty()) {
+            return ToolResult.Error(
+                "missing parameter: provide `className` (string) or `classNames` (array)"
+            )
+        }
 
         val contextElement = PsiNameResolver.resolveContextArg(args, ctx.project)
 
-        if (fqns.size == 1) {
-            val info = lookupOne(fqns[0], ctx, contextElement)
+        if (names.size == 1) {
+            val info = lookupOne(names[0], ctx, contextElement)
             if (info == null) {
-                return ToolResult.Error(buildNotFoundMessage(fqns[0], ctx, contextElement))
+                return ToolResult.Error(buildNotFoundMessage(names[0], ctx, contextElement))
             }
             return ToolResult.Text(GsonUtils.toJson(info))
         }
-        val result = fqns.associateWith { lookupOne(it, ctx, contextElement) ?: "not found" }
+        val result = names.associateWith {
+            lookupOne(it, ctx, contextElement) ?: buildNotFoundMessage(it, ctx, contextElement)
+        }
         return ToolResult.Text(GsonUtils.toJson(result))
     }
 
     /**
      * Builds the error message for a missing class. When the lookup was a
-     * simple name without context and `PsiNameResolver` found multiple
-     * matches, the message guides the agent to `find_classes_by_name`.
-     * Otherwise a plain "class not found" is returned.
+     * simple name without context and [PsiNameResolver] found multiple
+     * matches, the message lists the candidate FQNs so the agent can retry
+     * with the fully qualified name or a `context`. Otherwise a plain "class
+     * not found" is returned.
      */
     private suspend fun buildNotFoundMessage(
         fqn: String,
@@ -89,8 +98,7 @@ class GetPsiClassInfoTool : AiTool, IdeaLog {
         if (!fqn.contains('.') && contextElement == null) {
             val matches = PsiNameResolver.resolveAllClasses(fqn, ctx.project, null)
             if (matches.size > 1) {
-                return "ambiguous simple name '$fqn': ${matches.size} classes match, " +
-                    "use find_classes_by_name to disambiguate"
+                return PsiNameResolver.ambiguityMessage(fqn, matches)
             }
         }
         return "class not found: $fqn"

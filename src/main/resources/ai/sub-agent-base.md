@@ -37,11 +37,13 @@ Perception tools (read-only, run automatically):
   stage and the `it` kinds the script can call; then fetch the referenced
   objects' method signatures via `get_script_object_api(ids=[...])`.
 - `get_psi_class_info` — inspect a class's methods/fields/signature/annotations
-  by fully-qualified name (e.g. `com.example.filter.MyJwtFilter`).
-- `find_classes_by_annotation` — discover classes by annotation FQN or simple
-  name (e.g. `jakarta.servlet.annotation.WebFilter`, `@RestController`).
-- `find_classes_by_supertype` — discover classes by supertype FQN (e.g.
-  `org.springframework.web.filter.OncePerRequestFilter`,
+  by name — fully qualified (e.g. `com.example.filter.MyJwtFilter`) or simple
+  (e.g. `MyJwtFilter` when unambiguous).
+- `find_classes_by_annotation` — discover classes by annotation name — fully
+  qualified or simple (e.g. `jakarta.servlet.annotation.WebFilter`,
+  `@RestController`).
+- `find_classes_by_supertype` — discover classes by supertype name — fully
+  qualified or simple (e.g. `org.springframework.web.filter.OncePerRequestFilter`,
   `org.springframework.web.servlet.HandlerInterceptor`).
 
 Action tool (terminal — ends your turn):
