@@ -30,7 +30,13 @@ jobs:
               return core.setOutput('should-skip', 'true');
             }
             
-            console.log('PR does not have type: doc label, continuing with CI');
+            const releaseLabel = labels.data.find(label => label.name === 'release');
+            if (releaseLabel) {
+              console.log('PR has release label, skipping CI');
+              return core.setOutput('should-skip', 'true');
+            }
+            
+            console.log('PR has no skip labels, continuing with CI');
             return core.setOutput('should-skip', 'false');
 
   build-test:

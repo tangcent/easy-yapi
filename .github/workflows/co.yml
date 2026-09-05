@@ -29,7 +29,13 @@ jobs:
               return core.setOutput('should-skip', 'true');
             }
             
-            console.log('PR does not have type: doc label, continuing with CO');
+            const releaseLabel = labels.data.find(label => label.name === 'release');
+            if (releaseLabel) {
+              console.log('PR has release label, skipping CO');
+              return core.setOutput('should-skip', 'true');
+            }
+            
+            console.log('PR has no skip labels, continuing with CO');
             return core.setOutput('should-skip', 'false');
 
   coverage:

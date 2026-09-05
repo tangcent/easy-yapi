@@ -17,7 +17,33 @@ env:
   COMPAT_UNTIL: '251'
 
 jobs:
+  check-skip:
+    runs-on: ubuntu-latest
+    outputs:
+      should-skip: ${{ steps.check-labels.outputs.should-skip }}
+    steps:
+      - id: check-labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const releaseLabel = labels.data.find(label => label.name === 'release');
+            if (releaseLabel) {
+              console.log('PR has release label, skipping packaging');
+              return core.setOutput('should-skip', 'true');
+            }
+
+            console.log('PR has no release label, continuing with packaging');
+            return core.setOutput('should-skip', 'false');
+
   package-and-comment:
+    needs: check-skip
+    if: needs.check-skip.outputs.should-skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
