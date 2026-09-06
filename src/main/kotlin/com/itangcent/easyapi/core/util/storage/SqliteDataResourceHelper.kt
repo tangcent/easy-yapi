@@ -115,6 +115,40 @@ class SqliteDataResourceHelper(private val dbPath: Path) {
         }
     }
 
+    /**
+     * Returns the keys stored under the given key prefix (`prefix:`), with the prefix
+     * stripped, using a SQL `LIKE` prefix filter so only matching rows are read.
+     */
+    fun keysWithPrefix(prefix: String): Set<String> = synchronized(lock) {
+        withConnection { connection ->
+            connection.prepareStatement("SELECT k FROM kv_store WHERE k LIKE ? ESCAPE '\\'").use { ps ->
+                ps.setString(1, escapeLike("$prefix:") + "%")
+                ps.executeQuery().use { rs ->
+                    buildSet {
+                        while (rs.next()) {
+                            add(rs.getString(1).removePrefix("$prefix:"))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Escapes SQLite `LIKE` wildcards (`%`, `_`) and the escape character so the prefix
+     * is matched literally.
+     */
+    private fun escapeLike(value: String): String {
+        val sb = StringBuilder(value.length)
+        for (c in value) {
+            when (c) {
+                '\\', '%', '_' -> sb.append('\\').append(c)
+                else -> sb.append(c)
+            }
+        }
+        return sb.toString()
+    }
+
     private fun <T> withConnection(block: (Connection) -> T): T {
         return dataSource.connection.use(block)
     }

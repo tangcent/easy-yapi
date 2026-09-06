@@ -17,4 +17,19 @@ class DbBeanBinder<T>(
     fun delete(id: String) {
         sqliteHelper.delete("$keyPrefix:$id")
     }
+
+    /**
+     * Returns all ids stored under this binder's key prefix, with the prefix stripped.
+     *
+     * Delegates to [SqliteDataResourceHelper.keysWithPrefix] so the prefix filter happens
+     * in SQL rather than fetching every key in the shared `kv_store` table first.
+     */
+    fun allIds(): Set<String> = sqliteHelper.keysWithPrefix(keyPrefix)
+
+    /**
+     * Deletes every entry stored under this binder's key prefix.
+     */
+    fun deleteAll() {
+        allIds().forEach(::delete)
+    }
 }

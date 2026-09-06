@@ -66,6 +66,20 @@ class DbBeanBinderTest {
     }
 
     @Test
+    fun testAllIdsDelegatesToKeysWithPrefix() {
+        val sqliteHelper = mock<SqliteDataResourceHelper>()
+        whenever(sqliteHelper.keysWithPrefix("test")).thenReturn(setOf("id1", "id2"))
+        val binder = DbBeanBinder<String>(
+            sqliteHelper = sqliteHelper,
+            keyPrefix = "test",
+            serializer = { it },
+            deserializer = { it }
+        )
+        assertEquals(setOf("id1", "id2"), binder.allIds())
+        verify(sqliteHelper).keysWithPrefix("test")
+    }
+
+    @Test
     fun testSaveWithJsonSerializer() {
         val sqliteHelper = mock<SqliteDataResourceHelper>()
         val binder = DbBeanBinder<Map<String, String>>(

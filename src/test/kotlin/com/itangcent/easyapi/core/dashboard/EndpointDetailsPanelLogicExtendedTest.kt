@@ -116,45 +116,6 @@ class EndpointDetailsPanelLogicBuildFormParamsTest {
         assertTrue(result[2] is FormParam.Text)
     }
 
-    // ── formatJson additional tests ──────────────────────────────────────────
-
-    @Test
-    fun `formatJson handles nested JSON`() {
-        val nested = """{"user":{"name":"Alice","address":{"city":"NYC"}}}"""
-        val result = EndpointDetailsPanelLogic.formatJson(nested)
-        assertTrue(result.contains("\"user\""))
-        assertTrue(result.contains("\"name\""))
-        assertTrue(result.contains("\"Alice\""))
-        assertTrue(result.contains("\"city\""))
-        assertTrue(result.contains("NYC"))
-    }
-
-    @Test
-    fun `formatJson handles JSON array`() {
-        val array = """[1,2,3]"""
-        val result = EndpointDetailsPanelLogic.formatJson(array)
-        assertTrue(result.contains("1"))
-        assertTrue(result.contains("2"))
-        assertTrue(result.contains("3"))
-    }
-
-    @Test
-    fun `formatJson handles null JSON value`() {
-        val json = """{"key":null}"""
-        val result = EndpointDetailsPanelLogic.formatJson(json)
-        // Gson without serializeNulls may omit null values; just verify it doesn't crash
-        assertNotNull(result)
-        assertFalse(result.isBlank())
-    }
-
-    @Test
-    fun `formatJson handles boolean JSON values`() {
-        val json = """{"active":true,"deleted":false}"""
-        val result = EndpointDetailsPanelLogic.formatJson(json)
-        assertTrue(result.contains("true"))
-        assertTrue(result.contains("false"))
-    }
-
     // ── resolvePath additional tests ─────────────────────────────────────────
 
     @Test

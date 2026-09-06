@@ -174,6 +174,22 @@ class GsonUtilsTest {
         val json = GsonUtils.PRETTY.toJson(mapOf("a" to 1))
         assertEquals("{\n  \"a\": 1\n}", json)
     }
+
+    @Test
+    fun testToJson_dropsNullFieldKeys() {
+        val map = linkedMapOf("present" to 1, "absent" to null)
+        val json = GsonUtils.toJson(map)
+        // The compact GSON does NOT serialize nulls, so the null field's key is dropped.
+        assertTrue(json.contains("\"present\""))
+        assertFalse(json.contains("\"absent\""))
+    }
+
+    @Test
+    fun testPrettyJson_serializesNullFieldKeys() {
+        val map = linkedMapOf("absent" to null)
+        val json = GsonUtils.prettyJson(map)
+        assertTrue(json.contains("\"absent\""))
+    }
 }
 
 data class TestPoint(var x: Int, var y: Int)
