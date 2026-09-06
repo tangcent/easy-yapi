@@ -2,6 +2,7 @@ package com.itangcent.easyapi.core.dashboard
 
 import com.itangcent.easyapi.core.export.*
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
+import com.intellij.testFramework.registerServiceInstance
 import org.junit.Assert.*
 
 /**
@@ -16,6 +17,16 @@ class RequestEditCacheServiceExtendedTest : EasyApiLightCodeInsightFixtureTestCa
 
     override fun setUp() {
         super.setUp()
+        // Register a fresh service instance per test. The light fixture reuses the
+        // project across test methods but changes its base path, and
+        // `RequestEditCacheService` caches its SQLite helper (and the underlying
+        // `ProjectCacheRepository.cacheDir`) in `by lazy` fields. Reusing the cached
+        // service would keep writing to the previous test's already-deleted temp dir,
+        // so we replace it with a clean instance bound to the current project.
+        project.registerServiceInstance(
+            serviceInterface = RequestEditCacheService::class.java,
+            instance = RequestEditCacheService(project)
+        )
         service = RequestEditCacheService.getInstance(project)
     }
 
@@ -277,5 +288,86 @@ class RequestEditCacheServiceExtendedTest : EasyApiLightCodeInsightFixtureTestCa
         val queryParam = httpCache.queryParams.find { it.name == "q" }
         assertNotNull(queryParam)
         assertEquals("test-query", queryParam!!.value)
+    }
+
+    // ── allKeys / deleteAll / clearAll ───────────────────────────────────────
+
+    fun testAllKeysReturnsBothHttpAndGrpcKeys() {
+        val httpEndpoint = ApiEndpoint(
+            name = "Http",
+            metadata = HttpMetadata(method = HttpMethod.GET, path = "/api/http")
+        )
+        val grpcEndpoint = ApiEndpoint(
+            name = "Grpc",
+            metadata = GrpcMetadata(
+                serviceName = "Svc",
+                methodName = "M",
+                packageName = "pkg",
+                streamingType = GrpcStreamingType.UNARY,
+                path = "/Svc/M"
+            )
+        )
+
+        service.save(httpEndpoint, HttpRequestEditCache(key = "com.a.Http#get", name = "Http"), "com.a.Http#get")
+        service.save(grpcEndpoint, GrpcRequestEditCache(key = "com.a.Grpc#call", name = "Grpc"), "com.a.Grpc#call")
+
+        val keys = service.allKeys()
+        assertTrue(keys.contains("com.a.Http#get"))
+        assertTrue(keys.contains("com.a.Grpc#call"))
+
+        // cleanup
+        service.delete("com.a.Http#get", false)
+        service.delete("com.a.Grpc#call", true)
+    }
+
+    fun testDeleteAllRemovesGivenKeysFromBothTables() {
+        val httpEndpoint = ApiEndpoint(
+            name = "Http",
+            metadata = HttpMetadata(method = HttpMethod.GET, path = "/api/http")
+        )
+        val grpcEndpoint = ApiEndpoint(
+            name = "Grpc",
+            metadata = GrpcMetadata(
+                serviceName = "Svc",
+                methodName = "M",
+                packageName = "pkg",
+                streamingType = GrpcStreamingType.UNARY,
+                path = "/Svc/M"
+            )
+        )
+
+        // Same key in both tables (HTTP + gRPC) to verify deleteAll touches both.
+        val key = "com.a.Shared#m"
+        service.save(httpEndpoint, HttpRequestEditCache(key = key, name = "Http"), key)
+        service.save(grpcEndpoint, GrpcRequestEditCache(key = key, name = "Grpc"), key)
+
+        service.deleteAll(setOf(key))
+
+        assertNull(service.load(httpEndpoint, key))
+        assertNull(service.load(grpcEndpoint, key))
+    }
+
+    fun testClearAllRemovesEveryEdit() {
+        val httpEndpoint = ApiEndpoint(
+            name = "Http",
+            metadata = HttpMetadata(method = HttpMethod.GET, path = "/api/http")
+        )
+        val grpcEndpoint = ApiEndpoint(
+            name = "Grpc",
+            metadata = GrpcMetadata(
+                serviceName = "Svc",
+                methodName = "M",
+                packageName = "pkg",
+                streamingType = GrpcStreamingType.UNARY,
+                path = "/Svc/M"
+            )
+        )
+
+        service.save(httpEndpoint, HttpRequestEditCache(key = "com.a.Http#get", name = "Http"), "com.a.Http#get")
+        service.save(grpcEndpoint, GrpcRequestEditCache(key = "com.a.Grpc#call", name = "Grpc"), "com.a.Grpc#call")
+
+        service.clearAll()
+
+        assertTrue(service.allKeys().isEmpty())
     }
 }

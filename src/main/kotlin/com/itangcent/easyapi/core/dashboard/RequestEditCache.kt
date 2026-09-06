@@ -25,6 +25,10 @@ sealed interface RequestEditCache {
  * @param queryParams Query parameters
  * @param formParams Form parameters
  * @param body The request body
+ * @param baseBody The model-rendered body at the time this edit was saved. Used for
+ *   three-way merge to distinguish a field the user deleted from a field the source
+ *   deleted (see `EndpointDetailsPanelLogic.mergeJsonBody3`). Null for legacy caches,
+ *   which fall back to two-way merge.
  * @param contentType The content type
  */
 data class HttpRequestEditCache(
@@ -38,6 +42,7 @@ data class HttpRequestEditCache(
     val queryParams: List<EditableKeyValue> = emptyList(),
     val formParams: List<EditableKeyValue> = emptyList(),
     val body: String? = null,
+    val baseBody: String? = null,
     val contentType: String? = null
 ) : RequestEditCache
 
@@ -51,6 +56,8 @@ data class HttpRequestEditCache(
  * @param methodName The gRPC method name
  * @param packageName The gRPC package name
  * @param body The request message body (JSON)
+ * @param baseBody The model-rendered body at the time this edit was saved (three-way
+ *   merge; see [HttpRequestEditCache.baseBody]).
  */
 data class GrpcRequestEditCache(
     override val key: String? = null,
@@ -59,7 +66,8 @@ data class GrpcRequestEditCache(
     val serviceName: String? = null,
     val methodName: String? = null,
     val packageName: String? = null,
-    val body: String? = null
+    val body: String? = null,
+    val baseBody: String? = null
 ) : RequestEditCache
 
 /**

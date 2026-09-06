@@ -38,6 +38,8 @@ import com.itangcent.easyapi.core.export.httpMetadata
 import com.itangcent.easyapi.core.export.grpcMetadata
 import com.itangcent.easyapi.core.export.isGrpc
 import com.itangcent.easyapi.core.ide.support.NotificationUtils
+import com.itangcent.easyapi.core.util.json.GsonUtils
+import com.itangcent.easyapi.core.util.FormatterHelper
 import com.itangcent.easyapi.format.spi.toJson
 import kotlinx.coroutines.*
 import java.awt.BorderLayout
@@ -328,6 +330,13 @@ class EndpointDetailsPanel(
 
     /** Flag to prevent auto-save during programmatic updates */
     private var isLoading: Boolean = false
+
+    /**
+     * Serialized snapshot of the merged request state right after an endpoint was
+     * displayed. Used to detect whether any actual user edit happened before saving,
+     * so merely opening an endpoint doesn't persist a full snapshot (P1-a).
+     */
+    private var pristineSnapshot: String? = null
 
     /** Debounce timer for auto-save */
     private val autoSaveTimer = Timer(500) {
@@ -686,6 +695,15 @@ class EndpointDetailsPanel(
         return if (host.isEmpty()) "http://localhost:8080" else host
     }
 
+    /**
+     * Returns the cache key (`className#methodName`) of the endpoint currently
+     * displayed in the details panel, or an empty string when nothing is shown.
+     *
+     * Exposed so the dashboard can re-bind the panel to the latest snapshot of
+     * the same endpoint after a rescan (see P0-b).
+     */
+    fun currentKey(): String = currentEndpointKey
+
     fun showEndpoint(endpoint: ApiEndpoint) {
         saveCurrentEditBeforeSwitch()
         saveEndpointScripts()
@@ -724,6 +742,12 @@ class EndpointDetailsPanel(
         } finally {
             isLoading = false
         }
+
+        // Capture the pristine snapshot *after* the UI is fully populated (and after
+        // `isLoading` is cleared), so `doSaveCurrentEdit` can later tell a real edit
+        // from a no-op. The merged content is used, making the comparison idempotent:
+        // re-displaying an endpoint with a stale cache still yields the same snapshot.
+        pristineSnapshot = currentEndpoint?.let { currentEditCache(it) }?.let { GsonUtils.toJson(it) }
     }
 
     /**
@@ -814,7 +838,7 @@ class EndpointDetailsPanel(
             hostComboBox.selectedIndex = 0
         }
 
-        bodyArea.text = cache.body ?: meta.body?.let { it.toJson() } ?: ""
+        bodyArea.text = EndpointDetailsPanelLogic.mergeJsonBody3(cache.baseBody, meta.body?.let { it.toJson() }, cache.body) ?: ""
     }
 
     private fun loadGrpcFromEndpoint(meta: GrpcMetadata) {
@@ -976,7 +1000,7 @@ class EndpointDetailsPanel(
         endpointContentType = cache.contentType ?: contentType
 
         bodyArea.text = if (!isFormData) {
-            cache.body ?: meta?.body?.let { it.toJson() } ?: ""
+            EndpointDetailsPanelLogic.mergeJsonBody3(cache.baseBody, meta?.body?.let { it.toJson() }, cache.body) ?: ""
         } else ""
 
         rebuildTabs(hasPathParams = pathParams.isNotEmpty(), hasFormParams = isFormData)
@@ -1102,6 +1126,7 @@ class EndpointDetailsPanel(
         saveEndpointScripts()
         currentEndpoint = null
         currentEndpointKey = ""
+        pristineSnapshot = null
         nameLabel.text = ""
         methodLabel.text = ""
         pathField.text = ""
@@ -1452,7 +1477,7 @@ class EndpointDetailsPanel(
         return EndpointDetailsPanelLogic.buildFormParams(rows)
     }
 
-    private fun formatJson(json: String) = EndpointDetailsPanelLogic.formatJson(json)
+    private fun formatJson(json: String) = FormatterHelper.formatJson(json)
 
     private fun formatRequestBody() {
         val currentText = bodyArea.text
@@ -1581,69 +1606,86 @@ class EndpointDetailsPanel(
 
     private fun doSaveCurrentEdit() {
         val endpoint = currentEndpoint ?: return
+        val cache = currentEditCache(endpoint) ?: return
 
+        // Skip the write when nothing changed since the endpoint was displayed.
+        // Without this, simply opening an endpoint and switching away would persist a
+        // full snapshot (even with zero user edits), "pinning" the stale default values
+        // and masking later source-side default changes (see P1-a).
+        val snapshot = GsonUtils.toJson(cache)
+        if (snapshot == pristineSnapshot) return
+
+        editCacheService.save(endpoint, cache, currentEndpointKey)
+    }
+
+    /**
+     * Builds the [RequestEditCache] representing the current UI state for [endpoint],
+     * or `null` when no endpoint is being edited. Shared by [doSaveCurrentEdit] and the
+     * pristine-snapshot capture so both compare against identical content.
+     */
+    private fun currentEditCache(endpoint: ApiEndpoint): RequestEditCache? {
         if (endpoint.isGrpc) {
-            val cache = GrpcRequestEditCache(
+            return GrpcRequestEditCache(
                 key = currentEndpointKey,
                 name = endpoint.name,
                 host = getSelectedHost(),
                 serviceName = endpoint.grpcMetadata?.serviceName,
                 methodName = endpoint.grpcMetadata?.methodName,
                 packageName = endpoint.grpcMetadata?.packageName,
-                body = bodyArea.text.takeIf { it.isNotBlank() }
-            )
-            editCacheService.save(endpoint, cache, currentEndpointKey)
-        } else {
-            val headers = (0 until headersTableModel.rowCount)
-                .map { row ->
-                    val name = headersTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
-                    val value = headersTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
-                    EditableKeyValue(name, value)
-                }
-                .filter { it.name.isNotEmpty() }
-
-            val pathParams = (0 until pathParamsTableModel.rowCount)
-                .map { row ->
-                    val name = pathParamsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
-                    val value = pathParamsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
-                    val desc = pathParamsTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
-                    EditableKeyValue(name, value, desc)
-                }
-                .filter { it.name.isNotEmpty() }
-
-            val queryParams = (0 until paramsTableModel.rowCount)
-                .map { row ->
-                    val name = paramsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
-                    val value = paramsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
-                    val desc = paramsTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
-                    EditableKeyValue(name, value, desc)
-                }
-                .filter { it.name.isNotEmpty() }
-
-            val formParams = (0 until formTableModel.rowCount)
-                .map { row ->
-                    val name = formTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
-                    val value = formTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
-                    val desc = formTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
-                    EditableKeyValue(name, value, desc)
-                }
-                .filter { it.name.isNotEmpty() }
-
-            val cache = HttpRequestEditCache(
-                key = currentEndpointKey,
-                name = endpoint.name,
-                path = pathField.text,
-                method = endpoint.httpMetadata?.method?.name ?: endpoint.metadata.protocol,
-                host = getSelectedHost(),
-                headers = headers,
-                pathParams = pathParams,
-                queryParams = queryParams,
-                formParams = formParams,
                 body = bodyArea.text.takeIf { it.isNotBlank() },
-                contentType = endpointContentType
+                baseBody = endpoint.grpcMetadata?.body?.let { it.toJson() }
             )
-            editCacheService.save(endpoint, cache, currentEndpointKey)
         }
+
+        val headers = (0 until headersTableModel.rowCount)
+            .map { row ->
+                val name = headersTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
+                val value = headersTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                EditableKeyValue(name, value)
+            }
+            .filter { it.name.isNotEmpty() }
+
+        val pathParams = (0 until pathParamsTableModel.rowCount)
+            .map { row ->
+                val name = pathParamsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
+                val value = pathParamsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                val desc = pathParamsTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
+                EditableKeyValue(name, value, desc)
+            }
+            .filter { it.name.isNotEmpty() }
+
+        val queryParams = (0 until paramsTableModel.rowCount)
+            .map { row ->
+                val name = paramsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
+                val value = paramsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                val desc = paramsTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
+                EditableKeyValue(name, value, desc)
+            }
+            .filter { it.name.isNotEmpty() }
+
+        val formParams = (0 until formTableModel.rowCount)
+            .map { row ->
+                val name = formTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
+                val value = formTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                val desc = formTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
+                EditableKeyValue(name, value, desc)
+            }
+            .filter { it.name.isNotEmpty() }
+
+        return HttpRequestEditCache(
+            key = currentEndpointKey,
+            name = endpoint.name,
+            path = pathField.text,
+            method = endpoint.httpMetadata?.method?.name ?: endpoint.metadata.protocol,
+            host = getSelectedHost(),
+            headers = headers,
+            pathParams = pathParams,
+            queryParams = queryParams,
+            formParams = formParams,
+            body = bodyArea.text.takeIf { it.isNotBlank() },
+            baseBody = endpoint.httpMetadata?.body?.let { it.toJson() },
+            contentType = endpointContentType
+        )
     }
 
     private fun setupAutoSaveListeners() {
@@ -1660,7 +1702,11 @@ class EndpointDetailsPanel(
         }, project)
 
         val tableModelListener = TableModelListener { e ->
-            if (e.type == TableModelEvent.UPDATE) {
+            // UPDATE covers editing a cell (including typing into the trailing empty row).
+            // DELETE covers removing a row via the delete column button.
+            // INSERT is intentionally ignored: it is only emitted by `ensureEmptyRow`
+            // appending a blank trailing row, which is not a user edit.
+            if (e.type == TableModelEvent.UPDATE || e.type == TableModelEvent.DELETE) {
                 saveCurrentEdit()
             }
         }
@@ -1723,19 +1769,120 @@ class EndpointDetailsPanel(
 internal object EndpointDetailsPanelLogic {
 
     /**
-     * Pretty-prints a JSON string. Returns the original string if it is blank or not valid JSON.
+     * Merges the model-generated request body with the user's cached edits.
+     *
+     * The model body is authoritative for the key set, the key order and the
+     * default values; a cached value wins for every key the model still
+     * declares. This keeps user edits across rescans while letting fields
+     * added to the source DTO show up, and drops keys the model no longer has.
+     *
+     * Nested objects are merged recursively. Arrays and scalars are taken from
+     * the cache as-is (a whole-value user edit).
+     *
+     * Falls back to [cachedBody] when either side is blank or is not a JSON
+     * object (XML, plain text, form-encoded bodies), preserving the previous
+     * "cached body wins" behaviour.
+     *
+     * @param modelBody body rendered from the current source model, may be null
+     * @param cachedBody previously persisted body, may be null
      */
-    fun formatJson(json: String): String {
-        if (json.isBlank()) return json
-        return runCatching {
-            val gson = com.google.gson.GsonBuilder()
-                .setPrettyPrinting()
-                .disableHtmlEscaping()
-                .create()
-            val element = gson.fromJson(json, com.google.gson.JsonElement::class.java)
-            gson.toJson(element)
-        }.getOrElse { json }
+    fun mergeJsonBody(modelBody: String?, cachedBody: String?): String? {
+        if (cachedBody.isNullOrBlank()) return modelBody
+        if (modelBody.isNullOrBlank()) return cachedBody
+        val model = parseJsonElement(modelBody) ?: return cachedBody
+        val cached = parseJsonElement(cachedBody) ?: return cachedBody
+        if (!model.isJsonObject || !cached.isJsonObject) return cachedBody
+        return prettyJson(mergeJsonObject(model.asJsonObject, cached.asJsonObject))
     }
+
+    private fun mergeJsonObject(model: com.google.gson.JsonObject, cached: com.google.gson.JsonObject): com.google.gson.JsonObject {
+        val merged = com.google.gson.JsonObject()
+        model.entrySet().forEach { (name, modelValue) ->
+            val cachedValue = cached.get(name)
+            merged.add(
+                name, when {
+                    cachedValue == null -> modelValue
+                    modelValue.isJsonObject && cachedValue.isJsonObject ->
+                        mergeJsonObject(modelValue.asJsonObject, cachedValue.asJsonObject)
+                    else -> cachedValue
+                }
+            )
+        }
+        return merged
+    }
+
+    /**
+     * Three-way merge of the model body against the cached body and the base body.
+     *
+     * The two-way [mergeJsonBody] cannot tell whether a key missing from the cache was
+     * *deleted by the user* or simply *never present when the user edited it*. With the
+     * base body (the model body captured when the edit was saved) we can:
+     *
+     * - key in base, in model, absent from cache  → user deleted it, keep it deleted
+     * - key in base, absent from model, in cache  → source deleted it, drop it (model wins)
+     * - key absent from base, in model            → source added it, carry it over
+     * - key in both model and cache               → recurse (objects) or take cache (scalar/array)
+     *
+     * Falls back to [mergeJsonBody] (two-way) when [baseBody] is blank — i.e. for legacy
+     * caches persisted before the base-body field existed.
+     *
+     * @param baseBody  model-rendered body at save time, may be null (legacy)
+     * @param modelBody body rendered from the current source model, may be null
+     * @param cachedBody previously persisted body, may be null
+     */
+    fun mergeJsonBody3(baseBody: String?, modelBody: String?, cachedBody: String?): String? {
+        if (baseBody.isNullOrBlank()) return mergeJsonBody(modelBody, cachedBody)
+        if (cachedBody.isNullOrBlank()) return modelBody
+        if (modelBody.isNullOrBlank()) return cachedBody
+        val base = parseJsonElement(baseBody) ?: return mergeJsonBody(modelBody, cachedBody)
+        val model = parseJsonElement(modelBody) ?: return cachedBody
+        val cached = parseJsonElement(cachedBody) ?: return cachedBody
+        if (!base.isJsonObject || !model.isJsonObject || !cached.isJsonObject) {
+            return mergeJsonBody(modelBody, cachedBody)
+        }
+        return prettyJson(
+            mergeJsonObject3(base.asJsonObject, model.asJsonObject, cached.asJsonObject)
+        )
+    }
+
+    private fun mergeJsonObject3(
+        base: com.google.gson.JsonObject,
+        model: com.google.gson.JsonObject,
+        cached: com.google.gson.JsonObject
+    ): com.google.gson.JsonObject {
+        val merged = com.google.gson.JsonObject()
+        model.entrySet().forEach { (name, modelValue) ->
+            val cachedValue = cached.get(name)
+            val baseValue = base.get(name)
+            when {
+                cachedValue != null -> {
+                    merged.add(
+                        name,
+                        if (baseValue != null && modelValue.isJsonObject && cachedValue.isJsonObject) {
+                            mergeJsonObject3(baseValue.asJsonObject, modelValue.asJsonObject, cachedValue.asJsonObject)
+                        } else {
+                            cachedValue
+                        }
+                    )
+                }
+                baseValue != null -> {
+                    // Present in base but absent from cache -> the user deleted it. Keep deleted.
+                }
+                else -> {
+                    // Absent from base and cache -> a field the source added. Carry it over.
+                    merged.add(name, modelValue)
+                }
+            }
+        }
+        return merged
+    }
+
+    private fun parseJsonElement(json: String): com.google.gson.JsonElement? = runCatching {
+        com.google.gson.JsonParser.parseString(json)
+    }.getOrNull()
+
+    private fun prettyJson(element: com.google.gson.JsonElement): String =
+        GsonUtils.PRETTY.toJson(element)
 
     /**
      * Substitutes path template variables (e.g. `{id}`) with URL-encoded values

@@ -82,6 +82,29 @@ class SqliteDataResourceHelperTest {
     }
 
     @Test
+    fun testKeysWithPrefix() {
+        helper.upsert("http:id1", "v1")
+        helper.upsert("http:id2", "v2")
+        helper.upsert("grpc:id3", "v3")
+
+        val keys = helper.keysWithPrefix("http")
+
+        assertEquals("Should return only ids under the prefix, prefix stripped",
+            setOf("id1", "id2"), keys)
+    }
+
+    @Test
+    fun testKeysWithPrefixEscapesLikeWildcards() {
+        helper.upsert("100%:id1", "v1")
+        helper.upsert("100x:id2", "v2")
+
+        val keys = helper.keysWithPrefix("100%")
+
+        // The '%' in the prefix must be matched literally, not as a LIKE wildcard.
+        assertEquals(setOf("id1"), keys)
+    }
+
+    @Test
     fun testMultipleOperations() {
         helper.upsert("key1", "value1")
         helper.upsert("key2", "value2")

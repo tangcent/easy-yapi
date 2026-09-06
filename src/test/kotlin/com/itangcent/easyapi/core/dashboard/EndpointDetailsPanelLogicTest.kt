@@ -6,36 +6,6 @@ import org.junit.Test
 
 class EndpointDetailsPanelLogicTest {
 
-    // ── formatJson ───────────────────────────────────────────────────────────
-
-    @Test
-    fun `formatJson returns blank input unchanged`() {
-        assertEquals("", EndpointDetailsPanelLogic.formatJson(""))
-        assertEquals("   ", EndpointDetailsPanelLogic.formatJson("   "))
-    }
-
-    @Test
-    fun `formatJson pretty-prints compact JSON`() {
-        val compact = """{"name":"Alice","age":30}"""
-        val result = EndpointDetailsPanelLogic.formatJson(compact)
-        assertTrue(result.contains("\n"))
-        assertTrue(result.contains("\"name\""))
-        assertTrue(result.contains("\"Alice\""))
-    }
-
-    @Test
-    fun `formatJson returns original string for invalid JSON`() {
-        val invalid = "not json at all"
-        assertEquals(invalid, EndpointDetailsPanelLogic.formatJson(invalid))
-    }
-
-    @Test
-    fun `formatJson handles already-formatted JSON`() {
-        val pretty = "{\n  \"key\": \"value\"\n}"
-        val result = EndpointDetailsPanelLogic.formatJson(pretty)
-        assertTrue(result.contains("\"key\""))
-    }
-
     // ── resolvePath ──────────────────────────────────────────────────────────
 
     @Test
@@ -128,5 +98,148 @@ class EndpointDetailsPanelLogicTest {
         assertEquals(2, params.size)
         assertTrue(params[0] is FormParam.Text)
         assertTrue(params[1] is FormParam.File)
+    }
+
+    // ── mergeJsonBody ───────────────────────────────────────────────────────
+
+    private fun normalize(json: String?) = json?.replace("\\s".toRegex(), "")
+
+    @Test
+    fun `mergeJsonBody returns model body when there is no cached body`() {
+        val model = """{"toolType":"","toolId":""}"""
+        assertEquals(model, normalize(EndpointDetailsPanelLogic.mergeJsonBody(model, null)))
+        assertEquals(model, normalize(EndpointDetailsPanelLogic.mergeJsonBody(model, "  ")))
+    }
+
+    @Test
+    fun `mergeJsonBody returns cached body when the model has no body`() {
+        val cached = """{"a":1}"""
+        assertEquals(cached, normalize(EndpointDetailsPanelLogic.mergeJsonBody(null, cached)))
+        assertEquals(cached, normalize(EndpointDetailsPanelLogic.mergeJsonBody("", cached)))
+    }
+
+    @Test
+    fun `mergeJsonBody adds fields newly added to the model`() {
+        val model = """{"toolType":"","toolId":"","scope":""}"""
+        val cached = """{"toolType":"A","toolId":"B"}"""
+        val merged = normalize(EndpointDetailsPanelLogic.mergeJsonBody(model, cached))
+        assertEquals("""{"toolType":"A","toolId":"B","scope":""}""", merged)
+    }
+
+    @Test
+    fun `mergeJsonBody drops fields removed from the model`() {
+        val model = """{"toolType":""}"""
+        val cached = """{"toolType":"A","removed":"X"}"""
+        val merged = normalize(EndpointDetailsPanelLogic.mergeJsonBody(model, cached))
+        assertEquals("""{"toolType":"A"}""", merged)
+    }
+
+    @Test
+    fun `mergeJsonBody keeps user edited values including nulls and falsy values`() {
+        val model = """{"a":"","b":"","c":""}"""
+        val cached = """{"a":"edited","b":null,"c":0}"""
+        val merged = normalize(EndpointDetailsPanelLogic.mergeJsonBody(model, cached))
+        assertEquals("""{"a":"edited","b":null,"c":0}""", merged)
+    }
+
+    @Test
+    fun `mergeJsonBody follows the model key order`() {
+        val model = """{"z":"","a":""}"""
+        val cached = """{"a":"1","z":"2"}"""
+        val merged = normalize(EndpointDetailsPanelLogic.mergeJsonBody(model, cached))
+        assertEquals("""{"z":"2","a":"1"}""", merged)
+    }
+
+    @Test
+    fun `mergeJsonBody merges nested objects recursively`() {
+        val model = """{"data":{"x":"","y":""},"top":""}"""
+        val cached = """{"data":{"x":"1"},"top":"T"}"""
+        val merged = normalize(EndpointDetailsPanelLogic.mergeJsonBody(model, cached))
+        assertEquals("""{"data":{"x":"1","y":""},"top":"T"}""", merged)
+    }
+
+    @Test
+    fun `mergeJsonBody keeps cached arrays as a whole`() {
+        val model = """{"items":[]}"""
+        val cached = """{"items":[1,2,3]}"""
+        val merged = normalize(EndpointDetailsPanelLogic.mergeJsonBody(model, cached))
+        assertEquals("""{"items":[1,2,3]}""", merged)
+    }
+
+    @Test
+    fun `mergeJsonBody falls back to cached body for non-object JSON`() {
+        val cached = """["a","b"]"""
+        assertEquals(cached, normalize(EndpointDetailsPanelLogic.mergeJsonBody("""{"a":1}""", cached)))
+    }
+
+    @Test
+    fun `mergeJsonBody falls back to cached body for non-JSON payloads`() {
+        assertEquals("<xml/>", EndpointDetailsPanelLogic.mergeJsonBody("""{"a":1}""", "<xml/>"))
+        assertEquals("{broken", EndpointDetailsPanelLogic.mergeJsonBody("""{"a":1}""", "{broken"))
+    }
+
+    // ── mergeJsonBody3 (three-way) ───────────────────────────────────────────
+
+    @Test
+    fun `mergeJsonBody3 falls back to two-way when baseBody is blank`() {
+        val model = """{"a":1,"b":2}"""
+        val cached = """{"a":10}"""
+        // No base -> identical to mergeJsonBody: model wins key set, cache wins values.
+        assertEquals(
+            normalize(EndpointDetailsPanelLogic.mergeJsonBody(model, cached)),
+            normalize(EndpointDetailsPanelLogic.mergeJsonBody3(null, model, cached))
+        )
+    }
+
+    @Test
+    fun `mergeJsonBody3 keeps a field the user deleted`() {
+        val base = """{"a":1,"b":2}"""
+        val model = """{"a":1,"b":2}"""
+        val cached = """{"a":10}""" // user deleted b
+        val merged = normalize(EndpointDetailsPanelLogic.mergeJsonBody3(base, model, cached))!!
+        assertTrue(merged.contains("\"a\""))
+        assertFalse("user-deleted field must stay deleted", merged.contains("\"b\""))
+    }
+
+    @Test
+    fun `mergeJsonBody3 drops a field the source deleted`() {
+        val base = """{"a":1,"b":2}"""
+        val model = """{"a":1}""" // source deleted b
+        val cached = """{"a":10,"b":2}""" // user never touched b
+        val merged = normalize(EndpointDetailsPanelLogic.mergeJsonBody3(base, model, cached))!!
+        assertTrue(merged.contains("\"a\""))
+        assertFalse("source-deleted field must disappear", merged.contains("\"b\""))
+    }
+
+    @Test
+    fun `mergeJsonBody3 carries a field the source added`() {
+        val base = """{"a":1}"""
+        val model = """{"a":1,"b":2}""" // source added b
+        val cached = """{"a":10}"""
+        val merged = normalize(EndpointDetailsPanelLogic.mergeJsonBody3(base, model, cached))!!
+        assertTrue(merged.contains("\"a\""))
+        assertTrue("source-added field must be carried over", merged.contains("\"b\""))
+    }
+
+    @Test
+    fun `mergeJsonBody3 recurses into nested objects`() {
+        val base = """{"outer":{"x":1,"y":2}}"""
+        val model = """{"outer":{"x":1,"y":2,"z":3}}""" // source added z
+        val cached = """{"outer":{"x":10}}""" // user edited x, deleted y
+        val merged = normalize(EndpointDetailsPanelLogic.mergeJsonBody3(base, model, cached))!!
+        assertTrue(merged.contains("\"x\""))
+        assertTrue(merged.contains("10"))
+        assertTrue("nested source-added field must appear", merged.contains("\"z\""))
+        assertFalse("nested user-deleted field must stay deleted", merged.contains("\"y\""))
+    }
+
+    @Test
+    fun `mergeJsonBody3 keeps cached scalar over model`() {
+        val base = """{"a":1,"b":2}"""
+        val model = """{"a":1,"b":2}"""
+        val cached = """{"a":10,"b":20}"""
+        val merged = normalize(EndpointDetailsPanelLogic.mergeJsonBody3(base, model, cached))!!
+        assertTrue(merged.contains("10"))
+        assertTrue(merged.contains("20"))
     }
 }

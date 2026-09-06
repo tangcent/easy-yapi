@@ -78,6 +78,36 @@ class RequestEditCacheService(private val project: Project) {
         }
     }
 
+    /**
+     * Returns all cached edit keys (`className#methodName`), across both the HTTP and
+     * gRPC tables.
+     */
+    fun allKeys(): Set<String> = httpBeanBinder.allIds() + grpcBeanBinder.allIds()
+
+    /**
+     * Deletes the given cached-edit keys from both the HTTP and gRPC tables.
+     *
+     * Callers are expected to know which table each key belongs to; since keys are
+     * `className#methodName`, an HTTP and gRPC endpoint can share the same key, so we
+     * delete from both to be safe.
+     */
+    fun deleteAll(keys: Set<String>) {
+        keys.forEach { key ->
+            if (key.isBlank()) return@forEach
+            httpBeanBinder.delete(key)
+            grpcBeanBinder.delete(key)
+        }
+    }
+
+    /**
+     * Clears every cached request edit (both HTTP and gRPC). Irreversible; callers
+     * should confirm with the user first.
+     */
+    fun clearAll() {
+        httpBeanBinder.deleteAll()
+        grpcBeanBinder.deleteAll()
+    }
+
     fun createDefaultCache(endpoint: ApiEndpoint, key: String, host: String? = null): RequestEditCache {
         return if (endpoint.isGrpc) {
             createDefaultGrpcCache(endpoint, key, host)
@@ -143,5 +173,23 @@ class RequestEditCacheService(private val project: Project) {
     companion object {
         fun getInstance(project: Project): RequestEditCacheService =
             project.getService(RequestEditCacheService::class.java)
+
+        /**
+         * Returns the cached-edit keys whose owning class is no longer present in
+         * [liveClassNames], i.e. orphaned edits.
+         *
+         * Keys are `className#methodName`. The GC unit is deliberately the **class**,
+         * not the method: a method temporarily disappearing (branch switch, Dumb mode,
+         * a transient compile error) must not evict user edits. Only when the *entire
+         * class* is absent from the current snapshot do its records count as orphans
+         * (see `.spec/dashboard-request-state.md` decision D4).
+         *
+         * Pure function, testable without a Project or PSI.
+         */
+        fun orphanKeys(cachedKeys: Set<String>, liveClassNames: Set<String>): Set<String> =
+            cachedKeys.filterTo(mutableSetOf()) { key ->
+                val className = key.substringBeforeLast('#')
+                className.isEmpty() || className !in liveClassNames
+            }
     }
 }

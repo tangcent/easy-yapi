@@ -27,6 +27,13 @@ import java.lang.reflect.Type
 object GsonUtils {
     /**
      * Standard Gson instance for compact JSON output.
+     *
+     * Deliberately does **not** serialize nulls (the default; there is no
+     * `serializeNulls(false)` in Gson — omitting the call is the explicit "off").
+     * The compact form is used to persist settings and other data where a null field
+     * is indistinguishable from an absent field, and several readers
+     * (`SettingsPanels.applyImported`) rely on null fields being dropped rather than
+     * emitted as `JsonNull`.
      */
     val GSON: Gson = GsonBuilder()
         .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
@@ -34,10 +41,15 @@ object GsonUtils {
 
     /**
      * Gson instance with pretty printing enabled.
+     *
+     * Serializes null values so that a field explicitly set to `null` keeps its key in
+     * the output, rather than being silently dropped (required by JSON body merging and
+     * formatting, see `EndpointDetailsPanelLogic.prettyJson`).
      */
     val PRETTY: Gson = GsonBuilder()
         .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
         .setPrettyPrinting()
+        .serializeNulls()
         .create()
 
     /**

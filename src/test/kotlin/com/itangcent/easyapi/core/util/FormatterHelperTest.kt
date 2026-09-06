@@ -44,6 +44,14 @@ class FormatterHelperTest {
     }
 
     @Test
+    fun testFormatJson_keepsNullFieldKey() {
+        val result = FormatterHelper.formatJson("{\"key\":null}")
+        // GsonUtils serializes nulls, so the null field keeps its key.
+        assertTrue(result.contains("\"key\""))
+        assertTrue(result.contains("null"))
+    }
+
+    @Test
     fun testFormatXml_validXml() {
         val xml = "<root><item>value</item></root>"
         val result = FormatterHelper.formatXml(xml)

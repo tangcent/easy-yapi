@@ -20,6 +20,7 @@ import com.itangcent.easyapi.core.feature.CoreFeatureIds
 import com.itangcent.easyapi.core.feature.FeatureStateEvents
 import com.itangcent.easyapi.core.feature.FeatureStateService
 import com.itangcent.easyapi.core.internal.threading.IdeDispatchers
+import com.itangcent.easyapi.core.internal.threading.readSync
 import com.itangcent.easyapi.core.internal.threading.backgroundAsync
 import com.itangcent.easyapi.core.internal.threading.swing
 import com.itangcent.easyapi.core.export.ExportOrchestrator
@@ -255,6 +256,8 @@ class ApiDashboardPanel internal constructor(
             addSeparator()
             add(CollapseAllAction())
             add(ExpandAllAction())
+            addSeparator()
+            add(ClearOrphanedEditsAction())
         }
 
         val actionToolbar = ActionManager.getInstance().createActionToolbar("ApiDashboardToolbar", actionGroup, true)
@@ -854,7 +857,65 @@ class ApiDashboardPanel internal constructor(
     /** @requires Swing context */
     private fun applySnapshot(endpoints: List<ApiEndpoint>) {
         cachedEndpoints = endpoints.toList()
+        val previousKey = endpointDetailsPanel.currentKey()
         updateTree(cachedEndpoints)
+        if (previousKey.isNotEmpty()) {
+            restoreSelection(previousKey)
+        }
+    }
+
+    /**
+     * Re-selects the endpoint matching [previousKey] after a rescan rebuilt the tree.
+     *
+     * `updateTree` calls `treeModel.setRoot()`, which clears the selection but fires a
+     * `TreeSelectionEvent` carrying the *old* path — so `setupTreeListeners` re-binds the
+     * details panel to the stale `ApiEndpoint` (pre-refresh snapshot). By restoring the
+     * selection to the *new* node here, the subsequent selection event carries the fresh
+     * `ApiEndpoint`, which re-runs `showEndpoint(newEndpoint)` and re-binds to the latest
+     * model skeleton (P0-b). See `.spec/dashboard-request-state.md` decision D1.
+     *
+     * @requires Swing context
+     */
+    private fun restoreSelection(previousKey: String) {
+        val root = treeModel.root as? DefaultMutableTreeNode ?: return
+        val targetNode = findNodeByKey(root, previousKey) ?: return
+        if (targetNode.userObject !is ApiEndpoint) return
+        val path = TreePath(targetNode.path)
+        // Setting the selection fires a TreeSelectionEvent with the *new* path, which
+        // re-runs `showEndpoint(newEndpoint)` in `setupTreeListeners` and re-binds the
+        // panel to the fresh snapshot. No explicit showEndpoint needed here.
+        apiTree.selectionPath = path
+        apiTree.scrollPathToVisible(path)
+    }
+
+    /**
+     * Finds the tree node whose endpoint's cache key equals [key].
+     *
+     * @param node The subtree root to search
+     * @param key  The `className#methodName` key to match
+     */
+    private fun findNodeByKey(node: DefaultMutableTreeNode, key: String): DefaultMutableTreeNode? {
+        val userObject = node.userObject
+        if (userObject is ApiEndpoint && endpointCacheKey(userObject) == key) {
+            return node
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChildAt(i) as? DefaultMutableTreeNode
+            val found = child?.let { findNodeByKey(it, key) }
+            if (found != null) return found
+        }
+        return null
+    }
+
+    /**
+     * Computes the same `className#methodName` cache key used by [EndpointDetailsPanel]
+     * to identify an endpoint. `className` is a plain field; `method.name` is read under
+     * a read action (the callers run on EDT / Swing context).
+     */
+    private fun endpointCacheKey(endpoint: ApiEndpoint): String {
+        val className = endpoint.className ?: return ""
+        val methodName = endpoint.sourceMethod?.let { readSync { it.name } } ?: return ""
+        return "$className#$methodName"
     }
 
     /** @requires Swing context */
@@ -915,6 +976,47 @@ class ApiDashboardPanel internal constructor(
 
     /** @requires Swing context */
     internal fun displayedEndpoints(): List<ApiEndpoint> = cachedEndpoints.toList()
+
+    /**
+     * Prompts the user and, on confirmation, deletes cached request edits whose owning
+     * class is no longer present in the current snapshot.
+     *
+     * The GC unit is the class (see [RequestEditCacheService.orphanKeys] and decision D4),
+     * so a method that merely disappears from a still-present class is left untouched.
+     * This is an explicit, user-initiated cleanup — automatic GC was deliberately rejected
+     * because "class absent from A-side" does not imply the user permanently deleted it.
+     *
+     * @requires Swing context
+     */
+    private fun clearOrphanedEdits() {
+        val service = RequestEditCacheService.getInstance(project)
+        val cachedKeys = service.allKeys()
+        if (cachedKeys.isEmpty()) {
+            NotificationUtils.notifyInfo(project, "EasyApi", "No cached request edits to clean up.")
+            return
+        }
+
+        val liveClassNames = cachedEndpoints.mapNotNullTo(mutableSetOf()) { it.className }
+        val orphans = RequestEditCacheService.orphanKeys(cachedKeys, liveClassNames)
+        if (orphans.isEmpty()) {
+            NotificationUtils.notifyInfo(project, "EasyApi", "No orphaned request edits found.")
+            return
+        }
+
+        val confirmed = Messages.showOkCancelDialog(
+            project,
+            "Found ${orphans.size} request edit(s) whose API class no longer exists.\n" +
+                "Delete them? This cannot be undone.",
+            "Clean Up Request Edits",
+            "Delete",
+            "Cancel",
+            Messages.getWarningIcon()
+        )
+        if (confirmed != Messages.OK) return
+
+        service.deleteAll(orphans)
+        NotificationUtils.notifyInfo(project, "EasyApi", "Deleted ${orphans.size} orphaned request edit(s).")
+    }
 
     /** @requires Swing context */
     internal fun dashboardStatusText(): String = scanStatusLabel.text
@@ -1087,6 +1189,20 @@ class ApiDashboardPanel internal constructor(
     ) {
         override fun actionPerformed(e: com.intellij.openapi.actionSystem.AnActionEvent) {
             expandAll()
+        }
+    }
+
+    /**
+     * Action for cleaning up orphaned request edits (cached edits whose owning API
+     * class no longer exists in the current snapshot).
+     */
+    private inner class ClearOrphanedEditsAction : com.intellij.openapi.actionSystem.AnAction(
+        "Clean Up Request Edits",
+        "Delete cached edits whose API class no longer exists",
+        com.intellij.icons.AllIcons.Actions.GC
+    ) {
+        override fun actionPerformed(e: com.intellij.openapi.actionSystem.AnActionEvent) {
+            clearOrphanedEdits()
         }
     }
 
