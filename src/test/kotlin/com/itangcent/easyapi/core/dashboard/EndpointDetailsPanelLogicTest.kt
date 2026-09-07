@@ -242,4 +242,51 @@ class EndpointDetailsPanelLogicTest {
         assertTrue(merged.contains("10"))
         assertTrue(merged.contains("20"))
     }
+
+    // ── formatCategoryOf ────────────────────────────────────────────────────
+
+    @Test
+    fun `formatCategoryOf classifies xml media types`() {
+        assertEquals(EndpointDetailsPanelLogic.FormatCategory.XML, EndpointDetailsPanelLogic.formatCategoryOf("application/xml"))
+        assertEquals(EndpointDetailsPanelLogic.FormatCategory.XML, EndpointDetailsPanelLogic.formatCategoryOf("text/xml"))
+        assertEquals(EndpointDetailsPanelLogic.FormatCategory.XML, EndpointDetailsPanelLogic.formatCategoryOf("application/soap+xml"))
+        // Case-insensitive
+        assertEquals(EndpointDetailsPanelLogic.FormatCategory.XML, EndpointDetailsPanelLogic.formatCategoryOf("TEXT/XML"))
+    }
+
+    @Test
+    fun `formatCategoryOf classifies html media types`() {
+        assertEquals(EndpointDetailsPanelLogic.FormatCategory.HTML, EndpointDetailsPanelLogic.formatCategoryOf("text/html"))
+        assertEquals(EndpointDetailsPanelLogic.FormatCategory.HTML, EndpointDetailsPanelLogic.formatCategoryOf("application/xhtml+xml"))
+    }
+
+    @Test
+    fun `formatCategoryOf falls back to JSON`() {
+        assertEquals(EndpointDetailsPanelLogic.FormatCategory.JSON, EndpointDetailsPanelLogic.formatCategoryOf("application/json"))
+        assertEquals(EndpointDetailsPanelLogic.FormatCategory.JSON, EndpointDetailsPanelLogic.formatCategoryOf("text/plain"))
+        assertEquals(EndpointDetailsPanelLogic.FormatCategory.JSON, EndpointDetailsPanelLogic.formatCategoryOf(null))
+        assertEquals(EndpointDetailsPanelLogic.FormatCategory.JSON, EndpointDetailsPanelLogic.formatCategoryOf("  "))
+    }
+
+    // ── formatByContentType ─────────────────────────────────────────────────
+
+    @Test
+    fun `formatByContentType formats xml bodies`() {
+        val result = EndpointDetailsPanelLogic.formatByContentType("<root><item>v</item></root>", "application/xml")
+        assertTrue(result.contains("<root>"))
+        assertTrue(result.contains("\n"))
+    }
+
+    @Test
+    fun `formatByContentType formats html bodies`() {
+        val result = EndpointDetailsPanelLogic.formatByContentType("<div> <p>text</p> </div>", "text/html")
+        assertTrue(result.contains("<div>"))
+        assertTrue(result.contains("\n"))
+    }
+
+    @Test
+    fun `formatByContentType formats json by default`() {
+        val result = EndpointDetailsPanelLogic.formatByContentType("""{"a":1}""", null)
+        assertTrue(result.contains("\n"))
+    }
 }
