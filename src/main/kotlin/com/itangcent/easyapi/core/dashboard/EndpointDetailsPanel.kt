@@ -1520,6 +1520,13 @@ class EndpointDetailsPanel(
         } finally {
             isLoading = false
         }
+
+        // Re-capture the pristine snapshot for the freshly reloaded model content.
+        // Without this, `pristineSnapshot` still holds the pre-reset merged content, so
+        // switching away would serialize the (now model-default) UI state, find it
+        // differs from the stale snapshot, and re-persist a cache row — defeating the
+        // reset's "leave no cached edit" intent.
+        pristineSnapshot = currentEndpoint?.let { currentEditCache(it) }?.let { GsonUtils.toJson(it) }
     }
 
     fun resetEndpoint(endpoint: ApiEndpoint) {
