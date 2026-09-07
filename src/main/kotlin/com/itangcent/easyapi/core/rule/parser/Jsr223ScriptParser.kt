@@ -22,6 +22,8 @@ import com.itangcent.easyapi.core.util.text.RegexUtils
 import com.itangcent.easyapi.core.util.RuleToolUtils
 import com.itangcent.easyapi.core.util.ide.ModuleHelper
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import javax.script.Bindings
 
@@ -64,23 +66,96 @@ abstract class Jsr223ScriptParser(
 
     private val enginePool = EnginePool(engineName)
 
+    /**
+     * Bounds the number of concurrently executing scripts. Groovy evaluation is
+     * a blocking CPU-bound call; without this bound, a concurrent class scan
+     * (up to `MAX_CONCURRENT_SCANS`) can spawn one engine per in-flight class
+     * and spike CPU. This semaphore keeps script execution — the actual
+     * contention point — under a fixed ceiling regardless of how many exporters
+     * happen to evaluate rules concurrently.
+     */
+    private val scriptSemaphore = Semaphore(SCRIPT_CONCURRENCY)
+
+    /**
+     * Compiled-script cache keyed by script source. Groovy scripts are compiled
+     * once and reused across every class evaluation, avoiding the per-call
+     * recompilation that dominates the cost of `groovy:` rules in large scans.
+     *
+     * Bounded (like [com.itangcent.easyapi.core.export.recognizer.MetaAnnotationResolver])
+     * so stale script sources are evicted naturally after rule edits, without an
+     * explicit invalidation path.
+     */
+    private val compiledCache: com.google.common.cache.Cache<String, javax.script.CompiledScript> =
+        com.google.common.cache.CacheBuilder.newBuilder()
+            .maximumSize(COMPILED_CACHE_MAX_SIZE)
+            .expireAfterAccess(COMPILED_CACHE_EXPIRE_MINUTES, java.util.concurrent.TimeUnit.MINUTES)
+            .build()
+
     override fun canParse(expression: String): Boolean = expression.startsWith(prefix)
+
+    /**
+     * Drops every cached [javax.script.CompiledScript].
+     *
+     * Called on configuration reload: rule sources changed, so previously
+     * compiled scripts are dead weight. They are more than memory — each
+     * `CompiledScript` keeps its Groovy classloader reachable, so an unbounded
+     * cache of stale scripts shows up as Metaspace growth. Time-based expiry
+     * alone would leave them around for up to [COMPILED_CACHE_EXPIRE_MINUTES].
+     */
+    fun invalidateCompiledCache() {
+        compiledCache.invalidateAll()
+    }
 
     override suspend fun parse(expression: String, context: RuleContext, ruleKey: RuleKey<*>?): Any? {
         val script = expression.removePrefix(prefix)
         if (script.isBlank()) return null
         LOG.info("Jsr223ScriptParser: Starting to parse script (engine=${enginePool.engineName}, script length=${script.length})")
         return withContext(IdeDispatchers.Background) {
-            LOG.info("Jsr223ScriptParser: Running on Background thread=${Thread.currentThread().name}")
-            enginePool.withEngine { engine ->
-                val bindings = engine.createBindings()
-                bind(bindings, context)
-                LOG.info("Jsr223ScriptParser: Executing script...")
-                engine.eval(script, bindings).also { result ->
+            scriptSemaphore.withPermit {
+                LOG.info("Jsr223ScriptParser: Running on Background thread=${Thread.currentThread().name}")
+                enginePool.withEngine { engine ->
+                    val bindings = engine.createBindings()
+                    bind(bindings, context)
+                    LOG.info("Jsr223ScriptParser: Executing script...")
+                    val compiled = compiledScript(engine, script)
+                    val result = if (compiled != null) {
+                        compiled.eval(bindings)
+                    } else {
+                        engine.eval(script, bindings)
+                    }
                     LOG.info("Jsr223ScriptParser: Script execution completed, result type=${result?.javaClass?.simpleName}")
+                    result
                 }
             }
         }
+    }
+
+    /**
+     * Returns a cached [javax.script.CompiledScript] for [script], compiling it
+     * via the engine's [javax.script.Compilable] interface on first use.
+     *
+     * Falls back to returning `null` (compilation unsupported) — the caller
+     * then evaluates the raw source directly.
+     */
+    private fun compiledScript(
+        engine: javax.script.ScriptEngine,
+        script: String
+    ): javax.script.CompiledScript? {
+        val compilable = engine as? javax.script.Compilable ?: return null
+        return try {
+            compiledCache.get(script) { compilable.compile(script) }
+        } catch (e: Exception) {
+            LOG.warn("Jsr223ScriptParser: failed to compile script (will eval raw source)", e)
+            null
+        }
+    }
+
+    companion object : IdeaLog {
+        private const val COMPILED_CACHE_MAX_SIZE: Long = 500
+        private const val COMPILED_CACHE_EXPIRE_MINUTES: Long = 10
+
+        /** Upper bound on concurrently executing scripts (see [scriptSemaphore]). */
+        private const val SCRIPT_CONCURRENCY = 4
     }
 
     private fun bind(bindings: Bindings, context: RuleContext) {
@@ -145,8 +220,6 @@ abstract class Jsr223ScriptParser(
         bindings["runtime"] = ScriptRuntime(context)
         bindings["R"] = bindings["runtime"]
     }
-
-    companion object : IdeaLog
 }
 
 /**

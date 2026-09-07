@@ -1,9 +1,11 @@
 package com.itangcent.easyapi.core.rule.engine
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import com.itangcent.easyapi.core.config.ConfigReloadListener
 import com.itangcent.easyapi.core.rule.RuleKey
 import com.itangcent.easyapi.core.rule.RuleProvider
 import com.itangcent.easyapi.core.rule.RuleResult
@@ -17,13 +19,30 @@ import kotlin.coroutines.cancellation.CancellationException
 @Service(Service.Level.PROJECT)
 class RuleEngine internal constructor(
     private val project: Project
-) {
+) : ConfigReloadListener, Disposable {
     private val ruleProvider: RuleProvider
         get() = RuleProvider.getInstance(project)
 
     private val parsers: List<RuleParser> = defaultParsers().also { list ->
         list.filterIsInstance<RuleEngineAware>().forEach { it.setRuleEngine(this) }
     }
+
+    private val connection = project.messageBus.connect(this)
+
+    init {
+        connection.subscribe(ConfigReloadListener.TOPIC, this)
+    }
+
+    /**
+     * Rules were reloaded, so every compiled script cached by a JSR-223 parser
+     * is stale. Invalidate explicitly instead of waiting for time-based expiry —
+     * see [Jsr223ScriptParser.invalidateCompiledCache].
+     */
+    override fun onConfigReloaded() {
+        parsers.filterIsInstance<Jsr223ScriptParser>().forEach { it.invalidateCompiledCache() }
+    }
+
+    override fun dispose() = Unit
 
     private fun defaultParsers(): List<RuleParser> {
         return listOf(

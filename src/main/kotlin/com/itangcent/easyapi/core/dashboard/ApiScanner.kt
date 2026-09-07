@@ -78,10 +78,18 @@ class ApiScanner(private val project: Project) {
          * Maximum number of concurrent class scans when parallel scanning is enabled.
          */
         private const val MAX_CONCURRENT_SCANS = 4
+
+        /**
+         * How many classes are processed between two cancellation checks inside a
+         * single indexed search iteration. Keeps read actions interruptible without
+         * paying `checkCanceled` per class.
+         */
+        private const val CANCELLATION_CHECK_CHUNK_SIZE = 50
     }
 
     private val apiClassRecognizer = CompositeApiClassRecognizer.getInstance(project)
     private val console get() = project.console
+    private val monitor get() = ApiScanMonitor.getInstance(project)
 
     /**
      * Scans the entire project for API endpoints.
@@ -95,7 +103,13 @@ class ApiScanner(private val project: Project) {
         DumbModeHelper.waitForSmartMode(project)
         LOG.info("Starting API scan...")
         val endpoints = runWithProgress(project, "Scanning API endpoints...") { indicator ->
-            doScan(indicator)
+            monitor.onScanStart(indicator)
+            monitor.watchForStuck()
+            try {
+                doScan(indicator)
+            } finally {
+                monitor.onScanEnd()
+            }
         }
         LOG.info("API scan completed, found ${endpoints.size} endpoints")
         return endpoints
@@ -192,10 +206,11 @@ class ApiScanner(private val project: Project) {
      *
      * @return List of all controller/resource classes
      */
-    suspend fun findControllerClasses(): List<PsiClass> {
+    suspend fun findControllerClasses(indicator: ProgressIndicator? = null): List<PsiClass> {
         DumbModeHelper.waitForSmartMode(project)
 
         LOG.info("Finding controller classes...")
+        val annotations = apiClassRecognizer.allTargetAnnotations
         val scope = GlobalSearchScope.projectScope(project)
         val javaFacade = JavaPsiFacade.getInstance(project)
         val controllerClasses = mutableSetOf<PsiClass>()
@@ -204,7 +219,8 @@ class ApiScanner(private val project: Project) {
 
         // Process each annotation separately with its own read action
         // This breaks the long operation into smaller chunks and allows better cancellation
-        for (annotationFqn in apiClassRecognizer.allTargetAnnotations) {
+        for (annotationFqn in annotations) {
+            indicator?.checkCanceled()
             read {
                 LOG.info("Looking for annotation: $annotationFqn")
                 val annotationClass = javaFacade.findClass(annotationFqn, GlobalSearchScope.allScope(project))
@@ -219,14 +235,25 @@ class ApiScanner(private val project: Project) {
                     LOG.info("Skipping $annotationFqn — not an annotation type (interface or class)")
                     return@read
                 }
-                
+
                 try {
                     val annotated = AnnotatedElementsSearch.searchPsiClasses(annotationClass, scope)
-                    val found = annotated.findAll().filter { !it.isAnnotationType }
+                    val found = mutableListOf<PsiClass>()
+                    // Materialize the hits, then filter + yield to the cancellation
+                    // check every CANCELLATION_CHECK_CHUNK_SIZE classes so a long
+                    // read action never blocks the EDT indefinitely.
+                    annotated.findAll().forEachIndexed { index, psiClass ->
+                        if (index % CANCELLATION_CHECK_CHUNK_SIZE == 0) {
+                            indicator?.checkCanceled()
+                        }
+                        if (!psiClass.isAnnotationType) {
+                            found += psiClass
+                        }
+                    }
                     LOG.info("Found ${found.size} classes annotated with $annotationFqn")
                     controllerClasses.addAll(found)
 
-                    val metaAnnotated = findMetaAnnotatedClasses(annotationClass, scope)
+                    val metaAnnotated = findMetaAnnotatedClasses(annotationClass, scope, indicator)
                     if (metaAnnotated.isNotEmpty()) {
                         LOG.info("Found ${metaAnnotated.size} meta-annotated classes for $annotationFqn")
                         controllerClasses.addAll(metaAnnotated)
@@ -253,7 +280,8 @@ class ApiScanner(private val project: Project) {
      */
     private fun findMetaAnnotatedClasses(
         targetAnnotation: PsiClass,
-        scope: GlobalSearchScope
+        scope: GlobalSearchScope,
+        indicator: ProgressIndicator? = null
     ): List<PsiClass> {
         val result = mutableSetOf<PsiClass>()
         val targetFqn = targetAnnotation.qualifiedName ?: return emptyList()
@@ -261,10 +289,11 @@ class ApiScanner(private val project: Project) {
         try {
             val customAnnotations = AnnotatedElementsSearch.searchPsiClasses(
                 targetAnnotation,
-                GlobalSearchScope.allScope(project)
+                scope
             ).findAll().filter { it.isAnnotationType }
 
             for (customAnn in customAnnotations) {
+                indicator?.checkCanceled()
                 val customFqn = customAnn.qualifiedName ?: continue
                 LOG.info("Found custom annotation $customFqn meta-annotated with $targetFqn")
                 try {
@@ -288,7 +317,7 @@ class ApiScanner(private val project: Project) {
         LOG.info("Finding controller classes...")
         indicator.text = "Finding controller classes..."
         indicator.isIndeterminate = true
-        val psiClasses = findControllerClasses()
+        val psiClasses = findControllerClasses(indicator)
         LOG.info("Found ${psiClasses.size} controller classes")
         return exportClasses(psiClasses, indicator)
     }
@@ -390,29 +419,33 @@ class ApiScanner(private val project: Project) {
             indicator?.fraction = index.toDouble() / total
             LOG.info("search api from: $className")
 
-            val matchingFrameworks = recognizer.matchingFrameworks(psiClass)
-            if (matchingFrameworks.isEmpty()) {
-                continue
-            }
+            val token = monitor.onClassStart(className)
+            try {
+                val matchingFrameworks = recognizer.matchingFrameworks(psiClass)
+                if (matchingFrameworks.isEmpty()) continue
 
-            val matchingExporters = exporters.filter { exporter ->
-                matchingFrameworks.contains(exporter.frameworkName)
-            }
-
-            for (exporter in matchingExporters) {
-                try {
-                    val exported = withTimeout(PER_CLASS_TIMEOUT_MS) {
-                        exporter.export(psiClass)
-                    }
-                    if (exported.isNotEmpty()) {
-                        LOG.info("Exporter ${exporter::class.simpleName} found ${exported.size} endpoints in $className")
-                        endpoints.addAll(exported)
-                    }
-                } catch (e: TimeoutCancellationException) {
-                    console.warn("Export timed out for class: $className (>${PER_CLASS_TIMEOUT_MS})")
-                } catch (e: Exception) {
-                    console.warn("Error exporting class: $className", e)
+                val matchingExporters = exporters.filter { exporter ->
+                    matchingFrameworks.contains(exporter.frameworkName)
                 }
+
+                for (exporter in matchingExporters) {
+                    try {
+                        val exported = withTimeout(PER_CLASS_TIMEOUT_MS) {
+                            exporter.export(psiClass)
+                        }
+                        if (exported.isNotEmpty()) {
+                            LOG.info("Exporter ${exporter::class.simpleName} found ${exported.size} endpoints in $className")
+                            endpoints.addAll(exported)
+                        }
+                    } catch (e: TimeoutCancellationException) {
+                        monitor.onClassTimeout(className)
+                        console.warn("Export timed out for class: $className (>${PER_CLASS_TIMEOUT_MS}ms)")
+                    } catch (e: Exception) {
+                        console.warn("Error exporting class: $className", e)
+                    }
+                }
+            } finally {
+                monitor.onClassEnd(token)
             }
         }
 
@@ -451,32 +484,38 @@ class ApiScanner(private val project: Project) {
                     indicator?.fraction = index.toDouble() / total
                     LOG.info("search api from: $className")
 
-                    val matchingFrameworks = recognizer.matchingFrameworks(psiClass)
-                    if (matchingFrameworks.isEmpty()) {
-                        return@withPermit emptyList()
-                    }
-
-                    val matchingExporters = exporters.filter { exporter ->
-                        exporter.frameworkName in matchingFrameworks
-                    }
-
-                    val endpoints = mutableListOf<ApiEndpoint>()
-                    for (exporter in matchingExporters) {
-                        try {
-                            val exported = withTimeout(PER_CLASS_TIMEOUT_MS) {
-                                exporter.export(psiClass)
-                            }
-                            if (exported.isNotEmpty()) {
-                                LOG.info("Exporter ${exporter::class.simpleName} found ${exported.size} endpoints in $className")
-                                endpoints.addAll(exported)
-                            }
-                        } catch (e: TimeoutCancellationException) {
-                            console.warn("Export timed out for class: $className (>${PER_CLASS_TIMEOUT_MS})")
-                        } catch (e: Exception) {
-                            console.warn("Error exporting class: $className", e)
+                    val token = monitor.onClassStart(className)
+                    try {
+                        val matchingFrameworks = recognizer.matchingFrameworks(psiClass)
+                        if (matchingFrameworks.isEmpty()) {
+                            return@withPermit emptyList()
                         }
+
+                        val matchingExporters = exporters.filter { exporter ->
+                            exporter.frameworkName in matchingFrameworks
+                        }
+
+                        val endpoints = mutableListOf<ApiEndpoint>()
+                        for (exporter in matchingExporters) {
+                            try {
+                                val exported = withTimeout(PER_CLASS_TIMEOUT_MS) {
+                                    exporter.export(psiClass)
+                                }
+                                if (exported.isNotEmpty()) {
+                                    LOG.info("Exporter ${exporter::class.simpleName} found ${exported.size} endpoints in $className")
+                                    endpoints.addAll(exported)
+                                }
+                            } catch (e: TimeoutCancellationException) {
+                                monitor.onClassTimeout(className)
+                                console.warn("Export timed out for class: $className (>${PER_CLASS_TIMEOUT_MS}ms)")
+                            } catch (e: Exception) {
+                                console.warn("Error exporting class: $className", e)
+                            }
+                        }
+                        endpoints
+                    } finally {
+                        monitor.onClassEnd(token)
                     }
-                    endpoints
                 }
             }
         }.awaitAll().flatten()
