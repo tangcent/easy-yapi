@@ -244,6 +244,8 @@ class EndpointDetailsPanel(
     }
 
     private val jsonFileType = FileTypeManager.getInstance().getFileTypeByExtension("json")
+    private val xmlFileType = FileTypeManager.getInstance().getFileTypeByExtension("xml")
+    private val htmlFileType = FileTypeManager.getInstance().getFileTypeByExtension("html")
 
     /** Editor for pre-request script */
     private val preRequestScriptArea = EditorTextField("", project, jsonFileType).apply {
@@ -256,19 +258,19 @@ class EndpointDetailsPanel(
     }
 
     // Body area (editable, raw JSON with syntax highlighting)
-    /** Editor for request body with JSON syntax highlighting */
+    /** Editor for request body with syntax highlighting matched to the content type */
     private val bodyArea = EditorTextField("", project, jsonFileType).apply {
         setOneLineMode(false)
     }
 
-    /** Button to format/beautify JSON body */
+    /** Button to format/beautify the request body */
     private val formatBodyBtn = JButton("Format").apply {
-        toolTipText = "Format/Beautify JSON"
+        toolTipText = "Format/Beautify body"
         addActionListener { formatRequestBody() }
     }
 
     // Response body area
-    /** Editor for response body with JSON syntax highlighting (read-only) */
+    /** Editor for response body with syntax highlighting matched to the content type (read-only) */
     private val responseBodyArea = EditorTextField("", project, jsonFileType).apply {
         setOneLineMode(false)
         isViewer = true
@@ -296,6 +298,9 @@ class EndpointDetailsPanel(
     // Response body state
     /** Raw response body text */
     private var rawResponseBody: String = ""
+
+    /** The response body's content type, used to pick the formatter and highlighting */
+    private var responseContentType: String? = null
 
     /** Whether response is displayed in pretty JSON format */
     private var isPrettyJson: Boolean = true
@@ -838,6 +843,8 @@ class EndpointDetailsPanel(
             hostComboBox.selectedIndex = 0
         }
 
+        endpointContentType = null
+        applyFileType(bodyArea, null)
         bodyArea.text = EndpointDetailsPanelLogic.mergeJsonBody3(cache.baseBody, meta.body?.let { it.toJson() }, cache.body) ?: ""
     }
 
@@ -851,6 +858,8 @@ class EndpointDetailsPanel(
         }
         hostComboBox.selectedIndex = 0
 
+        endpointContentType = null
+        applyFileType(bodyArea, null)
         bodyArea.text = meta.body?.let { it.toJson() } ?: ""
     }
 
@@ -999,6 +1008,7 @@ class EndpointDetailsPanel(
         hasFormData = isFormData
         endpointContentType = cache.contentType ?: contentType
 
+        applyFileType(bodyArea, if (isFormData) null else endpointContentType)
         bodyArea.text = if (!isFormData) {
             EndpointDetailsPanelLogic.mergeJsonBody3(cache.baseBody, meta?.body?.let { it.toJson() }, cache.body) ?: ""
         } else ""
@@ -1061,6 +1071,7 @@ class EndpointDetailsPanel(
         hasFormData = isFormData
         endpointContentType = contentType
 
+        applyFileType(bodyArea, if (isFormData) null else endpointContentType)
         bodyArea.text = if (!isFormData) {
             meta?.body?.let { it.toJson() } ?: ""
         } else ""
@@ -1093,6 +1104,7 @@ class EndpointDetailsPanel(
         sendButton.text = "Send"
 
         rawResponseBody = ""
+        responseContentType = null
         isPrettyJson = true
         prettyToggleBtn.text = "Raw"
         responseBodyArea.text = ""
@@ -1114,9 +1126,12 @@ class EndpointDetailsPanel(
         if (demoJson.isBlank() || demoJson == "{}") return
 
         rawResponseBody = demoJson
+        // The example response is always serialized from the JSON model, so it is JSON.
+        responseContentType = null
         isPrettyJson = true
         prettyToggleBtn.text = "Raw"
-        responseBodyArea.text = formatJson(demoJson)
+        applyFileType(responseBodyArea, null)
+        responseBodyArea.text = EndpointDetailsPanelLogic.formatByContentType(demoJson, null)
         responseStatusLabel.text = "Example Response"
         responseStatusLabel.foreground = Color(0x888888)
     }
@@ -1322,9 +1337,11 @@ class EndpointDetailsPanel(
             sendButton.text = "Send"
 
             rawResponseBody = response.body
+            responseContentType = response.headers.firstOrNull { it.first.equals("Content-Type", ignoreCase = true) }?.second
             isPrettyJson = true
             prettyToggleBtn.text = "Raw"
-            responseBodyArea.text = if (response.isError) response.body else formatJson(response.body)
+            applyFileType(responseBodyArea, responseContentType)
+            responseBodyArea.text = if (response.isError) response.body else EndpointDetailsPanelLogic.formatByContentType(response.body, responseContentType)
 
             when {
                 response.statusCode != null -> {
@@ -1366,7 +1383,7 @@ class EndpointDetailsPanel(
         isPrettyJson = !isPrettyJson
         prettyToggleBtn.text = if (isPrettyJson) "Raw" else "Format"
         responseBodyArea.text = if (isPrettyJson) {
-            formatJson(rawResponseBody)
+            EndpointDetailsPanelLogic.formatByContentType(rawResponseBody, responseContentType)
         } else {
             rawResponseBody
         }
@@ -1477,11 +1494,33 @@ class EndpointDetailsPanel(
         return EndpointDetailsPanelLogic.buildFormParams(rows)
     }
 
-    private fun formatJson(json: String) = FormatterHelper.formatJson(json)
+    /**
+     * Maps a content type to the [com.intellij.openapi.fileTypes.FileType] used for syntax
+     * highlighting, falling back to JSON.
+     */
+    private fun fileTypeForContentType(contentType: String?) =
+        when (EndpointDetailsPanelLogic.formatCategoryOf(contentType)) {
+            EndpointDetailsPanelLogic.FormatCategory.XML -> xmlFileType
+            EndpointDetailsPanelLogic.FormatCategory.HTML -> htmlFileType
+            EndpointDetailsPanelLogic.FormatCategory.JSON -> jsonFileType
+        }
+
+    /**
+     * Switches [editor]'s syntax-highlighting file type to match [contentType] without
+     * disturbing its current text. [EditorTextField.setFileType] recreates the document,
+     * so the text is preserved and re-applied explicitly.
+     */
+    private fun applyFileType(editor: EditorTextField, contentType: String?) {
+        val target = fileTypeForContentType(contentType)
+        if (editor.fileType === target) return
+        val text = editor.text
+        editor.setFileType(target)
+        editor.text = text
+    }
 
     private fun formatRequestBody() {
         val currentText = bodyArea.text
-        val formatted = formatJson(currentText)
+        val formatted = EndpointDetailsPanelLogic.formatByContentType(currentText, endpointContentType)
         if (formatted != currentText) {
             bodyArea.text = formatted
         }
@@ -1933,4 +1972,40 @@ internal object EndpointDetailsPanelLogic {
             }
         }
     }
+
+    /**
+     * The format family a body belongs to, driving formatter selection and syntax highlighting.
+     */
+    enum class FormatCategory { XML, HTML, JSON }
+
+    /**
+     * Classifies a media type into a [FormatCategory].
+     *
+     * Dispatch rules (first match wins):
+     * - `application/xml` / `text/xml` (or any `.../xml`, `.../...+xml`) → [FormatCategory.XML]
+     * - `text/html` / `application/xhtml+xml` → [FormatCategory.HTML]
+     * - otherwise (including null/blank, `application/json`, `text/plain`) → [FormatCategory.JSON]
+     */
+    fun formatCategoryOf(contentType: String?): FormatCategory {
+        val ct = contentType?.trim()?.lowercase() ?: ""
+        return when {
+            // Check HTML before XML: `application/xhtml+xml` also ends with `xml`/contains `+xml`.
+            ct == "text/html" || ct == "application/xhtml+xml" -> FormatCategory.HTML
+            ct.endsWith("xml") || ct.contains("+xml") -> FormatCategory.XML
+            else -> FormatCategory.JSON
+        }
+    }
+
+    /**
+     * Pretty-prints [text] using the formatter matching [contentType].
+     *
+     * The generic formatters live in [FormatterHelper]; this dispatches to the right one
+     * based on the media type and falls back to JSON for unknown or missing types.
+     */
+    fun formatByContentType(text: String, contentType: String?): String =
+        when (formatCategoryOf(contentType)) {
+            FormatCategory.XML -> FormatterHelper.formatXml(text)
+            FormatCategory.HTML -> FormatterHelper.formatHtml(text)
+            FormatCategory.JSON -> FormatterHelper.formatJson(text)
+        }
 }
