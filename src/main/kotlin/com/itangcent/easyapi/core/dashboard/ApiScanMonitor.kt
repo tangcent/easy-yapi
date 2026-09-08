@@ -114,7 +114,7 @@ class ApiScanMonitor(private val project: Project) : IdeaLog {
         // and the whole monitor is dead weight when it is needed most.
         val summary = scanSummary(elapsed)
         LOG.info(summary)
-        console.debug(summary)
+        console.info(summary)
     }
 
     /**
