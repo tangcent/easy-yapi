@@ -279,4 +279,96 @@ class HttpResponseWrapperTest {
         wrapper.discard()
         assertTrue(wrapper.isDiscarded())
     }
+
+    private fun wrapper(response: HttpResponse): HttpResponseWrapper {
+        val request = HttpRequestWrapper(HttpRequest(url = "http://test.com", method = "GET"))
+        return HttpResponseWrapper(response, request)
+    }
+
+    @Test
+    fun `bytes returns null for text body`() {
+        val w = wrapper(HttpResponse(code = 200, body = "hello", responseBody = ResponseBody.Text("hello")))
+        assertNull(w.bytes())
+    }
+
+    @Test
+    fun `bytes returns raw bytes for Bytes body`() {
+        val bytes = byteArrayOf(0, 1, 2, 0xFF.toByte())
+        val w = wrapper(HttpResponse(code = 200, responseBody = ResponseBody.Bytes(bytes)))
+        assertArrayEquals(bytes, w.bytes())
+    }
+
+    @Test
+    fun `bytes returns null for spilled file body`() {
+        val src = java.nio.file.Files.createTempFile("easyapi-wrapper", null)
+        try {
+            val w = wrapper(HttpResponse(code = 200, responseBody = ResponseBody.File(src)))
+            assertNull(w.bytes())
+        } finally {
+            java.nio.file.Files.deleteIfExists(src)
+        }
+    }
+
+    @Test
+    fun `saveBody writes text body`() {
+        val w = wrapper(HttpResponse(code = 200, body = "hello", responseBody = ResponseBody.Text("hello")))
+        val target = java.nio.file.Files.createTempFile("easyapi-wrapper", null).toFile()
+        try {
+            assertTrue(w.saveBody(target.path))
+            assertEquals("hello", target.readText(Charsets.UTF_8))
+        } finally {
+            target.delete()
+        }
+    }
+
+    @Test
+    fun `saveBody writes binary body`() {
+        val bytes = byteArrayOf(0, 1, 2, 0xFF.toByte())
+        val w = wrapper(HttpResponse(code = 200, responseBody = ResponseBody.Bytes(bytes)))
+        val target = java.nio.file.Files.createTempFile("easyapi-wrapper", null).toFile()
+        try {
+            assertTrue(w.saveBody(target.path))
+            assertArrayEquals(bytes, target.readBytes())
+        } finally {
+            target.delete()
+        }
+    }
+
+    @Test
+    fun `saveBody copies spilled file`() {
+        val src = java.nio.file.Files.createTempFile("easyapi-wrapper-src", null)
+        java.nio.file.Files.write(src, byteArrayOf(9, 8, 7))
+        val w = wrapper(HttpResponse(code = 200, responseBody = ResponseBody.File(src)))
+        val target = java.nio.file.Files.createTempFile("easyapi-wrapper", null).toFile()
+        try {
+            assertTrue(w.saveBody(target.path))
+            assertArrayEquals(byteArrayOf(9, 8, 7), target.readBytes())
+        } finally {
+            java.nio.file.Files.deleteIfExists(src)
+            target.delete()
+        }
+    }
+
+    @Test
+    fun `saveBody falls back to body text when no carrier`() {
+        val w = wrapper(HttpResponse(code = 200, body = "legacy"))
+        val target = java.nio.file.Files.createTempFile("easyapi-wrapper", null).toFile()
+        try {
+            assertTrue(w.saveBody(target.path))
+            assertEquals("legacy", target.readText(Charsets.UTF_8))
+        } finally {
+            target.delete()
+        }
+    }
+
+    @Test
+    fun `saveBody returns false when no body at all`() {
+        val w = wrapper(HttpResponse(code = 204))
+        val target = java.nio.file.Files.createTempFile("easyapi-wrapper", null).toFile()
+        try {
+            assertFalse(w.saveBody(target.path))
+        } finally {
+            target.delete()
+        }
+    }
 }

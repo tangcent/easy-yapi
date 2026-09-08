@@ -289,4 +289,20 @@ class EndpointDetailsPanelLogicTest {
         val result = EndpointDetailsPanelLogic.formatByContentType("""{"a":1}""", null)
         assertTrue(result.contains("\n"))
     }
+
+    // ── truncateForEditor ───────────────────────────────────────────────────
+
+    @Test
+    fun `truncateForEditor keeps text within limit unchanged`() {
+        val text = "short body"
+        assertEquals(text, EndpointDetailsPanelLogic.truncateForEditor(text))
+    }
+
+    @Test
+    fun `truncateForEditor replaces oversized text with placeholder`() {
+        val huge = "x".repeat(EndpointDetailsPanelLogic.MAX_EDITOR_RESPONSE_CHARS + 1)
+        val result = EndpointDetailsPanelLogic.truncateForEditor(huge)
+        assertTrue(result.length < huge.length)
+        assertTrue(result.contains("too large"))
+    }
 }

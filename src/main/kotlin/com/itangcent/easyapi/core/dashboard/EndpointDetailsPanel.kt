@@ -1,7 +1,11 @@
 package com.itangcent.easyapi.core.dashboard
 
 import com.intellij.openapi.fileTypes.FileTypeManager
+import com.intellij.openapi.fileChooser.FileChooserFactory
+import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -302,6 +306,12 @@ class EndpointDetailsPanel(
     /** The response body's content type, used to pick the formatter and highlighting */
     private var responseContentType: String? = null
 
+    /** The current response body carrier (text / bytes / spilled file); null when no response */
+    private var currentResponseBody: ResponseBody? = null
+
+    /** The raw `Content-Disposition` header of the current response, used to suggest a file name */
+    private var responseContentDisposition: String? = null
+
     /** Whether response is displayed in pretty JSON format */
     private var isPrettyJson: Boolean = true
 
@@ -316,6 +326,13 @@ class EndpointDetailsPanel(
     private val copyResponseBtn = JButton("Copy").apply {
         toolTipText = "Copy response body to clipboard"
         addActionListener { copyResponseBody() }
+    }
+
+    /** Button to save a binary response body to disk; hidden for text responses */
+    private val saveResponseBtn = JButton("Save as…").apply {
+        toolTipText = "Save the response body to a file"
+        isVisible = false
+        addActionListener { saveResponseBody() }
     }
 
     /** Tab pane for request parameters (Path, Params, Headers, Form/Body) */
@@ -403,6 +420,8 @@ class EndpointDetailsPanel(
                 add(responseStatusLabel)
                 add(Box.createHorizontalStrut(8))
                 add(copyResponseBtn)
+                add(Box.createHorizontalStrut(4))
+                add(saveResponseBtn)
                 add(Box.createHorizontalStrut(8))
             }, BorderLayout.EAST)
         }
@@ -1103,10 +1122,15 @@ class EndpointDetailsPanel(
         sendButton.isEnabled = true
         sendButton.text = "Send"
 
+        (currentResponseBody as? ResponseBody.File)?.let { deleteTempFile(it) }
+        currentResponseBody = null
         rawResponseBody = ""
         responseContentType = null
+        responseContentDisposition = null
         isPrettyJson = true
         prettyToggleBtn.text = "Raw"
+        prettyToggleBtn.isVisible = true
+        saveResponseBtn.isVisible = false
         responseBodyArea.text = ""
         responseHeadersTableModel.rowCount = 0
         responseStatusLabel.text = ""
@@ -1125,11 +1149,16 @@ class EndpointDetailsPanel(
         val demoJson = responseBody.toJson()
         if (demoJson.isBlank() || demoJson == "{}") return
 
+        (currentResponseBody as? ResponseBody.File)?.let { deleteTempFile(it) }
+        currentResponseBody = null
         rawResponseBody = demoJson
         // The example response is always serialized from the JSON model, so it is JSON.
         responseContentType = null
+        responseContentDisposition = null
         isPrettyJson = true
         prettyToggleBtn.text = "Raw"
+        prettyToggleBtn.isVisible = true
+        saveResponseBtn.isVisible = false
         applyFileType(responseBodyArea, null)
         responseBodyArea.text = EndpointDetailsPanelLogic.formatByContentType(demoJson, null)
         responseStatusLabel.text = "Example Response"
@@ -1338,10 +1367,33 @@ class EndpointDetailsPanel(
 
             rawResponseBody = response.body
             responseContentType = response.headers.firstOrNull { it.first.equals("Content-Type", ignoreCase = true) }?.second
+            responseContentDisposition = response.headers.firstOrNull { it.first.equals("Content-Disposition", ignoreCase = true) }?.second
+
+            // Clean up any previously spilled temp file before replacing the carrier.
+            (currentResponseBody as? ResponseBody.File)?.let { deleteTempFile(it) }
+            currentResponseBody = response.responseBody
+
             isPrettyJson = true
             prettyToggleBtn.text = "Raw"
-            applyFileType(responseBodyArea, responseContentType)
-            responseBodyArea.text = if (response.isError) response.body else EndpointDetailsPanelLogic.formatByContentType(response.body, responseContentType)
+
+            val responseBody = response.responseBody
+            if (responseBody != null && responseBody !is ResponseBody.Text) {
+                // Binary response: show a metadata summary and surface "Save as".
+                val description = ResponseRendererRegistry.lookup(responseBody, responseContentType)
+                    .describe(responseBody, responseContentType)
+                applyFileType(responseBodyArea, null)
+                responseBodyArea.text = description.text
+                saveResponseBtn.isVisible = description.showSaveAs
+                prettyToggleBtn.isVisible = false
+            } else {
+                // Text response: preserve the existing editor/formatting path.
+                saveResponseBtn.isVisible = false
+                prettyToggleBtn.isVisible = true
+                applyFileType(responseBodyArea, responseContentType)
+                val formatted = if (response.isError) response.body
+                else EndpointDetailsPanelLogic.formatByContentType(response.body, responseContentType)
+                responseBodyArea.text = EndpointDetailsPanelLogic.truncateForEditor(formatted)
+            }
 
             when {
                 response.statusCode != null -> {
@@ -1397,6 +1449,26 @@ class EndpointDetailsPanel(
             clipboard.setContents(selection, null)
             showCopyNotification()
         }
+    }
+
+    private fun saveResponseBody() {
+        val body = currentResponseBody ?: return
+        val defaultName = ResponseBodyClassifier.extractFilename(responseContentDisposition) ?: "download"
+        val descriptor = FileSaverDescriptor("Save Response", "Choose where to save the response body")
+        val saver = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
+        val wrapper: VirtualFileWrapper? = saver.save(null as VirtualFile?, defaultName)
+        val target: java.io.File = wrapper?.file ?: return
+        val ok = runCatching { ResponseBodyWriter.save(body, target) }.getOrDefault(false)
+        if (ok) {
+            NotificationUtils.notifyInfo(project, "EasyApi", "Response saved to ${target.path}")
+        } else {
+            NotificationUtils.notifyError(project, "EasyApi", "Failed to save response")
+        }
+    }
+
+    private fun deleteTempFile(fileBody: ResponseBody.File) {
+        runCatching { java.nio.file.Files.deleteIfExists(fileBody.path) }
+            .onFailure { LOG.warn("Failed to delete temp response file: ${fileBody.path}", it) }
     }
 
     private fun showCopyNotification() {
@@ -1813,6 +1885,27 @@ class EndpointDetailsPanel(
  * No UI dependencies — all methods are stateless or take plain data as arguments.
  */
 internal object EndpointDetailsPanelLogic {
+
+    /**
+     * Text responses longer than this many characters are not loaded into the editor.
+     * A large body would otherwise freeze the EDT / risk OOM when materialized into an
+     * `EditorTextField`.
+     */
+    const val MAX_EDITOR_RESPONSE_CHARS: Int = 512_000
+
+    /**
+     * Truncates an oversized text body into a human-readable placeholder so the editor is
+     * never handed a multi-megabyte string. Returns the original text when within limits.
+     */
+    fun truncateForEditor(text: String): String {
+        if (text.length <= MAX_EDITOR_RESPONSE_CHARS) return text
+        return buildString {
+            appendLine("[Response body too large to display — ${text.length} characters]")
+            appendLine()
+            appendLine("The body is truncated for performance. Use Save as / Copy to access the full content.")
+        }
+    }
+
 
     /**
      * Merges the model-generated request body with the user's cached edits.

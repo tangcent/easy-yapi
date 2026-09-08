@@ -274,6 +274,77 @@ class PmResponseTest {
         )
         response.to.have.jsonSchema(mapOf("type" to "object"))
     }
+
+    @Test
+    fun `bytes returns null by default`() {
+        assertNull(jsonResponse().bytes())
+    }
+
+    @Test
+    fun `bytes returns the raw bytes when provided`() {
+        val bytes = byteArrayOf(0, 1, 2, 0xFF.toByte())
+        val response = PmResponse(
+            code = 200, status = "OK", headers = PmHeaderList(),
+            responseTime = 0, responseSize = 4, rawBody = "", bytes = bytes
+        )
+        assertArrayEquals(bytes, response.bytes())
+    }
+
+    @Test
+    fun `saveBody writes text body`() {
+        val target = java.nio.file.Files.createTempFile("easyapi-pm", null).toFile()
+        try {
+            assertTrue(jsonResponse().saveBody(target.path))
+            assertEquals(jsonResponse().text(), target.readText(Charsets.UTF_8))
+        } finally {
+            target.delete()
+        }
+    }
+
+    @Test
+    fun `saveBody writes bytes body`() {
+        val bytes = byteArrayOf(0, 1, 2, 0xFF.toByte())
+        val response = PmResponse(
+            code = 200, status = "OK", headers = PmHeaderList(),
+            responseTime = 0, responseSize = 4, rawBody = "", bytes = bytes
+        )
+        val target = java.nio.file.Files.createTempFile("easyapi-pm", null).toFile()
+        try {
+            assertTrue(response.saveBody(target.path))
+            assertArrayEquals(bytes, target.readBytes())
+        } finally {
+            target.delete()
+        }
+    }
+
+    @Test
+    fun `saveBody copies spilled file body`() {
+        val src = java.nio.file.Files.createTempFile("easyapi-src", null)
+        java.nio.file.Files.write(src, byteArrayOf(9, 8, 7))
+        val response = PmResponse(
+            code = 200, status = "OK", headers = PmHeaderList(),
+            responseTime = 0, responseSize = 3, rawBody = "",
+            responseBody = com.itangcent.easyapi.core.http.ResponseBody.File(src)
+        )
+        val target = java.nio.file.Files.createTempFile("easyapi-pm", null).toFile()
+        try {
+            assertTrue(response.saveBody(target.path))
+            assertArrayEquals(byteArrayOf(9, 8, 7), target.readBytes())
+        } finally {
+            java.nio.file.Files.deleteIfExists(src)
+            target.delete()
+        }
+    }
+
+    @Test
+    fun `saveBody returns false for empty body`() {
+        val target = java.nio.file.Files.createTempFile("easyapi-pm", null).toFile()
+        try {
+            assertFalse(errorResponse().saveBody(target.path))
+        } finally {
+            target.delete()
+        }
+    }
 }
 
 class JsonSchemaValidatorTest {

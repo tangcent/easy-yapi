@@ -33,11 +33,36 @@ class PmResponse(
     val headers: PmHeaderList,
     val responseTime: Long,
     val responseSize: Long,
-    private val rawBody: String
+    private val rawBody: String,
+    private val bytes: ByteArray? = null,
+    private val responseBody: com.itangcent.easyapi.core.http.ResponseBody? = null
 ) {
 
     /** Returns the raw response body as a string. */
     fun text(): String = rawBody
+
+    /**
+     * Returns the raw response body as bytes, or null when the body is not held in memory
+     * as bytes (text bodies, spilled large files, or no body).
+     */
+    fun bytes(): ByteArray? = bytes
+
+    /**
+     * Saves the response body to [path], preserving raw bytes for binary responses.
+     *
+     * Text bodies are UTF-8 encoded; in-memory bytes are written verbatim; a binary body
+     * spilled to a temporary file is copied directly, without reading it back into memory.
+     *
+     * @return true if a body was written, false if there is no body to save
+     */
+    fun saveBody(path: String): Boolean {
+        val body = responseBody ?: when {
+            bytes != null -> com.itangcent.easyapi.core.http.ResponseBody.Bytes(bytes!!)
+            rawBody.isNotEmpty() -> com.itangcent.easyapi.core.http.ResponseBody.Text(rawBody)
+            else -> return false
+        }
+        return com.itangcent.easyapi.core.http.ResponseBodyWriter.save(body, java.io.File(path))
+    }
 
     /**
      * Parses the response body as JSON using Gson.

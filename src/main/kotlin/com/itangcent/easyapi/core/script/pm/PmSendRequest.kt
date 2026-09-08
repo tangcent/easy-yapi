@@ -2,6 +2,7 @@ package com.itangcent.easyapi.core.script.pm
 
 import com.itangcent.easyapi.core.http.HttpClient
 import com.itangcent.easyapi.core.http.HttpRequest
+import com.itangcent.easyapi.core.http.HttpResponse
 import com.itangcent.easyapi.core.http.KeyValue
 import groovy.lang.Closure
 
@@ -45,15 +46,7 @@ class PmSendRequest(private val httpClient: HttpClient?) {
             val response = kotlinx.coroutines.runBlocking {
                 httpClient.execute(request)
             }
-            val pmResponse = PmResponse(
-                code = response.code,
-                status = "",
-                headers = PmHeaderList(response.headers.map { (k, v) -> k to v.joinToString(", ") }),
-                responseTime = 0,
-                responseSize = response.body?.length?.toLong() ?: 0,
-                rawBody = response.body ?: ""
-            )
-            closure.call(pmResponse)
+            closure.call(response.toPmResponse())
         } catch (e: Exception) {
             closure.call(
                 PmResponse(
@@ -125,15 +118,7 @@ class PmSendRequest(private val httpClient: HttpClient?) {
             val response = kotlinx.coroutines.runBlocking {
                 httpClient.execute(request)
             }
-            val pmResponse = PmResponse(
-                code = response.code,
-                status = "",
-                headers = PmHeaderList(response.headers.map { (k, v) -> k to v.joinToString(", ") }),
-                responseTime = 0,
-                responseSize = response.body?.length?.toLong() ?: 0,
-                rawBody = response.body ?: ""
-            )
-            closure.call(pmResponse)
+            closure.call(response.toPmResponse())
         } catch (e: Exception) {
             closure.call(
                 PmResponse(
@@ -179,6 +164,20 @@ class PmSendRequest(private val httpClient: HttpClient?) {
             call(*params)
         }
         return callback
+    }
+
+    private fun HttpResponse.toPmResponse(): PmResponse {
+        val carrier = responseBody ?: body?.let { com.itangcent.easyapi.core.http.ResponseBody.Text(it) }
+        return PmResponse(
+            code = code,
+            status = "",
+            headers = PmHeaderList(headers.map { (k, v) -> k to v.joinToString(", ") }),
+            responseTime = 0,
+            responseSize = com.itangcent.easyapi.core.http.ResponseBodyReader.sizeOf(carrier) ?: 0L,
+            rawBody = body ?: "",
+            bytes = (carrier as? com.itangcent.easyapi.core.http.ResponseBody.Bytes)?.value,
+            responseBody = carrier
+        )
     }
 }
 

@@ -178,6 +178,26 @@ class HttpResponseWrapper(
     fun code(): Int = delegate.code
     fun headers(): Map<String, List<String>> = delegate.headers
     fun body(): String? = delegate.body
+
+    /**
+     * Returns the raw response body as bytes, or null when the body is not held in memory
+     * as bytes (text bodies, spilled large files, or no body).
+     */
+    fun bytes(): ByteArray? = (delegate.responseBody as? ResponseBody.Bytes)?.value
+
+    /**
+     * Saves the response body to [path], preserving raw bytes for binary responses.
+     *
+     * Text bodies are UTF-8 encoded; in-memory bytes are written verbatim; a binary body
+     * spilled to a temporary file is copied directly, without reading it back into memory.
+     *
+     * @return true if a body was written, false if there is no body to save
+     */
+    fun saveBody(path: String): Boolean {
+        val carrier = delegate.responseBody ?: delegate.body?.let { ResponseBody.Text(it) } ?: return false
+        return ResponseBodyWriter.save(carrier, java.io.File(path))
+    }
+
     fun request(): HttpRequestWrapper = request
 
     fun discard() {

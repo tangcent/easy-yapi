@@ -132,16 +132,46 @@ fun HttpRequest.buildUrl(): String {
 }
 
 /**
+ * The body of an HTTP response, represented as a first-class carrier.
+ *
+ * Text responses are kept as [Text]; binary responses are either held in memory
+ * as [Bytes] (small files) or spilled to a temporary file as [File] (large files),
+ * so that the raw bytes survive without being corrupted by UTF-8 decoding.
+ */
+sealed class ResponseBody {
+
+    /** Text response (the equivalent of the legacy [HttpResponse.body]). */
+    data class Text(val value: String) : ResponseBody()
+
+    /** Small binary response held in memory. */
+    data class Bytes(val value: ByteArray) : ResponseBody() {
+        override fun equals(other: Any?): Boolean = other is Bytes && value.contentEquals(other.value)
+        override fun hashCode(): Int = value.contentHashCode()
+    }
+
+    /** Large binary response spilled to a temporary file; only the path is held in memory. */
+    data class File(val path: java.nio.file.Path) : ResponseBody()
+
+    companion object {
+        /** Binary responses larger than this (in bytes) are spilled to a temporary file. */
+        const val MAX_IN_MEMORY_BYTES: Long = 10L * 1024 * 1024
+    }
+}
+
+/**
  * Represents an HTTP response.
  *
  * @param code The HTTP status code
  * @param headers The response headers
- * @param body The response body
+ * @param body The response body as text; kept as the mirror of [responseBody] when it is
+ *   [ResponseBody.Text] for backward compatibility with existing callers
+ * @param responseBody The first-class response carrier (text / in-memory bytes / spilled file)
  */
 data class HttpResponse(
     val code: Int,
     val headers: Map<String, List<String>> = emptyMap(),
-    val body: String? = null
+    val body: String? = null,
+    val responseBody: ResponseBody? = null
 )
 
 /**

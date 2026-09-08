@@ -469,11 +469,13 @@ Type: `com.itangcent.easyapi.core.http.HttpRequestWrapper` — Script-facing HTT
 Type: `com.itangcent.easyapi.core.http.HttpResponseWrapper` — Script-facing HTTP response wrapper.
 
 - `body(): String?`
+- `bytes(): ByteArray?`
 - `code(): Int`
 - `discard(): Unit`
 - `headers(): Map<String, List<String>>`
 - `isDiscarded(): Boolean`
 - `request(): com.itangcent.easyapi.core.http.HttpRequestWrapper`
+- `saveBody(path: String): Boolean`
 
 
 ---
