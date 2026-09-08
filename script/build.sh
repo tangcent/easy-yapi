@@ -1,14 +1,8 @@
 #!/usr/bin/env bash
+source "$(dirname "$0")/_common.sh"
+trap maybe_stop_daemon_on_memory_pressure EXIT
 
-SOURCE="$0"
-while [[ -h "$SOURCE"  ]]; do
-    scriptDir="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ ${SOURCE} != /*  ]] && SOURCE="$scriptDir/$SOURCE"
-done
-scriptDir="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-basedir=${scriptDir%/*}
-cd "${basedir}"
+cd "$(dirname "$0")/.." || exit 1
 
 ./gradlew clean build -x test "$@"
 

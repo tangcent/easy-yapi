@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
+source "$(dirname "$0")/_common.sh"
+trap maybe_stop_daemon_on_memory_pressure EXIT
 
 set -e
 
-SCRIPT_SOURCE="$0"
-while [[ -h "$SCRIPT_SOURCE" ]]; do
-    scriptDir="$( cd -P "$( dirname "$SCRIPT_SOURCE" )" && pwd )"
-    SCRIPT_SOURCE="$(readlink "$SCRIPT_SOURCE")"
-    [[ ${SCRIPT_SOURCE} != /* ]] && SCRIPT_SOURCE="$scriptDir/$SCRIPT_SOURCE"
-done
-scriptDir="$( cd -P "$( dirname "$SCRIPT_SOURCE" )" && pwd )"
-basedir=${scriptDir%/*}
-cd "${basedir}"
+cd "$(dirname "$0")/.." || exit 1
 
 last_version=$(sed -n 's/^pluginBaseVersion=//p' gradle.properties | head -1 | tr -d '[:space:]')
 echo "Last version: ${last_version}"
