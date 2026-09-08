@@ -537,15 +537,19 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             }
         }
 
-        engine.evaluate(RuleKeys.JSON_CLASS_PARSE_AFTER, psiClass)
-        visited.remove(qualifiedName)
-
-        // Apply field ordering if field.order rules are configured
+        // Apply field ordering if field.order rules are configured. This must run
+        // BEFORE json.class.parse.after: rules like the Jackson JsonPropertyOrder
+        // support push their state in json.class.parse.before and pop it in
+        // json.class.parse.after, so ordering evaluated after the cleanup hook
+        // loses the session state and silently degrades to declaration order.
         val orderedFields = applyFieldOrdering(fields, accessibleFields, psiClass, engine)
         if (orderedFields != null) {
             fields.clear()
             fields.putAll(orderedFields)
         }
+
+        engine.evaluate(RuleKeys.JSON_CLASS_PARSE_AFTER, psiClass)
+        visited.remove(qualifiedName)
 
         return result
     }

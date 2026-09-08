@@ -10,6 +10,7 @@ import com.intellij.psi.PsiManager
 import com.itangcent.easyapi.core.dashboard.ApiScanner
 import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.recognizer.CompositeApiClassRecognizer
+import com.itangcent.easyapi.core.export.recognizer.MetaAnnotationResolver
 import com.itangcent.easyapi.core.internal.threading.IdeDispatchers
 import com.itangcent.easyapi.core.internal.threading.read
 import com.itangcent.easyapi.core.logging.IdeaLog
@@ -507,11 +508,16 @@ class ApiIndexManager internal constructor(
     }
 
     private suspend fun executeFullScan(session: ScanSession, source: String): ApiScanResult {
+        val startedAt = System.currentTimeMillis()
         return try {
             LOG.info(
                 "API full scan generation=${session.generation} source=$source result=started"
             )
             val endpoints = scanExecutor.scanAll()
+            // Split timings: scanAll() is the ApiScanner pass (already reported by
+            // ApiScanMonitor), commit is the index swap + mutation publish. Without
+            // this split a slow commit is indistinguishable from a slow scan.
+            val scanMs = System.currentTimeMillis() - startedAt
             val mutation = synchronized(sessionLock) {
                 if (!isCurrentLocked(session)) {
                     null
@@ -519,13 +525,21 @@ class ApiIndexManager internal constructor(
                     apiIndex.replaceEndpointsSnapshot(endpoints)
                 }
             }
+            val commitMs = System.currentTimeMillis() - startedAt - scanMs
             if (mutation == null) {
+                LOG.info(
+                    "API full scan generation=${session.generation} source=$source " +
+                        "result=stale elapsed=${System.currentTimeMillis() - startedAt}ms " +
+                        "scan=${scanMs}ms endpoints=${endpoints.size}"
+                )
                 ApiScanResult.Rejected(currentGeneration(), ApiScanRejectionReason.STALE_GENERATION)
             } else {
                 apiIndex.publishMutation(mutation, "API full scan committed")
                 LOG.info(
                     "API full scan generation=${session.generation} source=$source " +
-                        "result=success endpoints=${endpoints.size}"
+                        "result=success endpoints=${endpoints.size} " +
+                        "elapsed=${System.currentTimeMillis() - startedAt}ms " +
+                        "scan=${scanMs}ms commit=${commitMs}ms"
                 )
                 ApiScanResult.Success(session.generation, endpoints.size)
             }
@@ -533,7 +547,8 @@ class ApiIndexManager internal constructor(
             throw e
         } catch (e: Exception) {
             LOG.warn(
-                "API full scan generation=${session.generation} source=$source result=failed",
+                "API full scan generation=${session.generation} source=$source result=failed " +
+                    "elapsed=${System.currentTimeMillis() - startedAt}ms",
                 e
             )
             ApiScanResult.Failed(session.generation, e)
@@ -545,6 +560,7 @@ class ApiIndexManager internal constructor(
         filePaths: List<String>,
         source: String
     ): ApiScanResult {
+        val startedAt = System.currentTimeMillis()
         return try {
             val changedClasses = findClassesFromFiles(filePaths)
             if (changedClasses.isEmpty()) {
@@ -558,7 +574,9 @@ class ApiIndexManager internal constructor(
             val changedClassNames = read {
                 changedClasses.mapNotNull { it.qualifiedName }.toSet()
             }
+            val scanStartedAt = System.currentTimeMillis()
             val endpoints = scanExecutor.scanClasses(changedClasses)
+            val scanMs = System.currentTimeMillis() - scanStartedAt
             val classEndpoints = changedClassNames.associateWith { className ->
                 endpoints.filter { it.className == className }
             }
@@ -569,6 +587,7 @@ class ApiIndexManager internal constructor(
                     apiIndex.updateEndpointsByClassesSnapshot(classEndpoints)
                 }
             }
+            val commitMs = System.currentTimeMillis() - scanStartedAt - scanMs
             if (mutation == null) {
                 ApiScanResult.Rejected(currentGeneration(), ApiScanRejectionReason.STALE_GENERATION)
             } else {
@@ -576,7 +595,9 @@ class ApiIndexManager internal constructor(
                 session.lastIncrementalScanTime = System.currentTimeMillis()
                 LOG.info(
                     "API incremental scan generation=${session.generation} source=$source " +
-                        "result=success endpoints=${endpoints.size}"
+                        "result=success endpoints=${endpoints.size} classes=${changedClasses.size} " +
+                        "elapsed=${System.currentTimeMillis() - startedAt}ms " +
+                        "scan=${scanMs}ms commit=${commitMs}ms"
                 )
                 ApiScanResult.Success(session.generation, endpoints.size)
             }
@@ -585,7 +606,8 @@ class ApiIndexManager internal constructor(
         } catch (e: Exception) {
             LOG.warn(
                 "API incremental scan generation=${session.generation} source=$source " +
-                    "result=failed; scheduling full scan",
+                    "result=failed elapsed=${System.currentTimeMillis() - startedAt}ms; " +
+                    "scheduling full scan",
                 e
             )
             enqueueFull(session, FullScanRequest("incremental-fallback", null))
@@ -636,7 +658,11 @@ class ApiIndexManager internal constructor(
     private fun isApiClassFast(psiClass: PsiClass): Boolean {
         val annotationNames = psiClass.annotations.mapNotNull { it.qualifiedName }
         val targets = targetAnnotations()
-        return annotationNames.any { it in targets }
+        if (annotationNames.any { it in targets }) return true
+        // Also match meta-annotated classes (e.g. a custom annotation that is
+        // itself @RestController) so incremental scans align with the full scan
+        // and don't fall back to a full re-scan for such classes.
+        return MetaAnnotationResolver.hasMetaAnnotationSync(psiClass, targets)
     }
 
     private fun rejectQueuedFullRequests(session: ScanSession) {
