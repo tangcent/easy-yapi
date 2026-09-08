@@ -275,13 +275,16 @@ class RequestExecutor(private val project: Project) : IdeaLog {
         val response = httpClient.execute(request)
         LOG.info("Response: status=${response.code}, bodyLength=${response.body?.length ?: 0}")
 
+        val responseBody = response.responseBody
         val pmResponse = PmResponse(
             code = response.code,
             status = "",
             headers = PmHeaderList(response.headers.map { (k, v) -> k to v.joinToString(", ") }),
             responseTime = 0,
-            responseSize = response.body?.length?.toLong() ?: 0,
-            rawBody = response.body ?: ""
+            responseSize = ResponseBodyReader.sizeOf(responseBody) ?: 0L,
+            rawBody = response.body ?: "",
+            bytes = (responseBody as? ResponseBody.Bytes)?.value,
+            responseBody = responseBody
         )
 
         var testResults: List<TestResult>? = null
@@ -329,6 +332,7 @@ class RequestExecutor(private val project: Project) : IdeaLog {
 
         return RequestResult(
             body = response.body ?: "",
+            responseBody = responseBody,
             isError = response.code !in 200..299,
             statusCode = response.code,
             headers = response.headers.map { (k, v) -> k to v.joinToString(", ") },
@@ -360,6 +364,7 @@ class RequestExecutor(private val project: Project) : IdeaLog {
 
         return RequestResult(
             body = response.body ?: "",
+            responseBody = response.responseBody,
             isError = response.code !in 200..299,
             statusCode = response.code,
             headers = response.headers.map { (k, v) -> k to v.joinToString(", ") }
@@ -483,6 +488,7 @@ data class GrpcRequestInput(
  * The caller is responsible for rendering it in the UI.
  *
  * @property body The response body text
+ * @property responseBody The first-class response carrier (text / in-memory bytes / spilled file)
  * @property isError Whether the response indicates an error
  * @property statusCode The HTTP status code or gRPC status code
  * @property headers The response headers as name-value pairs
@@ -491,6 +497,7 @@ data class GrpcRequestInput(
  */
 data class RequestResult(
     val body: String,
+    val responseBody: ResponseBody? = null,
     val isError: Boolean,
     val statusCode: Int? = null,
     val headers: List<Pair<String, String>> = emptyList(),

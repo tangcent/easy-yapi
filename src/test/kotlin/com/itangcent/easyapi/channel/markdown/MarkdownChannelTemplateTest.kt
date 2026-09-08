@@ -427,6 +427,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
     /** Sends a UTF-8 response body with the given status code. */
     private fun sendResponse(exchange: HttpExchange, status: Int, body: String) {
         val bytes = body.toByteArray(Charsets.UTF_8)
+        exchange.responseHeaders.set("Content-Type", "text/plain; charset=utf-8")
         exchange.sendResponseHeaders(status, bytes.size.toLong())
         exchange.responseBody.use { it.write(bytes) }
     }

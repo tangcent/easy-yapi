@@ -80,9 +80,17 @@ class IntelliJHttpClient(
             }
             val code = conn.responseCode
             val input = if (code in 200..299) conn.inputStream else conn.errorStream
-            val responseBody = input?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
             val headers = conn.headerFields.filterKeys { it != null }.mapValues { (_, v) -> v }
-            HttpResponse(code = code, headers = headers, body = responseBody)
+            val contentType = headers.entries
+                .firstOrNull { it.key?.equals("Content-Type", ignoreCase = true) == true }
+                ?.value?.firstOrNull()
+            val responseBody = ResponseBodyReader.read(input, contentType, conn.contentLengthLong)
+            HttpResponse(
+                code = code,
+                headers = headers,
+                body = (responseBody as? ResponseBody.Text)?.value,
+                responseBody = responseBody
+            )
         }
     }
 

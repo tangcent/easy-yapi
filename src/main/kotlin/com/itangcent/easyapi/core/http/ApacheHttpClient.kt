@@ -17,7 +17,6 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.message.BasicNameValuePair
-import org.apache.http.util.EntityUtils
 import javax.net.ssl.SSLContext
 import javax.net.ssl.X509TrustManager
 
@@ -90,8 +89,18 @@ class ApacheHttpClient(
             val code = resp.statusLine.statusCode
             val headers = resp.allHeaders
                 .groupBy({ it.name }, { it.value })
-            val body = resp.entity?.let { EntityUtils.toString(it, Charsets.UTF_8) }
-            HttpResponse(code = code, headers = headers, body = body)
+            val contentType = headers.entries
+                .firstOrNull { it.key.equals("Content-Type", ignoreCase = true) }
+                ?.value?.firstOrNull()
+            val entity = resp.entity
+            val contentLength = entity?.contentLength ?: -1L
+            val responseBody = ResponseBodyReader.read(entity?.content, contentType, contentLength)
+            HttpResponse(
+                code = code,
+                headers = headers,
+                body = (responseBody as? ResponseBody.Text)?.value,
+                responseBody = responseBody
+            )
         }
     }
 

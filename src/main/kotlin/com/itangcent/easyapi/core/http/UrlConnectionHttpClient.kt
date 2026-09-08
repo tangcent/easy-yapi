@@ -62,8 +62,16 @@ object UrlConnectionHttpClient : HttpClient {
             }
             val code = conn.responseCode
             val input = if (code in 200..299) conn.inputStream else conn.errorStream
-            val responseBody = input?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
-            HttpResponse(code = code, headers = conn.headerFields.filterKeys { !it.isNullOrEmpty() }, body = responseBody)
+            val contentType = conn.headerFields.entries
+                .firstOrNull { it.key?.equals("Content-Type", ignoreCase = true) == true }
+                ?.value?.firstOrNull()
+            val responseBody = ResponseBodyReader.read(input, contentType, conn.contentLengthLong)
+            HttpResponse(
+                code = code,
+                headers = conn.headerFields.filterKeys { !it.isNullOrEmpty() },
+                body = (responseBody as? ResponseBody.Text)?.value,
+                responseBody = responseBody
+            )
         }
     }
 
