@@ -85,6 +85,17 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         /** Default max elements (total fields) per build operation. */
         const val DEFAULT_MAX_ELEMENTS = 512
 
+        /**
+         * JSON-native scalars that [SpecialTypeHandler] does not know about — it covers
+         * files, dates and every primitive wrapper, so only the plain `java.lang` / `java.math`
+         * scalars are listed here.
+         */
+        private val JSON_NATIVE_TYPES = setOf(
+            "java.lang.String",
+            "java.math.BigInteger",
+            "java.math.BigDecimal"
+        )
+
         fun getInstance(project: Project): DefaultPsiClassHelper =
             project.getService(DefaultPsiClassHelper::class.java)
     }
@@ -1009,17 +1020,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
     }
 
     private fun getDefaultValueForPrimitive(kind: PrimitiveKind): ObjectModel.Single {
-        return when (kind) {
-            PrimitiveKind.BOOLEAN -> ObjectModel.single(JsonType.BOOLEAN)
-            PrimitiveKind.BYTE -> ObjectModel.single(JsonType.INT)
-            PrimitiveKind.CHAR -> ObjectModel.single(JsonType.STRING)
-            PrimitiveKind.SHORT -> ObjectModel.single(JsonType.SHORT)
-            PrimitiveKind.INT -> ObjectModel.single(JsonType.INT)
-            PrimitiveKind.LONG -> ObjectModel.single(JsonType.LONG)
-            PrimitiveKind.FLOAT -> ObjectModel.single(JsonType.FLOAT)
-            PrimitiveKind.DOUBLE -> ObjectModel.single(JsonType.DOUBLE)
-            PrimitiveKind.VOID -> ObjectModel.nullValue()
-        }
+        val jsonType = JsonType.fromPrimitiveKind(kind) ?: return ObjectModel.nullValue()
+        return ObjectModel.single(jsonType)
     }
 
     private fun isCollection(psiClass: PsiClass): Boolean = InheritanceHelper.isCollection(psiClass)
@@ -1030,45 +1032,29 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         return psiClass.isEnum || psiClass.supers.any { it.qualifiedName == ClassNameConstants.JAVA_LANG_ENUM }
     }
 
+    /**
+     * Whether [psiClass] maps to a JSON scalar rather than a structural object.
+     *
+     * [SpecialTypeHandler] already covers every file / date / **primitive-wrapper** FQN
+     * (`Integer`, `Long`, `Byte`, `Character`, …), so only the remaining JSON-native
+     * `java.lang` / `java.math` scalars have to be named here. They were previously spelled
+     * out alongside the wrappers, which duplicated `PrimitiveFamilies` and drifted silently.
+     */
     private fun isSimpleType(psiClass: PsiClass): Boolean {
         val qualifiedName = psiClass.qualifiedName ?: return false
-        return SpecialTypeHandler.isSpecialType(qualifiedName) ||
-                qualifiedName == "java.lang.String" ||
-                qualifiedName == "java.lang.Integer" ||
-                qualifiedName == "java.lang.Long" ||
-                qualifiedName == "java.lang.Double" ||
-                qualifiedName == "java.lang.Float" ||
-                qualifiedName == "java.lang.Boolean" ||
-                qualifiedName == "java.lang.Byte" ||
-                qualifiedName == "java.lang.Short" ||
-                qualifiedName == "java.lang.Character" ||
-                qualifiedName == "java.math.BigInteger" ||
-                qualifiedName == "java.math.BigDecimal"
+        return SpecialTypeHandler.isSpecialType(qualifiedName) || qualifiedName in JSON_NATIVE_TYPES
     }
 
+    /**
+     * JSON type of a [isSimpleType] class. Delegates to [JsonType.fromJavaType] — the single
+     * owner of the FQN → JSON vocabulary — instead of keeping a parallel FQN table here.
+     *
+     * Safe despite [JsonType.fromJavaType]'s fuzzy suffix matching: the input is gated by
+     * [isSimpleType], so it is always one of a closed set of names for which the mapping is exact.
+     */
     private fun getDefaultValueForSimpleType(psiClass: PsiClass): ObjectModel.Single {
         val qualifiedName = psiClass.qualifiedName ?: return ObjectModel.single(JsonType.OBJECT)
-        return when (qualifiedName) {
-            "java.lang.String", "java.lang.Character" -> ObjectModel.single(JsonType.STRING)
-            "java.lang.Integer", "java.lang.Byte" -> ObjectModel.single(JsonType.INT)
-            "java.lang.Long", "java.math.BigInteger" -> ObjectModel.single(JsonType.LONG)
-            "java.lang.Float" -> ObjectModel.single(JsonType.FLOAT)
-            "java.lang.Double", "java.math.BigDecimal" -> ObjectModel.single(JsonType.DOUBLE)
-            "java.lang.Boolean" -> ObjectModel.single(JsonType.BOOLEAN)
-            "java.lang.Short" -> ObjectModel.single(JsonType.SHORT)
-            else -> {
-                if (SpecialTypeHandler.isFileType(qualifiedName)) {
-                    ObjectModel.single(JsonType.FILE)
-                } else {
-                    val specialDefault = SpecialTypeHandler.getDefaultValueForSpecialType(qualifiedName)
-                    if (specialDefault != null) {
-                        ObjectModel.single(JsonType.STRING)
-                    } else {
-                        ObjectModel.single(JsonType.OBJECT)
-                    }
-                }
-            }
-        }
+        return ObjectModel.single(JsonType.fromJavaType(qualifiedName))
     }
 
     /**

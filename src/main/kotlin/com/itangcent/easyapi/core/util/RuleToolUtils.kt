@@ -392,6 +392,19 @@ object RuleToolUtils {
         "copy"
     )
 
+    /**
+     * Type-name vocabulary used by [debug] output.
+     *
+     * Keys are fully qualified class names; values use the JSON-ish vocabulary
+     * shared with `com.itangcent.easyapi.core.psi.type.JsonType`, so a dumped
+     * model reads the same as an exported schema (`string`/`int`/`boolean`/...).
+     *
+     * A Java/Kotlin FQN pair must always collapse to the **same** word: given the
+     * same field, `debug` output should not depend on which language it was
+     * written in. In particular both `java.lang.Boolean` and `kotlin.Boolean`
+     * render as `boolean` — `bool` is the protobuf scalar spelling and belongs to
+     * `ProtoUtils`, not here.
+     */
     private val typeMapper = linkedMapOf(
         "java.lang.String" to "string",
         "kotlin.String" to "string",
@@ -404,7 +417,7 @@ object RuleToolUtils {
         "java.lang.Float" to "float",
         "kotlin.Float" to "float",
         "java.lang.Boolean" to "boolean",
-        "kotlin.Boolean" to "bool",
+        "kotlin.Boolean" to "boolean",
         "java.lang.Short" to "short",
         "kotlin.Short" to "short",
         "java.lang.Byte" to "byte",

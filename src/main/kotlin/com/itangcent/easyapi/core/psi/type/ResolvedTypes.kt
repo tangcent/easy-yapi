@@ -321,11 +321,27 @@ sealed class ResolvedType {
     }
 
     /**
-     * Represents a primitive type (boolean, int, etc.).
+     * Represents a primitive type (`boolean`, `int`, …) **or one of its boxed wrappers**
+     * (`java.lang.Integer`, …).
+     *
+     * Both are collapsed into one type because everything downstream cares about the value
+     * domain, not the wrapper: `Integer` and `int` map to the same JSON type, the same
+     * proto type, the same default value. What differs is only the language-level question
+     * "was it declared boxed?" — which is what [boxed] preserves. Collapsing without
+     * recording it made that question unanswerable, so `ScriptTypeContext.isPrimitiveWrapper()`
+     * could never be true (see `SpecialTypeHandler.resolveSpecialType`).
+     *
+     * [qualifiedName]/[simpleName] intentionally keep returning the *primitive* name
+     * (`int`, not `java.lang.Integer`) — they feed rule keys and script `type().name()`
+     * output, and changing them would be a behaviour change nothing asked for.
      *
      * @param kind The specific primitive kind
+     * @param boxed True when the declaration was the wrapper class rather than the keyword
      */
-    data class PrimitiveType(val kind: PrimitiveKind) : ResolvedType() {
+    data class PrimitiveType(
+        val kind: PrimitiveKind,
+        val boxed: Boolean = false
+    ) : ResolvedType() {
         override fun qualifiedName(): String = kind.name.lowercase()
         override fun simpleName(): String = kind.name.lowercase()
         override fun contextElement(): PsiElement? = null
@@ -748,9 +764,11 @@ object TypeResolver : com.itangcent.easyapi.core.logging.IdeaLog {
             return ResolvedType.UnresolvedType("__file__")
         }
 
-        val primitiveKind = resolvePrimitiveKind(trimmed)
-        if (primitiveKind != null) {
-            return ResolvedType.PrimitiveType(primitiveKind)
+        PrimitiveFamilies.KIND_BY_SPELLING[trimmed]?.let { primitiveKind ->
+            return ResolvedType.PrimitiveType(
+                kind = primitiveKind,
+                boxed = PrimitiveFamilies.isWrapperFqn(trimmed)
+            )
         }
 
         if (trimmed.endsWith("[]")) {
@@ -885,21 +903,6 @@ object TypeResolver : com.itangcent.easyapi.core.logging.IdeaLog {
         val last = current.toString().trim()
         if (last.isNotEmpty()) result.add(last)
         return result
-    }
-
-    private fun resolvePrimitiveKind(typeName: String): PrimitiveKind? {
-        return when (typeName) {
-            "boolean", "java.lang.Boolean" -> PrimitiveKind.BOOLEAN
-            "byte", "java.lang.Byte" -> PrimitiveKind.BYTE
-            "char", "java.lang.Character" -> PrimitiveKind.CHAR
-            "short", "java.lang.Short" -> PrimitiveKind.SHORT
-            "int", "java.lang.Integer" -> PrimitiveKind.INT
-            "long", "java.lang.Long" -> PrimitiveKind.LONG
-            "float", "java.lang.Float" -> PrimitiveKind.FLOAT
-            "double", "java.lang.Double" -> PrimitiveKind.DOUBLE
-            "void", "java.lang.Void" -> PrimitiveKind.VOID
-            else -> null
-        }
     }
 
     /**

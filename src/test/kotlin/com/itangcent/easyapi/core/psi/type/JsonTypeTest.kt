@@ -150,4 +150,95 @@ class JsonTypeTest {
         assertEquals(JsonType.OBJECT, JsonType.fromJavaType("com.example.MyCustomClass"))
         assertEquals(JsonType.OBJECT, JsonType.fromJavaType("UserDTO"))
     }
+
+    /**
+     * [JsonType.fromPrimitiveKind] is the `kind`-keyed view of [JsonType.fromJavaType].
+     * They are separate tables, so this pins them together: for every kind, the kind mapping
+     * must equal the mapping of that kind's boxed FQN. Without it the two could drift and
+     * `Integer` vs `int` would produce different JSON types depending on the resolution path.
+     */
+    @Test
+    fun testFromPrimitiveKindAgreesWithFromJavaType() {
+        for (kind in PrimitiveKind.entries) {
+            val viaKind = JsonType.fromPrimitiveKind(kind)
+            if (kind == PrimitiveKind.VOID) {
+                assertEquals("void has no value", null, viaKind)
+                continue
+            }
+            assertEquals(
+                "kind/boxed mismatch for $kind",
+                viaKind,
+                JsonType.fromJavaType(kind.wrapperFqnForTest())
+            )
+        }
+    }
+
+    @Test
+    fun testFromPrimitiveKind_values() {
+        assertEquals(JsonType.BOOLEAN, JsonType.fromPrimitiveKind(PrimitiveKind.BOOLEAN))
+        assertEquals(JsonType.INT, JsonType.fromPrimitiveKind(PrimitiveKind.BYTE))
+        assertEquals(JsonType.STRING, JsonType.fromPrimitiveKind(PrimitiveKind.CHAR))
+        assertEquals(JsonType.SHORT, JsonType.fromPrimitiveKind(PrimitiveKind.SHORT))
+        assertEquals(JsonType.INT, JsonType.fromPrimitiveKind(PrimitiveKind.INT))
+        assertEquals(JsonType.LONG, JsonType.fromPrimitiveKind(PrimitiveKind.LONG))
+        assertEquals(JsonType.FLOAT, JsonType.fromPrimitiveKind(PrimitiveKind.FLOAT))
+        assertEquals(JsonType.DOUBLE, JsonType.fromPrimitiveKind(PrimitiveKind.DOUBLE))
+    }
+
+    @Test
+    fun testToSchemaType_jsonVocabulary() {
+        assertEquals("string", JsonType.toSchemaType("string"))
+        assertEquals("string", JsonType.toSchemaType("date"))
+        assertEquals("string", JsonType.toSchemaType("datetime"))
+        assertEquals("string", JsonType.toSchemaType("file"))
+        assertEquals("integer", JsonType.toSchemaType("int"))
+        assertEquals("integer", JsonType.toSchemaType("short"))
+        assertEquals("integer", JsonType.toSchemaType("long"))
+        assertEquals("number", JsonType.toSchemaType("float"))
+        assertEquals("number", JsonType.toSchemaType("double"))
+        assertEquals("boolean", JsonType.toSchemaType("boolean"))
+        assertEquals("array", JsonType.toSchemaType("array"))
+        assertEquals("object", JsonType.toSchemaType("object"))
+        // Draft-04-only: legal for the YApi channel's declared `$schema`, illegal in OAS 3.0.3
+        // (whose `type` has six values). `OpenApiSchemaConverter` therefore keeps its own table
+        // and maps `"null"` to `string` rather than delegating here.
+        assertEquals("null", JsonType.toSchemaType("null"))
+    }
+
+    /**
+     * The aliases that reach [JsonType.toSchemaType] from rule scripts (`jsonTypeToSchemaType`)
+     * and from the channels that legitimately share this draft-04 vocabulary (YApi).
+     * They used to fall through to `"string"` — a wrong answer rather than a missing one.
+     */
+    @Test
+    fun testToSchemaType_aliasesAndCase() {
+        assertEquals("integer", JsonType.toSchemaType("integer"))
+        assertEquals("integer", JsonType.toSchemaType("int32"))
+        assertEquals("integer", JsonType.toSchemaType("int64"))
+        assertEquals("integer", JsonType.toSchemaType("byte"))
+        assertEquals("number", JsonType.toSchemaType("number"))
+        assertEquals("number", JsonType.toSchemaType("decimal"))
+        assertEquals("number", JsonType.toSchemaType("bigdecimal"))
+        assertEquals("boolean", JsonType.toSchemaType("bool"))
+        // Case-insensitive: script authors and converters spell these both ways.
+        assertEquals("integer", JsonType.toSchemaType("INTEGER"))
+        assertEquals("boolean", JsonType.toSchemaType("BOOLEAN"))
+        // Unknown / blank fall back to string.
+        assertEquals("string", JsonType.toSchemaType("totallyUnknownThing"))
+        assertEquals("string", JsonType.toSchemaType(null))
+        assertEquals("string", JsonType.toSchemaType("  "))
+    }
+}
+
+/** Boxed FQN of a primitive kind, for the kind/boxed consistency check above. */
+private fun PrimitiveKind.wrapperFqnForTest(): String = when (this) {
+    PrimitiveKind.BOOLEAN -> "java.lang.Boolean"
+    PrimitiveKind.BYTE -> "java.lang.Byte"
+    PrimitiveKind.CHAR -> "java.lang.Character"
+    PrimitiveKind.SHORT -> "java.lang.Short"
+    PrimitiveKind.INT -> "java.lang.Integer"
+    PrimitiveKind.LONG -> "java.lang.Long"
+    PrimitiveKind.FLOAT -> "java.lang.Float"
+    PrimitiveKind.DOUBLE -> "java.lang.Double"
+    PrimitiveKind.VOID -> "java.lang.Void"
 }

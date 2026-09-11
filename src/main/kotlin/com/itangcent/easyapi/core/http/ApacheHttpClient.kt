@@ -33,10 +33,10 @@ import javax.net.ssl.X509TrustManager
  * ## Usage
  * ```kotlin
  * val client = ApacheHttpClient(timeoutMs = 30000, unsafeSsl = false)
- * val response = client.execute(HttpRequest(
- *     method = "GET",
+ * val response = client.get {
  *     url = "https://api.example.com/users"
- * ))
+ *     header("Accept", "application/json")
+ * }
  * client.close()
  * ```
  *

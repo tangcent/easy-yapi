@@ -9,8 +9,9 @@ import com.itangcent.easyapi.channel.postman.model.PostmanEnvironmentCreateReque
 import com.itangcent.easyapi.channel.postman.model.PostmanEnvironmentUpdateRequest
 import com.itangcent.easyapi.channel.postman.model.PostmanGson
 import com.itangcent.easyapi.core.http.HttpClient
-import com.itangcent.easyapi.core.http.HttpRequest
-import com.itangcent.easyapi.core.http.KeyValue
+import com.itangcent.easyapi.core.http.execute
+import com.itangcent.easyapi.core.http.get
+import com.itangcent.easyapi.core.http.post
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.script.env.Environment
 import kotlinx.coroutines.Dispatchers
@@ -45,20 +46,14 @@ class PostmanApiClient(
 
         return withContext(Dispatchers.IO) {
             try {
-                val url = buildUploadUrl()
-                val body = gson.toJson(mapOf("collection" to collection))
+                val payload = gson.toJson(mapOf("collection" to collection))
 
-                val request = HttpRequest(
-                    url = url,
-                    method = "POST",
-                    headers = listOf(
-                        "Content-Type" to "application/json",
-                        "X-Api-Key" to apiKey
-                    ),
-                    body = body
-                )
-
-                val response = httpClient.execute(request)
+                val response = httpClient.post {
+                    url = buildUploadUrl()
+                    contentType = "application/json"
+                    header("X-Api-Key", apiKey)
+                    body = payload
+                }
 
                 if (response.code == 200) {
                     val result = gson.fromJson(response.body, JsonObject::class.java)
@@ -86,20 +81,15 @@ class PostmanApiClient(
 
         return withContext(Dispatchers.IO) {
             try {
-                val url = "${API_BASE_URL}/collections/$collectionUid"
-                val body = gson.toJson(mapOf("collection" to collection))
+                val payload = gson.toJson(mapOf("collection" to collection))
 
-                val request = HttpRequest(
-                    url = url,
-                    method = "PUT",
-                    headers = listOf(
-                        KeyValue("Content-Type", "application/json"),
-                        KeyValue("X-Api-Key", apiKey)
-                    ),
-                    body = body
-                )
-
-                val response = httpClient.execute(request)
+                val response = httpClient.execute {
+                    url = "${API_BASE_URL}/collections/$collectionUid"
+                    put()
+                    contentType = "application/json"
+                    header("X-Api-Key", apiKey)
+                    body = payload
+                }
 
                 if (response.code == 200) {
                     UploadResult(success = true, message = "Collection updated successfully")
@@ -124,13 +114,10 @@ class PostmanApiClient(
             val url = "${API_BASE_URL}/workspaces"
             LOG.info("listWorkspaces: requesting $url")
 
-            val request = HttpRequest(
-                url = url,
-                method = "GET",
-                headers = listOf(KeyValue("X-Api-Key", apiKey))
-            )
-
-            val response = httpClient.execute(request)
+            val response = httpClient.get {
+                this.url = url
+                header("X-Api-Key", apiKey)
+            }
             LOG.info(
                 "listWorkspaces: response code=${response.code}, bodyLength=${response.body?.length}, body=${
                     response.body?.take(
@@ -172,13 +159,10 @@ class PostmanApiClient(
             val url = "${API_BASE_URL}/collections?workspace=$workspaceId"
             LOG.info("listCollections: requesting $url")
 
-            val request = HttpRequest(
-                url = url,
-                method = "GET",
-                headers = listOf(KeyValue("X-Api-Key", apiKey))
-            )
-
-            val response = httpClient.execute(request)
+            val response = httpClient.get {
+                this.url = url
+                header("X-Api-Key", apiKey)
+            }
 
             if (response.code == 200) {
                 try {
@@ -216,13 +200,10 @@ class PostmanApiClient(
             val url = "${API_BASE_URL}/environments?workspace=$workspaceId"
             LOG.info("listEnvironments: requesting $url")
 
-            val request = HttpRequest(
-                url = url,
-                method = "GET",
-                headers = listOf(KeyValue("X-Api-Key", apiKey))
-            )
-
-            val response = httpClient.execute(request)
+            val response = httpClient.get {
+                this.url = url
+                header("X-Api-Key", apiKey)
+            }
 
             if (response.code == 200) {
                 try {
@@ -258,13 +239,10 @@ class PostmanApiClient(
             val url = "${API_BASE_URL}/environments/$environmentId"
             LOG.info("getEnvironment: requesting $url")
 
-            val request = HttpRequest(
-                url = url,
-                method = "GET",
-                headers = listOf(KeyValue("X-Api-Key", apiKey))
-            )
-
-            val response = httpClient.execute(request)
+            val response = httpClient.get {
+                this.url = url
+                header("X-Api-Key", apiKey)
+            }
 
             if (response.code == 200) {
                 try {
@@ -309,17 +287,12 @@ class PostmanApiClient(
                 val url = "${API_BASE_URL}/environments?workspace=$workspaceId"
                 val body = gson.toJson(PostmanEnvironmentCreateRequest(environment))
 
-                val request = HttpRequest(
-                    url = url,
-                    method = "POST",
-                    headers = listOf(
-                        KeyValue("Content-Type", "application/json"),
-                        KeyValue("X-Api-Key", apiKey)
-                    ),
-                    body = body
-                )
-
-                val response = httpClient.execute(request)
+                val response = httpClient.post {
+                    this.url = url
+                    contentType = "application/json"
+                    header("X-Api-Key", apiKey)
+                    this.body = body
+                }
 
                 if (response.code == 200) {
                     UploadResult(success = true, message = "Environment created successfully")
@@ -342,17 +315,13 @@ class PostmanApiClient(
                 val url = "${API_BASE_URL}/environments/$environmentId"
                 val body = gson.toJson(PostmanEnvironmentUpdateRequest(environment))
 
-                val request = HttpRequest(
-                    url = url,
-                    method = "PUT",
-                    headers = listOf(
-                        KeyValue("Content-Type", "application/json"),
-                        KeyValue("X-Api-Key", apiKey)
-                    ),
-                    body = body
-                )
-
-                val response = httpClient.execute(request)
+                val response = httpClient.execute {
+                    this.url = url
+                    put()
+                    contentType = "application/json"
+                    header("X-Api-Key", apiKey)
+                    this.body = body
+                }
 
                 if (response.code == 200) {
                     UploadResult(success = true, message = "Environment updated successfully")

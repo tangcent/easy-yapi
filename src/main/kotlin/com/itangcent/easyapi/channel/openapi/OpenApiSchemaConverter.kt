@@ -4,6 +4,7 @@ import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.FieldOption
 import com.itangcent.easyapi.core.psi.model.ObjectModel
+import com.itangcent.easyapi.core.psi.type.JsonType
 
 /**
  * Cycle-safe converter from EasyApi's [ObjectModel] to an OAS [SchemaObject]
@@ -239,58 +240,51 @@ class OpenApiSchemaConverter : IdeaLog {
     // ─── Primitive type table ─────────────────────────────────────
 
     /**
-     * Maps a Java/Kotlin type name to its OAS `(type, format)` pair. Match is
-     * case-insensitive substring. Unknown types default to
-     * `(string, null)`.
+     * OAS 3.0.3 schema for an [ObjectModel.Single].
+     *
+     * The input vocabulary is **closed and matched by equality**: every construction site in
+     * `main/` normalises `Single.type` through `JsonType.fromJavaType` / `fromPsiType` /
+     * `fromPrimitiveKind` / `resolveJsonType`, so the table below enumerates exactly those
+     * values. No substring matching — that would also fire on unrelated names (`Department`
+     * contains `part`, `PageList` contains `list`).
+     *
+     * Why not delegate to [JsonType.toSchemaType], which looks like the same table: that one is
+     * the **JSON Schema draft-04** vocabulary the YApi channel emits (`$schema: draft-04`), and
+     * draft-04 permits `type: "null"`. OAS 3.0.3 permits only six types and additionally
+     * requires `items` whenever `type` is `array`. The two vocabularies are not
+     * interchangeable — sharing one function let the draft-04-only `null` leak into OAS output.
+     *
+     * `Single("null")` — the placeholder for an unresolved / `void` type
+     * ([ObjectModel.nullValue]) — is listed explicitly so the `else` below covers only
+     * genuinely-unknown spellings. OAS 3.0.3 has no `null` type, so it degrades to `string`
+     * just like the draft-04-only `null` the two vocabularies split on.
+     *
+     * The `else` branch is a total-function safety net, not a guess: a third-party
+     * `classExporter` / `channel` extension can hand us a `Single` carrying an arbitrary string.
+     * Such a value has no known OAS shape, so it degrades to `string` rather than being
+     * pattern-matched into a confident but wrong answer — and logs at `info`, so the
+     * degradation is diagnosable instead of silent.
      */
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
-    private fun primitiveSchema(type: String): SchemaObject {
-        val t = type.lowercase()
-        return when {
-            // `byte[]` must be checked before `byte` (the latter → integer/int32).
-            t.contains("byte[]") || t.contains("binary") ->
-                SchemaObject(type = "string", format = "binary")
-
-            // datetime-family → string/date-time. Checked before `date` so that
-            // "datetime"/"date-time"/"zoneddatetime" all land here.
-            t.contains("datetime") || t.contains("date-time") ||
-                t.contains("timestamp") || t.contains("instant") ||
-                t.contains("zoneddatetime") ->
-                SchemaObject(type = "string", format = "date-time")
-
-            // Plain `date` (not `date-time`) → string/date.
-            t.contains("date") ->
-                SchemaObject(type = "string", format = "date")
-
-            t.contains("uuid") ->
-                SchemaObject(type = "string", format = "uuid")
-
-            // `char` / `character` → string/null. Must be checked before default.
-            t.contains("char") ->
-                SchemaObject(type = "string", format = null)
-
-            // `long` must be checked before `int` (no substring overlap, but
-            // explicit for clarity).
-            t.contains("long") ->
-                SchemaObject(type = "integer", format = "int64")
-
-            t.contains("int") ->
-                SchemaObject(type = "integer", format = "int32")
-
-            t.contains("short") || t.contains("byte") ->
-                SchemaObject(type = "integer", format = "int32")
-
-            t.contains("float") ->
-                SchemaObject(type = "number", format = "float")
-
-            t.contains("double") || t.contains("decimal") || t.contains("number") ->
-                SchemaObject(type = "number", format = "double")
-
-            t.contains("boolean") ->
-                SchemaObject(type = "boolean", format = null)
-
-            // Explicit `string` and unknown types default to (string, null).
-            else -> SchemaObject(type = "string", format = null)
+    @Suppress("CyclomaticComplexMethod")
+    private fun primitiveSchema(type: String): SchemaObject = when (type) {
+        JsonType.STRING, JsonType.FILE, "file[]" -> SchemaObject(type = "string")
+        JsonType.DATE -> SchemaObject(type = "string", format = "date")
+        JsonType.DATETIME -> SchemaObject(type = "string", format = "date-time")
+        JsonType.SHORT, JsonType.INT -> SchemaObject(type = "integer", format = "int32")
+        JsonType.LONG -> SchemaObject(type = "integer", format = "int64")
+        JsonType.FLOAT -> SchemaObject(type = "number", format = "float")
+        JsonType.DOUBLE -> SchemaObject(type = "number", format = "double")
+        JsonType.BOOLEAN -> SchemaObject(type = "boolean")
+        // `Single("array")` means "a container whose element type was lost" — `fromJavaType`
+        // returns it for unresolved list/set/collection spellings. OAS requires `items` whenever
+        // `type` is `array`, so emit the widest legal element schema rather than omit it.
+        JsonType.ARRAY -> SchemaObject(type = "array", items = SchemaObject())
+        JsonType.OBJECT -> SchemaObject(type = "object")
+        // Unresolved / `void` placeholder — no OAS `null` type exists, so render as `string`.
+        "null" -> SchemaObject(type = "string")
+        else -> {
+            LOG.info("Unknown JsonType '$type' in OpenAPI schema; degrading to 'string'")
+            SchemaObject(type = "string")
         }
     }
 }

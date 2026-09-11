@@ -41,6 +41,70 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         assertEquals(false, map["active"])
     }
 
+    /**
+     * Pins the JSON type of every scalar shape against one table.
+     *
+     * `ObjectModel.Single.type` used to be resolved by three separate tables inside
+     * [DefaultPsiClassHelper] (kind→type, a hand-written simple-type list, and an FQN→type
+     * map). They now all derive from [JsonType], so this test is the drift guard: a wrapper
+     * added to — or dropped from — `PrimitiveFamilies` must show up here as the same JSON
+     * type that a plain `java.math` scalar maps to.
+     */
+    fun testBuildObjectModelScalarTypes() = runBlocking {
+        loadFile(
+            "model/Scalars.java",
+            """
+            package model;
+            import java.math.BigDecimal;
+            import java.math.BigInteger;
+            public class Scalars {
+                public String name;
+                public Character letter;
+                public Byte tiny;
+                public Short small;
+                public Integer count;
+                public Long big;
+                public Float ratio;
+                public Double precise;
+                public BigDecimal amount;
+                public BigInteger huge;
+                public Boolean flag;
+                public boolean primitiveBoolean;
+                public byte primitiveByte;
+                public char primitiveChar;
+                public int primitiveInt;
+                public long primitiveLong;
+                public float primitiveFloat;
+                public double primitiveDouble;
+                public short primitiveShort;
+            }
+            """.trimIndent()
+        )
+
+        val model = helper.buildObjectModel(findClass("model.Scalars")!!) as ObjectModel.Object
+        val types = model.fields.mapValues { it.value.model.asSingle()?.type }
+
+        assertEquals("string", types["name"])
+        assertEquals("string", types["letter"])
+        assertEquals("string", types["primitiveChar"])
+        assertEquals("int", types["tiny"])
+        assertEquals("int", types["count"])
+        assertEquals("int", types["primitiveInt"])
+        assertEquals("int", types["primitiveByte"])
+        assertEquals("short", types["small"])
+        assertEquals("short", types["primitiveShort"])
+        assertEquals("long", types["big"])
+        assertEquals("long", types["huge"])
+        assertEquals("long", types["primitiveLong"])
+        assertEquals("float", types["ratio"])
+        assertEquals("float", types["primitiveFloat"])
+        assertEquals("double", types["precise"])
+        assertEquals("double", types["amount"])
+        assertEquals("double", types["primitiveDouble"])
+        assertEquals("boolean", types["flag"])
+        assertEquals("boolean", types["primitiveBoolean"])
+    }
+
     fun testBuildObjectModelWithNestedObject() = runBlocking {
         myFixture.addFileToProject(
             "model/Address.java",

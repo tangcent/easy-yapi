@@ -201,6 +201,35 @@ class SpecialTypeHandlerTest : TestCase() {
         assertFalse(SpecialTypeHandler.isFileTypeName("Long"))
     }
 
+    fun testMentionsFileType() {
+        // A bare file type — same answers as isFileTypeName.
+        assertTrue(SpecialTypeHandler.mentionsFileType("file"))
+        assertTrue(SpecialTypeHandler.mentionsFileType("file[]"))
+        assertTrue(SpecialTypeHandler.mentionsFileType("__file__"))
+        assertTrue(SpecialTypeHandler.mentionsFileType("MultipartFile"))
+        assertTrue(SpecialTypeHandler.mentionsFileType("java.io.File"))
+
+        // Files nested in a container — the reason this variant exists.
+        assertTrue(SpecialTypeHandler.mentionsFileType("MultipartFile[]"))
+        assertTrue(SpecialTypeHandler.mentionsFileType("java.util.List<org.springframework.web.multipart.MultipartFile>"))
+        assertTrue(SpecialTypeHandler.mentionsFileType("List<MultipartFile>"))
+        assertTrue(SpecialTypeHandler.mentionsFileType("Map<String, Part>"))
+
+        // Names that merely *contain* a file type name are not files — the bug the old
+        // `contains("Part")` check had (`Department` -> file upload).
+        assertFalse(SpecialTypeHandler.mentionsFileType("Department"))
+        assertFalse(SpecialTypeHandler.mentionsFileType("com.acme.Department"))
+        assertFalse(SpecialTypeHandler.mentionsFileType("java.io.FileInputStream"))
+        assertFalse(SpecialTypeHandler.mentionsFileType("PartialResult"))
+        assertFalse(SpecialTypeHandler.mentionsFileType("java.nio.file.Paths"))
+
+        // Non-files / empty.
+        assertFalse(SpecialTypeHandler.mentionsFileType(null))
+        assertFalse(SpecialTypeHandler.mentionsFileType(""))
+        assertFalse(SpecialTypeHandler.mentionsFileType("String"))
+        assertFalse(SpecialTypeHandler.mentionsFileType("java.util.List<String>"))
+    }
+
     fun testGetRecommendedConfig() {
         val config = SpecialTypeHandler.getRecommendedConfig()
         assertTrue(config.isNotEmpty())

@@ -10,6 +10,7 @@ import com.itangcent.easyapi.core.logging.console
 import com.itangcent.easyapi.core.psi.helper.DocHelper
 import com.itangcent.easyapi.core.psi.model.FieldOption
 import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.TypeNameComparison
 import com.itangcent.easyapi.core.rule.RuleKeys
 import com.itangcent.easyapi.core.rule.engine.RuleEngine
 import com.itangcent.easyapi.core.settings.module.ParsingOutputSettings
@@ -40,8 +41,8 @@ import com.itangcent.easyapi.core.settings.settings
  * 3. **`INTELLIGENT` heuristics** (mode-gated):
  *    - Case 1 (`context == null`): exactly one non-static non-enum instance
  *      field → [ValueField.Instance]
- *    - Case 2 (`context != null`): adapt `findEnumFieldByType` logic
- *      (type + name coincidence)
+ *    - Case 2 (`context != null`): [findEnumFieldByType] — same-kind type
+ *      match, then name coincidence
  * 4. **Fallback** → [ValueField.Name] (Spring default).
  *
  * Annotation intent enters at step 1 *via config*, so it
@@ -265,11 +266,16 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
     }
 
     /**
-     * Find an enum instance field whose type matches the referencing element's
-     * declared type (Case 2 INTELLIGENT type-match).
+     * Find an enum instance field whose declared type is the **same kind** as the
+     * referencing element's declared type (Case 2 INTELLIGENT type-match).
      *
-     * When multiple fields match, prefers the one whose name matches the
-     * referencing field name.
+     * The comparison is a deliberately coarse *candidate filter*: it bridges the
+     * Java/Kotlin spelling of the same type (`int` ≡ `Integer` ≡ `Int?`) and ignores
+     * qualification and type arguments — see [TypeNameComparison] for the exact rules,
+     * the reasons, and what it must not be used for.
+     *
+     * When multiple fields match, prefers the one whose name matches the referencing
+     * field name, then the first declared.
      */
     private fun findEnumFieldByType(enumClass: PsiClass, contextElement: PsiElement): PsiField? {
         val targetCanonical = readSync {
@@ -283,7 +289,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
 
         val instanceFields = instanceFields(enumClass)
         val candidates = instanceFields.filter { field ->
-            isTypeCompatible(field.type.canonicalText, targetCanonical)
+            TypeNameComparison.isSameKind(field.type.canonicalText, targetCanonical)
         }
 
         if (candidates.isEmpty()) return null
@@ -533,32 +539,6 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
     private fun instanceFields(enumClass: PsiClass): List<PsiField> = readSync {
         enumClass.allFields.filter {
             it !is PsiEnumConstant && !it.hasModifierProperty(PsiModifier.STATIC)
-        }
-    }
-
-    /**
-     * Check whether two type canonical texts are compatible (same or
-     * primitive↔boxed of the same kind).
-     */
-    private fun isTypeCompatible(fieldType: String, targetType: String): Boolean {
-        if (fieldType == targetType) return true
-        return normalizeBoxedType(fieldType) == normalizeBoxedType(targetType)
-    }
-
-    /**
-     * Normalize a canonical type text to its boxed form for comparison.
-     */
-    private fun normalizeBoxedType(type: String): String {
-        return when (type) {
-            "int", "Integer", "java.lang.Integer" -> "java.lang.Integer"
-            "long", "Long", "java.lang.Long" -> "java.lang.Long"
-            "short", "Short", "java.lang.Short" -> "java.lang.Short"
-            "byte", "Byte", "java.lang.Byte" -> "java.lang.Byte"
-            "float", "Float", "java.lang.Float" -> "java.lang.Float"
-            "double", "Double", "java.lang.Double" -> "java.lang.Double"
-            "boolean", "Boolean", "java.lang.Boolean" -> "java.lang.Boolean"
-            "char", "Character", "java.lang.Character" -> "java.lang.Character"
-            else -> type
         }
     }
 

@@ -144,8 +144,8 @@ class RuleGuideWorkflowCatalogTest {
             content.contains("http.call.after")
         )
         assertTrue(
-            "401-refresh recipe must reference httpClient.executeSync (sub-request)",
-            content.contains("httpClient.executeSync")
+            "401-refresh recipe must reference httpClient.newRequest (sub-request)",
+            content.contains("httpClient.newRequest")
         )
     }
 

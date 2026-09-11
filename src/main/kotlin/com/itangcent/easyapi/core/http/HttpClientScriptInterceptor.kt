@@ -152,8 +152,7 @@ class HttpRequestWrapper(private val delegate: HttpRequest) {
         query = delegate.query,
         body = delegate.body,
         formParams = delegate.formParams,
-        cookies = delegate.cookies,
-        contentType = delegate.contentType
+        cookies = delegate.cookies
     )
 }
 

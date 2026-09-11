@@ -61,20 +61,29 @@ object SpecialTypeHandler {
         "org.joda.time.LocalTime"
     )
 
-    private val PRIMITIVE_WRAPPER_TYPES = mapOf(
-        "java.lang.Boolean" to "boolean",
-        "java.lang.Byte" to "byte",
-        "java.lang.Character" to "char",
-        "java.lang.Short" to "short",
-        "java.lang.Integer" to "int",
-        "java.lang.Long" to "long",
-        "java.lang.Float" to "float",
-        "java.lang.Double" to "double"
-    )
+    /**
+     * Wrapper FQN → primitive keyword (`java.lang.Integer` → `int`).
+     *
+     * Derived from [PrimitiveFamilies] rather than spelled out here, so this table and the
+     * type-comparison / canonical-text tables can never drift apart.
+     */
+    private val PRIMITIVE_WRAPPER_TYPES = PrimitiveFamilies.WRAPPER_TO_KEYWORD
 
-    private val PRIMITIVE_TYPES = setOf(
-        "boolean", "byte", "char", "short", "int", "long", "float", "double"
-    )
+    private val PRIMITIVE_TYPES = PrimitiveFamilies.PRIMITIVE_KEYWORDS
+
+    /**
+     * Every accepted spelling of a file type: the FQNs plus their bare simple names
+     * (`MultipartFile`, `Part`, `File`, `Path`, `Resource`).
+     */
+    private val FILE_TYPE_SPELLINGS: Set<String> = buildSet {
+        FILE_TYPES.forEach {
+            add(it)
+            add(it.substringAfterLast('.'))
+        }
+    }
+
+    /** Splits a type spelling into identifier tokens: `List<MultipartFile>` → [`List`, `MultipartFile`]. */
+    private val TYPE_NAME_TOKENS = Regex("[^\\w$.]+")
 
     fun isFileType(qualifiedName: String?): Boolean {
         if (qualifiedName == null) return false
@@ -106,6 +115,27 @@ object SpecialTypeHandler {
         if (typeName.isNullOrBlank()) return false
         val t = singleTypeName(typeName.trim())
         return t == "file" || t == "__file__" || isFileTypeCanonical(t)
+    }
+
+    /**
+     * True when [typeName] *mentions* a file type anywhere in its spelling — as the type
+     * itself (`MultipartFile`, `org.springframework.web.multipart.MultipartFile`), as an
+     * array (`MultipartFile[]`) or as the element of a container (`List<MultipartFile>`).
+     *
+     * Deliberately looser than [isFileTypeName], which must stay strict because
+     * `TypeResolver` uses it to decide *whether the spelling itself is already a file* —
+     * collapsing `List<MultipartFile>` there would drop the container. This variant answers
+     * the other question ("does this declaration carry files?"), which is what Spring's
+     * `@RequestParam` binding and the model-based parameter typing need.
+     *
+     * Matching is per identifier token, so a class whose name merely *contains* a file type
+     * name — `Department`, `java.io.FileInputStream` — is not a file.
+     */
+    fun mentionsFileType(typeName: String?): Boolean {
+        if (typeName.isNullOrBlank()) return false
+        val t = singleTypeName(typeName.trim())
+        if (t == "file" || t == "__file__") return true
+        return TYPE_NAME_TOKENS.split(t).any { it in FILE_TYPE_SPELLINGS }
     }
 
     fun isDateTimeAsString(qualifiedName: String?): Boolean {
@@ -155,19 +185,15 @@ object SpecialTypeHandler {
         }
         
         val simpleTypeName = getSimpleTypeName(qualifiedName) ?: return null
-        
+
         return when (simpleTypeName) {
             "file" -> ResolvedType.UnresolvedType("__file__")
             "string" -> ResolvedType.UnresolvedType("java.lang.String")
-            "boolean" -> ResolvedType.PrimitiveType(PrimitiveKind.BOOLEAN)
-            "byte" -> ResolvedType.PrimitiveType(PrimitiveKind.BYTE)
-            "char" -> ResolvedType.PrimitiveType(PrimitiveKind.CHAR)
-            "short" -> ResolvedType.PrimitiveType(PrimitiveKind.SHORT)
-            "int" -> ResolvedType.PrimitiveType(PrimitiveKind.INT)
-            "long" -> ResolvedType.PrimitiveType(PrimitiveKind.LONG)
-            "float" -> ResolvedType.PrimitiveType(PrimitiveKind.FLOAT)
-            "double" -> ResolvedType.PrimitiveType(PrimitiveKind.DOUBLE)
-            else -> null
+            // A wrapper class resolves to its primitive kind, flagged as boxed so that
+            // ScriptTypeContext can still tell `Integer` from `int` afterwards.
+            else -> PrimitiveFamilies.KIND_BY_SPELLING[simpleTypeName]?.let { kind ->
+                ResolvedType.PrimitiveType(kind, boxed = true)
+            }
         }
     }
 

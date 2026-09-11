@@ -65,6 +65,25 @@ object JsonType {
         }
     }
 
+    /**
+     * Maps a primitive [PrimitiveKind] to its JSON type, or `null` for [PrimitiveKind.VOID].
+     *
+     * `null` means "no value", not "unknown": callers render `void` as a null value rather
+     * than a JSON type. This is the `kind`-keyed view of [fromJavaType] — the two are kept
+     * consistent by `JsonTypeTest.fromPrimitiveKindAgreesWithFromJavaType`.
+     */
+    fun fromPrimitiveKind(kind: PrimitiveKind): String? = when (kind) {
+        PrimitiveKind.BOOLEAN -> BOOLEAN
+        PrimitiveKind.BYTE -> INT
+        PrimitiveKind.CHAR -> STRING
+        PrimitiveKind.SHORT -> SHORT
+        PrimitiveKind.INT -> INT
+        PrimitiveKind.LONG -> LONG
+        PrimitiveKind.FLOAT -> FLOAT
+        PrimitiveKind.DOUBLE -> DOUBLE
+        PrimitiveKind.VOID -> null
+    }
+
     fun fromJavaType(javaType: String?): String {
         if (javaType.isNullOrBlank()) return STRING
 
@@ -163,19 +182,29 @@ object JsonType {
      * Maps a JSON type name (as used by [fromJavaType]/[fromPsiType]) to its
      * JSON Schema data type. Exposed to rule scripts via the shared
      * `ScriptHelper.jsonTypeToSchemaType` helper.
+     *
+     * This table is the **JSON Schema draft-04** vocabulary — the dialect the YApi channel
+     * declares (`JsonSchemaBuilder`: `$schema: draft-04`), in which `type: "null"` is legal.
+     * It is deliberately **not** shared with OpenAPI: OAS 3.0.3 allows only six `type` values
+     * (`null` is not among them) and requires `items` whenever `type` is `array`, so
+     * `OpenApiSchemaConverter` keeps its own explicit table. Do not collapse the two — a common
+     * table silently leaks draft-04-only spellings into OAS documents.
+     *
+     * Matching is case-insensitive and also accepts the aliases that reach this function from
+     * rule scripts: the Java primitive spellings (`byte`, `decimal`, `bigdecimal`, `bool`) and
+     * the JSON Schema spellings themselves (`integer`, `number`, `int32`, `int64`). Without
+     * them those names fell through to `"string"` — a wrong answer rather than a missing one.
      */
     fun toSchemaType(type: String?): String {
         if (type.isNullOrBlank()) return STRING
-        return when (type) {
-            STRING, DATE, DATETIME, FILE -> "string"
-            SHORT, INT, LONG -> "integer"
-            FLOAT, DOUBLE -> "number"
-            BOOLEAN -> "boolean"
+        return when (type.lowercase()) {
+            STRING, DATE, DATETIME, FILE, "text" -> "string"
+            SHORT, INT, LONG, "integer", "int32", "int64", "byte" -> "integer"
+            FLOAT, DOUBLE, "number", "decimal", "bigdecimal" -> "number"
+            BOOLEAN, "bool" -> "boolean"
             ARRAY -> "array"
             OBJECT -> "object"
             "null" -> "null"
-            "text" -> "string"
-            "file" -> "string"
             else -> "string"
         }
     }

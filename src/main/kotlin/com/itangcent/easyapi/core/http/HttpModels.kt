@@ -75,9 +75,11 @@ sealed class FormParam {
  * @param headers The request headers
  * @param query The query parameters
  * @param body The request body (for JSON, XML, etc.)
- * @param formParams Form fields (text + file). Encoding depends on contentType.
+ * @param formParams Form fields (text + file). Encoding depends on `contentType`.
  * @param cookies The cookies to send
- * @param contentType Optional content-type hint. When null, auto-detected from formParams.
+ *
+ * The request `Content-Type` is **not** a constructor parameter: it is read from
+ * [headers] (see [contentType]), so the header list stays the single source of truth.
  */
 data class HttpRequest(
     val url: String,
@@ -91,10 +93,18 @@ data class HttpRequest(
      * - `multipart/form-data` (default when file parts exist, or set explicitly)
      */
     val formParams: List<FormParam> = emptyList(),
-    val cookies: List<HttpCookie> = emptyList(),
-    /** Optional content-type hint. When null, auto-detected from formParams. */
-    val contentType: String? = null
-)
+    val cookies: List<HttpCookie> = emptyList()
+) {
+    /**
+     * The `Content-Type` header value, delegated to [headers] as the single source of truth.
+     *
+     * Reads the first `Content-Type` header (case-insensitive). When null, the encoding is
+     * auto-detected from [formParams] (see [isMultipart]). Writing the request `Content-Type`
+     * goes through a header ([HttpRequestBuilder.contentType] upserts/dedupes the header).
+     */
+    val contentType: String?
+        get() = headers.firstOrNull { it.name.equals("Content-Type", ignoreCase = true) }?.value
+}
 
 /**
  * Checks whether this request should use multipart encoding.

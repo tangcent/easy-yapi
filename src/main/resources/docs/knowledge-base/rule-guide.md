@@ -69,156 +69,34 @@ yields `[user, admin]`.
 
 ## Rule Key Catalog
 
-Every key below is sourced from [RuleKeys.kt](../../../kotlin/com/itangcent/EasyYapi/rule/RuleKeys.kt) and matches the output of the `list_rule_keys` AI tool.
+The key list is not reproduced here — it is served live by the `list_rule_keys`
+tool, which renders one line per key as
+`name | source | summary | outputShape | [contextKinds]`. Call it before
+authoring a rule rather than relying on a table; the same catalog ships as a
+generated snapshot in `skills/easy-yapi-assistant/rule-keys.md`
+(regenerate with `./gradlew syncRuleKeySchemes`), which additionally lists
+aliases.
 
-### API metadata
+Two things the catalog does not render:
 
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `api.name` | string | replace | API endpoint display name |
-| `folder.name` | string | replace | Folder/group name in the exported tree |
-| `ignore` | boolean | replace | Skip this element entirely |
-
-### Method rules
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `method.doc` | string | merge-distinct | Method-level documentation |
-| `class.doc` | string | merge-distinct | Class-level documentation |
-| `method.default.http.method` | string | replace | Default HTTP verb when not annotated |
-| `method.content.type` | string | replace | Request content type |
-| `method.return` | string | replace | Return type override (full name) |
-| `method.return.main` | string | replace | Inner type when returning a wrapper (e.g., `Mono<T>`) |
-| `class.prefix.path` | string | replace | Path prefix for all endpoints in the class |
-| `endpoint.prefix.path` | string | replace | Path prefix for a specific endpoint |
-| `path.multi` | string | replace | Configures multi-path handling |
-
-### Parameter rules
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `param.name` | string | replace | Parameter display name |
-| `param.type` | string | replace | Parameter type override |
-| `param.required` | boolean | replace | Whether the parameter is required |
-| `param.ignore` | boolean | replace | Skip this parameter |
-| `param.default.value` | string | replace | Default value for the parameter |
-| `param.doc` | string | merge-distinct | Parameter documentation (alias: `doc.param`) |
-| `param.http.type` | string | replace | HTTP param location (query/path/header/cookie/body) |
-| `param.demo` | string | replace | Demo value for the parameter |
-| `param.mock` | string | replace | Mock value for the parameter |
-
-### Field rules
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `field.name` | string | replace | Field display name (alias: `json.rule.field.name`) |
-| `field.name.prefix` | string | replace | Prefix added to all field names in a class |
-| `field.name.suffix` | string | replace | Suffix added to all field names in a class |
-| `field.required` | boolean | replace | Whether the field is required |
-| `field.ignore` | boolean | replace | Skip this field |
-| `field.default.value` | string | replace | Default value for the field |
-| `field.doc` | string | merge-distinct | Field documentation (alias: `doc.field`) |
-| `field.demo` | string | replace | Demo value for the field |
-| `field.order` | string | replace | Field ordering hint |
-| `field.order.with` | string | replace | Companion fields for ordering |
-| `field.advanced` | string | merge | Advanced field metadata |
-
-### JSON rules
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `json.field.parse.before` | event | — | Hook fired before each field is parsed |
-| `json.field.parse.after` | event | — | Hook fired after each field is parsed |
-| `json.class.parse.before` | event | — | Hook fired before a class is parsed into JSON |
-| `json.class.parse.after` | event | — | Hook fired after a class is parsed into JSON |
-| `json.additional.field` | string | merge | Inject an additional field into the JSON schema |
-| `json.rule.convert` | string | replace | Type conversion rule (regex on the type name) |
-| `json.unwrapped` | boolean | replace | Whether the field is unwrapped (Jackson `@JsonUnwrapped`) |
-
-### API lifecycle events
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `api.class.parse.before` | event | — | Hook fired before a controller class is parsed |
-| `api.class.parse.after` | event | — | Hook fired after a controller class is parsed |
-| `api.method.parse.before` | event | — | Hook fired before each API method is parsed |
-| `api.method.parse.after` | event | — | Hook fired after each API method is parsed |
-| `api.param.parse.before` | event | — | Hook fired before parameters are parsed (alias: `param.before`) |
-| `api.param.parse.after` | event | — | Hook fired after parameters are parsed (alias: `param.after`) |
-| `export.after` | event | — | Hook fired after the full export completes |
-
-### Additional headers / params
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `method.additional.header` | string | merge | Extra request headers to add |
-| `method.additional.param` | string | merge | Extra request parameters to add |
-| `method.additional.response.header` | string | merge | Extra response headers to add |
-
-### HTTP call events
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `http.call.before` | event | — | Hook fired before every HTTP call |
-| `http.call.after` | event | — | Hook fired after every HTTP call |
-
-### Class recognizer rules
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `class.is.spring.ctrl` | boolean | replace | Whether the class is a Spring controller (alias: `class.is.ctrl`) |
-| `class.is.feign.ctrl` | boolean | replace | Whether the class is a Feign client |
-| `class.is.jaxrs.ctrl` | boolean | replace | Whether the class is a JAX-RS resource |
-| `class.is.quarkus.ctrl` | boolean | replace | Whether the class is a Quarkus resource |
-| `class.is.grpc` | boolean | replace | Whether the class is a gRPC service |
-
-### Postman rules
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `postman.prerequest` | string | merge | Pre-request script (Postman) |
-| `postman.class.prerequest` | string | merge | Class-level pre-request script (alias: `class.postman.prerequest`) |
-| `postman.collection.prerequest` | event | — | Collection-level pre-request script (alias: `collection.postman.prerequest`) |
-| `postman.test` | string | merge | Post-response test script |
-| `postman.class.test` | string | merge | Class-level test script (alias: `class.postman.test`) |
-| `postman.collection.test` | event | — | Collection-level test script (alias: `collection.postman.test`) |
-| `postman.host` | string | replace | Host override for Postman export |
-| `postman.format.after` | event | throw-in-error | Hook fired after Postman collection formatting |
-
-### Hoppscotch rules
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `hopp.prerequest` | string | merge | Pre-request script (Hoppscotch) |
-| `hopp.class.prerequest` | string | merge | Class-level pre-request script (alias: `class.hopp.prerequest`) |
-| `hopp.collection.prerequest` | event | — | Collection-level pre-request script (alias: `collection.hopp.prerequest`) |
-| `hopp.test` | string | merge | Post-response test script |
-| `hopp.class.test` | string | merge | Class-level test script (alias: `class.hopp.test`) |
-| `hopp.collection.test` | event | — | Collection-level test script (alias: `collection.hopp.test`) |
-| `hopp.host` | string | replace | Host override for Hoppscotch export |
-| `hopp.format.after` | event | throw-in-error | Hook fired after Hoppscotch collection formatting |
-
-### Enum / constant rules
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `enum.use.custom` | string | replace | Custom enum value provider script |
-| `constant.field.ignore` | boolean | replace | Skip constant fields |
-
-### Properties rules
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `properties.prefix` | string | replace | Prefix applied to properties file keys |
-
-### Markdown rules
-
-| Key | Type | Mode | Description |
-|-----|------|------|-------------|
-| `markdown.template.language` | string | replace | BCP-47 locale tag selecting a bundled language template for Markdown export (e.g. `zh-CN`, `ja`, `pt-BR`). When unset (or `en`), the default English template is used. |
-| `markdown.template` | string | replace | Inline Markdown template content. Overrides every tier below it. |
-| `markdown.template.file` | string | replace | Path to a local Markdown template file. |
-| `markdown.template.url` | string | replace | Remote URL serving a Markdown template. |
+- **Execution mode and bound objects** — `get_rule_context(key="<key>")` renders
+  `key | source | mode | refs: [id1, id2, …]`. Each `id` is then resolved with
+  `get_script_object_api(ids=[…])`.
+- **Aliases** — legacy names accepted in place of the canonical key. Author
+  canonical names only; aliases exist for backward compatibility:
+  `doc.param` → `param.doc`, `doc.field` → `field.doc`,
+  `json.rule.field.name` → `field.name`, `field.parse.before` →
+  `json.field.parse.before`, `field.parse.after` → `json.field.parse.after`,
+  `param.before` → `api.param.parse.before`, `param.after` →
+  `api.param.parse.after`, `class.is.ctrl` → `class.is.spring.ctrl`,
+  `class.postman.prerequest` → `postman.class.prerequest`,
+  `class.postman.test` → `postman.class.test`,
+  `collection.postman.prerequest` → `postman.collection.prerequest`,
+  `collection.postman.test` → `postman.collection.test`,
+  `class.hopp.prerequest` → `hopp.class.prerequest`,
+  `class.hopp.test` → `hopp.class.test`,
+  `collection.hopp.prerequest` → `hopp.collection.prerequest`,
+  `collection.hopp.test` → `hopp.collection.test`.
 
 #### Bundled language templates
 
@@ -346,53 +224,65 @@ Event keys (lifecycle hooks) are always `MERGE` — every matching rule fires, i
 
 ## Groovy Binding Reference
 
-When a rule value is prefixed with `groovy:`, it runs as a Groovy script via the JSR-223 engine. The following variables are bound:
+When a rule value is prefixed with `groovy:`, it runs as a Groovy script via the
+JSR-223 engine. The bound objects are not listed here — fetch them with the two
+tools that own this surface:
 
-| Variable | Alias | Type | Description |
-|----------|-------|------|-------------|
-| `it` | — | ScriptContext | The current element (class, method, field, parameter, or type). Provides `name()`, `ann()`, `doc()`, `containingClass()`, etc. |
-| `logger` | `LOG` | IdeaConsole | Logging utility. `logger.info(...)`, `logger.warn(...)`, `logger.error(...)` |
-| `session` | `S`, `sessionStorage` | ScriptStorageWrapper | In-memory key-value store scoped to the current session. `session.get(group, key)`, `session.set(group, key, value)`, `session.pop(...)`, `session.push(...)`, `session.peek(...)` |
-| `tool` | `T` | RuleToolUtils | Utility functions. `tool.toJson(...)`, `tool.fromJson(...)`, string helpers. |
-| `regex` | `RE` | RegexUtils | Regex utilities. `regex.match(input, pattern)`, `regex.findGroup(input, pattern, group)`. |
-| `files` | `F` | ScriptFilesWrapper | File operations. `files.save(path, content)`, `files.saveWithUI(content)`. |
-| `config` | `C` | ScriptConfigWrapper | Config reader access. `config.get(key)`, `config.getValues(key)`, `config.resolveProperty(text)`. |
-| `helper` | `H` | ScriptHelper | Class lookup utilities. `helper.findClass("com.example.User")`, `helper.resolveLink(...)`. |
-| `runtime` | `R` | ScriptRuntime | Project/module metadata. `runtime.projectName()`, `runtime.module()`, `runtime.filePath()`. |
-| `httpClient` | — | HttpClient | HTTP client for outbound calls (may be `null` if initialization failed). |
-| `localStorage` | — | ScriptStorageWrapper | Persistent key-value store (SQLite-backed). Same API as `session`. |
-| `fieldContext` | — | ScriptFieldPathContext | When evaluating field rules, the dotted field path (e.g., `user.address.street`). |
+- `get_rule_context(key="<key>")` lists the object ids available to a given key
+  (`refs: [id1, id2, …]`); shared objects are referenced, never inlined.
+- `get_script_object_api(ids=[…])` prints the full method surface of each id as
+  `id | type | description | methods: name(params): returns`.
+
+Resolvable ids: `logger`, `session`, `tool`, `regex`, `files`, `config`,
+`localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`; the element
+contexts `empty`, `class`, `method`, `field`, `parameter`; and the fluent
+`httpRequestBuilder` returned by `httpClient.newRequest(url)`.
+
+Short aliases accepted in scripts (prefer the canonical name): `LOG` → `logger`,
+`S` / `sessionStorage` → `session`, `T` → `tool`, `RE` → `regex`, `F` → `files`,
+`C` → `config`, `H` → `helper`, `R` → `runtime`. `httpClient` is bound only when
+an HTTP client is configured, and may be `null`.
 
 ### The `it` object
 
-`it` is the central object in every script. It wraps the current PSI element and exposes a script-friendly API:
-
-```groovy
-// Name of the current element; for a class context this is the simple name
-it.name()
-
-// Fully-qualified name of the containing/current export class
-it.containingClass()?.qualifiedName()
-
-// Fully-qualified name of the class that originally declared an inherited member
-it.defineClass()?.qualifiedName()
-
-// Annotation access — returns the annotation wrapper or null
-it.ann("org.springframework.web.bind.annotation.RequestMapping")?.path()
-it.ann("org.springframework.web.bind.annotation.RequestMapping")?.method()
-
-// Documentation text
-it.doc()
-
-// Has annotation?
-it.hasAnn("java.lang.Deprecated")
-```
+`it` is the central object in every script — it wraps the current PSI element.
+The `class` / `method` / `field` / `parameter` ids above are its context
+flavours; fetch the exact method surface with
+`get_script_object_api(ids=["class", "method", "field", "parameter"])` rather
+than guessing method names from an example.
 
 On class contexts, `name()` returns a simple name such as `TraceBean`;
 `qualifiedName()` returns an FQN such as `com.example.dto.TraceBean`. Always
 use `qualifiedName()` for package or FQN comparisons. For inherited members,
 `containingClass()` identifies the current export class and `defineClass()`
 identifies the original declaring class.
+
+### Type predicates
+
+`it.type()` returns a `ScriptTypeContext`; the same predicates are also available
+on a class context (`it.isPrimitive()`, …). On a type context `isPrimitive()` means
+a **primitive keyword** (`int`, …) and `isPrimitiveWrapper()` a **boxed wrapper**
+(`java.lang.Integer`, …) — the two are mutually exclusive, and `isNormalType()` is
+true for any primitive or wrapper, `java.lang.String` and `java.lang.Object`. A
+class context's `isPrimitive()` is always `false`, so read the primitive-vs-wrapper
+split from `it.type()`.
+
+> **Migration note:** class-context `isPrimitiveWrapper()` / `isNormalType()`
+> previously compared the *simple* name, so they were effectively always `false`
+> for real JDK types (`java.lang.Integer` was not a wrapper and `java.lang.String`
+> was not a normal type). They now compare the fully-qualified name. A rule that
+> relied on the old always-`false` result — for example `!it.isNormalType()`
+> meaning "not a scalar leaf" — must be re-checked.
+
+### Script HTTP requests
+
+`httpClient.newRequest(url)` returns a fluent builder
+(`.post().form("k", "v").execute()`). Prefer it over constructing
+`com.itangcent.easyapi.core.http.HttpRequest` by hand: that class has no no-arg
+constructor, so Groovy's named-argument form does not compile, and its positional
+constructor has adjacent `String` parameters that still compile when reordered.
+Fetch the builder's full method surface with
+`get_script_object_api(ids=["httpRequestBuilder"])`.
 
 ---
 
@@ -517,7 +407,7 @@ the same catalog when scanning your project.
 | **Static Auth (API Key / Basic)** | Security filter/interceptor calling `request.getHeader("X-API-Key")` / `"Authorization"` starting `Basic `; or custom `@ApiKeyAuth` annotation. Discover via `find_classes_by_annotation` + `get_psi_class_info` (read filter body for `getHeader(...)`). | **API-key-in-header:**<br>`method.additional.header={"name":"X-API-Key","value":"${apiKey}","desc":"api key","required":true}`<br>**API-key-in-query:**<br>`method.additional.param={"name":"key","type":"String","value":"${apiKey}","required":true,"desc":"api key"}`<br>**Basic auth:**<br>`method.additional.header={"name":"Authorization","value":"Basic ${basicAuth}","desc":"http basic credentials","required":true}`<br>**No script** — the user supplies the credential once in the Environments panel (base64-encode `user:pass` for Basic). |
 | **Per-Request Injection (Correlation / Idempotency)** | Filter/interceptor reading `request.getHeader("X-Request-Id")` / `"X-Correlation-Id"` / `"X-Trace-Id"`; or `Idempotency-Key` header on POST/PUT methods. | **Correlation ID** (global, pre-request):<br>`postman.prerequest=pm.request.headers.upsert("X-Request-Id", java.util.UUID.randomUUID().toString())`<br>**Idempotency key** (scoped to mutating methods — never unscoped):<br>`postman.prerequest[groovy: it.methodType().name() == "POST" || it.methodType().name() == "PUT"]=pm.request.headers.upsert("Idempotency-Key", java.util.UUID.randomUUID().toString())`<br>Uses `pm.request.headers.upsert(...)` (add-or-replace, case-insensitive), not `.add(...)` (which would duplicate). |
 | **Request Signing (HMAC)** | Filter/interceptor using `javax.crypto.Mac` / `HmacSHA256` / `Sha256.hmac`; reads `appSecret`/`appKey`/`accessKeyId`; or custom `@SignedRequest` annotation. | **Pre-request signing script** (computes HMAC, attaches signature header):<br>`postman.prerequest[groovy: it.containingClass()?.qualifiedName().startsWith("com.example.api.")]=def mac = javax.crypto.Mac.getInstance("HmacSHA256"); mac.init(new javax.crypto.spec.SecretKeySpec("${appSecret}".getBytes("UTF-8"), "HmacSHA256")); def stringToSign = pm.request.url + "\n" + pm.request.body; def raw = mac.doFinal(stringToSign.getBytes("UTF-8")); def sig = raw.collect { String.format("%02x", it) }.join(); pm.request.headers.upsert("X-Signature", sig)`<br>**No hardcoded secret** — `${appSecret}` is always an env-var reference.<br>⚠ For non-trivial signing (AWS SigV4, etc.) treat as a scaffold + call `ask_clarification` for the canonical-string / algorithm variant. |
-| **401-Refresh** | Refresh endpoint at `/refresh`, `/token/refresh`; OR user explicitly asks for auto-refresh; OR documented "if 401, call /refresh" convention. | **Post-call rule** (detects 401, calls refresh, sets new header, forces retry):<br>`http.call.after=groovy: if (response.code() == 401) { def refreshReq = new com.itangcent.easyapi.core.http.HttpRequest("https://api.example.com/refresh", "POST", java.util.Collections.emptyList(), java.util.Collections.emptyList(), "grant_type=refresh_token", java.util.Collections.emptyList(), java.util.Collections.emptyList(), null); def resp = httpClient.executeSync(refreshReq); def newToken = new groovy.json.JsonSlurper().parseText(resp.body).access_token; if (newToken) { request.setHeader("Authorization", "Bearer " + newToken); response.discard() } }`<br>**Retry limit:** up to 3 (enforced by `HttpClientScriptInterceptor`). The retry re-sends the mutated request wrapper, so `request.setHeader(...)` + `response.discard()` is sufficient — `pm` is NOT available in `http.call.after` (use `session.set(...)` for cross-request persistence if needed).<br>⚠ Keep the refresh endpoint itself script-free (recursion guard limits sub-request hooks to depth < 2). Wrap in `try/catch`. |
+| **401-Refresh** | Refresh endpoint at `/refresh`, `/token/refresh`; OR user explicitly asks for auto-refresh; OR documented "if 401, call /refresh" convention. | **Post-call rule** (detects 401, calls refresh, sets new header, forces retry):<br>`http.call.after=groovy: if (response.code() == 401 && httpClient) { try { def resp = httpClient.newRequest("https://api.example.com/refresh").post().form("grant_type", "refresh_token").execute(); if (resp?.code() == 200 && resp.body) { def newToken = new groovy.json.JsonSlurper().parseText(resp.body).access_token; if (newToken) { request.setHeader("Authorization", "Bearer " + newToken); response.discard() } } } catch (e) { logger.warn("401 refresh failed: " + e.message) } }`<br>Use `form(...)` (not `body(...)`) so the refresh call sends `application/x-www-form-urlencoded`; see [Script HTTP requests](#script-http-requests).<br>**Retry limit:** up to 3 (enforced by `HttpClientScriptInterceptor`). The retry re-sends the mutated request wrapper, so `request.setHeader(...)` + `response.discard()` is sufficient — `pm` is NOT available in `http.call.after` (use `session.set(...)` for cross-request persistence if needed).<br>⚠ Keep the refresh endpoint itself script-free (recursion guard limits sub-request hooks to depth < 2). Wrap in `try/catch`. |
 
 > **Detection tip for the AI assistant:** before proposing a workflow bundle,
 > probe endpoints with `list_project_endpoints`; confirm the producer/consumer
