@@ -254,6 +254,12 @@ class OpenApiSchemaConverter : IdeaLog {
      * requires `items` whenever `type` is `array`. The two vocabularies are not
      * interchangeable — sharing one function let the draft-04-only `null` leak into OAS output.
      *
+     * They are not independent either: for every reachable `Single.type` the `type` chosen
+     * below is exactly `JsonType.toSchemaType` of that same value, the sole exception being the
+     * draft-04-only `"null"`, which must degrade. `OpenApiSchemaConverterTest` asserts that
+     * relationship across the whole closed vocabulary, so a type added to one table cannot
+     * silently miss the other.
+     *
      * `Single("null")` — the placeholder for an unresolved / `void` type
      * ([ObjectModel.nullValue]) — is listed explicitly so the `else` below covers only
      * genuinely-unknown spellings. OAS 3.0.3 has no `null` type, so it degrades to `string`
@@ -270,6 +276,9 @@ class OpenApiSchemaConverter : IdeaLog {
         JsonType.STRING, JsonType.FILE, "file[]" -> SchemaObject(type = "string")
         JsonType.DATE -> SchemaObject(type = "string", format = "date")
         JsonType.DATETIME -> SchemaObject(type = "string", format = "date-time")
+        // Not one of the six core OAS formats, but the one every toolchain emits for a UUID
+        // (springdoc, swagger-ui's `uuid` display); OAS explicitly allows additional values.
+        JsonType.UUID -> SchemaObject(type = "string", format = "uuid")
         JsonType.SHORT, JsonType.INT -> SchemaObject(type = "integer", format = "int32")
         JsonType.LONG -> SchemaObject(type = "integer", format = "int64")
         JsonType.FLOAT -> SchemaObject(type = "number", format = "float")

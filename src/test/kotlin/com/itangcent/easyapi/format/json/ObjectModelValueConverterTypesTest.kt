@@ -239,8 +239,19 @@ class ObjectModelValueConverterTypesTest : TestCase() {
         assertEquals("java.io.File should be treated as file type", "(binary)", fileValue)
 
         assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.util.Date")))
-        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDate")))
-        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDateTime")))
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("date")))
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("datetime")))
+
+        // A *qualified* spelling the IR vocabulary does not know is a composite. Deciding that
+        // `java.time.LocalDate` is a string is a `json.rule.convert` rule's job
+        // (`extensions/converts.config`), not `fromJavaType`'s — the method is deliberately
+        // configuration-agnostic, so nothing here maps a JDK FQN by substring.
+        assertTrue(
+            ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDate")) is Map<*, *>
+        )
+        assertTrue(
+            ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDateTime")) is Map<*, *>
+        )
     }
 
     fun testGetDefaultValueForTypeWithSpaces() {
@@ -312,5 +323,30 @@ class ObjectModelValueConverterTypesTest : TestCase() {
         val single = model.asSingle()
         assertNotNull(single)
         assertEquals("MultipartFile canonical name should resolve to 'file' type", JsonType.FILE, single!!.type)
+    }
+
+    /**
+     * Drift guard: [ObjectModelValueConverter] and [JsonType.defaultValueForType] used to be two
+     * independent tables and disagreed on the values JSON has no name for — `date`/`datetime`
+     * were `""` here and `null` there, `file` was `"(binary)"` and `null`. The converter now
+     * delegates its scalar cases, so both must answer identically for every JSON type.
+     *
+     * `object`/`array` are excluded: they are structural shapes with no scalar default.
+     */
+    fun testSingleToValueAgreesWithJsonTypeDefaultValue() {
+        for (type in JsonType.ALL_TYPES) {
+            if (type == JsonType.OBJECT || type == JsonType.ARRAY) continue
+            assertEquals(
+                "singleToValue and defaultValueForType disagree for '$type'",
+                JsonType.defaultValueForType(type),
+                ObjectModelValueConverter.toSimpleValue(ObjectModel.single(type))
+            )
+        }
+    }
+
+    fun testDateTypesHaveStringExampleValues() {
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(ObjectModel.single(JsonType.DATE)))
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(ObjectModel.single(JsonType.DATETIME)))
+        assertEquals("(binary)", ObjectModelValueConverter.toSimpleValue(ObjectModel.single(JsonType.FILE)))
     }
 }

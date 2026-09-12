@@ -1,6 +1,7 @@
 ---
 id: json.additional.field
 key: json.additional.field
+scheme-stamp: 487d67eaab14
 title: Additional JSON field
 cue: JSON object field injected into the serialized response (e.g. computed totals, envelope metadata)
 ---

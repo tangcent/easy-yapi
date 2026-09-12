@@ -159,6 +159,7 @@ class MockDataGenerator(
             JsonType.FILE -> "@file"
             JsonType.DATE -> "@date"
             JsonType.DATETIME -> "@datetime"
+            JsonType.UUID -> "@uuid"
             "text" -> "@string"
             "file" -> "@file"
             else -> null

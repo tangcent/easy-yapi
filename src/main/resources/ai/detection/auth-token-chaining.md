@@ -65,10 +65,10 @@ extraction from the login response).
   (filename like `auth-chaining.properties`):
   - **Producer side** (when Postman is enabled): a `postman.test` rule
     scoped to the login endpoint that extracts the token from the
-    response and stores it via `pm.environment.set("token",
+    response and stores it via `pm.environment.set("Authorization",
     pm.response.json().accessToken)`.
   - **Consumer side**: a `method.additional.header` rule scoped to the
-    secured endpoints that injects `Authorization: Bearer ${token}`.
+    secured endpoints that injects `Authorization: Bearer ${Authorization}`.
   Never propose half a bundle.
 
 ## Bundle integrity (CRITICAL)
@@ -77,6 +77,36 @@ Workflow rules that form a chain (login-script + consumer-header) MUST be
 proposed together in a single `propose_rule_content` call. Proposing half
 a chain is forbidden — a consumer header that references a token no
 script stores is a silent bug.
+
+## Recipe (full bundle — propose every line together)
+
+**Producer** — after the login response, extract the token and store it in the
+shared env var:
+```
+postman.test[groovy: it.containingClass()?.qualifiedName() == "com.example.AuthController"]=def token = pm.response.json().token; if (token) { pm.environment.set("Authorization", token) }
+```
+
+**Consumer** — attach the Bearer header to the secured controllers, reading the
+same env var:
+```
+method.additional.header[groovy: it.containingClass()?.qualifiedName().startsWith("com.example.api.")]={"name":"Authorization","value":"Bearer ${Authorization}","desc":"bearer token from login","required":true}
+```
+
+**Env var:** `Authorization` — reuse an existing name when the project already
+references one (resolve it from existing `method.additional.header=…${…}` rules
+via `get_existing_rules_for_key`, not from the Environments panel). Tell the
+user to create it in the Postman Environments panel.
+
+⚠ The producer uses `postman.test` (NOT `postman.prerequest`) — the token only
+exists after the login response.
+⚠ If the token field is ambiguous (multiple `*token*` candidates), call
+`ask_clarification` (single_choice) before writing the script.
+
+## Never strip legitimate auth fields
+
+Do NOT add a blanket `field.ignore` for `password`, `secret`,
+`clientSecret`, or `refreshToken` alongside this bundle — a login endpoint
+**legitimately requires** `password`. Stripping it breaks the export.
 
 ## No hardcoded secrets
 
@@ -91,11 +121,3 @@ scripts** (NO `groovy:` prefix). A `groovy:` prefix routes the value to
 `Jsr223ScriptParser` at export time, where `pm` is NOT bound — the script
 throws and the failure is silently swallowed, so no script lands in the
 Postman collection.
-
-## Fetch the full recipe
-
-Fetch the full recipe on demand via `get_plugin_doc` with
-`name="rule-guide"` (the "Workflow Patterns" → "Auth token chaining"
-section). Do NOT reproduce the table from memory — the canonical doc
-carries detection signals, complete `key[filter]=value` lines, and
-env-var-reuse notes.

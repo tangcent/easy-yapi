@@ -14,17 +14,31 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 /**
- * Classifies a tool as a sense (read-only) or a hand (state-changing).
+ * Classifies a tool by whether it can affect anything **outside the agent's own
+ * working memory**.
+ *
+ * - [PERCEPTION] — no external side effect. It reads PSI / config and may update
+ *   the conversation's own bookkeeping (e.g. `list_rule_keys` fills the knowledge
+ *   state; `create_task_list` / `update_task` write `AgentMemory.taskList` and
+ *   emit task events). Runs automatically and is never gated.
+ * - [ACTION] — acts beyond the conversation (writes a file, mutates project
+ *   state) or *is* the terminal staging step. Gated by [ApprovalGate] unless
+ *   [requiresApproval] is overridden to `false` for staging-only tools like
+ *   `propose_rule_content`.
+ *
+ * The dividing line is the **external** effect, not "does it write anything" —
+ * which is why the task-list tools are perception tools even though they mutate
+ * agent state: nothing outside the conversation can observe them.
  */
 enum class ToolKind { PERCEPTION, ACTION }
 
 /**
  * A capability the AI agent can invoke.
  *
- * Perception tools ([ToolKind.PERCEPTION]) run automatically and never mutate
- * state. Action tools ([ToolKind.ACTION]) change state and are gated by
- * [ApprovalGate] unless [requiresApproval] is overridden to `false` (e.g.
- * staging-only tools like `propose_rule_content`).
+ * Perception tools ([ToolKind.PERCEPTION]) run automatically and never reach
+ * outside the conversation. Action tools ([ToolKind.ACTION]) act beyond it and
+ * are gated by [ApprovalGate] unless [requiresApproval] is overridden to `false`
+ * (e.g. staging-only tools like `propose_rule_content`).
  */
 interface AiTool {
     val name: String

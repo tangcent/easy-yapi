@@ -25,8 +25,8 @@ class OpenApiSchemaConverterTest {
     // normalises through `JsonType.fromJavaType` / `fromPsiType` / `fromPrimitiveKind` /
     // `resolveJsonType`, so only the values in [REACHABLE_SINGLE_TYPES] can ever reach
     // `primitiveSchema`. These tests enumerate that domain — not the Java type spellings the
-    // old substring matcher tolerated (`byte[]`, `uuid`, `LocalDateTime`, …, none of which
-    // production can produce) — and assert every one lands on a legal OAS 3.0.3 schema.
+    // old substring matcher tolerated (`byte[]`, `LocalDateTime`, …, none of which production
+    // can produce) — and assert every one lands on a legal OAS 3.0.3 schema.
 
     @Test
     fun reachableSingleTypesMapToTheExpectedOasSchema() {
@@ -43,6 +43,32 @@ class OpenApiSchemaConverterTest {
             assertTrue(
                 "'$type' produced type '${schema.type}', not a legal OAS 3.0.3 type",
                 schema.type in OAS_SCHEMA_TYPES,
+            )
+        }
+    }
+
+    /**
+     * The OAS table and `JsonType.toSchemaType` — the draft-04 table the YApi channel emits —
+     * are deliberately separate, because OAS denies `type: "null"` and needs `items` on an
+     * `array`. This pins the *relationship* between them: the same `type` for every reachable
+     * value, with the draft-04-only `"null"` as the single, documented divergence.
+     *
+     * The failure mode guarded here is the silent one — someone gives `float` a `type` of
+     * `integer` on one side, or adds an IR type to one table only, and YApi and OpenAPI start
+     * describing the same field differently.
+     */
+    @Test
+    fun oasTypeAgreesWithTheDraft04VocabularyExceptForNull() {
+        for (type in REACHABLE_SINGLE_TYPES) {
+            val oas = converter().convert(ObjectModel.single(type))!!.type
+            if (type == "null") {
+                assertEquals("draft-04's `null` is illegal in OAS and must degrade", "string", oas)
+                continue
+            }
+            assertEquals(
+                "'$type': the two dialect tables must agree on `type`",
+                JsonType.toSchemaType(type),
+                oas,
             )
         }
     }
@@ -396,6 +422,9 @@ class OpenApiSchemaConverterTest {
             "file[]" to ("string" to null),
             JsonType.DATE to ("string" to "date"),
             JsonType.DATETIME to ("string" to "date-time"),
+            // Not a core OAS format, but the conventional one for a UUID; `toSchemaType` agrees
+            // on the `type` and the draft-04 vocabulary has no place to say `uuid`.
+            JsonType.UUID to ("string" to "uuid"),
             JsonType.SHORT to ("integer" to "int32"),
             JsonType.INT to ("integer" to "int32"),
             JsonType.LONG to ("integer" to "int64"),

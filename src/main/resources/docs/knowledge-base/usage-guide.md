@@ -121,7 +121,7 @@ This tells EasyYapi: whenever you encounter a type matching `Mono<X>`, treat it 
 #regex:java\.time\.LocalDateTime?json.rule.convert=string
 ```
 
-See the [Rule Authoring Guide](rule-guide.md#json-rules) for the full list of JSON-related rule keys.
+See the [Rule Authoring Guide](rule-guide.md#rule-key-catalog) for the full list of JSON-related rule keys.
 
 ---
 

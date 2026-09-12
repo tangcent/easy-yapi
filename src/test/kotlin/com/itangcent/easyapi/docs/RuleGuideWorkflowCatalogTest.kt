@@ -6,13 +6,18 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Drift tripwire for the Workflow-Pattern Catalog in `rule-guide.md`.
+ * Drift tripwire for the workflow recipes and their script-context isolation
+ * invariants.
  *
- * Asserts that the canonical knowledge-base `rule-guide.md` contains the
- * anchor strings for each workflow recipe. This is a cheap structural check
- * — it does NOT validate the full markdown, only that the key recipe
- * fragments survive future edits. If a refactor renames a section or drops a
- * recipe line, this test fails before release.
+ * The recipes are spread across the whole knowledge surface rather than
+ * living in one file: `rule-guide.md` keeps the user-facing workflow
+ * narrative and the scope note, while the concrete recipe lines and
+ * correctness notes live in the AI catalog — `ai/detection/` (per-pattern
+ * recipes) and `ai/key-guides/` (per-key value shapes), with the normative
+ * rules in `ai/agent-base.md`. This test reads all of them and asserts each
+ * anchor string survives future edits — it does NOT validate the full
+ * markdown, only that the key fragments are still present somewhere on that
+ * surface.
  *
  * Additionally, enforces **script-context isolation invariants** (review
  * Issue: recipe context-mixing). `postman.test`/`postman.prerequest` rule
@@ -23,9 +28,10 @@ import java.io.File
  * `PmScriptExecutor`). These tests prevent regressions that re-introduce the
  * silent-failure trap.
  *
- * The canonical source is `src/main/resources/docs/knowledge-base/rule-guide.md`.
- * The external skill's mirror (`skills/easy-yapi-assistant/docs/rule-guide.md`)
- * is kept in sync by the `syncKnowledgeBase` Gradle task (verified by
+ * Sources are the repo working-tree files: the canonical
+ * `src/main/resources/docs/knowledge-base/rule-guide.md` plus
+ * `src/main/resources/ai/`. The external skill mirrors are kept in sync by
+ * `syncKnowledgeBase` / `syncAgentCatalog` (verified by
  * `EasyYapiAssistantSkillTest`).
  *
  * Run with: `./gradlew test --tests "*.RuleGuideWorkflowCatalogTest*"`
@@ -35,13 +41,37 @@ class RuleGuideWorkflowCatalogTest {
     private val ruleGuide: File =
         File("src/main/resources/docs/knowledge-base/rule-guide.md")
 
+    private val aiDir: File = File("src/main/resources/ai")
+
+    /**
+     * Concatenation of every file that carries an anchor string. Reading the
+     * union (rather than one file) is deliberate: the recipes' single home
+     * changed when they moved out of `rule-guide.md`, and this guard is about
+     * the *content* existing on the shipped knowledge surface, not about which
+     * file holds it.
+     */
     private val content: String by lazy {
         assertTrue(
             "rule-guide.md must exist at ${ruleGuide.path} " +
                 "(test must run from project root)",
             ruleGuide.exists()
         )
-        ruleGuide.readText()
+        val sources = buildList {
+            add(ruleGuide)
+            add(aiDir.resolve("agent-base.md"))
+            CATALOG_DIRS.forEach { dir ->
+                aiDir.resolve(dir).listFiles()
+                    ?.filter { it.isFile && it.extension == "md" }
+                    ?.sortedBy { it.name }
+                    ?.forEach { add(it) }
+            }
+        }
+        val missing = sources.filterNot { it.isFile }
+        assertTrue(
+            "expected every knowledge source to exist on disk; missing: $missing",
+            missing.isEmpty()
+        )
+        sources.joinToString("\n\n") { it.readText(Charsets.UTF_8) }
     }
 
     @Test
@@ -218,5 +248,10 @@ class RuleGuideWorkflowCatalogTest {
             "scope note must state neither affects Markdown/cURL export",
             content.contains("Markdown") && content.contains("cURL")
         )
+    }
+
+    private companion object {
+        /** Catalog directories under `src/main/resources/ai/` carrying recipes. */
+        val CATALOG_DIRS = listOf("detection", "key-guides")
     }
 }

@@ -2,6 +2,7 @@ package com.itangcent.easyapi.channel.markdown.template
 
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
+import com.itangcent.easyapi.core.psi.type.JsonType
 
 /**
  * The two field-rendering primitives shared by [TemplateModelBuilder] (which pre-computes the
@@ -22,11 +23,15 @@ import com.itangcent.easyapi.core.psi.model.ObjectModel
 internal object MarkdownFieldFormatter {
 
     /**
-     * The display type of a field: `Single`→its type, `Array`→`<item>[]` (recursively),
+     * The display type of a field: `Single`→its display type, `Array`→`<item>[]` (recursively),
      * `Object`→`"object"`, `Map`→`"map"`.
+     *
+     * `Single` goes through [JsonType.toDisplayType] rather than being printed verbatim: the IR
+     * vocabulary carries values JSON has no name for (`date`, `datetime`) that would otherwise
+     * land in a document's type column as something neither a JSON nor a Java reader recognises.
      */
     fun formatType(model: ObjectModel): String = when (model) {
-        is ObjectModel.Single -> model.type
+        is ObjectModel.Single -> JsonType.toDisplayType(model.type)
         is ObjectModel.Array -> "${formatType(model.item)}[]"
         is ObjectModel.Object -> "object"
         is ObjectModel.MapModel -> "map"

@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.core.psi
 
 import com.intellij.testFramework.registerServiceInstance
+import com.itangcent.easyapi.core.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.format.spi.toSimpleValue
 import com.itangcent.easyapi.core.psi.type.JsonType
@@ -103,6 +104,123 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         assertEquals("double", types["primitiveDouble"])
         assertEquals("boolean", types["flag"])
         assertEquals("boolean", types["primitiveBoolean"])
+    }
+
+    /**
+     * Non-basic types (`Date`, `Duration`, `UUID`, …) become JSON strings because the shipped
+     * `converts` extension says so — not because of anything in Kotlin. No per-type table
+     * exists any more: a project can drop that extension and declare its own mapping.
+     *
+     * The array element is the interesting half. Only a *field*'s own type is handed to the
+     * rule engine, so without the resolver consulting the same declaration
+     * `Date[]` would expand its element as an object while a plain `Date` field mapped to
+     * `string` — the element and the standalone field would disagree.
+     *
+     * Deliberately uses `T[]` and not `List<T>`: in the light fixture `java.util.List` does not
+     * resolve as a `PsiClass`, so *any* `List<…>` collapses to the bare `array` IR marker
+     * regardless of its element (`List<String>` and `List<Date>` are indistinguishable — see
+     * `testBuildObjectModelWithListField`, whose assertions cannot tell `Single("array")` from a
+     * real `ObjectModel.Array`). `T[]` becomes a genuine `ResolvedType.ArrayType`, which keeps
+     * the element type visible.
+     */
+    fun testBuildObjectModelNonBasicTypesFollowTheConvertsExtension() = runBlocking {
+        loadJDKClass("java.util.Date")
+        loadJDKClass("java.util.UUID")
+        loadJDKClass("java.time.Duration")
+        loadFile(
+            "model/ValueFields.java",
+            """
+            package model;
+            import java.time.Duration;
+            import java.util.Date;
+            import java.util.UUID;
+            public class ValueFields {
+                public String name;
+                public String[] names;
+                public Date legacy;
+                public UUID id;
+                public Duration elapsed;
+                public Date[] history;
+            }
+            """.trimIndent()
+        )
+
+        installContentOfExtension("converts")
+
+        val model = helper.buildObjectModel(findClass("model.ValueFields")!!) as ObjectModel.Object
+
+        // Asserted as one shape map so a mismatch reports every field rather than just the
+        // first one that disagrees. `names` is the control: the array element is unchanged
+        // where nothing maps it, and mapped where the extension does.
+        assertEquals(
+            mapOf(
+                "name" to "single:string",
+                "names" to "array:single:string",
+                "legacy" to "single:string",
+                "id" to "single:string",
+                // `java.time.Duration` used to fall out of the fuzzy substring fallback as
+                // `datetime` (the package name contains "time"); with the mapping declared
+                // explicitly it is a string, and the fallback is gone.
+                "elapsed" to "single:string",
+                "history" to "array:single:string"
+            ),
+            model.fields.mapValues { (_, field) -> shapeOf(field.model) }
+        )
+    }
+
+    /** Renders a model's resolved shape: `single:string`, `array:single:int`, `object`, `map`. */
+    private fun shapeOf(model: ObjectModel): String = when (model) {
+        is ObjectModel.Single -> "single:${model.type}"
+        is ObjectModel.Array -> "array:${shapeOf(model.item)}"
+        is ObjectModel.Object -> "object"
+        is ObjectModel.MapModel -> "map"
+    }
+
+    /**
+     * The mapping is configuration, so a project may declare its own — including opting a type
+     * back into the IR-level `date`, which is what keeps OpenAPI's `format: date` reachable.
+     */
+    fun testBuildObjectModelHonoursAProjectDeclaredMapping() = runBlocking {
+        loadJDKClass("java.util.Date")
+        loadFile(
+            "model/CustomDateFields.java",
+            """
+            package model;
+            import java.util.Date;
+            public class CustomDateFields {
+                public Date legacy;
+            }
+            """.trimIndent()
+        )
+
+        project.registerServiceInstance(
+            serviceInterface = com.itangcent.easyapi.core.config.ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(project, "json.rule.convert[java.util.Date]" to "date")
+        )
+        project.registerServiceInstance(
+            serviceInterface = RuleEngine::class.java,
+            instance = RuleEngine.getInstance(project)
+        )
+
+        val model = helper.buildObjectModel(findClass("model.CustomDateFields")!!) as ObjectModel.Object
+
+        assertEquals(JsonType.DATE, model.fields["legacy"]?.model?.asSingle()?.type)
+        assertEquals("", (model.toSimpleValue() as Map<*, *>)["legacy"])
+    }
+
+    /** Installs a built-in extension as this project's configuration, the way Settings does. */
+    private fun installContentOfExtension(code: String) {
+        val extension = requireNotNull(ExtensionConfigRegistry.getExtension(code)) {
+            "the built-in '$code' extension must be on the test classpath"
+        }
+        project.registerServiceInstance(
+            serviceInterface = com.itangcent.easyapi.core.config.ConfigReader::class.java,
+            instance = TestConfigReader.fromConfigText(project, extension.content)
+        )
+        project.registerServiceInstance(
+            serviceInterface = RuleEngine::class.java,
+            instance = RuleEngine.getInstance(project)
+        )
     }
 
     fun testBuildObjectModelWithNestedObject() = runBlocking {

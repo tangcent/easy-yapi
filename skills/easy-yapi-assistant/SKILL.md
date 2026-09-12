@@ -71,8 +71,21 @@ page first — do **not** rely on memory or guess syntax.
 | `docs/postman-script-reference.md` | `postman-script-reference` | Postman-compatible `pm.*` Groovy scripting (pre-request / post-response only). |
 | `rule-keys.md` | *(built-in `list_rule_keys` tool)* | Complete rule-key catalog, **auto-generated** from every key's self-describing scheme (full scheme in `rule-keys.json`). |
 | `rule-contexts.md` | *(built-in `get_rule_context` tool)* | Per-key script-context (bindings + callable script-object method signatures), **auto-generated** by reflecting the same rule keys. Fetch one key with `scripts/get_key_context.sh`. |
+| `tools.md` | *(built-in tool registries)* | **Auto-generated** inventory of every AI tool: name, kind (perception/action), approval, timeout, implementation class, the registry it belongs to (`standardRuleTools()` / `orchestratorToolRegistry()` / `subAgentToolRegistry()`), and which tools have a bundled CLI mirror. |
+| `locales.md` | *(built-in `BundledLanguageTemplates`)* | **Auto-generated** list of bundled Markdown-template locales for `markdown.template.language`. |
+| `extensions.md` | *(built-in `plugin.xml`)* | **Auto-generated** extension-point declarations + every registered implementation class — the full EP wiring overview. |
+
+All generated files (`rule-keys.*`, `rule-contexts.*`, `tools.md`,
+`locales.md`, `extensions.md`) are refreshed by `./gradlew syncSkill` and must
+never be edited by hand.
 
 ## Toolset — CLI mirrors of the built-in agent tools
+
+> The **mechanical inventory** of the built-in tools (name, kind, approval,
+> timeout, description, registry membership, which have a CLI mirror) is
+> generated — see [`tools.md`](tools.md). The tables below add the
+> **emulation guidance**: how to achieve each tool's job with your own
+> file/`rg` capabilities, which is not derivable from code.
 
 The built-in agent has a fixed set of perception/action tools. You provide
 equivalent capability by reading files and searching the codebase. Use the
@@ -379,25 +392,27 @@ if the user exports a different app later into the same Postman environment.
   Note: the v1 runtime converts unresolved `${...}` placeholders in
   **header values** only; do not promise body-level namespacing.
 
-## Critical Rule File Format (follow exactly — inlined from the agent preamble)
+The sections below are inlined verbatim from the built-in agent's preamble
+(`ai/agent-base.md`) — the rule-file syntax, value formats, and quality rules
+are identical whether you author rules with the built-in agent or this skill.
 
-Each line is `<key>[<filter>]=<value>` or `<key>=<value>` (no filter). The
-filter goes **INSIDE `[...]` AFTER the key** — NEVER before it. There is no
-`filter?key=value` form.
+## Rule file format (CRITICAL — follow exactly)
 
+Each line is `<key>[<filter>]=<value>` or `<key>=<value>` (no filter).
+The filter goes INSIDE `[...]` AFTER the key — NEVER before it. There
+is no `filter?key=value` form. Example:
 ```
-api.tag[$class:com.example.UserController]=user
+method.doc[$class:com.example.UserController]=user
 method.additional.header={"name":"Authorization","value":"Bearer ${token}","desc":"","required":true}
 ```
 
 Valid filter prefixes (and ONLY these):
-
-- `$class:<FQN>` — exact class-name match. **Wildcards are NOT supported.**
+- `$class:<FQN>` — exact class-name match. Wildcards are NOT supported.
   For package/pattern matching use `groovy:` (e.g.
-  `groovy: it.containingClass()?.qualifiedName()?.startsWith("com.example.web.")`).
+  `groovy: it.containingClass()?.qualifiedName().startsWith("com.example.web.")`).
 - `@<AnnotationFqn>` — annotation presence.
-- `#regex:<pattern>` — regex match; captured groups available as `${1}`,
-  `${2}` in the value.
+- `#regex:<pattern>` — regex match; captured groups available as
+  `${1}`, `${2}` in the value.
 - `#<tag>` — JavaDoc/KDoc tag.
 - `!<expr>` — negation.
 - `groovy:<script>` — truthy script result = match.
@@ -408,44 +423,142 @@ Class identity in Groovy is context-sensitive:
   FQN equality and package-prefix comparisons.
 - For inherited members, `containingClass()` is the class currently being
   exported, while `defineClass()` is the original declaring class.
+- When a rule key accepts several context kinds (e.g. `custom.method.is.api`
+  evaluates `it` as a class OR a method), discriminate with
+  `it.contextType()` — it returns `"class"` / `"method"` / `"field"` /
+  `"param"` (and `"unknown"` when no PSI element is bound). Never probe the
+  method surface with Groovy MOP idioms such as
+  `it.respondsTo('containingClass')` to guess the context kind.
 
-There is **no `~` prefix** and **no bare `class:` prefix** — the older
-`class:com.example.Foo` and `~regex` forms are invalid; use `$class:` and
-`#regex:` respectively.
+There is NO `~` prefix and NO `class:` prefix (the bare `class:` form
+from older docs is invalid — use `$class:`).
 
-## Critical Quality Rules (follow exactly — inlined from the agent preamble)
+Never invent rule keys that are not in `list_rule_keys`. In particular:
+`api.header`, `api.header.additional`, and `path.prefix` do NOT exist — use
+`method.additional.header` and `class.prefix.path` /
+`endpoint.prefix.path` instead. `method.additional.header` and
+`method.additional.param` values are JSON objects (one per line:
+`{"name":"…","value":"…","desc":"…","required":…}`), not `Name:Value`.
 
-These mirror the rules the built-in agent enforces via its system prompt.
+## Writing a rule value — supported formats & when to use each (CRITICAL)
+
+The rule engine decides how a value is evaluated **by the value's shape**, not
+by the key. There is no per-key execution mode: **the same key** can be written
+as a literal or as a Groovy rule. Pick the format by *whether you need to
+compute the value from the project code*:
+
+- **Literal — the default.** A value that needs no dynamic computation is
+  injected as-is: plain text, JSON, URLs, or a full script. For a multi-line
+  value (e.g. a script) wrap it in triple backticks:
+  ```
+  field.ignore=true
+  method.additional.header={"name":"Authorization","value":"Bearer foo","desc":"","required":true}
+  postman.test=```
+  pm.test("status is 200", function () {
+      pm.response.to.have.status(200);
+  });
+  ```
+  ```
+  A literal value is never run through a Groovy engine — what you write is
+  exactly what is used.
+
+- **`groovy:` — dynamic computation.** When the value must be derived from the
+  current class/method (an annotation, a computed header, a context-dependent
+  value), prepend `groovy:`; the expression is evaluated with the PSI `it`
+  context (and helpers) and its **result** becomes the value:
+  ```
+  method.additional.header=groovy: '{"name":"X-Echo","value":"' + it.name() + '","required":false}'
+  ```
+  For multi-condition logic, use a **groovy value-block** (multi-line):
+  ```
+  method.additional.header=groovy:```
+  def cls = it.containingClass()?.qualifiedName()
+  if (cls?.startsWith("com.example.merchant.")) {
+      return '{"name":"X-Merchant","value":"gateway","required":true}'
+  }
+  return null
+  ```
+  ```
+  Single-line when ≤1 condition, value-block when ≥2; the script must
+  `return` the value string or `return null` to skip.
+
+- **`@Fqn` / `@Fqn#attr` — pull the value from an annotation** on the current
+  element (class/method/field/param). Omitting the attribute reads the
+  `value()` member. Use it to source docs/names from Swagger-style annotations
+  rather than duplicating the text by hand:
+  ```
+  method.doc=@io.swagger.v3.oas.annotations.Operation#description
+  param.doc=@io.swagger.annotations.ApiParam#value
+  field.name=@com.fasterxml.jackson.annotation.JsonProperty#value
+  ```
+- **`#tag` — pull the value from a JavaDoc/KDoc tag** on the current element
+  (e.g. `#return` → the `@return` text; `#mock` → the `@mock` value). Use it to
+  re-emit a doc tag as the rule value:
+  ```
+  method.return=#return
+  ```
+- **`${n}` group substitution** — when a **filter** uses `#regex:<pattern>`,
+  the captured groups are exposed to the value as `${1}`, `${2}`, … (and as
+  `it.regexGroups` inside a `groovy:` value). Use it to extract a piece of the
+  matched text:
+  ```
+  json.rule.convert[#regex:com\.example\.common\.ApiResult<(.*?)>]=${1}
+  ```
+
+**Filter syntax vs value-sourcing — do not confuse them.** `$class:`, `@`,
+`#tag`, `#regex:`, `!`, `groovy:` in the **filter** (`[...]` after the key)
+decide *whether* a rule applies. But the same `@` / `#` tokens in the **value**
+position mean *source the value from the element* (annotation attribute / doc
+tag) — see above. `$class:` and `!` are never valid as a value; if a value
+depends on such a match, express the decision in `groovy:` with `it`.
+
+Rule of thumb:
+- value independent of project code → **literal** (triple backticks for scripts)
+- value already on the element as an annotation/doc tag → **`@Fqn#attr`** / **`#tag`**
+- value computed from project code → **groovy:** (value-block for ≥2 conditions)
+
+`get_rule_context` cannot report "which format a key needs" — there is none to
+report. It only describes the **EasyAPI evaluation context** (the `it` PSI
+kinds, helpers, and their callable methods). For keys whose output is a script
+that runs on an external runtime (e.g. `postman.test`, whose output runs in the
+Postman `pm.*` environment), `get_rule_detail(key=…)` documents that runtime.
+Never invent a fixed mode for a key.
+
+## Writing rules — quality rules (CRITICAL — follow exactly)
 
 ### 1. Check existing rules before writing (avoid duplicates)
 
-Before proposing any rule for a key, read the existing rule files and check
-whether an equivalent rule already exists in **any** source — project
-(`.easyapi/`), global (`~/.easyapi/`), or bundled extension (Swagger /
-Jackson / etc.).
+Before proposing any rule for a key, call
+`get_existing_rules_for_key` for that key (or pass `keys` as an array
+to check multiple keys in one request). The result includes values
+from **all** sources — project (`.easyapi/`), global (`~/.easyapi/`),
+extension (Swagger/Jackson/etc.), and remote — with their `sourceId`
+and `priority`.
 
-- If an equivalent rule already exists, do NOT write a duplicate. Tell the
-  user where it already lives and skip it.
-- If a broader rule already covers your case (e.g. a `groovy:` filter matching
-  a package prefix, and you were about to add one for a sub-package), do NOT
-  add a narrower duplicate unless it overrides with a different value.
-- Extension-source rules (Swagger annotations, Jackson modules, etc.) are
-  already in effect. Never re-declare what the extension already provides
-  (e.g. `api.status[@java.lang.Deprecated]=deprecated` is handled by the
-  built-in extension — do not write it).
+- If an equivalent rule **already exists in any source**, do NOT write
+  a duplicate. Tell the user where it already lives (e.g. "already set
+  in the `extension` source") and skip it.
+- If a broader rule already covers your case (e.g. a `groovy:` filter
+  that matches a package prefix, and you were about to add one for a
+  sub-package), do NOT add a narrower duplicate unless it overrides
+  with a different value.
+- Extension-source rules (Swagger annotations, Jackson modules, etc.)
+  are already in effect. Never re-declare what the extension already
+  provides (e.g. `method.doc[@java.lang.Deprecated]=deprecated` is
+  handled by the built-in extension — do not write it).
 
 ### 2. Prefer groovy value-blocks for complex conditional logic
 
 When a filter expression grows long — multiple `&&`/`||`, multiple
-exclusions, or nested method calls — the `key[groovy:…]=value` form becomes
-unreadable on a single line. Switch to the **groovy value-block** form: the
-value itself is a multi-line groovy script that returns the value when the
-condition holds, or `null` when it doesn't. See the rule guide's Groovy
-Binding Reference for the `it` object API.
+exclusions, or nested method calls — the `key[groovy:…]=value` form
+becomes unreadable on a single line. In that case, switch to the
+**groovy value-block** form: the value itself is a multi-line groovy
+script that returns the value when the condition holds, or `null` when
+it doesn't.
 
 **Bad (unreadable single-line filter):**
 ```
-method.additional.header[groovy: it.containingClass()?.qualifiedName()?.startsWith("com.example.merchant.") && it.containingClass()?.qualifiedName() != "com.example.merchant.AuthController"]={"name":"Authorization","value":"Bearer ${token}","desc":"JWT","required":true}
+method.additional.header[groovy: it.containingClass()?.qualifiedName().startsWith("com.example.merchant.") && !it.containingClass()?.qualifiedName().equals("com.example.merchant.AuthController") && !it.containingClass()?.qualifiedName().equals("com.example.merchant.PublicController")]={"name":"Authorization","value":"Bearer ${token}","desc":"JWT","required":true}
 ```
 
 **Good (multi-line groovy value-block):**
@@ -453,7 +566,8 @@ method.additional.header[groovy: it.containingClass()?.qualifiedName()?.startsWi
 method.additional.header=groovy:```
 def cls = it.containingClass()?.qualifiedName()
 if (cls?.startsWith("com.example.merchant.")
-    && cls != "com.example.merchant.AuthController") {
+    && cls != "com.example.merchant.AuthController"
+    && cls != "com.example.merchant.PublicController") {
     return '{"name":"Authorization","value":"Bearer ${token}","desc":"JWT","required":true}'
 }
 return null
@@ -461,9 +575,10 @@ return null
 ```
 
 Rules of thumb:
-- **≤ 1 condition** → inline `<key>[<filter>]=<value>` is fine.
+- **≤ 1 condition** → inline `key[filter]=value` is fine.
 - **≥ 2 conditions or exclusions** → use a groovy value-block.
 - The script must `return` the value (string) or `return null` to skip.
+- Keep the script readable: use local variables, one condition per line.
 
 ### 3. Never generate blanket field-ignore rules
 
@@ -481,25 +596,12 @@ fields that some endpoints legitimately require.
 
 ### 4. Don't re-declare framework defaults
 
-Standard Spring MVC / WebFlux / JAX-RS / Feign endpoints need no rules —
-the plugin detects them out of the box. `@Deprecated` status, `@RequestMapping`
-paths, `@RequestParam` names, etc. are all handled automatically. Only write
-rules for **invisible contracts** the plugin cannot detect (custom filters,
-interceptors, argument resolvers, response wrappers, non-standard annotations).
-
-## Common Key-Name Mistakes (do not use these)
-
-These keys do **not** exist — use the correct alternative:
-
-| Does NOT exist | Use instead |
-|----------------|-------------|
-| `api.header` | `method.additional.header` |
-| `api.header.additional` | `method.additional.header` |
-| `path.prefix` | `class.prefix.path` / `endpoint.prefix.path` |
-
-`method.additional.header` and `method.additional.param` values are **JSON
-objects** (one per line):
-`{"name":"…","value":"…","desc":"…","required":…}`, not `Name:Value`.
+Standard Spring MVC / WebFlux / JAX-RS / Feign endpoints need no
+rules — the plugin detects them out of the box. `@Deprecated` status,
+`@RequestMapping` paths, `@RequestParam` names, etc. are all handled
+automatically. Only write rules for **invisible contracts** the
+plugin cannot detect (custom filters, interceptors, argument
+resolvers, response wrappers, non-standard annotations).
 
 ## Two-Approach Note for the User
 

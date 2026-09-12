@@ -10,12 +10,11 @@ package com.itangcent.easyapi.core.ai.agent
  *   derived detection and rule-detail indexes (enablement-aware). It uses
  *   `get_detection_prompt` / `get_rule_detail` to pull full recipes on
  *   demand. Task-list tools are not used.
- * - [TASK_LIST_MAGIC] — invoked by the Magic button. The agent gets
- *   the base prompt only; detection/rule detail is pulled inside tasks
- *   as needed. `create_task_list` / `update_task` are intended to be
- *   used here.
- * - [TASK_LIST_PROGRAMMATIC] — reserved for the future programmatic
- *   task-list entry seam. Same prompt shape as [TASK_LIST_MAGIC].
+ * - [TASK_LIST_PROGRAMMATIC] — the Magic detection pass: the caller seeds
+ *   the task list (`MagicTaskListBuilder`) and drives the orchestrator
+ *   agent. The agent gets the base prompt only; detection/rule detail is
+ *   pulled inside each task's sub-agent as needed. `update_task` /
+ *   `run_sub_agent` are used here.
  *
  * - [SUB_AGENT] — used by [com.itangcent.easyapi.core.ai.tools.RunSubAgentTool]
  *   when it spawns a sub-agent for one detection task. The sub-agent gets
@@ -30,7 +29,6 @@ package com.itangcent.easyapi.core.ai.agent
  */
 enum class EntryPath {
     REACTIVE,
-    TASK_LIST_MAGIC,
     TASK_LIST_PROGRAMMATIC,
     SUB_AGENT
 }

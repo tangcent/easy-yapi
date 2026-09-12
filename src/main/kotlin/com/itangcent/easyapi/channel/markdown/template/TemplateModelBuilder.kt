@@ -11,6 +11,7 @@ import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.core.psi.model.ObjectModelVisitTracker
+import com.itangcent.easyapi.core.psi.type.JsonType
 
 /**
  * Builds the pure-data [TemplateModel] from already-resolved [ApiEndpoint]s.
@@ -199,10 +200,12 @@ object TemplateModelBuilder : IdeaLog {
             }
             is ObjectModel.Single -> {
                 // Parity (review finding F5): one synthetic row, name="" matching legacy
-                // `Row(name="", type=model.type, desc="")` byte-for-byte.
+                // `Row(name="", type=model.type, desc="")` byte-for-byte. The type goes through
+                // `toDisplayType` like every other row — legacy never produced a date IR value
+                // here because it mapped dates to `string` upstream.
                 fields += FieldView(
                     name = "",
-                    type = model.type,
+                    type = JsonType.toDisplayType(model.type),
                     desc = "",
                     required = false,
                     defaultValue = null,
@@ -326,7 +329,7 @@ object TemplateModelBuilder : IdeaLog {
             is ObjectModel.Single -> {
                 fields += FieldView(
                     name = prefix,
-                    type = "${item.type}[]",
+                    type = "${JsonType.toDisplayType(item.type)}[]",
                     desc = "",
                     required = false,
                     defaultValue = null,

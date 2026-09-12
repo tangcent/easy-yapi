@@ -52,8 +52,26 @@ knows the contract.
   filter also injects the header into the response (echo-back for tracing),
   bundle a `method.additional.response.header` rule in the same call.
 
-## Fetch the full recipe
+## Recipe (full bundle — propose every line together)
 
-Fetch the full recipe on demand via `get_plugin_doc` with
-`name="rule-guide"` (the "Workflow Patterns" → "Per-request injection"
-section). Do NOT reproduce the table from memory.
+**Correlation ID** (global, pre-request):
+```
+postman.prerequest=pm.request.headers.upsert("X-Request-Id", java.util.UUID.randomUUID().toString())
+```
+
+**Idempotency key** (scoped to mutating methods — never unscoped):
+```
+postman.prerequest[groovy: it.methodType().name() == "POST" || it.methodType().name() == "PUT"]=pm.request.headers.upsert("Idempotency-Key", java.util.UUID.randomUUID().toString())
+```
+
+Uses `pm.request.headers.upsert(...)` (add-or-replace, case-insensitive), not
+`.add(...)` (which would duplicate). If the filter also echoes the header on
+the response, bundle a `method.additional.response.header` rule in the same
+proposal.
+
+## Script-context isolation (CRITICAL)
+
+`postman.prerequest` rule values MUST be **literal scripts** (NO `groovy:`
+prefix). A `groovy:` prefix routes the value to `Jsr223ScriptParser` at export
+time, where `pm` is NOT bound — the script throws and the failure is silently
+swallowed, so no script lands in the Postman collection.

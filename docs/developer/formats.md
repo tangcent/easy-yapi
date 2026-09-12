@@ -97,19 +97,63 @@ data class FieldModel(
 constants in
 [`JsonType`](../../src/main/kotlin/com/itangcent/easyapi/core/psi/type/JsonType.kt)
 (`STRING`, `INT`, `LONG`, `FLOAT`, `DOUBLE`, `BOOLEAN`, `ARRAY`, `OBJECT`,
-`FILE`, `DATE`, `DATETIME`). Default values come from
+`FILE`, `DATE`, `DATETIME`, `UUID`). Default values come from
 `JsonType.defaultValueForType(type)`:
 
 | `type` | Default |
 |---|---|
 | `STRING` | `""` |
+| `DATE` / `DATETIME` / `UUID` | `""` — string-shaped IR types, so they get the string default |
 | `INT` / `SHORT` / `int32` | `0` |
 | `LONG` / `int64` | `0L` |
 | `FLOAT` | `0.0f` |
 | `DOUBLE` | `0.0` |
 | `BOOLEAN` / `bool` | `false` |
+| `FILE` | `"(binary)"` |
 | `bytes` | `""` |
+| `ARRAY` / `OBJECT` | `null` — structural shapes have no scalar default; `ObjectModelValueConverter.singleToValue` renders them as `[]` / `{}` |
 | anything else | `null` |
+
+This table is the only one of its kind: `ObjectModelValueConverter.singleToValue`
+delegates its scalar cases here, so an exported example and its schema cannot
+disagree (`date` used to be `""` in one path and `null` in the other).
+
+For a **document's type column** use `JsonType.toDisplayType(type)`, never the raw
+`Single.type`: `date`/`datetime` are IR-only spellings that are neither JSON types
+nor Java type names. It rewrites only those two — `long`/`short`/`file`/`uuid` name
+a wire shape a reader can act on, so they are printed verbatim.
+
+#### Non-basic types are configuration, not code
+
+Which non-JSON-native types (`java.util.Date`, `java.time.Duration`,
+`java.util.UUID`, joda-time, …) collapse to a scalar — and to *which* scalar — is
+declared by the active configuration, not by a table in Kotlin:
+
+```properties
+# src/main/resources/extensions/converts.config  (default-enabled)
+json.rule.convert[java.time.Duration]=java.lang.String
+```
+
+Leave them unmapped and they are documented as objects (`java.time.Duration` →
+`{seconds, nanos}`), which is why the shipped extension maps them. Turn the
+extension off (Settings → Rule File → Extensions) and declare your own mapping —
+`=long` for a custom serializer, or `=date` / `=datetime` to keep OpenAPI's
+`format: date` / `format: date-time`.
+
+Two consequences worth knowing when you write a channel:
+
+- `JsonType.fromJavaType` is **configuration-agnostic**. It owns the closed
+  `JsonType` vocabulary and the container spellings only, so
+  `fromJavaType("java.time.LocalDate")` is `object` even with the extension on —
+  the configured mapping is applied by `SpecialTypeHandler.resolveSpecialType`
+  *before* this function is reached. Do not add a per-type table back here.
+- File detection is **token-level**, never substring-based — for the container
+  branch too. `SpecialTypeHandler.mentionsFileType` decides whether a
+  declaration carries files, so `List<MultipartFile>` from a rule script is
+  `file[]`, while `List<Department>` and `List<Partition>` are plain arrays
+  (a `contains("part")` check used to make any element whose name contained
+  "part" a file, and `com.acme.Department` → `file` directly). Unqualified
+  spellings keep the loose suffix rules as the script-facing fallback.
 
 ### Cycle safety (load-bearing)
 

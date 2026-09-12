@@ -6,7 +6,7 @@ import com.itangcent.easyapi.core.ai.AIService
  * The standard set of tools handed to the [ToolRegistry] for a real
  * conversation.
  *
- * 15 perception tools + 1 staging action (`propose_rule_content`).
+ * 18 perception tools + 1 staging action (`propose_rule_content`).
  * `write_rule_file` is intentionally NOT registered in v1 — the disk write
  * happens only through the user-confirmed "Save…" UI flow.
  *
@@ -97,7 +97,7 @@ fun orchestratorToolRegistry(
  * The sub-agent's tool set for a Magic detection turn (Phase 3 —
  * design §3.5 / FR-3.2, FR-3.3).
  *
- * Seven perception tools + one terminal action:
+ * Eight perception tools + one terminal action:
  * - [FindClassesByAnnotationTool] / [FindClassesBySupertypeTool] — locate
  *   candidate classes by annotation or supertype.
  * - [GetPsiClassInfoTool] — drill into a class's methods/fields/signature.
@@ -105,7 +105,12 @@ fun orchestratorToolRegistry(
  *   can draft concrete rule proposals.
  * - [GetRuleContextTool] — fetch key-specific bindings and callable script
  *   APIs before drafting a Groovy or Postman rule.
+ * - [GetScriptObjectApiTool] — fetch the method signatures of the shared
+ *   script objects the drafted script will call.
  * - [ListRuleKeysTool] — enumerate known rule keys (for proposal shape).
+ * - [GetExistingRulesForKeyTool] — current values for a key across all
+ *   sources, so the sub-agent honours the no-duplicates quality rule
+ *   (agent-base.md §"Check existing rules before writing") before proposing.
  * - [ReportFindingsTool] — terminal; stages the sub-agent's
  *   [com.itangcent.easyapi.core.ai.agent.TaskResult] and ends the
  *   sub-agent's turn.
@@ -130,5 +135,6 @@ fun subAgentToolRegistry(): List<AiTool> = listOf(
     GetRuleContextTool(),
     GetScriptObjectApiTool(),
     ListRuleKeysTool(),
+    GetExistingRulesForKeyTool(),
     ReportFindingsTool()
 )

@@ -2,6 +2,13 @@ package com.itangcent.easyapi.core.psi.type
 
 import junit.framework.TestCase
 
+/**
+ * Pure tests for the file / primitive-wrapper machinery of [SpecialTypeHandler].
+ *
+ * The non-basic type mapping (dates, `UUID`, `Duration`, …) is **not** covered here: it is
+ * declared by the active configuration as `json.rule.convert[<fqn>]` rules, so it needs a
+ * project to read them from — see `DefaultPsiClassHelperIntegrationTest`.
+ */
 class SpecialTypeHandlerTest : TestCase() {
 
     fun testIsFileType() {
@@ -39,27 +46,6 @@ class SpecialTypeHandlerTest : TestCase() {
         assertFalse(SpecialTypeHandler.isFileTypeCanonical(null))
     }
 
-    fun testIsDateTimeAsString() {
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("java.util.Date"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("java.sql.Date"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("java.sql.Timestamp"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("java.time.LocalDate"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("java.time.LocalDateTime"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("java.time.LocalTime"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("java.time.ZonedDateTime"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("java.time.OffsetDateTime"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("java.time.Instant"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("java.util.Calendar"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("org.joda.time.DateTime"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("org.joda.time.LocalDate"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("org.joda.time.LocalDateTime"))
-        assertTrue(SpecialTypeHandler.isDateTimeAsString("org.joda.time.LocalTime"))
-        
-        assertFalse(SpecialTypeHandler.isDateTimeAsString("java.lang.String"))
-        assertFalse(SpecialTypeHandler.isDateTimeAsString("java.lang.Integer"))
-        assertFalse(SpecialTypeHandler.isDateTimeAsString(null))
-    }
-
     fun testIsPrimitiveWrapper() {
         assertTrue(SpecialTypeHandler.isPrimitiveWrapper("java.lang.Boolean"))
         assertTrue(SpecialTypeHandler.isPrimitiveWrapper("java.lang.Byte"))
@@ -69,7 +55,7 @@ class SpecialTypeHandlerTest : TestCase() {
         assertTrue(SpecialTypeHandler.isPrimitiveWrapper("java.lang.Long"))
         assertTrue(SpecialTypeHandler.isPrimitiveWrapper("java.lang.Float"))
         assertTrue(SpecialTypeHandler.isPrimitiveWrapper("java.lang.Double"))
-        
+
         assertFalse(SpecialTypeHandler.isPrimitiveWrapper("java.lang.String"))
         assertFalse(SpecialTypeHandler.isPrimitiveWrapper("int"))
         assertFalse(SpecialTypeHandler.isPrimitiveWrapper(null))
@@ -77,10 +63,14 @@ class SpecialTypeHandlerTest : TestCase() {
 
     fun testIsSpecialType() {
         assertTrue(SpecialTypeHandler.isSpecialType("org.springframework.web.multipart.MultipartFile"))
-        assertTrue(SpecialTypeHandler.isSpecialType("java.util.Date"))
-        assertTrue(SpecialTypeHandler.isSpecialType("java.time.LocalDateTime"))
         assertTrue(SpecialTypeHandler.isSpecialType("java.lang.Integer"))
-        
+
+        // Non-basic types are no longer "special" by construction: whether they are scalar is
+        // decided by the active configuration, not by this object.
+        assertFalse(SpecialTypeHandler.isSpecialType("java.util.Date"))
+        assertFalse(SpecialTypeHandler.isSpecialType("java.time.LocalDateTime"))
+        assertFalse(SpecialTypeHandler.isSpecialType("java.util.UUID"))
+
         assertFalse(SpecialTypeHandler.isSpecialType("java.lang.String"))
         assertFalse(SpecialTypeHandler.isSpecialType("com.example.CustomClass"))
         assertFalse(SpecialTypeHandler.isSpecialType(null))
@@ -91,15 +81,6 @@ class SpecialTypeHandlerTest : TestCase() {
         assertEquals("file", SpecialTypeHandler.getSimpleTypeName("javax.servlet.http.Part"))
         assertEquals("file", SpecialTypeHandler.getSimpleTypeName("java.io.File"))
         assertEquals("file", SpecialTypeHandler.getSimpleTypeName("java.nio.file.Path"))
-    }
-
-    fun testGetSimpleTypeNameForDateTimeTypes() {
-        assertEquals("string", SpecialTypeHandler.getSimpleTypeName("java.util.Date"))
-        assertEquals("string", SpecialTypeHandler.getSimpleTypeName("java.sql.Timestamp"))
-        assertEquals("string", SpecialTypeHandler.getSimpleTypeName("java.time.LocalDate"))
-        assertEquals("string", SpecialTypeHandler.getSimpleTypeName("java.time.LocalDateTime"))
-        assertEquals("string", SpecialTypeHandler.getSimpleTypeName("java.time.LocalTime"))
-        assertEquals("string", SpecialTypeHandler.getSimpleTypeName("org.joda.time.DateTime"))
     }
 
     fun testGetSimpleTypeNameForPrimitiveWrappers() {
@@ -116,6 +97,9 @@ class SpecialTypeHandlerTest : TestCase() {
     fun testGetSimpleTypeNameForNonSpecialTypes() {
         assertNull(SpecialTypeHandler.getSimpleTypeName("java.lang.String"))
         assertNull(SpecialTypeHandler.getSimpleTypeName("com.example.CustomClass"))
+        // Non-basic types are resolved through the configuration, not here.
+        assertNull(SpecialTypeHandler.getSimpleTypeName("java.util.Date"))
+        assertNull(SpecialTypeHandler.getSimpleTypeName("java.util.UUID"))
         assertNull(SpecialTypeHandler.getSimpleTypeName(null))
     }
 
@@ -123,15 +107,6 @@ class SpecialTypeHandlerTest : TestCase() {
         assertEquals("(binary)", SpecialTypeHandler.getDefaultValueForSpecialType("org.springframework.web.multipart.MultipartFile"))
         assertEquals("(binary)", SpecialTypeHandler.getDefaultValueForSpecialType("javax.servlet.http.Part"))
         assertEquals("(binary)", SpecialTypeHandler.getDefaultValueForSpecialType("java.io.File"))
-    }
-
-    fun testGetDefaultValueForSpecialTypeDateTimeTypes() {
-        assertEquals("", SpecialTypeHandler.getDefaultValueForSpecialType("java.util.Date"))
-        assertEquals("", SpecialTypeHandler.getDefaultValueForSpecialType("java.sql.Timestamp"))
-        assertEquals("", SpecialTypeHandler.getDefaultValueForSpecialType("java.time.LocalDate"))
-        assertEquals("", SpecialTypeHandler.getDefaultValueForSpecialType("java.time.LocalDateTime"))
-        assertEquals("", SpecialTypeHandler.getDefaultValueForSpecialType("java.time.LocalTime"))
-        assertEquals("", SpecialTypeHandler.getDefaultValueForSpecialType("org.joda.time.DateTime"))
     }
 
     fun testGetDefaultValueForSpecialTypePrimitiveWrappers() {
@@ -148,6 +123,7 @@ class SpecialTypeHandlerTest : TestCase() {
     fun testGetDefaultValueForSpecialTypeNonSpecialTypes() {
         assertNull(SpecialTypeHandler.getDefaultValueForSpecialType("java.lang.String"))
         assertNull(SpecialTypeHandler.getDefaultValueForSpecialType("com.example.CustomClass"))
+        assertNull(SpecialTypeHandler.getDefaultValueForSpecialType("java.util.Date"))
         assertNull(SpecialTypeHandler.getDefaultValueForSpecialType(null))
     }
 
@@ -157,14 +133,6 @@ class SpecialTypeHandlerTest : TestCase() {
         assertTrue(patterns.any { it.contains("MultipartFile") })
         assertTrue(patterns.any { it.contains("java.io.File") })
         assertTrue(patterns.all { it.contains("__file__") })
-    }
-
-    fun testGetAllDateTimePatterns() {
-        val patterns = SpecialTypeHandler.getAllDateTimePatterns()
-        assertTrue(patterns.isNotEmpty())
-        assertTrue(patterns.any { it.contains("java.util.Date") })
-        assertTrue(patterns.any { it.contains("java.time.LocalDateTime") })
-        assertTrue(patterns.all { it.contains("java.lang.String") })
     }
 
     fun testSingleTypeName() {
@@ -215,6 +183,13 @@ class SpecialTypeHandlerTest : TestCase() {
         assertTrue(SpecialTypeHandler.mentionsFileType("List<MultipartFile>"))
         assertTrue(SpecialTypeHandler.mentionsFileType("Map<String, Part>"))
 
+        // Case-insensitive: `JsonType.fromJavaType` hands this predicate a lowercased
+        // spelling, so the lowercased forms must match the same file types.
+        assertTrue(SpecialTypeHandler.mentionsFileType("list<multipartfile>"))
+        assertTrue(SpecialTypeHandler.mentionsFileType("multipartfile"))
+        assertTrue(SpecialTypeHandler.mentionsFileType("javax.servlet.http.part"))
+        assertFalse(SpecialTypeHandler.mentionsFileType("department"))
+
         // Names that merely *contain* a file type name are not files — the bug the old
         // `contains("Part")` check had (`Department` -> file upload).
         assertFalse(SpecialTypeHandler.mentionsFileType("Department"))
@@ -228,27 +203,5 @@ class SpecialTypeHandlerTest : TestCase() {
         assertFalse(SpecialTypeHandler.mentionsFileType(""))
         assertFalse(SpecialTypeHandler.mentionsFileType("String"))
         assertFalse(SpecialTypeHandler.mentionsFileType("java.util.List<String>"))
-    }
-
-    fun testGetRecommendedConfig() {
-        val config = SpecialTypeHandler.getRecommendedConfig()
-        assertTrue(config.isNotEmpty())
-        assertTrue(config.contains("File types"))
-        assertTrue(config.contains("Date/Time types"))
-        assertTrue(config.contains("MultipartFile"))
-        assertTrue(config.contains("java.util.Date"))
-        assertTrue(config.contains("java.time.LocalDateTime"))
-    }
-
-    fun testResolveSpecialTypeForFileTypes() {
-    }
-
-    fun testResolveSpecialTypeForDateTimeTypes() {
-    }
-
-    fun testResolveSpecialTypeForPrimitiveWrappers() {
-    }
-
-    fun testResolveSpecialTypeForNonSpecialTypes() {
     }
 }

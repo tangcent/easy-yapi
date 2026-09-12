@@ -693,20 +693,12 @@ object TypeResolver : com.itangcent.easyapi.core.logging.IdeaLog {
                 val specialType = SpecialTypeHandler.resolveSpecialType(psiClass)
                 if (specialType != null) return specialType
 
-                val qualifiedName = psiClass.qualifiedName
-                if (qualifiedName != null && SpecialTypeHandler.isDateTimeAsString(qualifiedName)) {
-                    return ResolvedType.UnresolvedType(qualifiedName)
-                }
-
                 val args = classType.parameters.map { resolve(it, context) }
                 return ResolvedType.ClassType(psiClass, args)
             }
             val canonicalText = classType.canonicalText
             if (SpecialTypeHandler.isFileType(canonicalText) || SpecialTypeHandler.isFileTypeCanonical(canonicalText)) {
                 return ResolvedType.UnresolvedType("__file__")
-            }
-            if (SpecialTypeHandler.isDateTimeAsString(canonicalText)) {
-                return ResolvedType.UnresolvedType(canonicalText)
             }
             context.genericMap[classType.canonicalText]?.let { return it }
             context.genericMap[classType.className]?.let { return it }
@@ -771,6 +763,19 @@ object TypeResolver : com.itangcent.easyapi.core.logging.IdeaLog {
             )
         }
 
+        // An IR spelling (`date`, `datetime`, `uuid`, `string`, …) is not a Java type: a
+        // `json.rule.convert` rule may target it, and it reaches `JsonType.fromJavaType`
+        // verbatim — the same way `__file__` does above. Waiting for `createTypeFromText` to
+        // fail on it would make the answer depend on no class of that name existing.
+        //
+        // Matched exactly, not case-insensitively: the IR vocabulary is lowercase by
+        // construction, and a bare `Date` / `Boolean` spelling is a real class that must keep
+        // resolving as one. Every other `JsonType.isValid` call site is exact for the same
+        // reason.
+        if (JsonType.isValid(trimmed)) {
+            return ResolvedType.UnresolvedType(trimmed)
+        }
+
         if (trimmed.endsWith("[]")) {
             val componentText = trimmed.removeSuffix("[]")
             val componentType = resolveFromCanonicalText(componentText, project, contextElement, context)
@@ -809,10 +814,6 @@ object TypeResolver : com.itangcent.easyapi.core.logging.IdeaLog {
         if (psiClass != null) {
             val specialType = SpecialTypeHandler.resolveSpecialType(psiClass)
             if (specialType != null) return specialType
-            val qualifiedName = psiClass.qualifiedName
-            if (qualifiedName != null && SpecialTypeHandler.isDateTimeAsString(qualifiedName)) {
-                return ResolvedType.UnresolvedType(qualifiedName)
-            }
             return ResolvedType.ClassType(psiClass)
         }
 

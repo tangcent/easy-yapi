@@ -1,6 +1,7 @@
 ---
 id: markdown.template
 key: markdown.template
+scheme-stamp: 3ceabbd80899
 title: Markdown template & locale
 cue: markdown.template (local file or remote URL) and markdown.template.language (BCP-47 locale tag)
 ---

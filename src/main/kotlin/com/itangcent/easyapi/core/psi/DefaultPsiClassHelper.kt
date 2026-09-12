@@ -950,12 +950,14 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
             is ResolvedType.ClassType -> {
                 val psiClass = resolvedType.psiClass
-                val qualifiedName = psiClass.qualifiedName
 
-                if (qualifiedName != null && SpecialTypeHandler.isDateTimeAsString(qualifiedName)) {
-                    return ObjectModel.single(JsonType.STRING)
-                }
-
+                // No date/time special case here: `TypeResolver` resolves every date/time FQN
+                // to a `UnresolvedType` (see `SpecialTypeHandler.resolveSpecialType`), so dates
+                // arrive on the `UnresolvedType` branch below — which answers `date`/`datetime`
+                // via `JsonType.fromJavaType`. A `Single(STRING)` guard used to sit here and
+                // contradicted that branch while being unreachable; deleting it leaves one
+                // answer for dates and keeps both branches consistent if `TypeResolver` ever
+                // starts producing a `ClassType` for them.
                 if (isSimpleType(psiClass)) {
                     getDefaultValueForSimpleType(psiClass)
                 } else if (isCollection(psiClass)) {
