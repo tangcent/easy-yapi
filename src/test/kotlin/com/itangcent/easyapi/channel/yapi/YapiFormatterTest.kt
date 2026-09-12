@@ -5,7 +5,7 @@ import com.itangcent.easyapi.core.export.*
 import com.itangcent.easyapi.channel.yapi.model.*
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.channel.yapi.markdown.BundledMarkdownRender
 import org.junit.Assert.*
 import org.junit.Test
@@ -433,9 +433,9 @@ class YapiFormatterTest {
                 method = HttpMethod.POST,
                 body = ObjectModel.Object(
                     mapOf(
-                        "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "User name"),
-                        "age" to FieldModel(ObjectModel.Single(JsonType.INT), "User age"),
-                        "email" to FieldModel(ObjectModel.Single(JsonType.STRING), "User email")
+                        "name" to FieldModel(ObjectModel.Single(IrType.STRING), "User name"),
+                        "age" to FieldModel(ObjectModel.Single(IrType.INT), "User age"),
+                        "email" to FieldModel(ObjectModel.Single(IrType.STRING), "User email")
                     )
                 )
             )
@@ -460,8 +460,8 @@ class YapiFormatterTest {
                 method = HttpMethod.POST,
                 body = ObjectModel.Object(
                     mapOf(
-                        "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "User name"),
-                        "age" to FieldModel(ObjectModel.Single(JsonType.INT), "User age")
+                        "name" to FieldModel(ObjectModel.Single(IrType.STRING), "User name"),
+                        "age" to FieldModel(ObjectModel.Single(IrType.INT), "User age")
                     )
                 )
             )
@@ -516,13 +516,13 @@ class YapiFormatterTest {
                 body = null,
                 responseBody = ObjectModel.Object(
                     mapOf(
-                        "code" to FieldModel(ObjectModel.Single(JsonType.INT), "Response code"),
-                        "message" to FieldModel(ObjectModel.Single(JsonType.STRING), "Response message"),
+                        "code" to FieldModel(ObjectModel.Single(IrType.INT), "Response code"),
+                        "message" to FieldModel(ObjectModel.Single(IrType.STRING), "Response message"),
                         "data" to FieldModel(
                             ObjectModel.Object(
                                 mapOf(
-                                    "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                                    "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                                    "id" to FieldModel(ObjectModel.Single(IrType.INT)),
+                                    "name" to FieldModel(ObjectModel.Single(IrType.STRING))
                                 )
                             ),
                             "Response data"

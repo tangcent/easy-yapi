@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.channel.yapi
 
 import com.itangcent.easyapi.core.export.ApiParameter
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 
 /**
  * Generator for mock data values based on parameter names and types.
@@ -98,7 +98,7 @@ class MockDataGenerator(
         val lowerName = name.lowercase()
         
         return mockByName(lowerName)
-            ?: mockByJsonType(type)
+            ?: mockByIrType(type)
     }
     
     /**
@@ -139,28 +139,30 @@ class MockDataGenerator(
     }
 
     /**
-     * Generates mock data based on JSON type.
-     * Provides basic mock expressions for each primitive type.
-     * 
-     * @param type The JSON type string
+     * Generates mock data based on the IR word.
+     * Provides basic mock expressions for each core type; see [IrType] for why these are not
+     * JSON types.
+     *
+     * @param type An [IrType] word, or the wire-level `text` a [ParameterType] falls back to
      * @return A mock expression string, or null
      */
-    private fun mockByJsonType(type: String): String? {
+    private fun mockByIrType(type: String): String? {
         return when (type) {
-            JsonType.STRING -> "@string"
-            JsonType.SHORT -> "@integer(0, 32767)"
-            JsonType.INT, "integer" -> "@integer"
-            JsonType.LONG -> "@integer"
-            JsonType.FLOAT -> "@float"
-            JsonType.DOUBLE -> "@float"
-            JsonType.BOOLEAN -> "@boolean"
-            JsonType.ARRAY -> "@array"
-            JsonType.OBJECT -> "@object"
-            JsonType.FILE -> "@file"
-            JsonType.DATE -> "@date"
-            JsonType.DATETIME -> "@datetime"
+            IrType.STRING -> "@string"
+            IrType.SHORT -> "@integer(0, 32767)"
+            IrType.INT, "integer" -> "@integer"
+            IrType.LONG -> "@integer"
+            IrType.FLOAT -> "@float"
+            IrType.DOUBLE -> "@float"
+            IrType.BOOLEAN -> "@boolean"
+            IrType.ARRAY -> "@array"
+            IrType.OBJECT -> "@object"
+            IrType.FILE -> "@file"
+            // Reached when `param.jsonType` is absent and `param.type.rawType()` supplies the
+            // wire-level word. `"file"` needs no branch of its own — `IrType.FILE` matches it.
             "text" -> "@string"
-            "file" -> "@file"
+            // Date-like and UUID types have no IR word (they are a `string` on the wire);
+            // `mockByName` covers them through naming conventions (createTime → @datetime).
             else -> null
         }
     }

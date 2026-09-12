@@ -55,6 +55,18 @@ rejects every request.
   `hmac-signing.rules`). Bundle integrity applies — a consumer header
   referencing a signature no script computes is a silent bug.
 
+## Recipe (full bundle — propose every line together)
+
+**Pre-request signing script** (computes the HMAC, attaches the signature
+header):
+```
+postman.prerequest[groovy: it.containingClass()?.qualifiedName().startsWith("com.example.api.")]=def mac = javax.crypto.Mac.getInstance("HmacSHA256"); mac.init(new javax.crypto.spec.SecretKeySpec("${appSecret}".getBytes("UTF-8"), "HmacSHA256")); def stringToSign = pm.request.url + "\n" + pm.request.body; def raw = mac.doFinal(stringToSign.getBytes("UTF-8")); def sig = raw.collect { String.format("%02x", it) }.join(); pm.request.headers.upsert("X-Signature", sig)
+```
+
+**No hardcoded secret** — `${appSecret}` is always an env-var reference.
+⚠ For non-trivial signing (AWS SigV4, etc.) treat this as a scaffold and call
+`ask_clarification` for the canonical-string / algorithm variant.
+
 ## Bundle integrity (CRITICAL)
 
 Signer + signed-consumer rules MUST be proposed together in a single
@@ -73,9 +85,3 @@ content.
 `Jsr223ScriptParser` at export time, where `pm` is NOT bound — the
 script throws and the failure is silently swallowed, so no script
 lands in the Postman collection.
-
-## Fetch the full recipe
-
-Fetch the full recipe on demand via `get_plugin_doc` with
-`name="rule-guide"` (the "Workflow Patterns" → "Request signing"
-section). Do NOT reproduce the table from memory.

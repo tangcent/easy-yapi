@@ -46,7 +46,7 @@ class EndpointBuilder(private val project: Project) {
      * Strategy interface for building an [ObjectModel] from a [PsiClass].
      *
      * Allows framework-specific model construction (e.g., gRPC uses protobuf parsing,
-     * Actuator uses [JsonType], while standard SpringMVC/JAX-RS/Feign use [PsiClassHelper]).
+     * Actuator uses [IrType], while standard SpringMVC/JAX-RS/Feign use [PsiClassHelper]).
      */
     fun interface ResponseModelBuilder {
         suspend fun buildModel(psiClass: PsiClass): ObjectModel?

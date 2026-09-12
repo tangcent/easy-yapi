@@ -22,8 +22,17 @@ import com.itangcent.easyapi.core.psi.model.ObjectModel
 internal object MarkdownFieldFormatter {
 
     /**
-     * The display type of a field: `Single`→its type, `Array`→`<item>[]` (recursively),
+     * The display type of a field: `Single`→its type word, `Array`→`<item>[]` (recursively),
      * `Object`→`"object"`, `Map`→`"map"`.
+     *
+     * `Single` prints its type word verbatim: the pipeline already maps date-like types to
+     * `string` (`IrType.fromJavaType`), so the word a document's type column shows is always a
+     * wire shape a JSON reader recognises.
+     *
+     * `Object` stays the literal `object` on purpose. The JSON word is sufficient here: the rows
+     * below a field spell its shape out, so the type column has nothing to add — and the column is
+     * a *wire-type* column, not a place to name classes. [ObjectModel.ref] is therefore not
+     * consulted (see the OpenAPI converter, where a name really is needed to form a `$ref`).
      */
     fun formatType(model: ObjectModel): String = when (model) {
         is ObjectModel.Single -> model.type

@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.core.psi
 
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
@@ -78,7 +78,7 @@ class ComplexGenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("content (AtaPage) should have 'totalCount' field from Page", totalCountField)
         assertTrue(
             "totalCount should be int, got: ${totalCountField!!.model}",
-            totalCountField.model is ObjectModel.Single && (totalCountField.model as ObjectModel.Single).type == JsonType.INT
+            totalCountField.model is ObjectModel.Single && (totalCountField.model as ObjectModel.Single).type == IrType.INT
         )
 
         val currentPageField = contentObj.fields["currentPage"]
@@ -102,7 +102,7 @@ class ComplexGenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue(
             "data should be an array type, got: $dataModel",
             dataModel is ObjectModel.Array ||
-                    (dataModel is ObjectModel.Single && dataModel.type == JsonType.ARRAY)
+                    (dataModel is ObjectModel.Single && dataModel.type == IrType.ARRAY)
         )
 
         // If data resolved as a proper Array, verify the item type
@@ -117,14 +117,14 @@ class ComplexGenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
             assertNotNull("VotePageQueryVO should have 'id' field", idField)
             assertTrue(
                 "id should be long, got: ${idField!!.model}",
-                idField.model is ObjectModel.Single && (idField.model as ObjectModel.Single).type == JsonType.LONG
+                idField.model is ObjectModel.Single && (idField.model as ObjectModel.Single).type == IrType.LONG
             )
 
             val labelField = voObj.fields["label"]
             assertNotNull("VotePageQueryVO should have 'label' field", labelField)
             assertTrue(
                 "label should be string, got: ${labelField!!.model}",
-                labelField.model is ObjectModel.Single && (labelField.model as ObjectModel.Single).type == JsonType.STRING
+                labelField.model is ObjectModel.Single && (labelField.model as ObjectModel.Single).type == IrType.STRING
             )
         }
     }

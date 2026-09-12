@@ -11,7 +11,7 @@ import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.psi.LinkResolver
 import com.itangcent.easyapi.core.psi.helper.AnnotatedElementsHelper
 import com.itangcent.easyapi.core.psi.helper.SourceHelper
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.core.rule.RuleKey
 import com.itangcent.easyapi.core.rule.context.RuleContext
 import com.itangcent.easyapi.core.rule.context.ScriptPsiClassContext
@@ -250,14 +250,15 @@ class ScriptHelper(private val context: RuleContext) : IdeaLog {
     /**
      * Converts a JSON type string to a JSON Schema data type string.
      *
-     * Mapping:
-     * - string/date/datetime/file → "string"
+     * Mapping (the draft-04 table, see [toSchemaType]):
+     * - string/file/text → "string"
      * - short/int/long → "integer"
      * - float/double → "number"
      * - boolean → "boolean"
      * - array → "array"
      * - object → "object"
-     * - null/unknown → "string"
+     * - null → "null"
+     * - blank/unknown → "string"
      *
      * ## Usage in Scripts
      * ```
@@ -266,10 +267,7 @@ class ScriptHelper(private val context: RuleContext) : IdeaLog {
      * H.jsonTypeToSchemaType("long")        // "integer"
      * ```
      */
-    fun jsonTypeToSchemaType(jsonType: String?): String {
-        if (jsonType.isNullOrBlank()) return "string"
-        return JsonType.toSchemaType(jsonType)
-    }
+    fun jsonTypeToSchemaType(jsonType: String?): String = toSchemaType(jsonType)
 
     /**
      * Find a class by its fully qualified name.
@@ -520,3 +518,41 @@ class ScriptRuntime(private val context: RuleContext) {
  * ```
  */
 class GroovyScriptParser : Jsr223ScriptParser(prefix = "groovy:", engineName = "groovy")
+
+/**
+ * Maps a type word to its **JSON Schema draft-04** `type` — the dialect the YApi channel
+ * declares (`JsonSchemaBuilder`: `$schema: draft-04`), in which `type: "null"` is legal.
+ *
+ * ## Why this table lives here and not in [IrType]
+ *
+ * [IrType] owns the *vocabulary*; this is one of its *exits* — how a word renders in one
+ * dialect — and exits live with their consumers ("nothing renders" in `IrType`'s KDoc). The
+ * primary consumer is the rule-script API ([ScriptHelper.jsonTypeToSchemaType]): a Groovy
+ * rule may hand it any string, which is why matching is case-insensitive and accepts the
+ * Java primitive spellings (`byte`, `decimal`, `bigdecimal`, `bool`) and the JSON Schema
+ * spellings themselves (`integer`, `number`, `int32`, `int64`) — without them those names
+ * fell through to `"string"`, a wrong answer rather than a missing one. The YApi channel
+ * (`JsonSchemaBuilder`) shares the table because it emits the same dialect.
+ *
+ * OpenAPI deliberately does **not** delegate here: OAS 3.0.3 allows only six `type` values
+ * (`null` is not among them) and requires `items` whenever `type` is `array`, so
+ * `OpenApiSchemaConverter.primitiveSchema` keeps its own table. Do not collapse the two — a
+ * common table silently leaks draft-04-only spellings into OAS documents. They are not
+ * *independent* either: for every reachable `ObjectModel.Single.type` the OAS table's `type`
+ * equals this function's answer, the sole exception being the draft-04-only `"null"`, which
+ * OAS must degrade — `OpenApiSchemaConverterTest` pins that relationship over the whole
+ * closed vocabulary.
+ */
+internal fun toSchemaType(type: String?): String {
+    if (type.isNullOrBlank()) return IrType.STRING
+    return when (type.lowercase()) {
+        IrType.STRING, IrType.FILE, "text" -> "string"
+        IrType.SHORT, IrType.INT, IrType.LONG, "integer", "int32", "int64", "byte" -> "integer"
+        IrType.FLOAT, IrType.DOUBLE, "number", "decimal", "bigdecimal" -> "number"
+        IrType.BOOLEAN, "bool" -> "boolean"
+        IrType.ARRAY -> "array"
+        IrType.OBJECT -> "object"
+        "null" -> "null"
+        else -> "string"
+    }
+}

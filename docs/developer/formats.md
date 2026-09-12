@@ -70,10 +70,46 @@ is a sealed class with four variants:
 
 | Variant | Fields | Meaning |
 |---|---|---|
-| `ObjectModel.Single(type)` | `type: String` | Primitive / scalar. `type` is a `JsonType` name string. |
-| `ObjectModel.Object(fields)` | `fields: Map<String, FieldModel>` | Object with named fields. Each `Object` instance has a unique `id` (used by `ObjectModelVisitTracker`). |
-| `ObjectModel.Array(item)` | `item: ObjectModel` | Array of items. |
-| `ObjectModel.MapModel(keyType, valueType)` | `keyType`, `valueType` | Map / dictionary. |
+| `ObjectModel.Single(type, ref)` | `type: String`, `ref: String?` | Primitive / scalar. `type` is one of the `IrType` words. |
+| `ObjectModel.Object(fields, id, ref)` | `fields: Map<String, FieldModel>`, `id: Int`, `ref: String?` | Object with named fields. Each `Object` instance has a unique `id` (used by `ObjectModelVisitTracker`). |
+| `ObjectModel.Array(item, ref)` | `item: ObjectModel`, `ref: String?` | Array of items. |
+| `ObjectModel.MapModel(keyType, valueType, ref)` | `keyType`, `valueType`, `ref: String?` | Map / dictionary. |
+
+### `ref` — the type the node was declared with
+
+Every variant also carries `ref`: the declared type the node was projected from — `com.acme.User`
+for an expanded class, `java.util.List<java.lang.String>` for a collection, `java.lang.Integer`
+for a boxed primitive. `type` is a **lossy** projection (expanding `com.acme.User` yields the
+word `object` and the class name is gone), so `ref` is where the original survives.
+
+Two contracts to respect when writing a format:
+
+- **It may be null.** Nodes nobody declared — rule-configured `json.additional.field` entries,
+  raw `List`/`Map` placeholders, protobuf scalars with no declaration — have nothing to point at.
+- **It is not guaranteed to be fully qualified.** It is the *declared* spelling, so an unresolved
+  type contributes exactly what the parser saw (`User` as often as `com.acme.User`). Reduce it to
+  a bare class name yourself when you need one — the OpenAPI channel keeps such a helper private
+  inside `OpenApiSchemaConverter`, its only shipped consumer — and check for a `.` before
+  treating it as a FQN.
+- **A marker still carries its declaration.** `type = "file"` names no class at all, so the
+  declaration is the only way to tell a `MultipartFile` field from any other file field. The
+  resolver substitutes the marker while the declaration rides along in
+  `ResolvedType.UnresolvedType.declaration` — which is why `ref` is populated even for values
+  whose `type` is a domain marker rather than a JSON type.
+
+Consume it only where `type` is not enough. `Object` is the interesting case — it is the only
+variant whose identity the projection destroys — and even there the answer is usually "not needed":
+an expanded object is rendered by its fields, so a document that only prints a shape has no use for
+the name. The one shipped consumer is the OpenAPI converter, which needs a name to register
+`components.schemas[<name>]` and emit a `$ref`; without it a nested class can never be referenced
+and a class that is also a top-level type ends up in the document twice. It is also where the
+date/uuid `format` annotations come from: the IR vocabulary has no such words, so
+`OpenApiSchemaConverter.formatForRef` derives `format: date` / `date-time` / `uuid` from a
+string-typed field's declared `ref`.
+
+Markdown's type column and YApi's draft-04 schema deliberately do **not** consult `ref`: both
+already spell the shape out, so `object` is sufficient and the class name would only add noise.
+`Single`, `Array` and `MapModel` stay readable from `type` plus their children for the same reason.
 
 `FieldModel` carries per-field metadata:
 
@@ -91,14 +127,43 @@ data class FieldModel(
 )
 ```
 
-### `Single.type` is a `JsonType` name string
+### `Single.type` — the IR word
 
-`ObjectModel.Single.type` is **not** an arbitrary type — it's one of the
-constants in
-[`JsonType`](../../src/main/kotlin/com/itangcent/easyapi/core/psi/type/JsonType.kt)
-(`STRING`, `INT`, `LONG`, `FLOAT`, `DOUBLE`, `BOOLEAN`, `ARRAY`, `OBJECT`,
-`FILE`, `DATE`, `DATETIME`). Default values come from
-`JsonType.defaultValueForType(type)`:
+`ObjectModel.Single.type` is declared as `String`, not as `IrType`. `IrType` is a
+*vocabulary* (an `object` full of `const val String`), never a type, so a node holds **one of its
+words** rather than the vocabulary itself. Those words are the IR vocabulary — the type names that
+survive from PSI to Doc. **They are not the JSON type vocabulary**: JSON has no `file`, and
+`short`/`long`/`float`/`double` are finer-grained than JSON Schema's `integer`/`number`, so JSON's
+own types are a proper subset. Date-like and UUID types have **no word here** — on the wire they
+are a `string`, the declaration survives in `ref`, and a channel that wants to say more derives it
+from the ref.
+
+`type` lives on `Single` only — `Object` implies `object`, `Array` implies `array`, and `MapModel`
+holds child nodes (`keyType` / `valueType`), not words.
+
+#### What the domain actually is
+
+Three rings. Only the first is closed:
+
+| Ring | Values | Enforcement |
+|---|---|---|
+| **Core** | the 10 in `IrType.ALL_TYPES` — `STRING` `SHORT` `INT` `LONG` `FLOAT` `DOUBLE` `BOOLEAN` `ARRAY` `OBJECT` `FILE` | closed: every exit table must answer for all 10 |
+| **Named extensions** | `file[]` (a file *collection* spelled as one word) and `null` (`ObjectModel.nullValue()`, the value of an unresolved or `void` type) | enumerated: exits handle them explicitly |
+| **Pass-through** | protobuf type references (a failed deserialisation hands the FQN back verbatim, because that position renders a type *reference*), plus any word a third-party channel or rule script invents | open by design — an unrecognised value here is a case to handle, not a bug |
+
+The core ring is closed **by machine rather than by the type system**. `Jsr223ScriptParserTest`
+pins the draft-04 `toSchemaType` to `ALL_TYPES`; `ObjectModelValueConverterTypesTest` pins
+`defaultValueForType`; `OpenApiSchemaConverterTest.REACHABLE_SINGLE_TYPES` pins the OAS table to
+`ALL_TYPES + {"file[]", "null"}`. Adding an 11th IR word therefore breaks those tests, which is
+what forces every exit table to answer for it.
+
+That machine closure is why there is deliberately **no `enum` / `sealed` behind this field**. An
+enum would buy compile-time exhaustiveness over a set that is already exhaustively checked, and it
+still could not close the field: two members are not types (`file[]` is a *composite*, `null` is a
+*value*) and the pass-through ring *is* the extension point. The cost would be real — `IrType` is
+referenced 811 times.
+
+Default values come from `IrType.defaultValueForType(type)`:
 
 | `type` | Default |
 |---|---|
@@ -108,8 +173,74 @@ constants in
 | `FLOAT` | `0.0f` |
 | `DOUBLE` | `0.0` |
 | `BOOLEAN` / `bool` | `false` |
+| `FILE` | `"(binary)"` |
 | `bytes` | `""` |
+| `ARRAY` / `OBJECT` | `null` — structural shapes have no scalar default; `ObjectModelValueConverter.singleToValue` renders them as `[]` / `{}` |
 | anything else | `null` |
+
+This table is the only one of its kind: `ObjectModelValueConverter.singleToValue`
+delegates its scalar cases here, so an exported example and its schema cannot
+disagree (the retired `date` word used to be `""` in one path and `null` in the other).
+
+#### Every exit re-maps the word — one table per protocol
+
+The mapping cannot be avoided, and closing the IR would not remove it: the IR vocabulary is
+*finer* than any target protocol's, so `file` collapses into draft-04's single `string`, and
+`short`/`long`/`float`/`double` into `integer`/`number`. Exits are
+therefore **one table each**, never one shared table:
+
+| Exit | Mapping | Guarded by |
+|---|---|---|
+| draft-04 JSON Schema (YApi `res_body`, rule scripts) | `toSchemaType` (`core/rule/parser`) | `Jsr223ScriptParserTest` |
+| OAS 3.0.3 `SchemaObject` | `OpenApiSchemaConverter.primitiveSchema` | `OpenApiSchemaConverterTest` |
+| Date/uuid `format` (OAS) | `OpenApiSchemaConverter.formatForRef` — derived from `ref` | `OpenApiSchemaConverterTest` |
+| Human-readable type column | `MarkdownFieldFormatter.formatType` | `TemplateHelpersTest` |
+| Example / default values (yaml, properties, json5, json) | `IrType.defaultValueForType` | `ObjectModelValueConverterTypesTest` |
+| YApi mock expressions | `MockDataGenerator` | `MockDataGeneratorTest` |
+
+The first two must **not** be merged — draft-04 accepts `"null"` and needs no `items`, while OAS
+3.0.3 has no `null` and requires `items` on every array.
+
+For a **document's type column** the `Single` word is printed verbatim, never rewritten
+(`MarkdownFieldFormatter.formatType`). There is nothing left to collapse: the pipeline no longer
+produces `date`/`datetime`, so a `LocalDateTime` field already arrives as `string` with its
+declaration in `ref`. `long`/`short`/`file`/`uuid` name a wire shape a reader can act on, so they
+too are printed as-is. `Object` prints `object`, `Array` prints `<item>[]` and `MapModel` prints
+`map`; a field's shape is spelled out by the rows beneath it, so the column has no use for `ref`.
+
+#### Non-basic types are configuration, not code
+
+Which non-JSON-native types (`java.util.Date`, `java.time.Duration`,
+`java.util.UUID`, joda-time, …) collapse to a scalar — and to *which* scalar — is
+declared by the active configuration, not by a table in Kotlin:
+
+```properties
+# src/main/resources/extensions/converts.config  (default-enabled)
+json.rule.convert[java.time.Duration]=java.lang.String
+```
+
+Leave them unmapped and they are documented as objects (`java.time.Duration` →
+`{seconds, nanos}`), which is why the shipped extension maps them. Turn the
+extension off (Settings → Rule File → Extensions) and declare your own mapping with a
+**psi spelling** — `=long` for a custom serializer. A target must name a class
+(`java.lang.String`, `java.lang.Long`, a file type), not an IR word: the retired
+`=date` / `=datetime` / `=uuid` targets are shimmed to `java.lang.String` with a warning, and the
+OpenAPI channel derives `format: date` / `date-time` / `uuid` from the declared type instead.
+
+Two consequences worth knowing when you write a channel:
+
+- `IrType.fromJavaType` is **configuration-agnostic**. It owns the closed
+  `IrType` vocabulary and the container spellings only, so
+  `fromJavaType("java.time.LocalDate")` is `object` even with the extension on —
+  the configured mapping is applied by `SpecialTypeHandler.resolveSpecialType`
+  *before* this function is reached. Do not add a per-type table back here.
+- File detection is **token-level**, never substring-based — for the container
+  branch too. `SpecialTypeHandler.mentionsFileType` decides whether a
+  declaration carries files, so `List<MultipartFile>` from a rule script is
+  `file[]`, while `List<Department>` and `List<Partition>` are plain arrays
+  (a `contains("part")` check used to make any element whose name contained
+  "part" a file, and `com.acme.Department` → `file` directly). Unqualified
+  spellings keep the loose suffix rules as the script-facing fallback.
 
 ### Cycle safety (load-bearing)
 
@@ -156,7 +287,7 @@ single most common bug in a hand-written renderer.
 ### Step 1 — Pure renderer
 
 Create `format/<id>/<Id>Formatter.kt`. Walk the `ObjectModel`, branch on
-the four variants, read `JsonType.defaultValueForType` for scalar defaults,
+the four variants, read `IrType.defaultValueForType` for scalar defaults,
 read `FieldModel.comment` / `options` for comments. Use
 `ObjectModelVisitTracker` for cycles.
 
@@ -180,7 +311,7 @@ object TomlFormatter {
     ) {
         when (model) {
             is ObjectModel.Single -> {
-                sb.append(JsonType.defaultValueForType(model.type) ?: "null")
+                sb.append(IrType.defaultValueForType(model.type) ?: "null")
             }
             is ObjectModel.Object -> {
                 if (!tracker.tryEnter(model)) { sb.append("{}"); return }
@@ -326,7 +457,7 @@ package com.itangcent.easyapi.format.toml
 
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.core.psi.model.ObjectModelVisitTracker
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 
 object TomlFormatter {
     fun format(model: ObjectModel): String {
@@ -351,7 +482,7 @@ object TomlFormatter {
                 sb.append("  ".repeat(indent)).append(name).append(" = ")
                 when (val m = field.model) {
                     is ObjectModel.Single ->
-                        sb.append(JsonType.defaultValueForType(m.type) ?: "null")
+                        sb.append(IrType.defaultValueForType(m.type) ?: "null")
                     is ObjectModel.Object -> {
                         sb.appendLine()
                         renderObject(m, sb, tracker, indent + 1)
@@ -425,7 +556,7 @@ A format may import from:
 
 - `core.psi.model.*` (`ObjectModel`, `FieldModel`, `FieldOption`,
   `ObjectModelVisitTracker`, `ObjectModelUtils`)
-- `core.psi.type.*` (`JsonType`, special-case handlers — for type-default
+- `core.psi.type.*` (`IrType`, special-case handlers — for type-default
   lookup only)
 - `core.util.*` (text helpers — but NOT `FormatterHelper`; see above)
 - `core.psi.*` (`PsiClassHelper`, `JsonOption`) — only in the
@@ -443,7 +574,7 @@ A format **MUST NOT** import from:
 - `core.export.*` (formats don't touch `ApiEndpoint` / `ExportContext`)
 
 The pure renderer specifically should import only `core.psi.model.*`,
-`core.psi.type.JsonType`, and your own package — it must be testable with no
+`core.psi.type.IrType`, and your own package — it must be testable with no
 `Project` / no PSI.
 
 ## Testing

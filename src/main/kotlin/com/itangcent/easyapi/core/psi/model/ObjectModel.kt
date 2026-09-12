@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.core.psi.model
 
 import com.itangcent.easyapi.core.export.Extension
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 
 /**
  * Represents an option value for a field (e.g., enum constant, static field value).
@@ -75,13 +75,47 @@ data class FieldModel(
  * ```
  */
 sealed class ObjectModel {
+
+    /**
+     * The declared type this node was projected from — the reference back to the source
+     * declaration. Examples: `com.acme.User` for an expanded class,
+     * `java.util.List<java.lang.String>` for a collection, `java.lang.Integer` for a boxed
+     * primitive, `org.springframework.web.multipart.MultipartFile` for a file field.
+     *
+     * [Single.type] is a **lossy projection**: expanding `com.acme.User` yields the word
+     * `object` and the class name is gone, and a file field yields the word `file`, which names
+     * no class at all. This field is where the declaration survives, which is what lets a
+     * document render `User` instead of `object`, emit an OpenAPI `$ref` instead of inlining the
+     * same class into every occurrence, or say *which* type a `file` field was declared as.
+     *
+     * Contracts:
+     * - **May be null.** Nodes synthesized with no source declaration (rule-configured
+     *   `json.additional.field` entries, raw `List`/`Map` placeholders, protobuf `unknown`) have
+     *   nothing to point at.
+     * - **Not guaranteed fully qualified.** It is the *declared* spelling, so an unresolved type
+     *   contributes exactly what the parser saw (`User` as often as `com.acme.User`). Consumers
+     *   needing a FQN must verify it; a channel deriving a display name reduces it itself (see
+     *   `OpenApiSchemaConverter.componentName`).
+     * - **Not the JSON type.** `type` stays what a document should render by default — including
+     *   the domain marker JSON has no word for (`file`) — while `ref` records what was written.
+     *   They answer different questions and both are needed.
+     * - **Metadata, not structure.** [Single], [Array] and [MapModel] compare it in `equals`;
+     *   [Object] keeps its id-based equality, consistent with `fields` being ignored there too.
+     */
+    abstract val ref: String?
+
     /**
      * A single/primitive type value.
      *
-     * @param type The JSON type name (string, int, boolean, etc.)
+     * @param type The IR type word the document should render (`string`, `int`, `boolean`, …).
+     *   Not restricted to JSON's own types: `file` is a domain marker each channel maps to its
+     *   own shape, and a third-party channel may put any string here. See [ObjectModel.ref] for
+     *   the declaration it was projected from.
+     * @param ref The declared type this value was projected from
      */
     data class Single(
-        val type: String
+        val type: String,
+        override val ref: String? = null
     ) : ObjectModel()
 
     /**
@@ -89,10 +123,12 @@ sealed class ObjectModel {
      *
      * @param fields Map of field names to their models
      * @param id Unique identifier for this object instance
+     * @param ref The class this object was expanded from (e.g. `com.acme.User`)
      */
     data class Object(
         val fields: Map<String, FieldModel>,
-        val id: Int = nextId++
+        val id: Int = nextId++,
+        override val ref: String? = null
     ) : ObjectModel() {
         
         override fun equals(other: Any?): Boolean {
@@ -185,12 +221,14 @@ sealed class ObjectModel {
     }
 
     data class Array(
-        val item: ObjectModel
+        val item: ObjectModel,
+        override val ref: String? = null
     ) : ObjectModel()
 
     data class MapModel(
         val keyType: ObjectModel,
-        val valueType: ObjectModel
+        val valueType: ObjectModel,
+        override val ref: String? = null
     ) : ObjectModel()
 
     fun isSingle(): Boolean = this is Single
@@ -207,11 +245,12 @@ sealed class ObjectModel {
         /** Default maximum times to visit the same object during traversal (prevents infinite recursion). */
         const val DEFAULT_MAX_VISITS = 2
 
-        fun emptyObject(): Object = Object(emptyMap())
+        fun emptyObject(ref: String? = null): Object = Object(emptyMap(), ref = ref)
         fun nullValue(): Single = Single("null")
-        fun single(type: String): Single = Single(type)
-        fun array(itemType: ObjectModel): Array = Array(itemType)
-        fun map(keyType: ObjectModel, valueType: ObjectModel): MapModel = MapModel(keyType, valueType)
+        fun single(type: String, ref: String? = null): Single = Single(type, ref)
+        fun array(itemType: ObjectModel, ref: String? = null): Array = Array(itemType, ref)
+        fun map(keyType: ObjectModel, valueType: ObjectModel, ref: String? = null): MapModel =
+            MapModel(keyType, valueType, ref)
     }
 }
 
@@ -238,7 +277,7 @@ class ObjectModelBuilder {
         required: Boolean = false,
         defaultValue: String? = null
     ): ObjectModelBuilder = apply {
-        fields[name] = FieldModel(ObjectModel.single(JsonType.STRING), comment, required, defaultValue)
+        fields[name] = FieldModel(ObjectModel.single(IrType.STRING), comment, required, defaultValue)
     }
 
     fun intField(
@@ -247,7 +286,7 @@ class ObjectModelBuilder {
         required: Boolean = false,
         defaultValue: String? = null
     ): ObjectModelBuilder = apply {
-        fields[name] = FieldModel(ObjectModel.single(JsonType.INT), comment, required, defaultValue)
+        fields[name] = FieldModel(ObjectModel.single(IrType.INT), comment, required, defaultValue)
     }
 
     fun longField(
@@ -256,7 +295,7 @@ class ObjectModelBuilder {
         required: Boolean = false,
         defaultValue: String? = null
     ): ObjectModelBuilder = apply {
-        fields[name] = FieldModel(ObjectModel.single(JsonType.LONG), comment, required, defaultValue)
+        fields[name] = FieldModel(ObjectModel.single(IrType.LONG), comment, required, defaultValue)
     }
 
     fun floatField(
@@ -265,7 +304,7 @@ class ObjectModelBuilder {
         required: Boolean = false,
         defaultValue: String? = null
     ): ObjectModelBuilder = apply {
-        fields[name] = FieldModel(ObjectModel.single(JsonType.FLOAT), comment, required, defaultValue)
+        fields[name] = FieldModel(ObjectModel.single(IrType.FLOAT), comment, required, defaultValue)
     }
 
     fun doubleField(
@@ -274,7 +313,7 @@ class ObjectModelBuilder {
         required: Boolean = false,
         defaultValue: String? = null
     ): ObjectModelBuilder = apply {
-        fields[name] = FieldModel(ObjectModel.single(JsonType.DOUBLE), comment, required, defaultValue)
+        fields[name] = FieldModel(ObjectModel.single(IrType.DOUBLE), comment, required, defaultValue)
     }
 
     fun booleanField(
@@ -283,7 +322,7 @@ class ObjectModelBuilder {
         required: Boolean = false,
         defaultValue: String? = null
     ): ObjectModelBuilder = apply {
-        fields[name] = FieldModel(ObjectModel.single(JsonType.BOOLEAN), comment, required, defaultValue)
+        fields[name] = FieldModel(ObjectModel.single(IrType.BOOLEAN), comment, required, defaultValue)
     }
 
     fun arrayField(

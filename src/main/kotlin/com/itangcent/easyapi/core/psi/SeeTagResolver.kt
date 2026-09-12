@@ -84,7 +84,7 @@ class SeeTagResolver(
      * Resolve options from all `@see` tags on the given PSI element, along with
      * the resolved enum's value-field JSON type (for Case 2 type reconciliation).
      *
-     * The `valueFieldJsonType` is non-null only when the `@see` target is an enum;
+     * The `valueFieldIrType` is non-null only when the `@see` target is an enum;
      * it is null for static-constant classes or when no `@see` tag resolves.
      * Callers use it with [EnumValueResolver.reconcileType] to adjust the
      * declared field type against the actual enum value type.
@@ -107,7 +107,7 @@ class SeeTagResolver(
      */
     data class ResolvedSeeOptions(
         val options: List<FieldOption>,
-        val valueFieldJsonType: String?
+        val valueFieldIrType: String?
     )
 
     /**
@@ -158,7 +158,7 @@ class SeeTagResolver(
                     seeMemberName = parsed.memberName
                 )
                 val options = enumValueResolver.buildOptions(psiClass, resolution, docHelper)
-                val jsonType = enumValueResolver.resolveJsonType(psiClass, resolution)
+                val jsonType = enumValueResolver.resolveIrType(psiClass, resolution)
                 if (options != null) ResolvedSeeOptions(options, jsonType) else null
             } else {
                 val staticOptions = resolveStaticOptions(psiClass)

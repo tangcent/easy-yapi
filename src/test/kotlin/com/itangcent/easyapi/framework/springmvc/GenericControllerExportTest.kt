@@ -5,7 +5,7 @@ import com.itangcent.easyapi.core.export.path
 import com.itangcent.easyapi.core.psi.helper.DocHelper
 import com.itangcent.easyapi.core.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
@@ -96,7 +96,7 @@ class GenericControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         val dataField = fields["data"]!!
         assertTrue(
             "data should be string (T resolved to String), got: ${dataField.model}",
-            dataField.model is ObjectModel.Single && (dataField.model as ObjectModel.Single).type == JsonType.STRING
+            dataField.model is ObjectModel.Single && (dataField.model as ObjectModel.Single).type == IrType.STRING
         )
     }
 
@@ -164,7 +164,7 @@ class GenericControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         val dataField = fields["data"]!!
         assertTrue(
             "data should be string (R resolved to String), got: ${dataField.model}",
-            dataField.model is ObjectModel.Single && (dataField.model as ObjectModel.Single).type == JsonType.STRING
+            dataField.model is ObjectModel.Single && (dataField.model as ObjectModel.Single).type == IrType.STRING
         )
     }
 

@@ -2,13 +2,13 @@ package com.itangcent.easyapi.format.json
 
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import org.junit.Assert.*
 import org.junit.Test
 
 class RawJsonHandlerTest {
 
-    private fun field(type: String = JsonType.STRING): FieldModel {
+    private fun field(type: String = IrType.STRING): FieldModel {
         return FieldModel(model = ObjectModel.Single(type))
     }
 
@@ -44,7 +44,7 @@ class RawJsonHandlerTest {
     @Test
     fun testBeforeObjectField_notFirst() {
         val sb = StringBuilder()
-        RawJsonHandler.beforeObjectField(sb, "age", field(JsonType.INT), 1, 2, 0)
+        RawJsonHandler.beforeObjectField(sb, "age", field(IrType.INT), 1, 2, 0)
         assertFalse(sb.toString().startsWith("\n"))
         assertTrue(sb.toString().contains("\"age\": "))
     }
@@ -88,7 +88,7 @@ class RawJsonHandlerTest {
     @Test
     fun testBeforeArrayItem() {
         val sb = StringBuilder()
-        val item = ObjectModel.Single(JsonType.STRING)
+        val item = ObjectModel.Single(IrType.STRING)
         RawJsonHandler.beforeArrayItem(sb, item, 0, 1, 0)
         assertTrue(sb.toString().contains("\n"))
     }
@@ -96,7 +96,7 @@ class RawJsonHandlerTest {
     @Test
     fun testAfterArrayItem() {
         val sb = StringBuilder()
-        val item = ObjectModel.Single(JsonType.STRING)
+        val item = ObjectModel.Single(IrType.STRING)
         RawJsonHandler.afterArrayItem(sb, item, 0, 1, 0)
         assertTrue(sb.toString().contains("\n"))
     }
@@ -139,28 +139,28 @@ class RawJsonHandlerTest {
     @Test
     fun testHandleSingleValue_string() {
         val sb = StringBuilder()
-        RawJsonHandler.handleSingleValue(sb, ObjectModel.Single(JsonType.STRING), 0)
+        RawJsonHandler.handleSingleValue(sb, ObjectModel.Single(IrType.STRING), 0)
         assertEquals("\"\"", sb.toString())
     }
 
     @Test
     fun testHandleSingleValue_int() {
         val sb = StringBuilder()
-        RawJsonHandler.handleSingleValue(sb, ObjectModel.Single(JsonType.INT), 0)
+        RawJsonHandler.handleSingleValue(sb, ObjectModel.Single(IrType.INT), 0)
         assertEquals("0", sb.toString())
     }
 
     @Test
     fun testHandleSingleValue_boolean() {
         val sb = StringBuilder()
-        RawJsonHandler.handleSingleValue(sb, ObjectModel.Single(JsonType.BOOLEAN), 0)
+        RawJsonHandler.handleSingleValue(sb, ObjectModel.Single(IrType.BOOLEAN), 0)
         assertEquals("false", sb.toString())
     }
 
     @Test
     fun testHandleSingleValue_double() {
         val sb = StringBuilder()
-        RawJsonHandler.handleSingleValue(sb, ObjectModel.Single(JsonType.DOUBLE), 0)
+        RawJsonHandler.handleSingleValue(sb, ObjectModel.Single(IrType.DOUBLE), 0)
         assertEquals("0.0", sb.toString())
     }
 

@@ -1,10 +1,11 @@
 # EasyApi Developer Guides
 
-Step-by-step guides for contributors adding a new **channel**, **format**, or
-**framework** to the EasyApi IntelliJ plugin. These pages cover the SPI
-contracts, the `plugin.xml` wiring, the enablement model, threading/logging
-conventions, and worked examples — everything you need to ship a new
-extension end-to-end.
+Contributor guides for the EasyApi IntelliJ plugin. Most pages are step-by-step
+walkthroughs for adding a new **channel**, **format**, or **framework** — the
+SPI contracts, the `plugin.xml` wiring, the enablement model, threading/logging
+conventions, and worked examples — everything you need to ship a new extension
+end-to-end. [`ai.md`](ai.md) differs in kind: it is a subsystem reference for
+`core/ai/`, not an extension walkthrough.
 
 > **End user?** The user / rule-author docs live in
 > [`docs/knowledge-base/`](../knowledge-base/README.md) (rule files, settings,
@@ -15,9 +16,11 @@ extension end-to-end.
 
 | Page | What you'll learn |
 |------|-------------------|
+| [AI Module](ai.md) | The whole AI subsystem — agent runtime (entry paths, turn loop, events, gates), the three tool registries, prompt resources and the catalog, knowledge-asset sync (generated catalogs and their guards), known limitations, and the maintenance playbooks. Read this before touching anything under `core/ai/`. |
 | [Channels](channels.md) | Add a new output destination (Postman variant, Insomnia, …) — convert `ApiEndpoint` models into a target format and write/upload the result. |
 | [Formats](formats.md) | Add a new field serialization (TOML, XML, …) — render an `ObjectModel` to a target representation and wire a `FieldsTo*` action. |
 | [Frameworks](frameworks.md) | Add a new source framework (Micronaut, …) — scan PSI for endpoints and feed them into the export pipeline. |
+| [Custom framework](custom-framework.md) | The rules-driven **Custom** framework (id `custom`) — no hard-coded annotation detection; its entire extraction surface (class/method recognition, HTTP method, path, parameter binding) is the `custom.*` rules. The v3.0 replacement for the v2.x generic-export subsystem dropped in the rewrite (issue #1423). |
 
 ## Who this is for
 
@@ -34,11 +37,12 @@ If you're adding **user-facing rule keys** or **per-project config** (no new
 Kotlin), see the [Rule Authoring Guide](../knowledge-base/rule-guide.md)
 instead.
 
-## The three extension points at a glance
+## The extension points at a glance
 
-EasyApi exposes **three** IntelliJ extension points (EPs) for plugging in new
-behavior. A framework registers on **two** EPs (`classExporter` +
-`apiClassRecognizer`) — see [Frameworks](frameworks.md) for why.
+Three extension **kinds** — a channel, a field format, a framework — are
+plugged in through **four** EPs. A framework alone registers on **two**
+(`classExporter` + `apiClassRecognizer`) — see [Frameworks](frameworks.md) for
+why.
 
 | EP name (`plugin.xml`) | Interface FQN | Bucket | Scope | What it does |
 |---|---|---|---|---|
@@ -47,16 +51,19 @@ behavior. A framework registers on **two** EPs (`classExporter` +
 | `classExporter` | `com.itangcent.easyapi.core.export.ClassExporter` | `framework/` | `area="IDEA_PROJECT"` | Extract `ApiEndpoint`s from a `PsiClass` for one source framework. |
 | `apiClassRecognizer` | `com.itangcent.easyapi.core.export.recognizer.ApiClassRecognizer` | `framework/` | `area="IDEA_PROJECT"` | Cheap "is this an API class?" check; drives line markers, index scanning, AI discovery, and enablement. |
 
-All four EPs are declared `dynamic="true"` so they can be loaded/unloaded
-without a restart. The full declaration block lives at
-[`src/main/resources/META-INF/plugin.xml`](../../src/main/resources/META-INF/plugin.xml#L23-L32):
+All four are declared `dynamic="true"` so they can be loaded/unloaded without a
+restart. `plugin.xml` declares one further EP, `featureContributor`, which
+supplies per-project feature metadata (settings groups and descriptors) — it is
+not a surface for adding a channel/format/framework. The whole block lives at
+[`plugin.xml#L23-L33`](../../src/main/resources/META-INF/plugin.xml#L23-L33):
 
 ```xml
 <extensionPoints>
-    <extensionPoint name="classExporter"     interface="com.itangcent.easyapi.core.export.ClassExporter"            area="IDEA_PROJECT" dynamic="true"/>
-    <extensionPoint name="channel"           interface="com.itangcent.easyapi.channel.spi.Channel"                  area="IDEA_PROJECT" dynamic="true"/>
-    <extensionPoint name="fieldFormatChannel" interface="com.itangcent.easyapi.format.spi.FieldFormatChannel"        dynamic="true"/>
+    <extensionPoint name="classExporter"      interface="com.itangcent.easyapi.core.export.ClassExporter"                  area="IDEA_PROJECT" dynamic="true"/>
+    <extensionPoint name="channel"            interface="com.itangcent.easyapi.channel.spi.Channel"                        area="IDEA_PROJECT" dynamic="true"/>
+    <extensionPoint name="fieldFormatChannel" interface="com.itangcent.easyapi.format.spi.FieldFormatChannel"                              dynamic="true"/>
     <extensionPoint name="apiClassRecognizer" interface="com.itangcent.easyapi.core.export.recognizer.ApiClassRecognizer" area="IDEA_PROJECT" dynamic="true"/>
+    <extensionPoint name="featureContributor" interface="com.itangcent.easyapi.core.feature.FeatureContributor"           area="IDEA_PROJECT" dynamic="true"/>
 </extensionPoints>
 ```
 
@@ -103,127 +110,110 @@ The four top-level buckets form a directed-acyclic dependency graph:
                        (channel may import format)
 ```
 
-**Import rules** (authoritative in
-[AGENTS.md §"Project Structure"](../../AGENTS.md#project-structure)):
+**Import rules** — the part that bites an extension author: reach a sibling
+bucket only through its `spi/` seam, never through its concrete
+`<bucket>.<id>.*` classes.
 
-- `channel/` may import from `format`, `framework`, and `core` (via the
-  `*.spi.*` seams — never concrete `format.<id>.*` / `framework.<id>.*`).
-- `format/` and `framework/` may import from `core` (and `core.grpc/` for
-  `framework.grpc`).
-- `core/` imports **only** EP-contract seams from its siblings:
-  `channel.spi.*`, `format.spi.*`, `framework.spi.*`, `core.export.*`.
-  Concrete per-id packages (`channel.<id>.*`, `format.<id>.*`,
-  `framework.<id>.*`) imported from `core.*` are **forbidden** — this is
-  CI-enforced.
-
-The DAG rule is the single most common review feedback on a new extension.
-Each topic page restates the per-bucket import allow-list so you don't have to
-flip back here.
+The authoritative statement of the whole DAG lives in
+[AGENTS.md §"Project Structure"](../../AGENTS.md#project-structure). No
+automated gate enforces it — the rule is review-only, which is exactly why it
+is the single most common review feedback on a new extension. Read it there
+before your first PR.
 
 ## Package-layout decision rule
 
-When adding a new package, apply this **first-match-wins** rule to pick the
-bucket (mirrors [AGENTS.md §"Package Layout"](../../AGENTS.md#package-layout)):
+The first-match-wins rule for picking a bucket is normative in
+[AGENTS.md §"Package Layout"](../../AGENTS.md#package-layout).
 
-1. **One output destination** (Postman, Markdown, cURL, Hoppscotch, IntelliJ
-   HTTP Client, …) → `channel/<id>/`
-2. **One field serialization format** (JSON, JSON5, YAML, Properties, TOML, …)
-   → `format/<id>/`
-3. **One source framework** (Spring MVC, JAX-RS, Feign, gRPC, Micronaut, …)
-   → `framework/<id>/`
-4. **Else** — shared by ≥2 buckets, or runtime/IDE plumbing with no extension
-   target → `core/<sub-package>/`
-
-Each input/output bucket also owns a `spi/` sub-package for its EP contract
-surfaces, which `core.*` may legitimately import (the only sibling imports
-`core.*` allows).
+For a new extension it is mechanical: a channel goes in `channel/<id>/`, a
+field format in `format/<id>/`, a framework in `framework/<id>/`. Each
+input/output bucket owns a `spi/` sub-package for its EP contract surface —
+that is the only sibling surface `core.*` may import.
 
 ## `plugin.xml` basics
 
-Each EP has **two** appearances in
+Each EP appears **twice** in
 [`plugin.xml`](../../src/main/resources/META-INF/plugin.xml):
 
-1. **`<extensionPoints>`** (~L23-32) — declares the EP name, interface FQN,
-   scope, and `dynamic="true"`. This block is owned by EasyApi core; you
-   should not need to add a new entry here unless you're inventing a brand-new
-   EP category.
-2. **`<extensions defaultExtensionNs="com.itangcent.idea.plugin.easy-api">`**
-   (~L34-56) — registers concrete implementations against the EPs declared
-   above. **This is where your `<channel ... />`,
-   `<fieldFormatChannel ... />`, `<classExporter ... />`, or
-   `<apiClassRecognizer ... />` line goes.**
+1. **`<extensionPoints>`** declares the EP name, interface FQN, scope, and
+   `dynamic="true"`. Owned by EasyApi core — you only add here when inventing a
+   brand-new EP category.
+2. **`<extensions defaultExtensionNs="com.itangcent.idea.plugin.easy-yapi">`**
+   registers concrete implementations. **This is where your `<channel … />`,
+   `<fieldFormatChannel … />`, `<classExporter … />`, or
+   `<apiClassRecognizer … />` line goes** — one line for a channel or format,
+   two for a framework.
 
-A new channel/format/framework needs exactly one (or, for frameworks, two)
-`<… implementation="…"/>` line(s) here — no `<action>`, no
-`<applicationService>`, no other XML wiring. The action menu entry, settings
-tab, and registry discovery are all auto-wired by the SPI.
+No `<action>`, no `<applicationService>`, no other XML wiring: the action menu
+entry, settings tab, and registry discovery are all auto-wired by the SPI.
+
+The generated [`extensions.md`](../../skills/easy-yapi-assistant/extensions.md)
+lists every EP and its registered implementations — consult it instead of
+counting lines in `plugin.xml`.
+
+## Registering rule keys
+
+If your extension ships its own rule keys (a `XxxRuleKeys` object, like
+`PostmanRuleKeys` / `CustomRuleKeys`), register the source so the generated
+catalogs and the `list_rule_keys` tool can see it — in
+[`core/rule/RuleKeyCatalog.kt`](../../src/main/kotlin/com/itangcent/easyapi/core/rule/RuleKeyCatalog.kt):
+
+```kotlin
+val SOURCES: List<Pair<String, () -> List<RuleKey<*>>>> = listOf(
+    // …
+    "<your-id>" to { RuleKey.collectFrom(YourRuleKeys) },
+)
+```
+
+Then run `./gradlew syncSkill` and commit the regenerated files.
+`RuleKeySchemeExporterTest` and `EasyYapiAssistantSkillTest` fail when a
+registered `RuleKeyRegistry` source is missing from `SOURCES`, or when the
+committed catalogs drift from the code.
+
+Most extensions need no rule keys at all — skip this section unless yours does.
+
+## Design notes (`.spec/`)
+
+Larger changes get a design note before implementation: the problem, the root
+cause, a **file-level change matrix**, and verifiable acceptance criteria (a
+note with only ideas is not accepted). They live in
+[`.spec/`](../../.spec/README.md):
+
+| Spec | Topic |
+|------|-------|
+| [`dashboard-request-state.md`](../../.spec/dashboard-request-state.md) | API Dashboard — the PSI-derived vs UI-saved request states and how they reconcile. |
+| [`api-scan-performance.md`](../../.spec/api-scan-performance.md) | API scan cost / UI-freeze root cause, anti-freeze work, scan-health monitoring. |
+| [`dashboard-file-response.md`](../../.spec/dashboard-file-response.md) | API Dashboard file responses — binary support (Save as) and response-size limits. |
 
 ## Shared concerns
 
-The following cross-cutting rules apply to **all three** extension kinds.
-They're written once here and linked from each topic page so they don't
-drift.
+Cross-cutting rules that apply to **all three** extension kinds. Each is
+normative in `AGENTS.md`; what follows is only the part an extension author
+actually has to act on.
 
 ### Threading
 
-All PSI/VFS access must run on the correct IntelliJ dispatcher. Use
-[`IdeDispatchers`](../../src/main/kotlin/com/itangcent/easyapi/core/internal/threading/IdeDispatchers.kt):
+Your SPI methods touch PSI, so: make them `suspend` and wrap the PSI reads in
+`read { … }`; put network / file I/O in `background { … }` and dialogs in
+`swing { … }`.
 
-| Dispatcher | Purpose |
-|-----------|---------|
-| `IdeDispatchers.ReadAction` | PSI/VFS read operations |
-| `IdeDispatchers.WriteAction` | PSI/VFS write operations |
-| `IdeDispatchers.Swing` | UI operations on EDT (non-modal) |
-| `IdeDispatchers.Background` | General background work (network, CPU) |
-
-Convenience wrappers (defined on `IdeDispatchers`):
-
-```kotlin
-suspend fun <T> read(block: suspend () -> T): T      // ReadAction
-suspend fun <T> write(block: suspend () -> T): T    // WriteAction
-suspend fun <T> swing(block: suspend () -> T): T    // EDT
-suspend fun <T> background(block: suspend () -> T): T // Background
-fun backgroundAsync(block: suspend () -> Unit)       // fire-and-forget
-```
-
-**Rule of thumb:** every method on your SPI that touches `PsiClass` /
-`PsiMethod` should be `suspend` and wrap PSI reads in `read { … }`. Network
-and file I/O belongs in `background { … }`; modal dialogs and file choosers
-belong in `swing { … }`.
-
-The full threading model — including the IntelliJ context-propagation warning
-for `StartupActivity` and the `@requires` KDoc convention — is normative in
+Everything else — the dispatcher table, the `@requires` KDoc convention, the
+boundary-class self-protection rules, the `StartupActivity`
+context-propagation warning — is normative in
 [AGENTS.md §"Threading Model"](../../AGENTS.md#threading-model). Link to it;
 don't paraphrase.
 
 ### Logging
 
 Implement [`IdeaLog`](../../src/main/kotlin/com/itangcent/easyapi/core/logging/IdeaLog.kt)
-to get a `LOG` property; do **not** call `Logger.getLogger()` directly.
+to get a `LOG` property (never `Logger.getLogger()` directly), and pick **one**
+channel per event: `NotificationUtils` for a terminal user-visible outcome,
+`IdeaConsole` for what the plugin is doing, `LOG` for developer-facing detail.
 
-Hard rules (CI-enforced by `AntiPatternGateTest`):
-
-- **`LOG.error(...)` is forbidden** — IntelliJ treats it as a test failure
-  and pops an error dialog. Use `LOG.warn(msg, t)` instead.
-- **`LOG.debug(...)` / `LOG.trace(...)` are forbidden** — IntelliJ filters
-  them out of `idea.log` by default. `LOG.info` is the floor.
-- **No `println(...)` / `printStackTrace()`.**
-- **No `runCatching{}.getOrNull()`** on a meaningful operation without a
-  `.onFailure { LOG.warn(...) }`. No empty `catch` blocks.
-- **Pass the throwable as the last arg** — never stringify it into the
-  message.
-
-Three output channels exist; pick **one** by first-match-wins:
-
-1. `NotificationUtils` — terminal user-visible outcome (export success/failure).
-2. `IdeaConsole` (via `IdeaConsoleProvider.getInstance(project).getConsole()`)
-   — what the plugin is doing/decided, per-item batch failures,
-   user-fixable conditions.
-3. `IdeaLog` (`LOG` via `IdeaLog`) — developer-facing diagnostic detail, or
-   code running with no `Project` context.
-
-The full channel-selection rule, anti-pattern list, and placement rules are
-normative in [AGENTS.md §"Logging"](../../AGENTS.md#logging). Defer to it.
+The channel-selection rule, the anti-pattern list (`LOG.error`, `LOG.debug`,
+`println`, swallowed exceptions, …) and the placement rules are normative in
+[AGENTS.md §"Logging"](../../AGENTS.md#logging) and CI-enforced by
+`AntiPatternGateTest`. Defer to it.
 
 ### Enablement model
 
@@ -269,24 +259,13 @@ gRPC recognizers for examples.
 
 ### Testing
 
-- **JUnit 4 + mockito-kotlin** for all tests.
-- **Pure registry rules** (e.g. `ChannelRegistry.resolveEnabled`) are
-  extracted as `internal companion fun` so they can be unit-tested without
-  a `Project` / `plugin.xml`.
-- **PSI / Project-aware tests** extend `EasyApiLightCodeInsightFixtureTestCase`
-  (the project's base class for `LightCodeInsightFixtureTestCase`).
-- **Cross-platform golden-file rule:** never read expected-output resources
-  with `File.readText()`. Use `ResultLoader.load()` (trailing-trimmed) or
-  `ResourceLoader.readRaw()` (strict byte parity) — both collapse CRLF→LF so
-  snapshot tests pass on Windows CI.
+PSI / `Project`-aware tests extend `EasyApiLightCodeInsightFixtureTestCase`
+(the project's base class for `LightCodeInsightFixtureTestCase`); pure registry
+rules are extracted as `internal companion fun` so they can be unit-tested
+without a `Project` / `plugin.xml`.
 
-**Always invoke the `write-test-case` skill before writing tests** — it
-guides test-pattern selection (simple unit, IDE fixture, ResultLoader,
-action mock, parity test) based on the target class. See
-[AGENTS.md §"Testing"](../../AGENTS.md#testing) for the brief reminder.
-
-## Table of contents
-
-- [Channels — adding a new output destination](channels.md)
-- [Formats — adding a new field serialization](formats.md)
-- [Frameworks — adding a new source framework](frameworks.md)
+**Invoke the `write-test-case` skill before writing tests** — it guides
+test-pattern selection (simple unit, IDE fixture, `ResultLoader`, action mock,
+parity test) based on the target class. The full testing rules — including the
+cross-platform golden-file rule that every snapshot test depends on — are
+normative in [AGENTS.md §"Testing"](../../AGENTS.md#testing).

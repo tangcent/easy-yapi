@@ -14,7 +14,7 @@ import com.itangcent.easyapi.core.export.httpMetadata
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.format.json.ObjectModelJsonConverter
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -186,8 +186,8 @@ class TemplateModelBuilderTest {
     fun testBodyRowsSimpleObject() {
         val body = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name"),
-                "age" to FieldModel(ObjectModel.single(JsonType.INT), comment = "user age")
+                "name" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user name"),
+                "age" to FieldModel(ObjectModel.single(IrType.INT), comment = "user age")
             )
         )
         val endpoint = ApiEndpoint(
@@ -212,7 +212,7 @@ class TemplateModelBuilderTest {
     @Test
     fun testBodyRowsNestedObjectHasIndentPrefix() {
         val inner = ObjectModel.Object(
-            mapOf("id" to FieldModel(ObjectModel.single(JsonType.LONG), comment = "user id"))
+            mapOf("id" to FieldModel(ObjectModel.single(IrType.LONG), comment = "user id"))
         )
         val body = ObjectModel.Object(
             mapOf("data" to FieldModel(inner, comment = "response data"))
@@ -243,8 +243,8 @@ class TemplateModelBuilderTest {
     fun testBodyRowsArrayTypeIsItemPlusBrackets() {
         val itemModel = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.single(JsonType.LONG)),
-                "name" to FieldModel(ObjectModel.single(JsonType.STRING))
+                "id" to FieldModel(ObjectModel.single(IrType.LONG)),
+                "name" to FieldModel(ObjectModel.single(IrType.STRING))
             )
         )
         val body = ObjectModel.Object(
@@ -267,7 +267,7 @@ class TemplateModelBuilderTest {
     @Test
     fun testBodyDemoPresentWhenOutputDemoTrue() {
         val body = ObjectModel.Object(
-            mapOf("name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name"))
+            mapOf("name" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user name"))
         )
         val endpoint = ApiEndpoint(
             name = "Create User",
@@ -315,7 +315,7 @@ class TemplateModelBuilderTest {
     fun testPrimitiveBodyProducesOneSyntheticField() {
         // Review finding F5: Single body → one FieldView with name="", type=model.type, desc="",
         // structuralKind=PRIMITIVE, depth=0, indent="" — byte-identical to legacy Row.
-        val body = ObjectModel.single(JsonType.STRING)
+        val body = ObjectModel.single(IrType.STRING)
         val endpoint = ApiEndpoint(
             name = "Echo",
             metadata = httpMetadata(path = "/api/echo", method = HttpMethod.POST, body = body)
@@ -345,8 +345,8 @@ class TemplateModelBuilderTest {
         // Review finding F6: MapModel body → two FieldViews at depth 0:
         // {name="key", type=formatType(keyType), structuralKind=MAP} and {name="value", ...}.
         val body = ObjectModel.MapModel(
-            keyType = ObjectModel.single(JsonType.STRING),
-            valueType = ObjectModel.single(JsonType.INT),
+            keyType = ObjectModel.single(IrType.STRING),
+            valueType = ObjectModel.single(IrType.INT),
         )
         val endpoint = ApiEndpoint(
             name = "MapResource",
@@ -380,7 +380,7 @@ class TemplateModelBuilderTest {
         // TreeNode { name: String, children: List<TreeNode> }
         val fields = mutableMapOf<String, FieldModel>()
         val treeNode = ObjectModel.Object(fields)
-        fields["name"] = FieldModel(ObjectModel.single(JsonType.STRING), comment = "node name")
+        fields["name"] = FieldModel(ObjectModel.single(IrType.STRING), comment = "node name")
         fields["children"] = FieldModel(ObjectModel.array(treeNode), comment = "child nodes")
 
         val endpoint = ApiEndpoint(
@@ -403,7 +403,7 @@ class TemplateModelBuilderTest {
         // Object A { id, parent: A }
         val fields = mutableMapOf<String, FieldModel>()
         val selfRef = ObjectModel.Object(fields)
-        fields["id"] = FieldModel(ObjectModel.single(JsonType.INT), comment = "id")
+        fields["id"] = FieldModel(ObjectModel.single(IrType.INT), comment = "id")
         fields["parent"] = FieldModel(selfRef, comment = "parent reference")
 
         val endpoint = ApiEndpoint(
@@ -425,9 +425,9 @@ class TemplateModelBuilderTest {
         val fieldsB = mutableMapOf<String, FieldModel>()
         val objectA = ObjectModel.Object(fieldsA)
         val objectB = ObjectModel.Object(fieldsB)
-        fieldsA["name"] = FieldModel(ObjectModel.single(JsonType.STRING))
+        fieldsA["name"] = FieldModel(ObjectModel.single(IrType.STRING))
         fieldsA["refB"] = FieldModel(objectB, comment = "reference to B")
-        fieldsB["value"] = FieldModel(ObjectModel.single(JsonType.INT))
+        fieldsB["value"] = FieldModel(ObjectModel.single(IrType.INT))
         fieldsB["refA"] = FieldModel(objectA, comment = "reference to A")
 
         val endpoint = ApiEndpoint(
@@ -445,7 +445,7 @@ class TemplateModelBuilderTest {
     @Test
     fun testNonCircularDeepNestingRendersAllLevels() {
         val inner = ObjectModel.Object(
-            mapOf("value" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "inner value"))
+            mapOf("value" to FieldModel(ObjectModel.single(IrType.STRING), comment = "inner value"))
         )
         val middle = ObjectModel.Object(
             mapOf("inner" to FieldModel(inner, comment = "inner object"))
@@ -520,7 +520,7 @@ class TemplateModelBuilderTest {
     @Test
     fun testGrpcEndpointWithBody() {
         val body = ObjectModel.Object(
-            mapOf("user_id" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user ID"))
+            mapOf("user_id" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user ID"))
         )
         val endpoint = ApiEndpoint(
             name = "GetUser",
@@ -551,7 +551,7 @@ class TemplateModelBuilderTest {
         val body = ObjectModel.Object(
             mapOf(
                 "status" to FieldModel(
-                    ObjectModel.single(JsonType.STRING),
+                    ObjectModel.single(IrType.STRING),
                     comment = "user status",
                     options = listOf(
                         com.itangcent.easyapi.core.psi.model.FieldOption(value = "ACTIVE", desc = "active user"),
@@ -687,7 +687,7 @@ class TemplateModelBuilderTest {
                 method = HttpMethod.POST,
                 contentType = "application/json",
                 body = ObjectModel.Object(
-                    mapOf("name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name"))
+                    mapOf("name" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user name"))
                 ),
             ),
         )

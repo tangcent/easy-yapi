@@ -4,7 +4,7 @@ import com.itangcent.easyapi.core.export.ApiParameter
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.core.psi.model.ObjectModelVisitTracker
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.rule.parser.toSchemaType
 import com.itangcent.easyapi.core.util.json.GsonUtils
 
 /**
@@ -78,7 +78,7 @@ class JsonSchemaBuilder {
             val propSchema = linkedMapOf<String, Any?>()
 
             param.type.rawType().let { type ->
-                propSchema["type"] = JsonType.toSchemaType(type)
+                propSchema["type"] = toSchemaType(type)
             }
 
             param.description?.let { desc ->
@@ -142,7 +142,7 @@ class JsonSchemaBuilder {
      * @return A schema map with type
      */
     private fun buildSingleSchema(model: ObjectModel.Single): LinkedHashMap<String, Any?> {
-        return linkedMapOf("type" to JsonType.toSchemaType(model.type))
+        return linkedMapOf("type" to toSchemaType(model.type))
     }
 
     /**

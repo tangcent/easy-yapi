@@ -3,7 +3,7 @@ package com.itangcent.easyapi.format.json
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.format.json5.Json5Handler
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -16,13 +16,13 @@ class ObjectModelJsonConverterTest {
 
     @Test
     fun testToJson_singleTypes() {
-        assertEquals("\"\"", ObjectModelJsonConverter.toJson(ObjectModel.Single(JsonType.STRING)))
-        assertEquals("0", ObjectModelJsonConverter.toJson(ObjectModel.Single(JsonType.INT)))
-        assertEquals("0", ObjectModelJsonConverter.toJson(ObjectModel.Single(JsonType.SHORT)))
-        assertEquals("0", ObjectModelJsonConverter.toJson(ObjectModel.Single(JsonType.LONG)))
-        assertEquals("0.0", ObjectModelJsonConverter.toJson(ObjectModel.Single(JsonType.FLOAT)))
-        assertEquals("0.0", ObjectModelJsonConverter.toJson(ObjectModel.Single(JsonType.DOUBLE)))
-        assertEquals("false", ObjectModelJsonConverter.toJson(ObjectModel.Single(JsonType.BOOLEAN)))
+        assertEquals("\"\"", ObjectModelJsonConverter.toJson(ObjectModel.Single(IrType.STRING)))
+        assertEquals("0", ObjectModelJsonConverter.toJson(ObjectModel.Single(IrType.INT)))
+        assertEquals("0", ObjectModelJsonConverter.toJson(ObjectModel.Single(IrType.SHORT)))
+        assertEquals("0", ObjectModelJsonConverter.toJson(ObjectModel.Single(IrType.LONG)))
+        assertEquals("0.0", ObjectModelJsonConverter.toJson(ObjectModel.Single(IrType.FLOAT)))
+        assertEquals("0.0", ObjectModelJsonConverter.toJson(ObjectModel.Single(IrType.DOUBLE)))
+        assertEquals("false", ObjectModelJsonConverter.toJson(ObjectModel.Single(IrType.BOOLEAN)))
         assertEquals("null", ObjectModelJsonConverter.toJson(ObjectModel.Single("unknown")))
     }
 
@@ -36,8 +36,8 @@ class ObjectModelJsonConverterTest {
     fun testToJson_simpleObject() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                "age" to FieldModel(ObjectModel.Single(JsonType.INT))
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                "age" to FieldModel(ObjectModel.Single(IrType.INT))
             )
         )
         val expected = "{\n" +
@@ -54,8 +54,8 @@ class ObjectModelJsonConverterTest {
                 "user" to FieldModel(
                     ObjectModel.Object(
                         mapOf(
-                            "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                            "age" to FieldModel(ObjectModel.Single(JsonType.INT))
+                            "name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                            "age" to FieldModel(ObjectModel.Single(IrType.INT))
                         )
                     )
                 )
@@ -72,7 +72,7 @@ class ObjectModelJsonConverterTest {
 
     @Test
     fun testToJson_array() {
-        val model = ObjectModel.Array(ObjectModel.Single(JsonType.STRING))
+        val model = ObjectModel.Array(ObjectModel.Single(IrType.STRING))
         val expected = "[\n" +
             "  \"\"\n" +
             "]"
@@ -84,8 +84,8 @@ class ObjectModelJsonConverterTest {
         val model = ObjectModel.Array(
             ObjectModel.Object(
                 mapOf(
-                    "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                    "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                    "id" to FieldModel(ObjectModel.Single(IrType.INT)),
+                    "name" to FieldModel(ObjectModel.Single(IrType.STRING))
                 )
             )
         )
@@ -101,8 +101,8 @@ class ObjectModelJsonConverterTest {
     @Test
     fun testToJson_map() {
         val model = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
-            ObjectModel.Single(JsonType.INT)
+            ObjectModel.Single(IrType.STRING),
+            ObjectModel.Single(IrType.INT)
         )
         val expected = "{\n" +
             "  \"\": 0\n" +
@@ -117,17 +117,17 @@ class ObjectModelJsonConverterTest {
 
     @Test
     fun testToJson5_singleTypes() {
-        assertEquals("\"\"", ObjectModelJsonConverter.toJson5(ObjectModel.Single(JsonType.STRING)))
-        assertEquals("0", ObjectModelJsonConverter.toJson5(ObjectModel.Single(JsonType.INT)))
-        assertEquals("false", ObjectModelJsonConverter.toJson5(ObjectModel.Single(JsonType.BOOLEAN)))
+        assertEquals("\"\"", ObjectModelJsonConverter.toJson5(ObjectModel.Single(IrType.STRING)))
+        assertEquals("0", ObjectModelJsonConverter.toJson5(ObjectModel.Single(IrType.INT)))
+        assertEquals("false", ObjectModelJsonConverter.toJson5(ObjectModel.Single(IrType.BOOLEAN)))
     }
 
     @Test
     fun testToJson5_withComments() {
         val model = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.Single(JsonType.INT), "Primary key"),
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "User name")
+                "id" to FieldModel(ObjectModel.Single(IrType.INT), "Primary key"),
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), "User name")
             )
         )
         val expected = "{\n" +
@@ -144,7 +144,7 @@ class ObjectModelJsonConverterTest {
                 "user" to FieldModel(
                     ObjectModel.Object(
                         mapOf(
-                            "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "User name")
+                            "name" to FieldModel(ObjectModel.Single(IrType.STRING), "User name")
                         )
                     ),
                     "User information"
@@ -164,8 +164,8 @@ class ObjectModelJsonConverterTest {
     fun testToJson5_keysAreQuoted() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                "user-name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                "user-name" to FieldModel(ObjectModel.Single(IrType.STRING))
             )
         )
         val expected = "{\n" +
@@ -179,7 +179,7 @@ class ObjectModelJsonConverterTest {
     fun testToJson_withCustomHandler() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING))
             )
         )
         val result = ObjectModelJsonConverter.toJson(model, Json5Handler)
@@ -199,13 +199,13 @@ class RawJsonHandlerBuilderTest {
 
     @Test
     fun testSingleValues() {
-        assertEquals("\"\"", builder.build(ObjectModel.Single(JsonType.STRING)))
-        assertEquals("0", builder.build(ObjectModel.Single(JsonType.INT)))
-        assertEquals("0", builder.build(ObjectModel.Single(JsonType.SHORT)))
-        assertEquals("0", builder.build(ObjectModel.Single(JsonType.LONG)))
-        assertEquals("0.0", builder.build(ObjectModel.Single(JsonType.FLOAT)))
-        assertEquals("0.0", builder.build(ObjectModel.Single(JsonType.DOUBLE)))
-        assertEquals("false", builder.build(ObjectModel.Single(JsonType.BOOLEAN)))
+        assertEquals("\"\"", builder.build(ObjectModel.Single(IrType.STRING)))
+        assertEquals("0", builder.build(ObjectModel.Single(IrType.INT)))
+        assertEquals("0", builder.build(ObjectModel.Single(IrType.SHORT)))
+        assertEquals("0", builder.build(ObjectModel.Single(IrType.LONG)))
+        assertEquals("0.0", builder.build(ObjectModel.Single(IrType.FLOAT)))
+        assertEquals("0.0", builder.build(ObjectModel.Single(IrType.DOUBLE)))
+        assertEquals("false", builder.build(ObjectModel.Single(IrType.BOOLEAN)))
         assertEquals("null", builder.build(ObjectModel.Single("unknown")))
     }
 
@@ -218,8 +218,8 @@ class RawJsonHandlerBuilderTest {
     fun testSimpleObject() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "The name field"),
-                "age" to FieldModel(ObjectModel.Single(JsonType.INT), "The age field")
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), "The name field"),
+                "age" to FieldModel(ObjectModel.Single(IrType.INT), "The age field")
             )
         )
         val expected = "{\n" +
@@ -236,8 +236,8 @@ class RawJsonHandlerBuilderTest {
                 "user" to FieldModel(
                     ObjectModel.Object(
                         mapOf(
-                            "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                            "age" to FieldModel(ObjectModel.Single(JsonType.INT))
+                            "name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                            "age" to FieldModel(ObjectModel.Single(IrType.INT))
                         )
                     )
                 )
@@ -254,7 +254,7 @@ class RawJsonHandlerBuilderTest {
 
     @Test
     fun testArray() {
-        val model = ObjectModel.Array(ObjectModel.Single(JsonType.STRING))
+        val model = ObjectModel.Array(ObjectModel.Single(IrType.STRING))
         val expected = "[\n" +
             "  \"\"\n" +
             "]"
@@ -266,8 +266,8 @@ class RawJsonHandlerBuilderTest {
         val model = ObjectModel.Array(
             ObjectModel.Object(
                 mapOf(
-                    "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                    "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                    "id" to FieldModel(ObjectModel.Single(IrType.INT)),
+                    "name" to FieldModel(ObjectModel.Single(IrType.STRING))
                 )
             )
         )
@@ -283,8 +283,8 @@ class RawJsonHandlerBuilderTest {
     @Test
     fun testMap() {
         val model = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
-            ObjectModel.Single(JsonType.INT)
+            ObjectModel.Single(IrType.STRING),
+            ObjectModel.Single(IrType.INT)
         )
         val expected = "{\n" +
             "  \"\": 0\n" +
@@ -303,9 +303,9 @@ class RawJsonHandlerBuilderTest {
                                 ObjectModel.Array(
                                     ObjectModel.Object(
                                         mapOf(
-                                            "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
+                                            "id" to FieldModel(ObjectModel.Single(IrType.INT)),
                                             "tags" to FieldModel(
-                                                ObjectModel.Array(ObjectModel.Single(JsonType.STRING))
+                                                ObjectModel.Array(ObjectModel.Single(IrType.STRING))
                                             )
                                         )
                                     )
@@ -335,8 +335,8 @@ class RawJsonHandlerBuilderTest {
     fun testCommentsAreIgnored() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "This comment should not appear"),
-                "age" to FieldModel(ObjectModel.Single(JsonType.INT), "Neither should this")
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), "This comment should not appear"),
+                "age" to FieldModel(ObjectModel.Single(IrType.INT), "Neither should this")
             )
         )
         val result = builder.build(model)
@@ -348,11 +348,11 @@ class RawJsonHandlerBuilderTest {
     @Test
     fun testMapWithObjectValue() {
         val model = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
+            ObjectModel.Single(IrType.STRING),
             ObjectModel.Object(
                 mapOf(
-                    "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                    "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                    "id" to FieldModel(ObjectModel.Single(IrType.INT)),
+                    "name" to FieldModel(ObjectModel.Single(IrType.STRING))
                 )
             )
         )
@@ -368,8 +368,8 @@ class RawJsonHandlerBuilderTest {
     @Test
     fun testMapWithIntKey() {
         val model = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.INT),
-            ObjectModel.Single(JsonType.STRING)
+            ObjectModel.Single(IrType.INT),
+            ObjectModel.Single(IrType.STRING)
         )
         val expected = "{\n" +
             "  0: \"\"\n" +
@@ -380,11 +380,11 @@ class RawJsonHandlerBuilderTest {
     @Test
     fun testMapWithIntKeyAndComplexValue() {
         val model = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.INT),
+            ObjectModel.Single(IrType.INT),
             ObjectModel.Object(
                 mapOf(
-                    "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                    "score" to FieldModel(ObjectModel.Single(JsonType.DOUBLE))
+                    "name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                    "score" to FieldModel(ObjectModel.Single(IrType.DOUBLE))
                 )
             )
         )
@@ -400,7 +400,7 @@ class RawJsonHandlerBuilderTest {
     @Test
     fun testArrayOfArray() {
         val model = ObjectModel.Array(
-            ObjectModel.Array(ObjectModel.Single(JsonType.INT))
+            ObjectModel.Array(ObjectModel.Single(IrType.INT))
         )
         val expected = "[\n" +
             "  [\n" +
@@ -423,13 +423,13 @@ class Json5HandlerBuilderTest {
 
     @Test
     fun testSingleValues() {
-        assertEquals("\"\"", builder.build(ObjectModel.Single(JsonType.STRING)))
-        assertEquals("0", builder.build(ObjectModel.Single(JsonType.INT)))
-        assertEquals("0", builder.build(ObjectModel.Single(JsonType.SHORT)))
-        assertEquals("0", builder.build(ObjectModel.Single(JsonType.LONG)))
-        assertEquals("0.0", builder.build(ObjectModel.Single(JsonType.FLOAT)))
-        assertEquals("0.0", builder.build(ObjectModel.Single(JsonType.DOUBLE)))
-        assertEquals("false", builder.build(ObjectModel.Single(JsonType.BOOLEAN)))
+        assertEquals("\"\"", builder.build(ObjectModel.Single(IrType.STRING)))
+        assertEquals("0", builder.build(ObjectModel.Single(IrType.INT)))
+        assertEquals("0", builder.build(ObjectModel.Single(IrType.SHORT)))
+        assertEquals("0", builder.build(ObjectModel.Single(IrType.LONG)))
+        assertEquals("0.0", builder.build(ObjectModel.Single(IrType.FLOAT)))
+        assertEquals("0.0", builder.build(ObjectModel.Single(IrType.DOUBLE)))
+        assertEquals("false", builder.build(ObjectModel.Single(IrType.BOOLEAN)))
         assertEquals("null", builder.build(ObjectModel.Single("unknown")))
     }
 
@@ -442,7 +442,7 @@ class Json5HandlerBuilderTest {
     fun testEmptyFieldName() {
         val model = ObjectModel.Object(
             mapOf(
-                "" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                "" to FieldModel(ObjectModel.Single(IrType.STRING))
             )
         )
         val result = builder.build(model)
@@ -453,7 +453,7 @@ class Json5HandlerBuilderTest {
     fun testSingleFieldWithEndlineComment() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "The name field")
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), "The name field")
             )
         )
         val expected = "{\n" +
@@ -466,8 +466,8 @@ class Json5HandlerBuilderTest {
     fun testMultipleFieldsWithEndlineComments() {
         val model = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.Single(JsonType.INT), "The ID"),
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "The name")
+                "id" to FieldModel(ObjectModel.Single(IrType.INT), "The ID"),
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), "The name")
             )
         )
         val expected = "{\n" +
@@ -481,7 +481,7 @@ class Json5HandlerBuilderTest {
     fun testSingleFieldWithMultilineComment() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "Line one\nLine two\nLine three")
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), "Line one\nLine two\nLine three")
             )
         )
         val expected = "{\n" +
@@ -502,7 +502,7 @@ class Json5HandlerBuilderTest {
                 "user" to FieldModel(
                     ObjectModel.Object(
                         mapOf(
-                            "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                            "name" to FieldModel(ObjectModel.Single(IrType.STRING))
                         )
                     ),
                     "User information"
@@ -525,7 +525,7 @@ class Json5HandlerBuilderTest {
                 "user" to FieldModel(
                     ObjectModel.Object(
                         mapOf(
-                            "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                            "name" to FieldModel(ObjectModel.Single(IrType.STRING))
                         )
                     ),
                     "User information\nContains name and age"
@@ -549,7 +549,7 @@ class Json5HandlerBuilderTest {
         val model = ObjectModel.Object(
             mapOf(
                 "tags" to FieldModel(
-                    ObjectModel.Array(ObjectModel.Single(JsonType.STRING)),
+                    ObjectModel.Array(ObjectModel.Single(IrType.STRING)),
                     "List of tags"
                 )
             )
@@ -571,7 +571,7 @@ class Json5HandlerBuilderTest {
                     ObjectModel.Array(
                         ObjectModel.Object(
                             mapOf(
-                                "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                                "name" to FieldModel(ObjectModel.Single(IrType.STRING))
                             )
                         )
                     ),
@@ -596,8 +596,8 @@ class Json5HandlerBuilderTest {
             mapOf(
                 "metadata" to FieldModel(
                     ObjectModel.MapModel(
-                        ObjectModel.Single(JsonType.STRING),
-                        ObjectModel.Single(JsonType.STRING)
+                        ObjectModel.Single(IrType.STRING),
+                        ObjectModel.Single(IrType.STRING)
                     ),
                     "Key-value metadata"
                 )
@@ -618,8 +618,8 @@ class Json5HandlerBuilderTest {
             mapOf(
                 "metadata" to FieldModel(
                     ObjectModel.MapModel(
-                        ObjectModel.Single(JsonType.STRING),
-                        ObjectModel.Single(JsonType.INT)
+                        ObjectModel.Single(IrType.STRING),
+                        ObjectModel.Single(IrType.INT)
                     )
                 )
             )
@@ -636,19 +636,19 @@ class Json5HandlerBuilderTest {
     fun testMixedFields() {
         val model = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.Single(JsonType.INT), "The ID"),
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "The name"),
+                "id" to FieldModel(ObjectModel.Single(IrType.INT), "The ID"),
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), "The name"),
                 "address" to FieldModel(
                     ObjectModel.Object(
                         mapOf(
-                            "city" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                            "country" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                            "city" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                            "country" to FieldModel(ObjectModel.Single(IrType.STRING))
                         )
                     ),
                     "Address information"
                 ),
                 "tags" to FieldModel(
-                    ObjectModel.Array(ObjectModel.Single(JsonType.STRING)),
+                    ObjectModel.Array(ObjectModel.Single(IrType.STRING)),
                     "List of tags"
                 )
             )
@@ -673,7 +673,7 @@ class Json5HandlerBuilderTest {
     fun testFieldWithoutComment() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), null)
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), null)
             )
         )
         val expected = "{\n" +
@@ -686,7 +686,7 @@ class Json5HandlerBuilderTest {
     fun testFieldWithBlankComment() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "   ")
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), "   ")
             )
         )
         val expected = "{\n" +
@@ -699,13 +699,13 @@ class Json5HandlerBuilderTest {
     fun testAllKeysAreQuoted() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                "userName" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                "_private" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                "\$price" to FieldModel(ObjectModel.Single(JsonType.DOUBLE)),
-                "user-name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                "123field" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                "field name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                "userName" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                "_private" to FieldModel(ObjectModel.Single(IrType.INT)),
+                "\$price" to FieldModel(ObjectModel.Single(IrType.DOUBLE)),
+                "user-name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                "123field" to FieldModel(ObjectModel.Single(IrType.INT)),
+                "field name" to FieldModel(ObjectModel.Single(IrType.STRING))
             )
         )
         val result = builder.build(model)
@@ -725,11 +725,11 @@ class Json5HandlerBuilderTest {
                 "user" to FieldModel(
                     ObjectModel.Object(
                         mapOf(
-                            "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "User name"),
+                            "name" to FieldModel(ObjectModel.Single(IrType.STRING), "User name"),
                             "profile" to FieldModel(
                                 ObjectModel.Object(
                                     mapOf(
-                                        "avatar" to FieldModel(ObjectModel.Single(JsonType.STRING), "Avatar URL")
+                                        "avatar" to FieldModel(ObjectModel.Single(IrType.STRING), "Avatar URL")
                                     )
                                 ),
                                 "User profile"
@@ -763,7 +763,7 @@ class Json5HandlerBuilderTest {
                             "level2" to FieldModel(
                                 ObjectModel.Object(
                                     mapOf(
-                                        "value" to FieldModel(ObjectModel.Single(JsonType.STRING), "Deep value")
+                                        "value" to FieldModel(ObjectModel.Single(IrType.STRING), "Deep value")
                                     )
                                 ),
                                 "Nested level 2"
@@ -789,7 +789,7 @@ class Json5HandlerBuilderTest {
     @Test
     fun testArrayOfArray() {
         val model = ObjectModel.Array(
-            ObjectModel.Array(ObjectModel.Single(JsonType.INT))
+            ObjectModel.Array(ObjectModel.Single(IrType.INT))
         )
         val expected = "[\n" +
             "  [\n" +
@@ -802,11 +802,11 @@ class Json5HandlerBuilderTest {
     @Test
     fun testMapWithIntKeyAndObjectValue() {
         val model = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.INT),
+            ObjectModel.Single(IrType.INT),
             ObjectModel.Object(
                 mapOf(
-                    "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "User name"),
-                    "age" to FieldModel(ObjectModel.Single(JsonType.INT), "User age")
+                    "name" to FieldModel(ObjectModel.Single(IrType.STRING), "User name"),
+                    "age" to FieldModel(ObjectModel.Single(IrType.INT), "User age")
                 )
             )
         )
@@ -825,12 +825,12 @@ class Json5HandlerBuilderTest {
             mapOf(
                 "users" to FieldModel(
                     ObjectModel.MapModel(
-                        ObjectModel.Single(JsonType.LONG),
+                        ObjectModel.Single(IrType.LONG),
                         ObjectModel.Object(
                             mapOf(
-                                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), "User name"),
+                                "name" to FieldModel(ObjectModel.Single(IrType.STRING), "User name"),
                                 "tags" to FieldModel(
-                                    ObjectModel.Array(ObjectModel.Single(JsonType.STRING)),
+                                    ObjectModel.Array(ObjectModel.Single(IrType.STRING)),
                                     "User tags"
                                 )
                             )
@@ -858,8 +858,8 @@ class Json5HandlerBuilderTest {
     @Test
     fun testMapWithStringKeyAndSimpleValue() {
         val model = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
-            ObjectModel.Single(JsonType.BOOLEAN)
+            ObjectModel.Single(IrType.STRING),
+            ObjectModel.Single(IrType.BOOLEAN)
         )
         val expected = "{\n" +
             "  \"\": false\n" +

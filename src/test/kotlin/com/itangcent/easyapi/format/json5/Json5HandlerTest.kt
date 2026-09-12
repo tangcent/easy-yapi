@@ -3,7 +3,7 @@ package com.itangcent.easyapi.format.json5
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.FieldOption
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -12,21 +12,21 @@ class Json5HandlerTest {
     @Test
     fun testHandleSingleValue_string() {
         val sb = StringBuilder()
-        Json5Handler.handleSingleValue(sb, ObjectModel.Single(JsonType.STRING), 0)
+        Json5Handler.handleSingleValue(sb, ObjectModel.Single(IrType.STRING), 0)
         assertEquals("\"\"", sb.toString())
     }
 
     @Test
     fun testHandleSingleValue_int() {
         val sb = StringBuilder()
-        Json5Handler.handleSingleValue(sb, ObjectModel.Single(JsonType.INT), 0)
+        Json5Handler.handleSingleValue(sb, ObjectModel.Single(IrType.INT), 0)
         assertEquals("0", sb.toString())
     }
 
     @Test
     fun testHandleSingleValue_boolean() {
         val sb = StringBuilder()
-        Json5Handler.handleSingleValue(sb, ObjectModel.Single(JsonType.BOOLEAN), 0)
+        Json5Handler.handleSingleValue(sb, ObjectModel.Single(IrType.BOOLEAN), 0)
         assertEquals("false", sb.toString())
     }
 
@@ -96,7 +96,7 @@ class Json5HandlerTest {
     @Test
     fun testBeforeObjectField_withComment() {
         val sb = StringBuilder()
-        val field = FieldModel(ObjectModel.single(JsonType.STRING), comment = "User name")
+        val field = FieldModel(ObjectModel.single(IrType.STRING), comment = "User name")
         Json5Handler.beforeObjectField(sb, "name", field, 0, 1, 0)
         val result = sb.toString()
         assertTrue(result.contains("\"name\""))
@@ -106,7 +106,7 @@ class Json5HandlerTest {
     @Test
     fun testAfterObjectField_withEndlineComment() {
         val sb = StringBuilder()
-        val field = FieldModel(ObjectModel.single(JsonType.STRING), comment = "User name")
+        val field = FieldModel(ObjectModel.single(IrType.STRING), comment = "User name")
         Json5Handler.afterObjectField(sb, "name", field, 0, 2, 0)
         val result = sb.toString()
         assertTrue(result.contains("// User name"))
@@ -115,7 +115,7 @@ class Json5HandlerTest {
     @Test
     fun testAfterObjectField_lastField_noComma() {
         val sb = StringBuilder()
-        val field = FieldModel(ObjectModel.single(JsonType.STRING))
+        val field = FieldModel(ObjectModel.single(IrType.STRING))
         Json5Handler.afterObjectField(sb, "name", field, 0, 1, 0)
         val result = sb.toString()
         assertFalse(result.contains(","))
@@ -124,7 +124,7 @@ class Json5HandlerTest {
     @Test
     fun testAfterObjectField_notLastField_hasComma() {
         val sb = StringBuilder()
-        val field = FieldModel(ObjectModel.single(JsonType.STRING))
+        val field = FieldModel(ObjectModel.single(IrType.STRING))
         Json5Handler.afterObjectField(sb, "name", field, 0, 2, 0)
         val result = sb.toString()
         assertTrue(result.contains(","))
@@ -133,7 +133,7 @@ class Json5HandlerTest {
     @Test
     fun testBeforeObjectField_multilineComment_usesBlockComment() {
         val sb = StringBuilder()
-        val field = FieldModel(ObjectModel.single(JsonType.STRING), comment = "Line 1\nLine 2")
+        val field = FieldModel(ObjectModel.single(IrType.STRING), comment = "Line 1\nLine 2")
         Json5Handler.beforeObjectField(sb, "name", field, 0, 1, 0)
         val result = sb.toString()
         assertTrue(result.contains("/*"))
@@ -143,7 +143,7 @@ class Json5HandlerTest {
     @Test
     fun testBeforeObjectField_objectType_usesBlockComment() {
         val sb = StringBuilder()
-        val innerObj = ObjectModel.Object(mapOf("x" to FieldModel(ObjectModel.single(JsonType.INT))))
+        val innerObj = ObjectModel.Object(mapOf("x" to FieldModel(ObjectModel.single(IrType.INT))))
         val field = FieldModel(innerObj, comment = "Address object")
         Json5Handler.beforeObjectField(sb, "address", field, 0, 1, 0)
         val result = sb.toString()
@@ -153,7 +153,7 @@ class Json5HandlerTest {
     @Test
     fun testAfterObjectField_objectType_noEndlineComment() {
         val sb = StringBuilder()
-        val innerObj = ObjectModel.Object(mapOf("x" to FieldModel(ObjectModel.single(JsonType.INT))))
+        val innerObj = ObjectModel.Object(mapOf("x" to FieldModel(ObjectModel.single(IrType.INT))))
         val field = FieldModel(innerObj, comment = "Address object")
         Json5Handler.afterObjectField(sb, "address", field, 0, 1, 0)
         val result = sb.toString()
@@ -164,7 +164,7 @@ class Json5HandlerTest {
     fun testBeforeObjectField_withOptions() {
         val sb = StringBuilder()
         val field = FieldModel(
-            ObjectModel.single(JsonType.INT),
+            ObjectModel.single(IrType.INT),
             comment = "Status",
             options = listOf(FieldOption(1, "active"), FieldOption(0, "inactive"))
         )

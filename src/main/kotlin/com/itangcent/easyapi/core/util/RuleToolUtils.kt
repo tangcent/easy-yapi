@@ -396,7 +396,7 @@ object RuleToolUtils {
      * Type-name vocabulary used by [debug] output.
      *
      * Keys are fully qualified class names; values use the JSON-ish vocabulary
-     * shared with `com.itangcent.easyapi.core.psi.type.JsonType`, so a dumped
+     * shared with `com.itangcent.easyapi.core.psi.type.IrType`, so a dumped
      * model reads the same as an exported schema (`string`/`int`/`boolean`/...).
      *
      * A Java/Kotlin FQN pair must always collapse to the **same** word: given the

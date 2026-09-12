@@ -447,7 +447,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue(
             "first should be string (A=Y=String), got: $firstModel",
             (firstModel is ResolvedType.ClassType && (firstModel as? ResolvedType.ClassType)?.psiClass?.name == "String") ||
-                    (firstModel is ObjectModel.Single && firstModel.type == JsonType.STRING)
+                    (firstModel is ObjectModel.Single && firstModel.type == IrType.STRING)
         )
 
         // second: B = X = Integer
@@ -456,7 +456,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         val secondModel = secondField!!.model
         assertTrue(
             "second should be int (B=X=Integer), got: $secondModel",
-            secondModel is ObjectModel.Single && secondModel.type == JsonType.INT
+            secondModel is ObjectModel.Single && secondModel.type == IrType.INT
         )
 
         // Own field: swapped
@@ -464,7 +464,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'swapped' field", swappedField)
         assertTrue(
             "swapped should be boolean, got: ${swappedField!!.model}",
-            swappedField.model is ObjectModel.Single && (swappedField.model as ObjectModel.Single).type == JsonType.BOOLEAN
+            swappedField.model is ObjectModel.Single && (swappedField.model as ObjectModel.Single).type == IrType.BOOLEAN
         )
     }
 
@@ -498,7 +498,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
             assertNotNull("Inner Wrapper should have 'value' field", innerValue)
             assertTrue(
                 "Inner value should be string, got: ${innerValue!!.model}",
-                innerValue.model is ObjectModel.Single && (innerValue.model as ObjectModel.Single).type == JsonType.STRING
+                innerValue.model is ObjectModel.Single && (innerValue.model as ObjectModel.Single).type == IrType.STRING
             )
             val innerLabel = valueModel.fields["label"]
             assertNotNull("Inner Wrapper should have 'label' field", innerLabel)
@@ -539,7 +539,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'first' field", firstField)
         assertTrue(
             "first should be string, got: ${firstField!!.model}",
-            firstField.model is ObjectModel.Single && (firstField.model as ObjectModel.Single).type == JsonType.STRING
+            firstField.model is ObjectModel.Single && (firstField.model as ObjectModel.Single).type == IrType.STRING
         )
 
         // second: B=Wrapper<Integer> → Object
@@ -557,7 +557,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Wrapper should have 'value' field", wrapperValue)
         assertTrue(
             "Wrapper value should be int, got: ${wrapperValue!!.model}",
-            wrapperValue.model is ObjectModel.Single && (wrapperValue.model as ObjectModel.Single).type == JsonType.INT
+            wrapperValue.model is ObjectModel.Single && (wrapperValue.model as ObjectModel.Single).type == IrType.INT
         )
 
         // Wrapper.label: String
@@ -569,7 +569,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'status' field from ResponseWrapper", statusField)
         assertTrue(
             "status should be int, got: ${statusField!!.model}",
-            statusField.model is ObjectModel.Single && (statusField.model as ObjectModel.Single).type == JsonType.INT
+            statusField.model is ObjectModel.Single && (statusField.model as ObjectModel.Single).type == IrType.INT
         )
     }
 
@@ -593,7 +593,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'id' field from BaseEntity", idField)
         assertTrue(
             "id should be long, got: ${idField!!.model}",
-            idField.model is ObjectModel.Single && (idField.model as ObjectModel.Single).type == JsonType.LONG
+            idField.model is ObjectModel.Single && (idField.model as ObjectModel.Single).type == IrType.LONG
         )
 
         // name: String (from BaseEntity/Named)
@@ -601,7 +601,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'name' field from BaseEntity", nameField)
         assertTrue(
             "name should be string, got: ${nameField!!.model}",
-            nameField.model is ObjectModel.Single && (nameField.model as ObjectModel.Single).type == JsonType.STRING
+            nameField.model is ObjectModel.Single && (nameField.model as ObjectModel.Single).type == IrType.STRING
         )
 
         // createdAt: Long (from BaseEntity)
@@ -609,7 +609,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'createdAt' field from BaseEntity", createdAtField)
         assertTrue(
             "createdAt should be long, got: ${createdAtField!!.model}",
-            createdAtField.model is ObjectModel.Single && (createdAtField.model as ObjectModel.Single).type == JsonType.LONG
+            createdAtField.model is ObjectModel.Single && (createdAtField.model as ObjectModel.Single).type == IrType.LONG
         )
 
         // email: String (own field)
@@ -617,7 +617,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'email' field from UserEntity", emailField)
         assertTrue(
             "email should be string, got: ${emailField!!.model}",
-            emailField.model is ObjectModel.Single && (emailField.model as ObjectModel.Single).type == JsonType.STRING
+            emailField.model is ObjectModel.Single && (emailField.model as ObjectModel.Single).type == IrType.STRING
         )
     }
 
@@ -878,7 +878,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'flag' from Layer3", flagField)
         assertTrue(
             "flag should be boolean, got: ${flagField!!.model}",
-            flagField.model is ObjectModel.Single && (flagField.model as ObjectModel.Single).type == JsonType.BOOLEAN
+            flagField.model is ObjectModel.Single && (flagField.model as ObjectModel.Single).type == IrType.BOOLEAN
         )
 
         // Field from Layer2: tag (String)
@@ -915,7 +915,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Pair should have 'first'", firstField)
         assertTrue(
             "Pair.first should be string, got: ${firstField!!.model}",
-            firstField.model is ObjectModel.Single && (firstField.model as ObjectModel.Single).type == JsonType.STRING
+            firstField.model is ObjectModel.Single && (firstField.model as ObjectModel.Single).type == IrType.STRING
         )
 
         // Pair.second: B=Integer → int
@@ -923,7 +923,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Pair should have 'second'", secondField)
         assertTrue(
             "Pair.second should be int, got: ${secondField!!.model}",
-            secondField.model is ObjectModel.Single && (secondField.model as ObjectModel.Single).type == JsonType.INT
+            secondField.model is ObjectModel.Single && (secondField.model as ObjectModel.Single).type == IrType.INT
         )
     }
 
@@ -1116,14 +1116,14 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'x' from B", xField)
         assertTrue(
             "x should be string (X=String), got: ${xField!!.model}",
-            xField.model is ObjectModel.Single && (xField.model as ObjectModel.Single).type == JsonType.STRING
+            xField.model is ObjectModel.Single && (xField.model as ObjectModel.Single).type == IrType.STRING
         )
 
         val yField = obj.fields["y"]
         assertNotNull("Should have 'y' from B", yField)
         assertTrue(
             "y should be int (Y=Integer), got: ${yField!!.model}",
-            yField.model is ObjectModel.Single && (yField.model as ObjectModel.Single).type == JsonType.INT
+            yField.model is ObjectModel.Single && (yField.model as ObjectModel.Single).type == IrType.INT
         )
 
         // A's fields (inverted): t=Integer, r=String
@@ -1131,14 +1131,14 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 't' from A", tField)
         assertTrue(
             "t should be int (T=Y=Integer), got: ${tField!!.model}",
-            tField.model is ObjectModel.Single && (tField.model as ObjectModel.Single).type == JsonType.INT
+            tField.model is ObjectModel.Single && (tField.model as ObjectModel.Single).type == IrType.INT
         )
 
         val rField = obj.fields["r"]
         assertNotNull("Should have 'r' from A", rField)
         assertTrue(
             "r should be string (R=X=String), got: ${rField!!.model}",
-            rField.model is ObjectModel.Single && (rField.model as ObjectModel.Single).type == JsonType.STRING
+            rField.model is ObjectModel.Single && (rField.model as ObjectModel.Single).type == IrType.STRING
         )
     }
 
@@ -1171,14 +1171,14 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'm' from E", mField)
         assertTrue(
             "m should be long (M=Long), got: ${mField!!.model}",
-            mField.model is ObjectModel.Single && (mField.model as ObjectModel.Single).type == JsonType.LONG
+            mField.model is ObjectModel.Single && (mField.model as ObjectModel.Single).type == IrType.LONG
         )
 
         val nField = obj.fields["n"]
         assertNotNull("Should have 'n' from E", nField)
         assertTrue(
             "n should be boolean (N=Boolean), got: ${nField!!.model}",
-            nField.model is ObjectModel.Single && (nField.model as ObjectModel.Single).type == JsonType.BOOLEAN
+            nField.model is ObjectModel.Single && (nField.model as ObjectModel.Single).type == IrType.BOOLEAN
         )
 
         // D level: p=Boolean (P=N=Boolean), q=Long (Q=M=Long)
@@ -1186,14 +1186,14 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'p' from D", pField)
         assertTrue(
             "p should be boolean (P=N=Boolean), got: ${pField!!.model}",
-            pField.model is ObjectModel.Single && (pField.model as ObjectModel.Single).type == JsonType.BOOLEAN
+            pField.model is ObjectModel.Single && (pField.model as ObjectModel.Single).type == IrType.BOOLEAN
         )
 
         val qField = obj.fields["q"]
         assertNotNull("Should have 'q' from D", qField)
         assertTrue(
             "q should be long (Q=M=Long), got: ${qField!!.model}",
-            qField.model is ObjectModel.Single && (qField.model as ObjectModel.Single).type == JsonType.LONG
+            qField.model is ObjectModel.Single && (qField.model as ObjectModel.Single).type == IrType.LONG
         )
 
         // A level: t=Long (T=Q=M=Long), r=Boolean (R=P=N=Boolean)
@@ -1202,14 +1202,14 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 't' from A", tField)
         assertTrue(
             "t should be long (T=Q=M=Long, double inversion cancels), got: ${tField!!.model}",
-            tField.model is ObjectModel.Single && (tField.model as ObjectModel.Single).type == JsonType.LONG
+            tField.model is ObjectModel.Single && (tField.model as ObjectModel.Single).type == IrType.LONG
         )
 
         val rField = obj.fields["r"]
         assertNotNull("Should have 'r' from A", rField)
         assertTrue(
             "r should be boolean (R=P=N=Boolean, double inversion cancels), got: ${rField!!.model}",
-            rField.model is ObjectModel.Single && (rField.model as ObjectModel.Single).type == JsonType.BOOLEAN
+            rField.model is ObjectModel.Single && (rField.model as ObjectModel.Single).type == IrType.BOOLEAN
         )
     }
 

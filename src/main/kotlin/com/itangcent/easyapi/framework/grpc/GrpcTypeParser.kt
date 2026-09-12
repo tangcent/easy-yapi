@@ -172,36 +172,40 @@ class GrpcTypeParser {
             )
         }
 
-        return ObjectModel.Object(fields = fieldModels)
+        return ObjectModel.Object(fields = fieldModels, ref = psiClass.qualifiedName)
     }
 
     private fun resolveFieldModel(field: ProtobufField, depth: Int): ObjectModel {
+        // `field.typeName` is the declared canonical text (`com.foo.Bar`, `java.util.List<...>`,
+        // `int`), so it is what every node here records as its ref.
         return when {
             field.isRepeated -> {
                 val itemModel = resolveElementModel(field.elementType, depth)
-                ObjectModel.Array(item = itemModel)
+                ObjectModel.Array(item = itemModel, ref = field.typeName)
             }
             field.isMap -> {
-                val keyModel = ObjectModel.Single(mapProtobufType(field.keyType ?: "string"))
+                val keyModel = ObjectModel.Single(mapProtobufType(field.keyType ?: "string"), ref = field.keyType)
                 val valueModel = resolveElementModel(field.valueType, depth)
-                ObjectModel.MapModel(keyType = keyModel, valueType = valueModel)
+                ObjectModel.MapModel(keyType = keyModel, valueType = valueModel, ref = field.typeName)
             }
             field.isMessage -> {
                 resolveNestedMessage(field.type, depth)
-                    ?: ObjectModel.Single(mapProtobufType(field.typeName))
+                    ?: ObjectModel.Single(mapProtobufType(field.typeName), ref = field.typeName)
             }
-            else -> ObjectModel.Single(mapProtobufType(field.typeName))
+            else -> ObjectModel.Single(mapProtobufType(field.typeName), ref = field.typeName)
         }
     }
 
     private fun resolveElementModel(type: PsiType?, depth: Int): ObjectModel {
+        // No declaration to point at — a repeated field's element type is recorded on the
+        // enclosing `Array`'s ref instead.
         if (type == null) return ObjectModel.Single("unknown")
         val psiClass = PsiTypesUtil.getPsiClass(type)
         if (psiClass != null && isProtobufMessage(psiClass)) {
             return parseMessageTypeInternal(psiClass, depth + 1)
-                ?: ObjectModel.Single(mapProtobufType(type.canonicalText))
+                ?: ObjectModel.Single(mapProtobufType(type.canonicalText), ref = type.canonicalText)
         }
-        return ObjectModel.Single(mapProtobufType(type.canonicalText))
+        return ObjectModel.Single(mapProtobufType(type.canonicalText), ref = type.canonicalText)
     }
 
     private fun resolveNestedMessage(type: PsiType?, depth: Int): ObjectModel? {

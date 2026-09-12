@@ -55,6 +55,10 @@ internal object PrimitiveFamilies {
     val WRAPPER_TO_KEYWORD: Map<String, String> =
         valueFamilies.associate { it.wrapperFqn to it.keyword }
 
+    /** Primitive kind → canonical boxed FQN (`INT` → `java.lang.Integer`). Excludes `void`. */
+    val WRAPPER_FQN_BY_KIND: Map<PrimitiveKind, String> =
+        valueFamilies.associate { it.kind to it.wrapperFqn }
+
     /** Lowercased simple name → canonical boxed FQN (`int`/`integer` → `java.lang.Integer`). */
     val BOXED_BY_SIMPLE_NAME: Map<String, String> = buildMap {
         valueFamilies.forEach { family ->

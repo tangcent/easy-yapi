@@ -54,7 +54,7 @@ package com.itangcent.easyapi.core.psi.type
  * canonicalization routine:
  * - no subtyping — `List<X>` ≢ `Collection<X>`, nothing ≡ `Object`
  * - no numeric widening — `byte` ≢ `Integer` (JSON-type reconciliation is done separately,
- *   by `EnumValueResolver.resolveJsonType` / `reconcileType`)
+ *   by `EnumValueResolver.resolveIrType` / `reconcileType`)
  * - raw `List` ≡ `List<X>` holds *by construction*, not by erasure semantics
  *
  * Accepted false positive: a user class named like a boxed primitive

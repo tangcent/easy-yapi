@@ -1,18 +1,18 @@
 package com.itangcent.easyapi.format.json
 
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import junit.framework.TestCase
 
 /**
  * Tests [ObjectModelValueConverter.toSimpleValue] behavior for the various
- * [JsonType] constants produced by PSI type resolution.
+ * [IrType] constants produced by PSI type resolution.
  *
  * Originally located at `core/psi/DefaultPsiClassHelperUtilityTest.kt`, this
  * file was moved to `format/json/` because it is a pure unit test of
  * [ObjectModelValueConverter] — every test case calls
  * `ObjectModelValueConverter.toSimpleValue(...)` on a model built from a
- * [JsonType]. Co-locating the test with the converter avoids a concrete-impl
+ * [IrType]. Co-locating the test with the converter avoids a concrete-impl
  * upward import from `core.psi` to `format.json` (DAG rule).
  */
 class ObjectModelValueConverterTypesTest : TestCase() {
@@ -239,8 +239,19 @@ class ObjectModelValueConverterTypesTest : TestCase() {
         assertEquals("java.io.File should be treated as file type", "(binary)", fileValue)
 
         assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.util.Date")))
-        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDate")))
-        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDateTime")))
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("date")))
+        assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("datetime")))
+
+        // A *qualified* spelling the IR vocabulary does not know is a composite. Deciding that
+        // `java.time.LocalDate` is a string is a `json.rule.convert` rule's job
+        // (`extensions/converts.config`), not `fromJavaType`'s — the method is deliberately
+        // configuration-agnostic, so nothing here maps a JDK FQN by substring.
+        assertTrue(
+            ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDate")) is Map<*, *>
+        )
+        assertTrue(
+            ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDateTime")) is Map<*, *>
+        )
     }
 
     fun testGetDefaultValueForTypeWithSpaces() {
@@ -290,27 +301,46 @@ class ObjectModelValueConverterTypesTest : TestCase() {
     }
 
     private fun callGetDefaultValueForType(typeName: String): ObjectModel? {
-        return ObjectModel.single(JsonType.fromJavaType(typeName))
+        return ObjectModel.single(IrType.fromJavaType(typeName))
     }
 
     fun testFromFileTypeMarkerResolvesToFile() {
-        val model = ObjectModel.single(JsonType.fromJavaType("__file__"))
+        val model = ObjectModel.single(IrType.fromJavaType("__file__"))
         val single = model.asSingle()
         assertNotNull("ObjectModel.Single should be created from __file__", single)
-        assertEquals("__file__ should resolve to 'file' type", JsonType.FILE, single!!.type)
+        assertEquals("__file__ should resolve to 'file' type", IrType.FILE, single!!.type)
     }
 
     fun testFromFileTypeMarkerNotObject() {
-        val model = ObjectModel.single(JsonType.fromJavaType("__file__"))
+        val model = ObjectModel.single(IrType.fromJavaType("__file__"))
         val single = model.asSingle()
         assertNotNull(single)
-        assertNotSame("__file__ should NOT resolve to 'object' type", JsonType.OBJECT, single!!.type)
+        assertNotSame("__file__ should NOT resolve to 'object' type", IrType.OBJECT, single!!.type)
     }
 
     fun testFromFileTypeCanonicalResolvesToFile() {
-        val model = ObjectModel.single(JsonType.fromJavaType("org.springframework.web.multipart.MultipartFile"))
+        val model = ObjectModel.single(IrType.fromJavaType("org.springframework.web.multipart.MultipartFile"))
         val single = model.asSingle()
         assertNotNull(single)
-        assertEquals("MultipartFile canonical name should resolve to 'file' type", JsonType.FILE, single!!.type)
+        assertEquals("MultipartFile canonical name should resolve to 'file' type", IrType.FILE, single!!.type)
+    }
+
+    /**
+     * Drift guard: [ObjectModelValueConverter] and [IrType.defaultValueForType] used to be two
+     * independent tables and disagreed on the values JSON has no name for — `date`/`datetime`
+     * were `""` here and `null` there, `file` was `"(binary)"` and `null`. The converter now
+     * delegates its scalar cases, so both must answer identically for every JSON type.
+     *
+     * `object`/`array` are excluded: they are structural shapes with no scalar default.
+     */
+    fun testSingleToValueAgreesWithIrTypeDefaultValue() {
+        for (type in IrType.ALL_TYPES) {
+            if (type == IrType.OBJECT || type == IrType.ARRAY) continue
+            assertEquals(
+                "singleToValue and defaultValueForType disagree for '$type'",
+                IrType.defaultValueForType(type),
+                ObjectModelValueConverter.toSimpleValue(ObjectModel.single(type))
+            )
+        }
     }
 }

@@ -199,7 +199,9 @@ object TemplateModelBuilder : IdeaLog {
             }
             is ObjectModel.Single -> {
                 // Parity (review finding F5): one synthetic row, name="" matching legacy
-                // `Row(name="", type=model.type, desc="")` byte-for-byte.
+                // `Row(name="", type=model.type, desc="")` byte-for-byte. The type prints
+                // verbatim — the pipeline maps date-like types to `string` upstream, so there
+                // is nothing left to rewrite here.
                 fields += FieldView(
                     name = "",
                     type = model.type,

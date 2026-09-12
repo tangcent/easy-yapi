@@ -16,7 +16,7 @@ import com.itangcent.easyapi.core.export.httpMetadata
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.FieldOption
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.testFramework.ResourceLoader
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -84,19 +84,19 @@ class MarkdownTemplateParityTest {
                 method = HttpMethod.POST,
                 body = ObjectModel.Object(
                     mapOf(
-                        "name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name"),
-                        "age" to FieldModel(ObjectModel.single(JsonType.INT), comment = "user age")
+                        "name" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user name"),
+                        "age" to FieldModel(ObjectModel.single(IrType.INT), comment = "user age")
                     )
                 ),
                 responseBody = ObjectModel.Object(
                     mapOf(
-                        "code" to FieldModel(ObjectModel.single(JsonType.INT), comment = "response code"),
-                        "msg" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "message"),
+                        "code" to FieldModel(ObjectModel.single(IrType.INT), comment = "response code"),
+                        "msg" to FieldModel(ObjectModel.single(IrType.STRING), comment = "message"),
                         "data" to FieldModel(
                             ObjectModel.Object(
                                 mapOf(
-                                    "id" to FieldModel(ObjectModel.single(JsonType.LONG), comment = "user id"),
-                                    "name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name")
+                                    "id" to FieldModel(ObjectModel.single(IrType.LONG), comment = "user id"),
+                                    "name" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user name")
                                 )
                             ),
                             comment = "response data"
@@ -119,13 +119,13 @@ class MarkdownTemplateParityTest {
                 ),
                 responseBody = ObjectModel.Object(
                     mapOf(
-                        "code" to FieldModel(ObjectModel.single(JsonType.INT)),
+                        "code" to FieldModel(ObjectModel.single(IrType.INT)),
                         "data" to FieldModel(
                             ObjectModel.array(
                                 ObjectModel.Object(
                                     mapOf(
-                                        "id" to FieldModel(ObjectModel.single(JsonType.LONG)),
-                                        "name" to FieldModel(ObjectModel.single(JsonType.STRING))
+                                        "id" to FieldModel(ObjectModel.single(IrType.LONG)),
+                                        "name" to FieldModel(ObjectModel.single(IrType.STRING))
                                     )
                                 )
                             ),
@@ -142,7 +142,7 @@ class MarkdownTemplateParityTest {
             metadata = httpMetadata(
                 path = "/api/echo/string",
                 method = HttpMethod.POST,
-                body = ObjectModel.single(JsonType.STRING),
+                body = ObjectModel.single(IrType.STRING),
                 headers = listOf(ApiHeader(name = "Content-Type", value = "application/json"))
             )
         ),
@@ -160,8 +160,8 @@ class MarkdownTemplateParityTest {
                     mapOf(
                         "metadata" to FieldModel(
                             ObjectModel.MapModel(
-                                keyType = ObjectModel.single(JsonType.STRING),
-                                valueType = ObjectModel.single(JsonType.INT)
+                                keyType = ObjectModel.single(IrType.STRING),
+                                valueType = ObjectModel.single(IrType.INT)
                             ),
                             comment = "key-value metadata"
                         )
@@ -179,7 +179,7 @@ class MarkdownTemplateParityTest {
                 method = HttpMethod.POST,
                 body = ObjectModel.Object(
                     mapOf(
-                        "tags" to FieldModel(ObjectModel.array(ObjectModel.single(JsonType.STRING)), comment = "tag list")
+                        "tags" to FieldModel(ObjectModel.array(ObjectModel.single(IrType.STRING)), comment = "tag list")
                     )
                 ),
                 headers = listOf(ApiHeader(name = "Content-Type", value = "application/json"))
@@ -195,7 +195,7 @@ class MarkdownTemplateParityTest {
                 body = ObjectModel.Object(
                     mapOf(
                         "status" to FieldModel(
-                            ObjectModel.single(JsonType.STRING),
+                            ObjectModel.single(IrType.STRING),
                             comment = "status",
                             options = listOf(
                                 FieldOption(value = "active", desc = "Active user"),
@@ -244,7 +244,7 @@ class MarkdownTemplateParityTest {
         run {
             val fields = mutableMapOf<String, FieldModel>()
             val treeNode = ObjectModel.Object(fields)
-            fields["name"] = FieldModel(ObjectModel.single(JsonType.STRING), comment = "node name")
+            fields["name"] = FieldModel(ObjectModel.single(IrType.STRING), comment = "node name")
             fields["children"] = FieldModel(ObjectModel.array(treeNode), comment = "child nodes")
             ApiEndpoint(
                 name = "Get Tree",
@@ -268,12 +268,12 @@ class MarkdownTemplateParityTest {
                 streamingType = GrpcStreamingType.UNARY,
                 body = ObjectModel.Object(
                     mapOf(
-                        "user_id" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user ID")
+                        "user_id" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user ID")
                     )
                 ),
                 responseBody = ObjectModel.Object(
                     mapOf(
-                        "name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name")
+                        "name" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user name")
                     )
                 )
             )

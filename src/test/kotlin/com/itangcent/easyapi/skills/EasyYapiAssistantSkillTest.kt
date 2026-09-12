@@ -5,6 +5,7 @@ import com.itangcent.easyapi.core.rule.RuleKeyRegistry
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.tooling.RuleKeySchemeExporter
 import com.itangcent.easyapi.tooling.RuleContextExporter
+import com.itangcent.easyapi.tooling.SkillFactsExporter
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import java.io.File
@@ -224,6 +225,39 @@ class EasyYapiAssistantSkillTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     /**
+     * Reverse direction of the two bundle tests above.
+     *
+     * Those iterate the **source** files and assert each is mirrored, so a
+     * file left behind in the mirror (e.g. after a source rename or removal)
+     * would go unnoticed — the skill would ship a catalog entry the plugin no
+     * longer has. Assert set equality in both directions instead.
+     */
+    fun testCatalogMirrorsHaveNoOrphanFiles() {
+        listOf("detection", "key-guides").forEach { category ->
+            val canonical = repoRoot.resolve("src/main/resources/ai/$category")
+            val mirror = skillAiDir.resolve(category)
+            assertTrue("canonical ai/$category/ must exist", canonical.isDirectory)
+            assertTrue(
+                "skill ai/$category/ must exist — run ./gradlew syncAgentCatalog",
+                mirror.isDirectory
+            )
+
+            fun markdownNames(dir: File): List<String> =
+                dir.listFiles { f -> f.isFile && f.name.endsWith(".md") }
+                    ?.map { it.name }?.sorted().orEmpty()
+
+            assertEquals(
+                "skill ai/$category/ must mirror the canonical set exactly. An orphan " +
+                    "means a source rename/removal was not synced (run " +
+                    "./gradlew syncAgentCatalog); a missing file is covered by the " +
+                    "bundle test above.",
+                markdownNames(canonical),
+                markdownNames(mirror)
+            )
+        }
+    }
+
+    /**
      * Every `src/main/resources/ai/key-guides/` markdown file must be bundled
      * verbatim under `skills/easy-yapi-assistant/ai/key-guides/` so the external
      * skill mirrors the in-plugin agent's `get_rule_detail` surface.
@@ -390,6 +424,96 @@ class EasyYapiAssistantSkillTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue(
             "rule-contexts.json must ship at least one shared script-object API",
             dictIds.isNotEmpty()
+        )
+    }
+
+    // -------------------------------------------------------------------------
+    // Code-derived fact sheets (tools.md / locales.md / extensions.md)
+    // -------------------------------------------------------------------------
+
+    /**
+     * [SkillFactsExporter] generates the tool inventory, the bundled-locale
+     * list, and the EP wiring overview. The skill must ship all three — they
+     * replace hand-maintained enumerations that used to drift silently.
+     */
+    fun testFactSheetsExist() {
+        listOf("tools.md", "locales.md", "extensions.md").forEach { name ->
+            val file = skillDir.resolve(name)
+            assertTrue(
+                "skill must ship the generated $name — run ./gradlew syncSkillFacts",
+                file.isFile
+            )
+            assertTrue(
+                "$name must not be empty",
+                file.readText(Charsets.UTF_8).isNotBlank()
+            )
+        }
+    }
+
+    /**
+     * Same freshness contract as `rule-keys.*`: the committed fact sheets must
+     * equal what the exporter produces right now, so a tool/locale/EP change
+     * cannot land with a stale reference in the repo.
+     */
+    fun testFactSheetsAreFreshFromExporter() {
+        assertEquals(
+            "skills/easy-yapi-assistant/tools.md is stale — run ./gradlew syncSkillFacts",
+            SkillFactsExporter.toolsMarkdown(skillScriptsDir),
+            skillDir.resolve("tools.md").readText(Charsets.UTF_8)
+        )
+        assertEquals(
+            "skills/easy-yapi-assistant/locales.md is stale — run ./gradlew syncSkillFacts",
+            SkillFactsExporter.localesMarkdown(),
+            skillDir.resolve("locales.md").readText(Charsets.UTF_8)
+        )
+        assertEquals(
+            "skills/easy-yapi-assistant/extensions.md is stale — run ./gradlew syncSkillFacts",
+            SkillFactsExporter.extensionsMarkdown(
+                repoRoot.resolve("src/main/resources/META-INF/plugin.xml")
+            ),
+            skillDir.resolve("extensions.md").readText(Charsets.UTF_8)
+        )
+    }
+
+    fun testSkillBodyReferencesFactSheets() {
+        val body = skillBody()
+        listOf("tools.md", "locales.md", "extensions.md").forEach { name ->
+            assertTrue(
+                "SKILL.md must point at the generated $name so the assistant can find it",
+                body.contains(name)
+            )
+        }
+    }
+
+    /**
+     * G9/G10 guard — the hand-written alias table and bundled-locale list were
+     * removed from `rule-guide.md`: both are generated (`rule-keys.md` per key,
+     * `locales.md` from the locale registry). Re-adding a hand-maintained copy
+     * would drift again, so pin its absence.
+     */
+    fun testRuleGuideDoesNotEnumerateAliasesOrLocales() {
+        val guide = skillDocsDir.resolve("rule-guide.md").readText(Charsets.UTF_8)
+
+        listOf(
+            "`doc.param` → `param.doc`",
+            "`json.rule.field.name` → `field.name`",
+            "`class.is.ctrl` → `class.is.spring.ctrl`",
+            "`collection.hopp.test` → `hopp.collection.test`",
+        ).forEach { handWrittenAlias ->
+            assertFalse(
+                "rule-guide.md must not hand-maintain the alias table (it is " +
+                    "generated into rule-keys.md); found: $handWrittenAlias",
+                guide.contains(handWrittenAlias)
+            )
+        }
+        assertFalse(
+            "rule-guide.md must not hand-maintain the bundled-locale list (it is " +
+                "generated into locales.md)",
+            guide.contains("`pt-BR`, `ru`, `th`, `tr`, `uk`, `vi`, `zh`, `zh-CN`, `zh-TW`")
+        )
+        assertTrue(
+            "rule-guide.md must point at the generated sources instead",
+            guide.contains("rule-keys.md") && guide.contains("locales.md")
         )
     }
 

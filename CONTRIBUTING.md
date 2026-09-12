@@ -31,17 +31,18 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 ### Pull Requests
 
 1. Fork the repository and create your branch from `master`
-2. Follow the project's architecture principles (see `.kiro/steering/project.md`)
+2. Follow the conventions in [`AGENTS.md`](AGENTS.md)
 3. Write clear, concise commit messages
 4. Include tests for new functionality
 5. Ensure all tests pass
 6. Update documentation as needed
+7. If you touched a generated asset, run `./gradlew syncSkill` (see below)
 
 ## Development Setup
 
 ### Prerequisites
 
-- IntelliJ IDEA 2023.1 or higher
+- IntelliJ IDEA 2025.2 or higher
 - JDK 17 or higher
 - Kotlin 2.1.0
 
@@ -63,33 +64,35 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 ./gradlew runIde
 ```
 
-## Architecture Guidelines
+## Conventions & guides
 
-### Key Principles
+The authoritative conventions — project structure and the four-bucket dependency
+graph, threading model, logging channels, testing rules — live in
+[`AGENTS.md`](AGENTS.md). Link to it rather than restating it.
 
-1. **Kotlin Coroutines**: Use structured concurrency for all async operations
-2. **PSI Threading**: Methods accessing PSI must be `suspend` functions with internal read/write actions
-3. **Type Safety**: Use sealed classes for type hierarchies, data classes for DTOs
-4. **Dependency Injection**: Use IntelliJ `@Service` for singletons, `OperationScope` for per-operation objects
+Step-by-step guides live in [`docs/developer/`](docs/developer/README.md); that page
+index is the current list, so it stays correct as guides are added.
 
-### Code Style
+## Generated assets — keep them in sync
 
-- Follow Kotlin coding conventions
-- Use meaningful variable and function names
-- Keep functions small and focused
-- Add KDoc comments for public APIs
-- Prefer expression bodies for simple functions
+Some files under `skills/easy-yapi-assistant/` are generated from code or mirrored
+from a single source. Two of the tasks are **manual** — they are not on the
+`processResources` chain, so a stale copy passes a local build and only fails in CI.
 
-### Testing
+```bash
+./gradlew syncSkill            # runs all of the below
+./gradlew syncKnowledgeBase    # docs/knowledge-base → plugin resource + skill mirror
+./gradlew syncAgentCatalog     # ai/detection + ai/key-guides → skill mirror
+./gradlew syncRuleKeySchemes   # reflect *RuleKeys → rule-keys.{json,md}            (MANUAL)
+./gradlew syncRuleContexts     # script-object signatures → rule-contexts.{json,md} (MANUAL)
+./gradlew syncSkillFacts       # tool inventory / locales / EP wiring →                     (MANUAL)
+                               #   tools.md, locales.md, extensions.md
+```
 
-- Write unit tests for new functionality
-- Use `LightCodeInsightFixtureTestCase` for PSI tests
-- Use `mockito-kotlin` for mocking
-- Aim for good test coverage
-
-### Extensions
-
-- Adding a new channel, format, or framework? See [`docs/developer/`](docs/developer/README.md) for step-by-step guides (SPI contracts, `plugin.xml` wiring, threading/logging conventions, worked examples).
+**If you changed a `*RuleKeys` object or a script-object signature, run
+`./gradlew syncSkill` and commit the regenerated files.** The guard tests
+(`RuleKeySchemeExporterTest`, `EasyYapiAssistantSkillTest`) fail when the committed
+copies drift.
 
 ## Project Structure
 

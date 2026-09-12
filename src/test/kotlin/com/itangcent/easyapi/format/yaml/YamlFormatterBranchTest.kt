@@ -2,7 +2,7 @@ package com.itangcent.easyapi.format.yaml
 
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -23,7 +23,7 @@ class YamlFormatterBranchTest {
 
     @Test
     fun testFormatTopLevelSingle() {
-        val model = ObjectModel.Single(JsonType.STRING)
+        val model = ObjectModel.Single(IrType.STRING)
         val result = YamlFormatter.format(model)
         assertEquals("value: \"\"", result)
     }
@@ -44,7 +44,7 @@ class YamlFormatterBranchTest {
 
     @Test
     fun testFormatTopLevelArray() {
-        val model = ObjectModel.Array(ObjectModel.Single(JsonType.STRING))
+        val model = ObjectModel.Array(ObjectModel.Single(IrType.STRING))
         val result = YamlFormatter.format(model)
         assertEquals("- \"\"", result)
     }
@@ -52,8 +52,8 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatTopLevelMap() {
         val model = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
-            ObjectModel.Single(JsonType.INT)
+            ObjectModel.Single(IrType.STRING),
+            ObjectModel.Single(IrType.INT)
         )
         val result = YamlFormatter.format(model)
         assertEquals("key: \"\"\nvalue: 0", result)
@@ -65,9 +65,9 @@ class YamlFormatterBranchTest {
     fun testFormatObjectWithScalars() {
         val obj = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                "age" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                "active" to FieldModel(ObjectModel.Single(JsonType.BOOLEAN))
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                "age" to FieldModel(ObjectModel.Single(IrType.INT)),
+                "active" to FieldModel(ObjectModel.Single(IrType.BOOLEAN))
             )
         )
         val result = YamlFormatter.format(obj)
@@ -78,9 +78,9 @@ class YamlFormatterBranchTest {
     fun testFormatObjectWithLongAndDouble() {
         val obj = ObjectModel.Object(
             mapOf(
-                "big" to FieldModel(ObjectModel.Single(JsonType.LONG)),
-                "price" to FieldModel(ObjectModel.Single(JsonType.DOUBLE)),
-                "rate" to FieldModel(ObjectModel.Single(JsonType.FLOAT))
+                "big" to FieldModel(ObjectModel.Single(IrType.LONG)),
+                "price" to FieldModel(ObjectModel.Single(IrType.DOUBLE)),
+                "rate" to FieldModel(ObjectModel.Single(IrType.FLOAT))
             )
         )
         val result = YamlFormatter.format(obj)
@@ -91,7 +91,7 @@ class YamlFormatterBranchTest {
     fun testFormatObjectWithShortType() {
         val obj = ObjectModel.Object(
             mapOf(
-                "s" to FieldModel(ObjectModel.Single(JsonType.SHORT))
+                "s" to FieldModel(ObjectModel.Single(IrType.SHORT))
             )
         )
         val result = YamlFormatter.format(obj)
@@ -116,7 +116,7 @@ class YamlFormatterBranchTest {
         val obj = ObjectModel.Object(
             mapOf(
                 "name" to FieldModel(
-                    model = ObjectModel.Single(JsonType.STRING),
+                    model = ObjectModel.Single(IrType.STRING),
                     defaultValue = "alice"
                 )
             )
@@ -130,7 +130,7 @@ class YamlFormatterBranchTest {
         val obj = ObjectModel.Object(
             mapOf(
                 "name" to FieldModel(
-                    model = ObjectModel.Single(JsonType.STRING),
+                    model = ObjectModel.Single(IrType.STRING),
                     defaultValue = ""
                 )
             )
@@ -144,7 +144,7 @@ class YamlFormatterBranchTest {
         val obj = ObjectModel.Object(
             mapOf(
                 "age" to FieldModel(
-                    model = ObjectModel.Single(JsonType.INT),
+                    model = ObjectModel.Single(IrType.INT),
                     defaultValue = "42"
                 )
             )
@@ -159,7 +159,7 @@ class YamlFormatterBranchTest {
         val obj = ObjectModel.Object(
             mapOf(
                 "active" to FieldModel(
-                    model = ObjectModel.Single(JsonType.BOOLEAN),
+                    model = ObjectModel.Single(IrType.BOOLEAN),
                     defaultValue = "true"
                 )
             )
@@ -187,7 +187,7 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatNestedObject() {
         val inner = ObjectModel.Object(
-            mapOf("id" to FieldModel(ObjectModel.Single(JsonType.INT)))
+            mapOf("id" to FieldModel(ObjectModel.Single(IrType.INT)))
         )
         val outer = ObjectModel.Object(
             mapOf("nested" to FieldModel(inner))
@@ -209,7 +209,7 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatDeeplyNestedObject() {
         val leaf = ObjectModel.Object(
-            mapOf("value" to FieldModel(ObjectModel.Single(JsonType.STRING)))
+            mapOf("value" to FieldModel(ObjectModel.Single(IrType.STRING)))
         )
         val middle = ObjectModel.Object(
             mapOf("child" to FieldModel(leaf))
@@ -225,7 +225,7 @@ class YamlFormatterBranchTest {
 
     @Test
     fun testFormatArrayInObject() {
-        val array = ObjectModel.Array(ObjectModel.Single(JsonType.STRING))
+        val array = ObjectModel.Array(ObjectModel.Single(IrType.STRING))
         val obj = ObjectModel.Object(
             mapOf("tags" to FieldModel(array))
         )
@@ -236,7 +236,7 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatArrayOfObjects() {
         val item = ObjectModel.Object(
-            mapOf("id" to FieldModel(ObjectModel.Single(JsonType.INT)))
+            mapOf("id" to FieldModel(ObjectModel.Single(IrType.INT)))
         )
         val array = ObjectModel.Array(item)
         val obj = ObjectModel.Object(
@@ -250,8 +250,8 @@ class YamlFormatterBranchTest {
     fun testFormatArrayOfObjectsWithMultipleFields() {
         val item = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                "id" to FieldModel(ObjectModel.Single(IrType.INT)),
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING))
             )
         )
         val array = ObjectModel.Array(item)
@@ -275,7 +275,7 @@ class YamlFormatterBranchTest {
 
     @Test
     fun testFormatArrayOfArrays() {
-        val innerArray = ObjectModel.Array(ObjectModel.Single(JsonType.INT))
+        val innerArray = ObjectModel.Array(ObjectModel.Single(IrType.INT))
         val outerArray = ObjectModel.Array(innerArray)
         val obj = ObjectModel.Object(
             mapOf("matrix" to FieldModel(outerArray))
@@ -288,8 +288,8 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatArrayOfMaps() {
         val map = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
-            ObjectModel.Single(JsonType.INT)
+            ObjectModel.Single(IrType.STRING),
+            ObjectModel.Single(IrType.INT)
         )
         val array = ObjectModel.Array(map)
         val obj = ObjectModel.Object(
@@ -302,7 +302,7 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatTopLevelArrayOfObjects() {
         val item = ObjectModel.Object(
-            mapOf("id" to FieldModel(ObjectModel.Single(JsonType.INT)))
+            mapOf("id" to FieldModel(ObjectModel.Single(IrType.INT)))
         )
         val array = ObjectModel.Array(item)
         val result = YamlFormatter.format(array)
@@ -311,7 +311,7 @@ class YamlFormatterBranchTest {
 
     @Test
     fun testFormatTopLevelArrayOfArrays() {
-        val innerArray = ObjectModel.Array(ObjectModel.Single(JsonType.INT))
+        val innerArray = ObjectModel.Array(ObjectModel.Single(IrType.INT))
         val outerArray = ObjectModel.Array(innerArray)
         val result = YamlFormatter.format(outerArray)
         assertEquals("-   - 0", result)
@@ -320,8 +320,8 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatTopLevelArrayOfMaps() {
         val map = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
-            ObjectModel.Single(JsonType.INT)
+            ObjectModel.Single(IrType.STRING),
+            ObjectModel.Single(IrType.INT)
         )
         val array = ObjectModel.Array(map)
         val result = YamlFormatter.format(array)
@@ -341,8 +341,8 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatMapInObject() {
         val map = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
-            ObjectModel.Single(JsonType.INT)
+            ObjectModel.Single(IrType.STRING),
+            ObjectModel.Single(IrType.INT)
         )
         val obj = ObjectModel.Object(
             mapOf("metadata" to FieldModel(map))
@@ -354,10 +354,10 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatMapWithObjectValue() {
         val valueObj = ObjectModel.Object(
-            mapOf("id" to FieldModel(ObjectModel.Single(JsonType.INT)))
+            mapOf("id" to FieldModel(ObjectModel.Single(IrType.INT)))
         )
         val map = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
+            ObjectModel.Single(IrType.STRING),
             valueObj
         )
         val obj = ObjectModel.Object(
@@ -371,7 +371,7 @@ class YamlFormatterBranchTest {
     fun testFormatMapWithEmptyObjectValue() {
         val valueObj = ObjectModel.Object(emptyMap())
         val map = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
+            ObjectModel.Single(IrType.STRING),
             valueObj
         )
         val obj = ObjectModel.Object(
@@ -383,9 +383,9 @@ class YamlFormatterBranchTest {
 
     @Test
     fun testFormatMapWithArrayValue() {
-        val array = ObjectModel.Array(ObjectModel.Single(JsonType.INT))
+        val array = ObjectModel.Array(ObjectModel.Single(IrType.INT))
         val map = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
+            ObjectModel.Single(IrType.STRING),
             array
         )
         val obj = ObjectModel.Object(
@@ -398,11 +398,11 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatMapWithMapValue() {
         val innerMap = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
-            ObjectModel.Single(JsonType.INT)
+            ObjectModel.Single(IrType.STRING),
+            ObjectModel.Single(IrType.INT)
         )
         val outerMap = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
+            ObjectModel.Single(IrType.STRING),
             innerMap
         )
         val obj = ObjectModel.Object(
@@ -415,10 +415,10 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatTopLevelMapWithObjectValue() {
         val valueObj = ObjectModel.Object(
-            mapOf("id" to FieldModel(ObjectModel.Single(JsonType.INT)))
+            mapOf("id" to FieldModel(ObjectModel.Single(IrType.INT)))
         )
         val map = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
+            ObjectModel.Single(IrType.STRING),
             valueObj
         )
         val result = YamlFormatter.format(map)
@@ -427,9 +427,9 @@ class YamlFormatterBranchTest {
 
     @Test
     fun testFormatTopLevelMapWithArrayValue() {
-        val array = ObjectModel.Array(ObjectModel.Single(JsonType.INT))
+        val array = ObjectModel.Array(ObjectModel.Single(IrType.INT))
         val map = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
+            ObjectModel.Single(IrType.STRING),
             array
         )
         val result = YamlFormatter.format(map)
@@ -439,11 +439,11 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatTopLevelMapWithMapValue() {
         val innerMap = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
-            ObjectModel.Single(JsonType.INT)
+            ObjectModel.Single(IrType.STRING),
+            ObjectModel.Single(IrType.INT)
         )
         val outerMap = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
+            ObjectModel.Single(IrType.STRING),
             innerMap
         )
         val result = YamlFormatter.format(outerMap)
@@ -454,7 +454,7 @@ class YamlFormatterBranchTest {
     fun testFormatMapWithEmptyObjectKey() {
         val map = ObjectModel.MapModel(
             ObjectModel.Object(emptyMap()),
-            ObjectModel.Single(JsonType.INT)
+            ObjectModel.Single(IrType.INT)
         )
         val result = YamlFormatter.format(map)
         assertEquals("key: {}\nvalue: 0", result)
@@ -500,7 +500,7 @@ class YamlFormatterBranchTest {
     fun testFormatCycleInMapValue() {
         // Object with a map whose value is the object itself
         val obj = ObjectModel.Object(mutableMapOf<String, FieldModel>())
-        val map = ObjectModel.MapModel(ObjectModel.Single(JsonType.STRING), obj)
+        val map = ObjectModel.MapModel(ObjectModel.Single(IrType.STRING), obj)
         (obj.fields as MutableMap)["self"] = FieldModel(map)
         val result = YamlFormatter.format(obj)
         // Should not infinite loop
@@ -513,15 +513,15 @@ class YamlFormatterBranchTest {
     fun testFormatComplexNestedStructure() {
         val item = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                "tags" to FieldModel(ObjectModel.Array(ObjectModel.Single(JsonType.STRING)))
+                "id" to FieldModel(ObjectModel.Single(IrType.INT)),
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                "tags" to FieldModel(ObjectModel.Array(ObjectModel.Single(IrType.STRING)))
             )
         )
         val obj = ObjectModel.Object(
             mapOf(
                 "items" to FieldModel(ObjectModel.Array(item)),
-                "count" to FieldModel(ObjectModel.Single(JsonType.INT))
+                "count" to FieldModel(ObjectModel.Single(IrType.INT))
             )
         )
         val result = YamlFormatter.format(obj)
@@ -533,15 +533,15 @@ class YamlFormatterBranchTest {
     fun testFormatObjectWithMultipleFieldsAndNestedArray() {
         val user = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.Single(JsonType.LONG)),
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                "active" to FieldModel(ObjectModel.Single(JsonType.BOOLEAN))
+                "id" to FieldModel(ObjectModel.Single(IrType.LONG)),
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                "active" to FieldModel(ObjectModel.Single(IrType.BOOLEAN))
             )
         )
         val obj = ObjectModel.Object(
             mapOf(
                 "user" to FieldModel(user),
-                "tags" to FieldModel(ObjectModel.Array(ObjectModel.Single(JsonType.STRING)))
+                "tags" to FieldModel(ObjectModel.Array(ObjectModel.Single(IrType.STRING)))
             )
         )
         val result = YamlFormatter.format(obj)
@@ -563,7 +563,7 @@ class YamlFormatterBranchTest {
         // Array of singles (default value)
         val obj = ObjectModel.Object(
             mapOf(
-                "tags" to FieldModel(ObjectModel.Array(ObjectModel.Single(JsonType.STRING)))
+                "tags" to FieldModel(ObjectModel.Array(ObjectModel.Single(IrType.STRING)))
             )
         )
         val result = YamlFormatter.format(obj)
@@ -572,31 +572,31 @@ class YamlFormatterBranchTest {
 
     @Test
     fun testFormatTopLevelSingleWithInt() {
-        val result = YamlFormatter.format(ObjectModel.Single(JsonType.INT))
+        val result = YamlFormatter.format(ObjectModel.Single(IrType.INT))
         assertEquals("value: 0", result)
     }
 
     @Test
     fun testFormatTopLevelSingleWithBoolean() {
-        val result = YamlFormatter.format(ObjectModel.Single(JsonType.BOOLEAN))
+        val result = YamlFormatter.format(ObjectModel.Single(IrType.BOOLEAN))
         assertEquals("value: false", result)
     }
 
     @Test
     fun testFormatTopLevelSingleWithLong() {
-        val result = YamlFormatter.format(ObjectModel.Single(JsonType.LONG))
+        val result = YamlFormatter.format(ObjectModel.Single(IrType.LONG))
         assertEquals("value: 0", result)
     }
 
     @Test
     fun testFormatTopLevelSingleWithDouble() {
-        val result = YamlFormatter.format(ObjectModel.Single(JsonType.DOUBLE))
+        val result = YamlFormatter.format(ObjectModel.Single(IrType.DOUBLE))
         assertEquals("value: 0.0", result)
     }
 
     @Test
     fun testFormatTopLevelSingleWithFloat() {
-        val result = YamlFormatter.format(ObjectModel.Single(JsonType.FLOAT))
+        val result = YamlFormatter.format(ObjectModel.Single(IrType.FLOAT))
         assertEquals("value: 0.0", result)
     }
 
@@ -606,8 +606,8 @@ class YamlFormatterBranchTest {
     fun testFormatWithEmptyPrefixEqualsNoPrefix() {
         val obj = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                "id" to FieldModel(ObjectModel.Single(IrType.INT)),
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING))
             )
         )
         val withoutPrefix = YamlFormatter.format(obj)
@@ -619,8 +619,8 @@ class YamlFormatterBranchTest {
     fun testFormatWithSingleSegmentPrefixForObject() {
         val obj = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                "id" to FieldModel(ObjectModel.Single(IrType.INT)),
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING))
             )
         )
         val result = YamlFormatter.format(obj, prefix = "app")
@@ -631,8 +631,8 @@ class YamlFormatterBranchTest {
     fun testFormatWithMultiSegmentPrefixForObject() {
         val obj = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                "id" to FieldModel(ObjectModel.Single(IrType.INT)),
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING))
             )
         )
         val result = YamlFormatter.format(obj, prefix = "app.config")
@@ -642,7 +642,7 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatWithPrefixCollapsesEmptySegments() {
         val obj = ObjectModel.Object(
-            mapOf("id" to FieldModel(ObjectModel.Single(JsonType.INT)))
+            mapOf("id" to FieldModel(ObjectModel.Single(IrType.INT)))
         )
         // Leading/trailing/repeated dots collapse to the single segment "app"
         val result = YamlFormatter.format(obj, prefix = ".app.")
@@ -652,7 +652,7 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatWithPrefixAndNestedObject() {
         val inner = ObjectModel.Object(
-            mapOf("id" to FieldModel(ObjectModel.Single(JsonType.INT)))
+            mapOf("id" to FieldModel(ObjectModel.Single(IrType.INT)))
         )
         val obj = ObjectModel.Object(
             mapOf("nested" to FieldModel(inner))
@@ -663,7 +663,7 @@ class YamlFormatterBranchTest {
 
     @Test
     fun testFormatWithPrefixAndArrayField() {
-        val array = ObjectModel.Array(ObjectModel.Single(JsonType.STRING))
+        val array = ObjectModel.Array(ObjectModel.Single(IrType.STRING))
         val obj = ObjectModel.Object(
             mapOf("tags" to FieldModel(array))
         )
@@ -681,7 +681,7 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatTopLevelArrayWithPrefix() {
         val item = ObjectModel.Object(
-            mapOf("id" to FieldModel(ObjectModel.Single(JsonType.INT)))
+            mapOf("id" to FieldModel(ObjectModel.Single(IrType.INT)))
         )
         val array = ObjectModel.Array(item)
         val result = YamlFormatter.format(array, prefix = "app")
@@ -691,8 +691,8 @@ class YamlFormatterBranchTest {
     @Test
     fun testFormatTopLevelMapWithPrefix() {
         val map = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
-            ObjectModel.Single(JsonType.INT)
+            ObjectModel.Single(IrType.STRING),
+            ObjectModel.Single(IrType.INT)
         )
         val result = YamlFormatter.format(map, prefix = "app")
         // Map follows the same convention as a map field value (no blank line
@@ -702,7 +702,7 @@ class YamlFormatterBranchTest {
 
     @Test
     fun testFormatTopLevelSingleWithPrefix() {
-        val single = ObjectModel.Single(JsonType.STRING)
+        val single = ObjectModel.Single(IrType.STRING)
         val result = YamlFormatter.format(single, prefix = "app")
         assertEquals("app:\n  value: \"\"", result)
     }

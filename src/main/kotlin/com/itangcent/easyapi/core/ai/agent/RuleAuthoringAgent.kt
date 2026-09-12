@@ -230,7 +230,9 @@ class RuleAuthoringAgent(
                         // sees something happened.
                         events.emit(AgentEvent.Acting(tc.name, tc.arguments))
                 }
-                // Log the tool name only — never log arguments (bodies are private).
+                // Trace the dispatch as kind + name only. The arguments are logged
+                // by ToolRegistry.dispatch itself (diagnostics-only, never
+                // persisted secrets), so they are not repeated here.
                 LOG.info("AI agent ${kind?.name?.lowercase() ?: "unknown"}: ${tc.name}")
 
                 // For ACTION tools gated by approval, signal the UI before

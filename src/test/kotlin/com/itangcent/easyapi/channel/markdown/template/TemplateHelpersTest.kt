@@ -141,6 +141,31 @@ class TemplateHelpersTest {
         assertEquals("", TemplateHelpers.resolve("typeOf", listOf("not-a-model"), ctx))
     }
 
+    /**
+     * The display type prints the `Single` word verbatim. The main pipeline no longer produces
+     * `date`/`datetime` — a `java.time.LocalDateTime` field arrives as `string` (with the
+     * declaration in `ref`) — but a third-party rule or channel may still construct a
+     * `Single` with any word, and `typeOf` must not silently rewrite it.
+     */
+    @Test
+    fun testTypeOfPrintsTheWordVerbatim() {
+        assertEquals("date", TemplateHelpers.resolve("typeOf", listOf(ObjectModel.single("date")), ctx))
+        assertEquals("string", TemplateHelpers.resolve("typeOf", listOf(ObjectModel.single("string")), ctx))
+        assertEquals(
+            "date[]",
+            TemplateHelpers.resolve("typeOf", listOf(ObjectModel.array(ObjectModel.single("date"))), ctx)
+        )
+    }
+
+    @Test
+    fun testTypeOfKeepsJavaRecognisableNames() {
+        // The display mapping is not the draft-04 `toSchemaType`: `long`/`short` must survive.
+        assertEquals("long", TemplateHelpers.resolve("typeOf", listOf(ObjectModel.single("long")), ctx))
+        assertEquals("file", TemplateHelpers.resolve("typeOf", listOf(ObjectModel.single("file")), ctx))
+        // `uuid` tells the reader the wire shape, so it is kept like `long`/`file`.
+        assertEquals("uuid", TemplateHelpers.resolve("typeOf", listOf(ObjectModel.single("uuid")), ctx))
+    }
+
     // ---------- indent ----------
 
     @Test
@@ -246,7 +271,7 @@ class TemplateHelpersTest {
     @Test
     fun testJsonDemoSingleString() {
         val model = ObjectModel.single("string")
-        // JsonType.defaultValueForType("string") == "" → JSON literal ""
+        // IrType.defaultValueForType("string") == "" → JSON literal ""
         val expected = "```json\n\"\"\n```"
         assertEquals(expected, TemplateHelpers.resolve("jsonDemo", listOf(model), ctx))
     }

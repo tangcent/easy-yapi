@@ -11,8 +11,9 @@ import org.junit.Test
  *   rule-file format, and writing-quality rules — but NOT the detection/recipe
  *   prose (which moved to `ai/detection/` and `ai/key-guides/` catalog files).
  * - The entry-path overload (`build(entryPath, amb)`) composes the right seed
- *   messages per path: 3 for REACTIVE (base + detection index + rule index),
- *   1 for both Task-List variants.
+ *   messages per path: 4 for REACTIVE (base + detection index + rule index +
+ *   the L0 rule-key menu), 1 for TASK_LIST_PROGRAMMATIC, and 1 for SUB_AGENT
+ *   (which gets its own `sub-agent-base.md`).
  * - The indexes are enablement-aware: a `channel: postman` rule file is
  *   absent from the rule index when Postman is disabled (AC-S7).
  */
@@ -188,17 +189,6 @@ class SystemPromptBuilderTest {
     }
 
     @Test
-    fun `build task list magic returns one message`() {
-        val amb = Ambient(
-            projectName = "demo",
-            editingRuleFile = null,
-            existingRuleFiles = emptyList()
-        )
-        val msgs = SystemPromptBuilder.build(EntryPath.TASK_LIST_MAGIC, amb)
-        Assert.assertEquals("TASK_LIST_MAGIC should return 1 seed message", 1, msgs.size)
-    }
-
-    @Test
     fun `build task list programmatic returns one message`() {
         val amb = Ambient(
             projectName = "demo",
@@ -215,7 +205,7 @@ class SystemPromptBuilderTest {
     // that advertises ONLY the tools in `subAgentToolRegistry()` (perception +
     // report_findings). It must NOT advertise the orchestrator/Reactive tools
     // the sub-agent cannot call — otherwise the LLM trusts the prompt's tool
-    // index over its 6-entry tools schema and calls tools that aren't in its
+    // index over its 9-entry tools schema and calls tools that aren't in its
     // registry, surfacing as "Unknown tool: <name>" (the bug this section
     // pins). See RunSubAgentTool + subAgentToolRegistry for the tool set.
 
@@ -245,11 +235,12 @@ class SystemPromptBuilderTest {
 
     @Test
     fun `sub-agent base prompt advertises its registered tools`() {
-        // The 7 perception + 1 terminal tools in subAgentToolRegistry() — the
+        // The 8 perception + 1 terminal tools in subAgentToolRegistry() — the
         // prompt's tool index is the only menu the sub-agent LLM should trust.
         val text = SystemPromptBuilder.buildSubAgent().content
         for (tool in listOf(
-            "list_rule_keys", "get_script_object_api", "get_rule_detail", "get_rule_context", "get_psi_class_info",
+            "list_rule_keys", "get_existing_rules_for_key", "get_script_object_api",
+            "get_rule_detail", "get_rule_context", "get_psi_class_info",
             "find_classes_by_annotation", "find_classes_by_supertype",
             "report_findings"
         )) {
@@ -283,7 +274,7 @@ class SystemPromptBuilderTest {
             .toSet()
         for (forbidden in listOf(
             "list_project_endpoints", "get_plugin_doc", "find_classes_by_name",
-            "get_existing_rules_for_key", "propose_rule_content",
+            "propose_rule_content",
             "create_task_list", "update_task", "read_rule_file",
             "ask_clarification", "get_detection_prompt", "get_psi_method_info",
             "get_module_dependency_graph", "run_sub_agent"
@@ -297,8 +288,9 @@ class SystemPromptBuilderTest {
         }
         // And the registered tools MUST be advertised.
         for (registered in listOf(
-            "list_rule_keys", "get_script_object_api", "get_rule_detail", "get_rule_context",
-            "get_psi_class_info", "find_classes_by_annotation", "find_classes_by_supertype",
+            "list_rule_keys", "get_existing_rules_for_key", "get_script_object_api",
+            "get_rule_detail", "get_rule_context", "get_psi_class_info",
+            "find_classes_by_annotation", "find_classes_by_supertype",
             "report_findings"
         )) {
             Assert.assertTrue(
@@ -313,7 +305,7 @@ class SystemPromptBuilderTest {
     fun `sub-agent base prompt forbids unregistered tools`() {
         // The prompt must explicitly tell the model not to call tools outside
         // its registry, so a model that pattern-matches from training data
-        // still steers back to the 6 registered tools.
+        // still steers back to the 9 registered tools.
         val text = SystemPromptBuilder.buildSubAgent().content
         Assert.assertTrue(
             "sub-agent base prompt should warn against calling unregistered tools: $text",
@@ -700,9 +692,12 @@ class SystemPromptBuilderTest {
         // the preamble now documents the stateful-tool receipt protocol and the
         // `get_rule_context` objectRefs + `get_script_object_api` split. Actual
         // ~22.0k + ~1.2k headroom.
+        // Ceiling raised 23_200 → 24_400 for the "Never generate blanket
+        // field-ignore rules" quality rule (§Writing rules — quality rules).
+        // Actual ~22.8k + ~1.6k headroom.
         val msg = SystemPromptBuilder.build()
         val content = msg.content
-        val ceiling = 23_200 // raised for the Knowledge State protocol update: actual ~22.0k + ~1.2k headroom
+        val ceiling = 24_400 // raised for the blanket field-ignore quality rule: actual ~22.8k + headroom
         Assert.assertTrue(
             "Preamble content length (${content.length} chars) must stay under $ceiling chars " +
                 "to stay within the token budget. If a future section is added, raise the " +

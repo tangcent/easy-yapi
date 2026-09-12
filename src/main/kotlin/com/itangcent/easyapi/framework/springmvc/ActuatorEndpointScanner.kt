@@ -11,7 +11,7 @@ import com.itangcent.easyapi.core.export.*
 import com.itangcent.easyapi.core.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.core.psi.type.TypeResolver
 
 /**
@@ -130,13 +130,15 @@ class ActuatorEndpointScanner(
                     )
                 )
             } else if (hasBody) {
-                val jsonType = JsonType.fromPsiType(paramType)
-                val objectModel = ObjectModel.Single(jsonType)
+                val jsonType = IrType.fromPsiType(paramType)
+                val objectModel = ObjectModel.Single(jsonType, ref = paramType.canonicalText)
                 bodyFields[paramName] = FieldModel(objectModel, paramComment)
             }
         }
 
         val body = if (bodyFields.isNotEmpty()) {
+            // No ref: this object is assembled from the method's parameters and has no declaring
+            // class of its own.
             ObjectModel.Object(bodyFields)
         } else {
             null
@@ -193,8 +195,8 @@ class ActuatorEndpointScanner(
     private suspend fun buildResponseBody(method: PsiMethod): ObjectModel? {
         val actuatorModelBuilder = EndpointBuilder.ResponseModelBuilder { psiClass ->
             try {
-                val jsonType = JsonType.fromPsiType(PsiTypesUtil.getClassType(psiClass))
-                ObjectModel.Single(jsonType)
+                val jsonType = IrType.fromPsiType(PsiTypesUtil.getClassType(psiClass))
+                ObjectModel.Single(jsonType, ref = psiClass.qualifiedName)
             } catch (_: Exception) {
                 null
             }

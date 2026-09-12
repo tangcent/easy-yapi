@@ -1,6 +1,7 @@
 ---
 id: postman.test
 key: postman.test
+scheme-stamp: f860510c8b69
 title: Postman test script
 cue: JavaScript assertion attached to an endpoint, fired AFTER the response
 channel: postman
@@ -41,3 +42,40 @@ Workflow rules that form a chain (login-script + consumer-header) MUST
 be proposed together in a single `propose_rule_content` call. Proposing
 half a chain is forbidden — a consumer header that references a token no
 script stores is a silent bug.
+
+## Shared-env-var rule
+
+When the producer stores a value with `pm.environment.set("<name>", …)`, the
+consuming header rule MUST reference the **same** `<name>` (e.g.
+`Bearer ${<name>}`). Tell the user the env var is created in the Postman
+Environments panel (or on the first login run) — the bundle is not usable
+until it exists. Reuse an existing name when the project already references
+one; default to `Authorization` otherwise.
+
+## No hardcoded secrets
+
+Every credential is an env-var reference (`${Authorization}`, `${appSecret}`,
+`${apiKey}`). Never emit a literal token, key, or password in rule content.
+
+## Never strip legitimate auth fields
+
+Do NOT pair an auth workflow with a blanket `field.ignore` for `password`,
+`secret`, `clientSecret`, or `refreshToken`. A login endpoint **legitimately
+requires** `password`; stripping it breaks the exported documentation. See
+the agent base rule "Never generate blanket field-ignore rules".
+
+## Script-context isolation (CRITICAL — silent-failure trap)
+
+`postman.test`/`postman.prerequest` rule values MUST be **literal scripts**
+(NO `groovy:` prefix). A `groovy:` prefix routes the value to
+`Jsr223ScriptParser` at export time, where `pm` is NOT bound — the script
+throws and the failure is **silently swallowed**, so no script lands in the
+Postman collection. (Conversely, `http.call.before`/`http.call.after` values
+MUST use `groovy:` — see `http.call.after`.)
+
+## Anti-duplication
+
+Before proposing any header/script rule, call `get_existing_rules_for_key`
+for each key in the bundle; skip any rule already present in any source
+(project / global / extension / remote), naming the source it already lives
+in. See the agent base quality rule "Check existing rules before writing".

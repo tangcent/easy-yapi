@@ -19,6 +19,9 @@ object ObjectModelUtils {
      */
     fun addFieldComment(model: ObjectModel, fieldPath: String, comment: String): ObjectModel? {
         val obj = model.asObject() ?: return null
+        // `.copy()` rather than rebuilding via `Object(updatedFields)`: the constructor mints a
+        // fresh `id`, which silently replaced this node's identity and — now that nodes carry
+        // `ref` — would also drop its declared type.
         if (fieldPath.contains(".")) {
             val head = fieldPath.substringBefore('.')
             val rest = fieldPath.substringAfter('.')
@@ -26,7 +29,7 @@ object ObjectModelUtils {
             val updatedInner = addFieldComment(fieldModel.model, rest, comment) ?: return null
             val updatedFields = obj.fields.toMutableMap()
             updatedFields[head] = fieldModel.copy(model = updatedInner)
-            return ObjectModel.Object(updatedFields)
+            return obj.copy(fields = updatedFields)
         }
         val fieldModel = obj.fields[fieldPath] ?: return null
         val existingComment = fieldModel.comment
@@ -34,7 +37,7 @@ object ObjectModelUtils {
         else "$existingComment\n$comment"
         val updatedFields = obj.fields.toMutableMap()
         updatedFields[fieldPath] = fieldModel.copy(comment = newComment)
-        return ObjectModel.Object(updatedFields)
+        return obj.copy(fields = updatedFields)
     }
 
     /**

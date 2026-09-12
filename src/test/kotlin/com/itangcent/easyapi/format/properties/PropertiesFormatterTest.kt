@@ -3,7 +3,7 @@ package com.itangcent.easyapi.format.properties
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.FieldOption
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -11,7 +11,7 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatSingleValue() {
-        val model = ObjectModel.Single(JsonType.STRING)
+        val model = ObjectModel.Single(IrType.STRING)
         val formatter = PropertiesFormatter()
 
         val result = formatter.format(model)
@@ -20,7 +20,7 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatSingleValueWithDefault() {
-        val model = ObjectModel.Single(JsonType.STRING)
+        val model = ObjectModel.Single(IrType.STRING)
         val fieldModel = FieldModel(
             model = model,
             defaultValue = "admin"
@@ -34,7 +34,7 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatObject() {
-        val stringModel = ObjectModel.Single(JsonType.STRING)
+        val stringModel = ObjectModel.Single(IrType.STRING)
         val field = FieldModel(
             model = stringModel,
             comment = "User name"
@@ -49,7 +49,7 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatNestedObject() {
-        val stringModel = ObjectModel.Single(JsonType.STRING)
+        val stringModel = ObjectModel.Single(IrType.STRING)
         val nameField = FieldModel(model = stringModel)
         val userObj = ObjectModel.Object(fields = mapOf("name" to nameField))
         val userField = FieldModel(model = userObj)
@@ -62,7 +62,7 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatArray() {
-        val stringModel = ObjectModel.Single(JsonType.STRING)
+        val stringModel = ObjectModel.Single(IrType.STRING)
         val arrayModel = ObjectModel.Array(stringModel)
         val field = FieldModel(model = arrayModel)
         val obj = ObjectModel.Object(fields = mapOf("tags" to field))
@@ -74,8 +74,8 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatMap() {
-        val stringModel = ObjectModel.Single(JsonType.STRING)
-        val mapModel = ObjectModel.MapModel(ObjectModel.Single(JsonType.STRING), stringModel)
+        val stringModel = ObjectModel.Single(IrType.STRING)
+        val mapModel = ObjectModel.MapModel(ObjectModel.Single(IrType.STRING), stringModel)
         val field = FieldModel(model = mapModel)
         val obj = ObjectModel.Object(fields = mapOf("metadata" to field))
         val formatter = PropertiesFormatter()
@@ -86,7 +86,7 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatWithOptions() {
-        val stringModel = ObjectModel.Single(JsonType.STRING)
+        val stringModel = ObjectModel.Single(IrType.STRING)
         val options = listOf(
             FieldOption(value = "active", desc = "Active user"),
             FieldOption(value = "inactive", desc = "Inactive user")
@@ -106,7 +106,7 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatWithComment() {
-        val stringModel = ObjectModel.Single(JsonType.STRING)
+        val stringModel = ObjectModel.Single(IrType.STRING)
         val field = FieldModel(
             model = stringModel,
             comment = "User email address"
@@ -132,8 +132,8 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatDifferentTypes() {
-        val intModel = ObjectModel.Single(JsonType.INT)
-        val boolModel = ObjectModel.Single(JsonType.BOOLEAN)
+        val intModel = ObjectModel.Single(IrType.INT)
+        val boolModel = ObjectModel.Single(IrType.BOOLEAN)
         val fields = mapOf(
             "count" to FieldModel(model = intModel),
             "enabled" to FieldModel(model = boolModel)
@@ -148,7 +148,7 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatWithPrefix() {
-        val stringModel = ObjectModel.Single(JsonType.STRING)
+        val stringModel = ObjectModel.Single(IrType.STRING)
         val nameField = FieldModel(model = stringModel)
         val obj = ObjectModel.Object(fields = mapOf("name" to nameField))
         val formatter = PropertiesFormatter()
@@ -159,7 +159,7 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatWithPrefixNestedObject() {
-        val stringModel = ObjectModel.Single(JsonType.STRING)
+        val stringModel = ObjectModel.Single(IrType.STRING)
         val nameField = FieldModel(model = stringModel)
         val userObj = ObjectModel.Object(fields = mapOf("name" to nameField))
         val userField = FieldModel(model = userObj)
@@ -172,7 +172,7 @@ class PropertiesFormatterTest {
 
     @Test
     fun testFormatWithEmptyPrefix() {
-        val stringModel = ObjectModel.Single(JsonType.STRING)
+        val stringModel = ObjectModel.Single(IrType.STRING)
         val nameField = FieldModel(model = stringModel)
         val obj = ObjectModel.Object(fields = mapOf("name" to nameField))
         val formatter = PropertiesFormatter()

@@ -4,6 +4,6 @@
   "name": "",
   "age": 0,
   "sex": 0,
-  "birthDay": null,
-  "regtime": null
+  "birthDay": "",
+  "regtime": ""
 }

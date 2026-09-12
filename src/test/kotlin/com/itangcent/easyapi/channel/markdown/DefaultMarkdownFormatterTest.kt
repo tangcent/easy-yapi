@@ -17,7 +17,7 @@ import com.itangcent.easyapi.core.export.path
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.FieldOption
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
@@ -149,8 +149,8 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithRequestBody() = runBlocking {
         val bodyModel = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name"),
-                "age" to FieldModel(ObjectModel.single(JsonType.INT), comment = "user age")
+                "name" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user name"),
+                "age" to FieldModel(ObjectModel.single(IrType.INT), comment = "user age")
             )
         )
 
@@ -177,13 +177,13 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithResponseBody() = runBlocking {
         val responseModel = ObjectModel.Object(
             mapOf(
-                "code" to FieldModel(ObjectModel.single(JsonType.INT), comment = "response code"),
-                "msg" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "message"),
+                "code" to FieldModel(ObjectModel.single(IrType.INT), comment = "response code"),
+                "msg" to FieldModel(ObjectModel.single(IrType.STRING), comment = "message"),
                 "data" to FieldModel(
                     ObjectModel.Object(
                         mapOf(
-                            "id" to FieldModel(ObjectModel.single(JsonType.LONG), comment = "user id"),
-                            "name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name")
+                            "id" to FieldModel(ObjectModel.single(IrType.LONG), comment = "user id"),
+                            "name" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user name")
                         )
                     ),
                     comment = "response data"
@@ -217,13 +217,13 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithArrayResponseBody() = runBlocking {
         val itemModel = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.single(JsonType.LONG)),
-                "name" to FieldModel(ObjectModel.single(JsonType.STRING))
+                "id" to FieldModel(ObjectModel.single(IrType.LONG)),
+                "name" to FieldModel(ObjectModel.single(IrType.STRING))
             )
         )
         val responseModel = ObjectModel.Object(
             mapOf(
-                "code" to FieldModel(ObjectModel.single(JsonType.INT)),
+                "code" to FieldModel(ObjectModel.single(IrType.INT)),
                 "data" to FieldModel(ObjectModel.array(itemModel), comment = "user list")
             )
         )
@@ -302,7 +302,7 @@ class DefaultMarkdownFormatterTest {
         // Simulate a self-referencing type like TreeNode { name: String, children: List<TreeNode> }
         val fields = mutableMapOf<String, FieldModel>()
         val treeNode = ObjectModel.Object(fields)
-        fields["name"] = FieldModel(ObjectModel.single(JsonType.STRING), comment = "node name")
+        fields["name"] = FieldModel(ObjectModel.single(IrType.STRING), comment = "node name")
         fields["children"] = FieldModel(ObjectModel.array(treeNode), comment = "child nodes")
 
         val endpoint = ApiEndpoint(
@@ -328,7 +328,7 @@ class DefaultMarkdownFormatterTest {
         // Object A has a field of type Object A (direct self-reference)
         val fields = mutableMapOf<String, FieldModel>()
         val selfRef = ObjectModel.Object(fields)
-        fields["id"] = FieldModel(ObjectModel.single(JsonType.INT), comment = "id")
+        fields["id"] = FieldModel(ObjectModel.single(IrType.INT), comment = "id")
         fields["parent"] = FieldModel(selfRef, comment = "parent reference")
 
         val endpoint = ApiEndpoint(
@@ -355,9 +355,9 @@ class DefaultMarkdownFormatterTest {
         val fieldsB = mutableMapOf<String, FieldModel>()
         val objectA = ObjectModel.Object(fieldsA)
         val objectB = ObjectModel.Object(fieldsB)
-        fieldsA["name"] = FieldModel(ObjectModel.single(JsonType.STRING))
+        fieldsA["name"] = FieldModel(ObjectModel.single(IrType.STRING))
         fieldsA["refB"] = FieldModel(objectB, comment = "reference to B")
-        fieldsB["value"] = FieldModel(ObjectModel.single(JsonType.INT))
+        fieldsB["value"] = FieldModel(ObjectModel.single(IrType.INT))
         fieldsB["refA"] = FieldModel(objectA, comment = "reference to A")
 
         val endpoint = ApiEndpoint(
@@ -381,7 +381,7 @@ class DefaultMarkdownFormatterTest {
     fun testFormatNonCircularDeepNesting() = runBlocking {
         // Non-circular deep nesting should render all levels
         val inner = ObjectModel.Object(
-            mapOf("value" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "inner value"))
+            mapOf("value" to FieldModel(ObjectModel.single(IrType.STRING), comment = "inner value"))
         )
         val middle = ObjectModel.Object(
             mapOf("inner" to FieldModel(inner, comment = "inner object"))
@@ -455,7 +455,7 @@ class DefaultMarkdownFormatterTest {
     fun testFormatGrpcEndpointWithRequestBody() = runBlocking {
         val bodyModel = ObjectModel.Object(
             mapOf(
-                "user_id" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user ID")
+                "user_id" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user ID")
             )
         )
 
@@ -484,7 +484,7 @@ class DefaultMarkdownFormatterTest {
     fun testFormatGrpcEndpointWithResponseBody() = runBlocking {
         val responseModel = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name")
+                "name" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user name")
             )
         )
 
@@ -639,8 +639,8 @@ class DefaultMarkdownFormatterTest {
     @Test
     fun testFormatEndpointWithMapBody() = runBlocking {
         val mapModel = ObjectModel.MapModel(
-            keyType = ObjectModel.single(JsonType.STRING),
-            valueType = ObjectModel.single(JsonType.INT)
+            keyType = ObjectModel.single(IrType.STRING),
+            valueType = ObjectModel.single(IrType.INT)
         )
         val bodyModel = ObjectModel.Object(
             mapOf(
@@ -670,7 +670,7 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithArrayOfPrimitives() = runBlocking {
         val bodyModel = ObjectModel.Object(
             mapOf(
-                "tags" to FieldModel(ObjectModel.array(ObjectModel.single(JsonType.STRING)), comment = "tag list")
+                "tags" to FieldModel(ObjectModel.array(ObjectModel.single(IrType.STRING)), comment = "tag list")
             )
         )
 
@@ -697,7 +697,7 @@ class DefaultMarkdownFormatterTest {
         val bodyModel = ObjectModel.Object(
             mapOf(
                 "status" to FieldModel(
-                    ObjectModel.single(JsonType.STRING),
+                    ObjectModel.single(IrType.STRING),
                     comment = "status",
                     options = listOf(
                         FieldOption(value = "active", desc = "Active user"),

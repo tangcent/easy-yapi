@@ -3,6 +3,7 @@ package com.itangcent.easyapi.channel.yapi
 import com.itangcent.easyapi.core.export.ApiParameter
 import com.itangcent.easyapi.core.export.MutableExtension
 import com.itangcent.easyapi.core.export.ParameterType
+import com.itangcent.easyapi.core.psi.type.IrType
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -72,7 +73,7 @@ class MockDataGeneratorTest {
     }
 
     @Test
-    fun testMockForUnknownFieldWithNoJsonType() {
+    fun testMockForUnknownFieldWithNoIrType() {
         val param = ApiParameter(name = "data")
         assertEquals("@string", emptyGenerator.mockFor(param))
     }
@@ -185,7 +186,7 @@ class MockDataGeneratorTest {
     // region jsonType vs ParameterType
 
     @Test
-    fun testMockForUsesJsonTypeOverParameterType() {
+    fun testMockForUsesIrTypeOverParameterType() {
         val param = apiParam(name = "email", jsonType = "string")
         assertEquals("@email", rulesGenerator.mockFor(param))
     }
@@ -247,6 +248,42 @@ class MockDataGeneratorTest {
         )
         val param = apiParam(name = "email", jsonType = "string")
         assertEquals("@wildcard_type", generator.mockFor(param))
+    }
+
+    // endregion
+
+    // region IrType coverage — this channel must translate every core word
+
+    /**
+     * Mock generation is one of the exits that must translate an IR word into something native
+     * to the target protocol (here: YApi's `@…` mock syntax). Pinning the table to
+     * [IrType.ALL_TYPES] means a new IR word fails here until this channel has decided what to
+     * generate for it — rather than silently exporting a parameter with no mock at all.
+     */
+    @Test
+    fun testEveryCoreIrTypeHasAMockExpression() {
+        val unmapped = IrType.ALL_TYPES.filter {
+            emptyGenerator.mockFor(apiParam(name = "field", jsonType = it)) == null
+        }
+        assertEquals(
+            "every core IR word needs a YApi mock expression",
+            emptyList<String>(),
+            unmapped
+        )
+    }
+
+    /**
+     * A form parameter with no IR word falls back to the wire-level word from
+     * [ParameterType.rawType] (`text` / `file`). `file` is already an IR word, but `text` is not,
+     * so it needs its own branch — this pins that.
+     */
+    @Test
+    fun testWireLevelParameterTypeAlsoProducesAMock() {
+        assertEquals("@string", emptyGenerator.mockFor(apiParam(name = "field")))
+        assertEquals(
+            "@file",
+            emptyGenerator.mockFor(apiParam(name = "field", type = ParameterType.FILE))
+        )
     }
 
     // endregion

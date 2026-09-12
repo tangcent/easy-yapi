@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.core.psi
 
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.core.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.core.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
@@ -88,7 +88,7 @@ enum.use.custom=groovy:```
             assertNotNull("Should have 'simpleStatus' field", simpleStatus)
             assertEquals(
                 "Case 1a: simpleStatus should be STRING",
-                JsonType.STRING, (simpleStatus!!.model as ObjectModel.Single).type
+                IrType.STRING, (simpleStatus!!.model as ObjectModel.Single).type
             )
             assertNotNull("Case 1a: simpleStatus should have options", simpleStatus.options)
             assertEquals(
@@ -102,7 +102,7 @@ enum.use.custom=groovy:```
             assertNotNull("Should have 'jacksonStatus' field", jacksonStatus)
             assertEquals(
                 "Case 1b @JsonValue: jacksonStatus should be INT",
-                JsonType.INT, (jacksonStatus!!.model as ObjectModel.Single).type
+                IrType.INT, (jacksonStatus!!.model as ObjectModel.Single).type
             )
             assertNotNull("Case 1b @JsonValue: jacksonStatus should have options", jacksonStatus.options)
             assertEquals(
@@ -116,7 +116,7 @@ enum.use.custom=groovy:```
             assertNotNull("Should have 'myBatisStatus' field", myBatisStatus)
             assertEquals(
                 "Case 1b @EnumValue: myBatisStatus should be INT",
-                JsonType.INT, (myBatisStatus!!.model as ObjectModel.Single).type
+                IrType.INT, (myBatisStatus!!.model as ObjectModel.Single).type
             )
             assertNotNull("Case 1b @EnumValue: myBatisStatus should have options", myBatisStatus.options)
             assertEquals(
@@ -130,7 +130,7 @@ enum.use.custom=groovy:```
             assertNotNull("Should have 'userCode' field", userCode)
             assertEquals(
                 "Case 2 @see#field: userCode should be INT",
-                JsonType.INT, (userCode!!.model as ObjectModel.Single).type
+                IrType.INT, (userCode!!.model as ObjectModel.Single).type
             )
             assertNotNull("Case 2 @see#field: userCode should have options", userCode.options)
             assertEquals(
@@ -144,7 +144,7 @@ enum.use.custom=groovy:```
             assertNotNull("Should have 'userDesc' field", userDesc)
             assertEquals(
                 "Case 2 @see#getter: userDesc should be STRING",
-                JsonType.STRING, (userDesc!!.model as ObjectModel.Single).type
+                IrType.STRING, (userDesc!!.model as ObjectModel.Single).type
             )
             assertNotNull("Case 2 @see#getter: userDesc should have options", userDesc.options)
             assertEquals(
@@ -158,7 +158,7 @@ enum.use.custom=groovy:```
             assertNotNull("Should have 'constantName' field", constantName)
             assertEquals(
                 "Case 2 @see#name(): constantName should be STRING",
-                JsonType.STRING, (constantName!!.model as ObjectModel.Single).type
+                IrType.STRING, (constantName!!.model as ObjectModel.Single).type
             )
             assertNotNull("Case 2 @see#name(): constantName should have options", constantName.options)
             assertEquals(
@@ -172,7 +172,7 @@ enum.use.custom=groovy:```
             assertNotNull("Should have 'autoMatchedCode' field", autoMatchedCode)
             assertEquals(
                 "Case 2 @see class-only: autoMatchedCode should be INT",
-                JsonType.INT, (autoMatchedCode!!.model as ObjectModel.Single).type
+                IrType.INT, (autoMatchedCode!!.model as ObjectModel.Single).type
             )
             assertNotNull(
                 "Case 2 @see class-only: autoMatchedCode should have options",

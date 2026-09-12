@@ -116,7 +116,7 @@ class TemplateEngineTest {
             childrenCount = 0,
             structuralKind = FieldStructuralKind.PRIMITIVE,
         )
-        val bodyModel = ObjectModel.Object(mapOf("id" to com.itangcent.easyapi.core.psi.model.FieldModel(ObjectModel.single(com.itangcent.easyapi.core.psi.type.JsonType.STRING), comment = "user id")))
+        val bodyModel = ObjectModel.Object(mapOf("id" to com.itangcent.easyapi.core.psi.model.FieldModel(ObjectModel.single(com.itangcent.easyapi.core.psi.type.IrType.STRING), comment = "user id")))
         val endpoint = Endpoint(
             name = "x",
             description = null,

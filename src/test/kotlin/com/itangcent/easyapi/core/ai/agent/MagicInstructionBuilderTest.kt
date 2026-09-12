@@ -15,6 +15,11 @@ import org.junit.Test
  * [MagicInstructionBuilder.detectionInstruction]; these tests pin that
  * contract so it cannot regress.
  *
+ * The prompt text itself now lives in resources under `ai/magic/`; the
+ * builder only loads and interpolates it. These tests therefore also guard the
+ * *anchors* each body must keep, so moving a wording change into a resource
+ * file cannot silently drop a directive.
+ *
  * No IDE / PSI dependency — Pattern A (simple JUnit 4).
  */
 class MagicInstructionBuilderTest {
@@ -205,6 +210,40 @@ class MagicInstructionBuilderTest {
             assertTrue(
                 "rendered instruction must contain built task id ${task.id}:\n$body",
                 body.contains(task.id)
+            )
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Resource templates — the prompt text lives in ai/magic/*.md and is
+    // interpolated here. A typo in a placeholder would ship the literal
+    // token to the LLM, so pin that each body is fully substituted.
+    // ------------------------------------------------------------------
+
+    /**
+     * Every template's `{{…}}` placeholder must be substituted in the rendered
+     * body, and each body must name the rule file it applies to.
+     */
+    @Test
+    fun everyBodySubstitutesItsPlaceholders() {
+        val seeded = MagicInstructionBuilder.detectionInstruction(
+            ".easy.api.rules",
+            TaskList(listOf(Task("detect_static_auth", "Static auth headers")))
+        )
+        val empty = MagicInstructionBuilder.detectionInstruction(
+            ".easy.api.rules",
+            TaskList(emptyList())
+        )
+        val review = MagicInstructionBuilder.reviewInstruction(".easy.api.rules", "api.name=Demo")
+
+        mapOf("seeded" to seeded, "empty-task" to empty, "review" to review).forEach { (label, body) ->
+            assertFalse(
+                "the $label body must not leak an unsubstituted placeholder:\n$body",
+                body.contains("{{")
+            )
+            assertTrue(
+                "the $label body must name the rule file:\n$body",
+                body.contains(".easy.api.rules")
             )
         }
     }

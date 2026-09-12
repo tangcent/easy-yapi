@@ -12,7 +12,7 @@ import com.itangcent.easyapi.core.export.httpMetadata
 import com.itangcent.easyapi.channel.postman.model.*
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -171,13 +171,13 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
                 contentType = "application/json",
                 body = ObjectModel.Object(
                     mapOf(
-                        "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                        "age" to FieldModel(ObjectModel.Single(JsonType.INT)),
+                        "name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                        "age" to FieldModel(ObjectModel.Single(IrType.INT)),
                         "address" to FieldModel(
                             ObjectModel.Object(
                                 mapOf(
-                                    "city" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                                    "country" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                                    "city" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                                    "country" to FieldModel(ObjectModel.Single(IrType.STRING))
                                 )
                             )
                         )
@@ -261,8 +261,8 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
                 contentType = "application/json",
                 body = ObjectModel.Object(
                     mapOf(
-                        "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                        "age" to FieldModel(ObjectModel.Single(JsonType.INT))
+                        "name" to FieldModel(ObjectModel.Single(IrType.STRING)),
+                        "age" to FieldModel(ObjectModel.Single(IrType.INT))
                     )
                 )
             )

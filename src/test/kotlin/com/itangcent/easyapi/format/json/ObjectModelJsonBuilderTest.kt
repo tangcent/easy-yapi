@@ -3,7 +3,7 @@ package com.itangcent.easyapi.format.json
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.core.psi.model.ObjectModelBuilder
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import junit.framework.TestCase
 
 class ObjectModelJsonBuilderTest : TestCase() {
@@ -32,7 +32,7 @@ class ObjectModelJsonBuilderTest : TestCase() {
     }
 
     fun testArrayModel() {
-        val model = ObjectModel.array(ObjectModel.single(JsonType.STRING))
+        val model = ObjectModel.array(ObjectModel.single(IrType.STRING))
         val json = ObjectModelJsonConverter.toJson(model)
         assertTrue(json.contains("["))
         assertTrue(json.contains("\"\""))
@@ -41,8 +41,8 @@ class ObjectModelJsonBuilderTest : TestCase() {
 
     fun testMapModel() {
         val model = ObjectModel.map(
-            ObjectModel.single(JsonType.STRING),
-            ObjectModel.single(JsonType.INT)
+            ObjectModel.single(IrType.STRING),
+            ObjectModel.single(IrType.INT)
         )
         val json = ObjectModelJsonConverter.toJson(model)
         assertTrue(json.contains("{"))
@@ -53,8 +53,8 @@ class ObjectModelJsonBuilderTest : TestCase() {
 
     fun testJson5SingleLineComment() {
         val model = ObjectModel.Object(linkedMapOf(
-            "id" to FieldModel(ObjectModel.single(JsonType.LONG), comment = "user id"),
-            "name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name")
+            "id" to FieldModel(ObjectModel.single(IrType.LONG), comment = "user id"),
+            "name" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user name")
         ))
         val json5 = ObjectModelJsonConverter.toJson5(model)
         assertTrue(json5.contains("// user id"))
@@ -64,7 +64,7 @@ class ObjectModelJsonBuilderTest : TestCase() {
     fun testJson5MultiLineCommentUsesBlockComment() {
         val model = ObjectModel.Object(linkedMapOf(
             "id" to FieldModel(
-                ObjectModel.single(JsonType.LONG),
+                ObjectModel.single(IrType.LONG),
                 comment = "Node ID\nUnique identifier"
             )
         ))
@@ -84,8 +84,8 @@ class ObjectModelJsonBuilderTest : TestCase() {
         val fields = linkedMapOf<String, FieldModel>()
         val nodeModel = ObjectModel.Object(fields)
 
-        fields["id"] = FieldModel(ObjectModel.single(JsonType.LONG))
-        fields["name"] = FieldModel(ObjectModel.single(JsonType.STRING))
+        fields["id"] = FieldModel(ObjectModel.single(IrType.LONG))
+        fields["name"] = FieldModel(ObjectModel.single(IrType.STRING))
         fields["parent"] = FieldModel(nodeModel)
 
         val json = ObjectModelJsonConverter.toJson(nodeModel)
@@ -107,8 +107,8 @@ class ObjectModelJsonBuilderTest : TestCase() {
         val fields = linkedMapOf<String, FieldModel>()
         val nodeModel = ObjectModel.Object(fields)
 
-        fields["id"] = FieldModel(ObjectModel.single(JsonType.LONG), comment = "Node ID")
-        fields["name"] = FieldModel(ObjectModel.single(JsonType.STRING), comment = "Node Name")
+        fields["id"] = FieldModel(ObjectModel.single(IrType.LONG), comment = "Node ID")
+        fields["name"] = FieldModel(ObjectModel.single(IrType.STRING), comment = "Node Name")
         fields["parent"] = FieldModel(nodeModel, comment = "Parent Node")
 
         val json5 = ObjectModelJsonConverter.toJson5(nodeModel)
@@ -132,10 +132,10 @@ class ObjectModelJsonBuilderTest : TestCase() {
         val modelA = ObjectModel.Object(fieldsA)
         val modelB = ObjectModel.Object(fieldsB)
 
-        fieldsA["name"] = FieldModel(ObjectModel.single(JsonType.STRING))
+        fieldsA["name"] = FieldModel(ObjectModel.single(IrType.STRING))
         fieldsA["b"] = FieldModel(modelB)
 
-        fieldsB["value"] = FieldModel(ObjectModel.single(JsonType.INT))
+        fieldsB["value"] = FieldModel(ObjectModel.single(IrType.INT))
         fieldsB["a"] = FieldModel(modelA)
 
         val json = ObjectModelJsonConverter.toJson(modelA)
@@ -158,7 +158,7 @@ class ObjectModelJsonBuilderTest : TestCase() {
         val fields = linkedMapOf<String, FieldModel>()
         val nodeModel = ObjectModel.Object(fields)
 
-        fields["id"] = FieldModel(ObjectModel.single(JsonType.LONG))
+        fields["id"] = FieldModel(ObjectModel.single(IrType.LONG))
         fields["children"] = FieldModel(ObjectModel.array(nodeModel))
 
         val json = ObjectModelJsonConverter.toJson(nodeModel)
