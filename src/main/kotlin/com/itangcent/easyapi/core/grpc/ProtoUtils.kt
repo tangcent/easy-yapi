@@ -223,35 +223,76 @@ object ProtoUtils {
     }
 
     /**
+     * The shared protobuf **scalar** table: accepted Java spelling (primitive keyword,
+     * boxed FQN, or bare simple name) → protobuf scalar type name.
+     *
+     * Single source of truth, shared with
+     * [com.itangcent.easyapi.framework.grpc.GrpcTypeParser] — the two used to carry
+     * independent copies of the same entries and could drift.
+     *
+     * The bare simple-name entries make the table match what `mapJavaTypeToProto` already
+     * resolved through its case-insensitive fallback (`Integer` → `int32`), and they also
+     * cover a canonical text degraded to a simple name by an unresolved/light PSI. The
+     * trade-off is that a user *message* class named `Integer` (unusual — the same accepted
+     * false positive as `String`) is read as a scalar.
+     */
+    val PROTO_SCALAR_TYPES: Map<String, String> = mapOf(
+        "java.lang.String" to "string",
+        "String" to "string",
+        "int" to "int32",
+        "java.lang.Integer" to "int32",
+        "Integer" to "int32",
+        "long" to "int64",
+        "java.lang.Long" to "int64",
+        "Long" to "int64",
+        "float" to "float",
+        "java.lang.Float" to "float",
+        "Float" to "float",
+        "double" to "double",
+        "java.lang.Double" to "double",
+        "Double" to "double",
+        "boolean" to "bool",
+        "java.lang.Boolean" to "bool",
+        "Boolean" to "bool",
+        "com.google.protobuf.ByteString" to "bytes",
+        "byte[]" to "bytes"
+    )
+
+    /**
+     * Resolves an **exact** scalar spelling against [PROTO_SCALAR_TYPES], or `null` when the
+     * input is not a scalar (a message/enum, a generic type, an empty string).
+     *
+     * What a caller does with the `null` case differs by design — see [mapJavaTypeToProto]
+     * versus `GrpcTypeParser.mapProtobufType`.
+     */
+    fun protoScalarType(javaType: String): String? = PROTO_SCALAR_TYPES[javaType]
+
+    /**
      * Map Java type names to protobuf type names.
      *
      * Handles:
      * - Primitive types (int, long, boolean, float, double)
      * - Wrapper types (java.lang.Integer, java.lang.Long, etc.)
      * - Common types (String, ByteString, byte[])
-     * - Unknown types return their simple name (e.g., "com.example.MyMessage" -> "MyMessage")
+     * - Unknown types return their simple name (e.g., "com.example.MyMessage" -> "MyMessage"),
+     *   because a `.proto` message is referenced by its bare name
      *
      * @param javaType The Java type canonical name or simple name
      * @return The corresponding protobuf type name
      */
-    fun mapJavaTypeToProto(javaType: String): String = when (javaType) {
-        "java.lang.String", "String" -> "string"
-        "int", "java.lang.Integer" -> "int32"
-        "long", "java.lang.Long" -> "int64"
-        "boolean", "java.lang.Boolean" -> "bool"
-        "float", "java.lang.Float" -> "float"
-        "double", "java.lang.Double" -> "double"
-        "com.google.protobuf.ByteString" -> "bytes"
-        "byte[]" -> "bytes"
-        else -> {
-            val simpleName = javaType.substringAfterLast('.')
-            if (simpleName.equals("string", ignoreCase = true)) "string"
-            else if (simpleName.equals("integer", ignoreCase = true) || simpleName.equals("int", ignoreCase = true)) "int32"
-            else if (simpleName.equals("long", ignoreCase = true)) "int64"
-            else if (simpleName.equals("boolean", ignoreCase = true) || simpleName.equals("bool", ignoreCase = true)) "bool"
-            else if (simpleName.equals("float", ignoreCase = true)) "float"
-            else if (simpleName.equals("double", ignoreCase = true)) "double"
-            else simpleName
+    fun mapJavaTypeToProto(javaType: String): String {
+        protoScalarType(javaType)?.let { return it }
+        val simpleName = javaType.substringAfterLast('.')
+        return when {
+            simpleName.equals("string", ignoreCase = true) -> "string"
+            simpleName.equals("integer", ignoreCase = true) ||
+                    simpleName.equals("int", ignoreCase = true) -> "int32"
+            simpleName.equals("long", ignoreCase = true) -> "int64"
+            simpleName.equals("boolean", ignoreCase = true) ||
+                    simpleName.equals("bool", ignoreCase = true) -> "bool"
+            simpleName.equals("float", ignoreCase = true) -> "float"
+            simpleName.equals("double", ignoreCase = true) -> "double"
+            else -> simpleName
         }
     }
 

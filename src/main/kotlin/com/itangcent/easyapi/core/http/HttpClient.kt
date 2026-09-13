@@ -13,25 +13,30 @@ package com.itangcent.easyapi.core.http
  * ## Usage
  * ```kotlin
  * val client = HttpClientProvider.getInstance(project).getClient()
- * val response = client.execute(HttpRequest(
- *     method = "GET",
+ *
+ * // builder (preferred)
+ * val response = client.execute {
  *     url = "https://api.example.com/users"
- * ))
+ *     get()
+ * }
+ *
+ * // or the two-step form
+ * val response = client.execute(HttpRequest(url = "https://api.example.com/users"))
  * ```
  *
  * @see HttpClientProvider for client selection
  * @see HttpRequest for request model
  * @see HttpResponse for response model
  */
-interface HttpClient : AutoCloseable {
+interface HttpClient : HttpExecutor, AutoCloseable {
     /**
      * Executes an HTTP request and returns the response.
      *
      * @param request The request to execute
      * @return The response
      */
-    suspend fun execute(request: HttpRequest): HttpResponse
-    
+    override suspend fun execute(request: HttpRequest): HttpResponse
+
     /**
      * Closes the client and releases resources.
      */

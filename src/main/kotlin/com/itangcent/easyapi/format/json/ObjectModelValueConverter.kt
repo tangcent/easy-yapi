@@ -48,20 +48,14 @@ object ObjectModelValueConverter {
      * Converts a Single type to its default primitive value.
      */
     private fun singleToValue(single: ObjectModel.Single): Any? {
+        // Structural shapes have no scalar default; every scalar is owned by
+        // JsonType.defaultValueForType. This used to be a second, parallel table that
+        // disagreed with it on date/datetime/file (`""` here, `null` there).
         return when (single.type) {
-            JsonType.STRING -> ""
-            JsonType.INT, JsonType.SHORT -> 0
-            JsonType.LONG -> 0L
-            JsonType.FLOAT -> 0.0f
-            JsonType.DOUBLE -> 0.0
-            JsonType.BOOLEAN -> false
-            JsonType.DATE -> ""
-            JsonType.DATETIME -> ""
-            JsonType.FILE -> "(binary)"
             JsonType.OBJECT -> emptyMap<String, Any?>()
             JsonType.ARRAY -> emptyList<Any?>()
             "null" -> null
-            else -> null
+            else -> JsonType.defaultValueForType(single.type)
         }
     }
     

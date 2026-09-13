@@ -1,6 +1,7 @@
 ---
 id: method.additional.header
 key: method.additional.header
+scheme-stamp: d538ae78c1b5
 title: Additional request header
 cue: JSON object header attached to every matching endpoint's request
 ---

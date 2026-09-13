@@ -51,14 +51,30 @@ from auth-token-chaining.
   integrity applies: if the same filter also injects a response header
   (e.g. `WWW-Authenticate` on 401), both rules go in the same proposal.
 
+## Recipe (full bundle — propose every line together)
+
+**API key in a header:**
+```
+method.additional.header={"name":"X-API-Key","value":"${apiKey}","desc":"api key","required":true}
+```
+
+**API key in a query param:**
+```
+method.additional.param={"name":"key","type":"String","value":"${apiKey}","required":true,"desc":"api key"}
+```
+
+**HTTP Basic:**
+```
+method.additional.header={"name":"Authorization","value":"Basic ${basicAuth}","desc":"http basic credentials","required":true}
+```
+
+**No script** — the credential is static, so the user supplies it once in the
+Postman Environments panel (base64-encode `user:pass` for Basic). Reuse an
+existing env-var name when the project already references one; otherwise
+default to `apiKey` (API key) or `Authorization` (Basic).
+
 ## No hardcoded secrets
 
 Every credential in a workflow rule is an env-var reference
 (`${apiKey}`, `${Authorization}`). Never emit a literal token, key, or
 password in rule content.
-
-## Fetch the full recipe
-
-Fetch the full recipe on demand via `get_plugin_doc` with
-`name="rule-guide"` (the "Workflow Patterns" → "Static auth" section). Do
-NOT reproduce the table from memory.

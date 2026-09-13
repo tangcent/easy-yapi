@@ -347,6 +347,11 @@ class RuleKeyScriptProfilerTest {
         listOf("api", "endpoint", "request", "response", "collection").forEach { id ->
             assertTrue("wrapped additional object '$id' must be in the dictionary: $dict", id in dict)
         }
+        // Objects reached by chaining off a binding (httpClient.newRequest(...));
+        // no key references them, but get_script_object_api must still resolve them.
+        listOf("httpRequestBuilder").forEach { id ->
+            assertTrue("chained object '$id' must be in the dictionary: $dict", id in dict)
+        }
         // Bindings without a wrapper class are NOT objects.
         assertFalse("a/b are context injections, not objects", dict.contains("a"))
         assertFalse("item is an opaque channel model, not an object", dict.contains("item"))

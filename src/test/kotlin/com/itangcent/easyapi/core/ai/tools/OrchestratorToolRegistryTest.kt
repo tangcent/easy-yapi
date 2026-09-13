@@ -17,9 +17,9 @@ import org.junit.Assert
  *   No `report_findings` (sub-agent-only terminal action).
  * - **Sub-agent** — `{ find_classes_by_annotation, find_classes_by_supertype,
  *   get_psi_class_info, get_rule_detail, get_rule_context,
- *   get_script_object_api, list_rule_keys, report_findings }`. No
- *   `propose_rule_content`, no `run_sub_agent` — the sub-agent cannot recurse
- *   and cannot stage final rule content.
+ *   get_script_object_api, list_rule_keys, get_existing_rules_for_key,
+ *   report_findings }`. No `propose_rule_content`, no `run_sub_agent` — the
+ *   sub-agent cannot recurse and cannot stage final rule content.
  *
  * `create_task_list` is intentionally absent from both sets: the task list
  * is seeded by the caller (FR-2.4), and sub-agents don't manage the
@@ -104,7 +104,7 @@ class OrchestratorToolRegistryTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     /**
-     * Full set assertion — the sub-agent advertises EXACTLY six perception
+     * Full set assertion — the sub-agent advertises EXACTLY eight perception
      * tools + `report_findings`.
      *
      * Catches a regression where an orchestrator tool is accidentally
@@ -115,8 +115,8 @@ class OrchestratorToolRegistryTest : EasyApiLightCodeInsightFixtureTestCase() {
         val names = subAgentTools.schemas().map { it.name }
 
         Assert.assertEquals(
-            "sub-agent should advertise exactly 8 tools: $names",
-            8, names.size
+            "sub-agent should advertise exactly 9 tools: $names",
+            9, names.size
         )
         // Perception tools.
         Assert.assertTrue(names.contains("find_classes_by_annotation"))
@@ -126,6 +126,7 @@ class OrchestratorToolRegistryTest : EasyApiLightCodeInsightFixtureTestCase() {
         Assert.assertTrue(names.contains("get_rule_context"))
         Assert.assertTrue(names.contains("get_script_object_api"))
         Assert.assertTrue(names.contains("list_rule_keys"))
+        Assert.assertTrue(names.contains("get_existing_rules_for_key"))
         // Sub-agent terminal action.
         Assert.assertTrue(names.contains("report_findings"))
     }

@@ -1,8 +1,9 @@
 package com.itangcent.easyapi.channel.markdown.template
 
 import com.itangcent.easyapi.core.http.HttpClient
-import com.itangcent.easyapi.core.http.HttpRequest
 import com.itangcent.easyapi.core.http.HttpResponse
+import com.itangcent.easyapi.core.http.execute
+import com.itangcent.easyapi.core.http.get
 import com.itangcent.easyapi.core.logging.IdeaLog
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -140,7 +141,9 @@ object RemoteTemplateFetcher : IdeaLog {
         maxBytes: Long,
     ): FetchResult {
         val response: HttpResponse = try {
-            httpClient.execute(HttpRequest(url = url, method = "GET"))
+            httpClient.get {
+                this.url = url
+            }
         } catch (t: Throwable) {
             return FetchResult.Failed("transport error fetching $url: ${t.message}", t)
         }

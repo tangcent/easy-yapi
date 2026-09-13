@@ -15,6 +15,13 @@ import com.itangcent.easyapi.core.logging.IdeaLog
  *   orchestrator's `RunSubAgentTool` is awaiting), and returns
  *   `ToolResult.Text("findings reported")`.
  *
+ * **Draft-and-report contract.** The sub-agent reports evidence *and* the
+ * concrete rule proposals it drafted from that evidence. It is the only role
+ * holding the per-key value-format guides (`get_rule_detail`) and the
+ * existing-rule lookup (`get_existing_rules_for_key`), so it can honour the
+ * no-duplicates quality rule before proposing. The orchestrator only merges
+ * the collected proposals deterministically — it has no perception tools.
+ *
  * Terminal for sub-agents: the agent loop's terminal-action detection must
  * treat `report_findings` as terminal in sub-agent contexts, mirroring how
  * `propose_rule_content` is terminal for the orchestrator. The orchestrator's
@@ -55,15 +62,15 @@ class ReportFindingsTool : AiTool, IdeaLog {
                 "type" to "string",
                 "description" to "Free-form markdown — search evidence, " +
                     "located classes, why the pattern applies (or doesn't). " +
-                    "Concatenated verbatim into the orchestrator's final " +
-                    "propose_rule_content payload."
+                    "Rendered as a `#` comment block above this task's rules " +
+                    "in the merged proposal."
             ),
             "proposedRules" to mapOf(
                 "type" to "array",
                 "description" to "Concrete rule proposals drafted from the " +
                     "findings. Empty when detected=false. Each entry has a " +
-                    "`key` (rule key, e.g. method.additional.header) and a " +
-                    "short `preview` of the proposed value.",
+                    "`key` (rule key, e.g. method.additional.header) and the " +
+                    "complete rule text in `rules`.",
                 "items" to mapOf(
                     "type" to "object",
                     "properties" to mapOf(
@@ -72,13 +79,19 @@ class ReportFindingsTool : AiTool, IdeaLog {
                             "description" to "Rule key this proposal targets " +
                                 "(matches a key from list_rule_keys)."
                         ),
-                        "preview" to mapOf(
+                        "rules" to mapOf(
                             "type" to "string",
-                            "description" to "Short human-readable preview of " +
-                                "the proposed value (full body lives in findings)."
+                            "description" to "The complete rule line(s) to " +
+                                "append to the proposed file, verbatim — " +
+                                "`<key>[<filter>]=<value>`. Not a summary: it " +
+                                "is concatenated as-is, so a truncated or " +
+                                "paraphrased value corrupts the proposal. May " +
+                            "span lines when the value needs a guard block " +
+                            "(e.g. ###set resolveProperty=false … true to keep " +
+                            "a placeholder literal)."
                         )
                     ),
-                    "required" to listOf("key", "preview")
+                    "required" to listOf("key", "rules")
                 )
             )
         ),
@@ -104,9 +117,11 @@ class ReportFindingsTool : AiTool, IdeaLog {
             if (key.isNullOrBlank()) {
                 return ToolResult.Error("proposedRules[$index].key is missing or blank")
             }
-            val preview = (raw["preview"] as? String)?.trim()
-                ?: return ToolResult.Error("proposedRules[$index].preview is missing")
-            proposedRules += RuleProposal(key = key, preview = preview)
+            val rules = (raw["rules"] as? String)?.trim()
+            if (rules.isNullOrBlank()) {
+                return ToolResult.Error("proposedRules[$index].rules is missing or blank")
+            }
+            proposedRules += RuleProposal(key = key, rules = rules)
         }
 
         val result = TaskResult(

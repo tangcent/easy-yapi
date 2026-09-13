@@ -14,12 +14,16 @@ import kotlinx.coroutines.runBlocking
  * synchronous sub-request to the refresh-token endpoint, the suspend `HttpClient.execute`
  * must be bridged to a plain blocking call.
  *
- * `ScriptHttpClient` is that bridge: [executeSync] wraps the delegate's suspend
+ * `ScriptHttpClient` is that bridge: it hands out [HttpRequestBuilder]s
+ * ([newRequest]) whose terminal [HttpRequestBuilder.execute] wraps the delegate's suspend
  * `execute` in `runBlocking { ... }`, so a Groovy script can write:
  *
  * ```groovy
- * def resp = httpClient.executeSync(refreshReq)
- * def newToken = new groovy.json.JsonSlurper().parseText(resp.body).access_token
+ * def resp = httpClient.newRequest("https://api.example.com/refresh")
+ *     .post()
+ *     .form("grant_type", "refresh_token")
+ *     .execute()
+ * def newToken = new groovy.json.JsonSlurper().parseText(resp?.body).access_token
  * ```
  *
  * ## Threading
@@ -48,4 +52,30 @@ class ScriptHttpClient(private val delegate: HttpClient) {
      * @return the [HttpResponse] returned by the delegate
      */
     fun executeSync(request: HttpRequest): HttpResponse = runBlocking { delegate.execute(request) }
+
+    /**
+     * Starts an OkHttp-style fluent request bound to this client:
+     *
+     * ```groovy
+     * def resp = httpClient.newRequest("https://api.example.com/refresh")
+     *     .post()
+     *     .form("grant_type", "refresh_token")
+     *     .execute()
+     * ```
+     *
+     * Groovy-friendly on purpose: no default parameters, no lambdas, plain chaining, and
+     * the terminal [HttpRequestBuilder.execute] bridges back through [runBlocking] — so the
+     * script never has to build an [HttpRequest] by hand (its 8-arg positional constructor
+     * is order-sensitive and has no no-arg overload for Groovy named arguments).
+     *
+     * @param url the target URL
+     * @return a builder whose [HttpRequestBuilder.execute] runs synchronously on this client
+     */
+    fun newRequest(url: String): HttpRequestBuilder = delegate.newRequest(url)
+
+    /**
+     * Same as [newRequest] without an initial URL — set it later via
+     * [HttpRequestBuilder.url].
+     */
+    fun newRequest(): HttpRequestBuilder = delegate.newRequest()
 }

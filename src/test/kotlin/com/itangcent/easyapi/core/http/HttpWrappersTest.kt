@@ -97,7 +97,7 @@ class HttpRequestWrapperTest {
         val request = HttpRequest(
             url = "http://test.com",
             method = "POST",
-            contentType = "application/json"
+            headers = listOf(kv("Content-Type", "application/json"))
         )
         val wrapper = HttpRequestWrapper(request)
 
@@ -184,8 +184,7 @@ class HttpRequestWrapperTest {
             query = listOf(KeyValue("page", "1")),
             body = """{"k":"v"}""",
             formParams = listOf(FormParam.Text("field", "val")),
-            cookies = listOf(HttpCookie("session", "abc")),
-            contentType = "application/json"
+            cookies = listOf(HttpCookie("session", "abc"))
         )
         val wrapper = HttpRequestWrapper(request)
 
@@ -202,7 +201,7 @@ class HttpRequestWrapperTest {
         assertEquals("""{"k":"v"}""", built.body)
         assertEquals(1, built.formParams.size)
         assertEquals(1, built.cookies.size)
-        assertEquals("application/json", built.contentType)
+        assertNull(built.contentType)
     }
 
     @Test

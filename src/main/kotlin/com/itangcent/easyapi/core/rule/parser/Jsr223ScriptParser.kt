@@ -201,9 +201,11 @@ abstract class Jsr223ScriptParser(
             bindings["fieldContext"] = context.wrapExt("fieldContext", context.fieldContext)
         }
 
-        // httpClient — wrapped in ScriptHttpClient so `groovy:` scripts can call
-        // executeSync(...) (the suspend HttpClient.execute is not callable from the
-        // blocking JSR-223 boundary). Scope: bound ONLY here (groovy: rule values +
+        // httpClient — wrapped in ScriptHttpClient so `groovy:` scripts can make
+        // sub-requests: `httpClient.newRequest(url).post().form(k, v).execute()`
+        // (preferred), or `executeSync(request)` for a pre-built HttpRequest. The
+        // suspend HttpClient.execute is not callable from the blocking JSR-223
+        // boundary. Scope: bound ONLY here (groovy: rule values +
         // http.call.before/after events), NOT in PmScriptExecutor (postman.* scripts
         // use pm.sendRequest for sub-requests if ever needed).
         val rawHttpClient = runCatching {

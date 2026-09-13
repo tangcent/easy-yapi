@@ -415,6 +415,40 @@ val syncRuleContexts by tasks.registering(JavaExec::class) {
     outputs.files(fileTree(ruleKeySchemeSkillDir) { include("rule-contexts.json", "rule-contexts.md") })
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Code-derived fact sheets (tools / locales / extension points)
+//
+// `SkillFactsExporter` writes three small generated references into the skill:
+// `tools.md` (the AI-tool inventory read from the three registries in
+// `core/ai/tools/RuleTools.kt`), `locales.md` (the bundled Markdown-template
+// locales), and `extensions.md` (the `plugin.xml` EP declarations + registered
+// implementations). They replace hand-maintained enumerations in SKILL.md /
+// rule-guide.md that could drift silently.
+//
+// Reflects main classes (tools + BundledLanguageTemplates), so it runs off the
+// test output + test compile classpath — like `syncRuleContexts`, standalone,
+// not on `processResources`.
+// ─────────────────────────────────────────────────────────────────────────────
+val syncSkillFacts by tasks.registering(JavaExec::class) {
+    group = "documentation"
+    description = "Generate tools.md / locales.md / extensions.md into the easy-yapi-assistant skill from the tool registries, the locale registry, and plugin.xml."
+
+    dependsOn("classes", "testClasses")
+    val kotlinRuntime = configurations.detachedConfiguration(
+        dependencies.create("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
+    )
+    classpath = sourceSets.test.get().output + sourceSets.test.get().compileClasspath + kotlinRuntime
+    mainClass.set("com.itangcent.easyapi.tooling.SkillFactsExporter")
+    args(ruleKeySchemeSkillDir.absolutePath)
+
+    inputs.file(file("src/test/kotlin/com/itangcent/easyapi/tooling/SkillFactsExporter.kt"))
+    inputs.file(file("src/main/resources/META-INF/plugin.xml"))
+    inputs.dir(file("src/main/kotlin/com/itangcent/easyapi/core/ai/tools"))
+    inputs.dir(file("src/main/kotlin/com/itangcent/easyapi/channel/markdown/template"))
+    inputs.dir(file("skills/easy-yapi-assistant/scripts"))
+    outputs.files(fileTree(ruleKeySchemeSkillDir) { include("tools.md", "locales.md", "extensions.md") })
+}
+
 // Ensure the JAR always ships docs synced from the canonical source.
 // `syncRuleKeySchemes` is intentionally NOT wired into the build: it depends on
 // `classes` (to run the exporter) and only needs to re-run before committing a
@@ -429,14 +463,16 @@ tasks.named("processResources") {
 //
 // One command to refresh the entire `skills/easy-yapi-assistant` mirror: the
 // knowledge base, the agent catalog (detection + key-guides), the rule-key
-// scheme catalog, and the rule script-context catalog. `syncRuleKeySchemes`
-// and `syncRuleContexts` depend on `classes` (they run a reflective exporter),
-// so they are kept out of `processResources` and run here on demand — trigger
-// them by hand (or let the content-guard tests fail) before committing any
-// rule-key / scheme / renderer change.
+// scheme catalog, the rule script-context catalog, and the code-derived fact
+// sheets (tools / locales / extensions). The exporters depend on `classes`
+// (they run reflectively), so they are kept out of `processResources` and run
+// here on demand — trigger them by hand (or let the content-guard tests fail)
+// before committing any rule-key / scheme / renderer change.
 // ─────────────────────────────────────────────────────────────────────────────
 tasks.register("syncSkill") {
     group = "documentation"
-    description = "Refresh the entire easy-yapi-assistant skill mirror (knowledge base, agent catalog, rule-key schemes, rule contexts)."
-    dependsOn("syncKnowledgeBase", "syncAgentCatalog", "syncRuleKeySchemes", "syncRuleContexts")
+    description = "Refresh the entire easy-yapi-assistant skill mirror (knowledge base, agent catalog, rule-key schemes, rule contexts, fact sheets)."
+    dependsOn(
+        "syncKnowledgeBase", "syncAgentCatalog", "syncRuleKeySchemes", "syncRuleContexts", "syncSkillFacts"
+    )
 }

@@ -141,6 +141,30 @@ class TemplateHelpersTest {
         assertEquals("", TemplateHelpers.resolve("typeOf", listOf("not-a-model"), ctx))
     }
 
+    /**
+     * `date`/`datetime` are internal IR values — printing them would put something that is
+     * neither a JSON type nor a Java type name into a document's type column.
+     */
+    @Test
+    fun testTypeOfDateCollapsesToString() {
+        assertEquals("string", TemplateHelpers.resolve("typeOf", listOf(ObjectModel.single("date")), ctx))
+        assertEquals("string", TemplateHelpers.resolve("typeOf", listOf(ObjectModel.single("datetime")), ctx))
+        // Arrays of dates too.
+        assertEquals(
+            "string[]",
+            TemplateHelpers.resolve("typeOf", listOf(ObjectModel.array(ObjectModel.single("datetime"))), ctx)
+        )
+    }
+
+    @Test
+    fun testTypeOfKeepsJavaRecognisableNames() {
+        // The display mapping is not `JsonType.toSchemaType`: `long`/`short` must survive.
+        assertEquals("long", TemplateHelpers.resolve("typeOf", listOf(ObjectModel.single("long")), ctx))
+        assertEquals("file", TemplateHelpers.resolve("typeOf", listOf(ObjectModel.single("file")), ctx))
+        // `uuid` tells the reader the wire shape, so it is kept like `long`/`file`.
+        assertEquals("uuid", TemplateHelpers.resolve("typeOf", listOf(ObjectModel.single("uuid")), ctx))
+    }
+
     // ---------- indent ----------
 
     @Test

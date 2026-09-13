@@ -1,6 +1,7 @@
 ---
 id: markdown.curl.host
 key: markdown.curl.host
+scheme-stamp: 94defc74a36e
 title: Markdown cURL host override
 cue: host override for the {{{api.http.curl()}}} placeholder in Markdown export
 channel: markdown

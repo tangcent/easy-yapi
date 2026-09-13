@@ -11,6 +11,7 @@ import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.core.psi.model.ObjectModelVisitTracker
+import com.itangcent.easyapi.core.psi.type.JsonType
 
 /**
  * Builds the pure-data [TemplateModel] from already-resolved [ApiEndpoint]s.
@@ -19,10 +20,14 @@ import com.itangcent.easyapi.core.psi.model.ObjectModelVisitTracker
  * [ObjectModel] bodies into a flat, cycle-safe list of [FieldView]s using
  * [ObjectModelVisitTracker] (cycle-safe by object identity, not depth-capped).
  *
- * The body-flattening logic is ported from the legacy `DefaultMarkdownFormatter`
- * (`formatObjectModelRecursive` / `formatFieldRow` / `formatArrayItemRecursive` /
- * `buildFieldDescription` / `formatType`) so the default template can reproduce the old
- * output byte-for-byte (the parity gate — [MarkdownTemplateParityTest]).
+ * The body-flattening logic is the template layer's own now — it was lifted out of the former
+ * `DefaultMarkdownFormatter`, which by now only delegates here. The default template has to
+ * reproduce the pre-template output byte-for-byte, locked by the golden-file parity gate
+ * [MarkdownTemplateParityTest].
+ *
+ * `formatType` / `buildFieldDescription` live in [MarkdownFieldFormatter] rather than here,
+ * because [TemplateHelpers] exposes the very same two shapes to *user* templates as
+ * `{{typeOf}}` / `{{fieldDesc}}` — one implementation keeps the two from disagreeing.
  *
  * The JSON demo is **not** pre-rendered here — `BodyView.asDemo()`/`asJson()`/`asJson5()`
  * are evaluated lazily at render time. See [BodyView].
@@ -195,10 +200,12 @@ object TemplateModelBuilder : IdeaLog {
             }
             is ObjectModel.Single -> {
                 // Parity (review finding F5): one synthetic row, name="" matching legacy
-                // `Row(name="", type=model.type, desc="")` byte-for-byte.
+                // `Row(name="", type=model.type, desc="")` byte-for-byte. The type goes through
+                // `toDisplayType` like every other row — legacy never produced a date IR value
+                // here because it mapped dates to `string` upstream.
                 fields += FieldView(
                     name = "",
-                    type = model.type,
+                    type = JsonType.toDisplayType(model.type),
                     desc = "",
                     required = false,
                     defaultValue = null,
@@ -214,7 +221,7 @@ object TemplateModelBuilder : IdeaLog {
                 // legacy `Row(name="key", type=formatType(keyType), desc="")` + value byte-for-byte.
                 fields += FieldView(
                     name = "key",
-                    type = formatType(model.keyType),
+                    type = MarkdownFieldFormatter.formatType(model.keyType),
                     desc = "",
                     required = false,
                     defaultValue = null,
@@ -226,7 +233,7 @@ object TemplateModelBuilder : IdeaLog {
                 )
                 fields += FieldView(
                     name = "value",
-                    type = formatType(model.valueType),
+                    type = MarkdownFieldFormatter.formatType(model.valueType),
                     desc = "",
                     required = false,
                     defaultValue = null,
@@ -248,8 +255,8 @@ object TemplateModelBuilder : IdeaLog {
         tracker: ObjectModelVisitTracker,
     ) {
         val indent = if (depth > 0) "&ensp;&ensp;".repeat(depth) + "&#124;─" else ""
-        val type = formatType(fieldModel.model)
-        val desc = buildFieldDescription(fieldModel)
+        val type = MarkdownFieldFormatter.formatType(fieldModel.model)
+        val desc = MarkdownFieldFormatter.buildFieldDescription(fieldModel)
         val structuralKind = structuralKindOf(fieldModel.model)
         val (hasChildren, childrenCount) = childrenInfo(fieldModel.model, tracker)
 
@@ -322,7 +329,7 @@ object TemplateModelBuilder : IdeaLog {
             is ObjectModel.Single -> {
                 fields += FieldView(
                     name = prefix,
-                    type = "${item.type}[]",
+                    type = "${JsonType.toDisplayType(item.type)}[]",
                     desc = "",
                     required = false,
                     defaultValue = null,
@@ -336,7 +343,7 @@ object TemplateModelBuilder : IdeaLog {
             is ObjectModel.MapModel -> {
                 fields += FieldView(
                     name = "$prefix.key",
-                    type = formatType(item.keyType),
+                    type = MarkdownFieldFormatter.formatType(item.keyType),
                     desc = "",
                     required = false,
                     defaultValue = null,
@@ -348,7 +355,7 @@ object TemplateModelBuilder : IdeaLog {
                 )
                 fields += FieldView(
                     name = "$prefix.value",
-                    type = formatType(item.valueType),
+                    type = MarkdownFieldFormatter.formatType(item.valueType),
                     desc = "",
                     required = false,
                     defaultValue = null,
@@ -393,30 +400,4 @@ object TemplateModelBuilder : IdeaLog {
         }
     }
 
-    /**
-     * Mirrors `DefaultMarkdownFormatter.buildFieldDescription`: comment + options joined
-     * with `<br>`, options as `value :desc` / `value`.
-     */
-    private fun buildFieldDescription(fieldModel: FieldModel): String {
-        val parts = mutableListOf<String>()
-        fieldModel.comment?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-        fieldModel.options?.takeIf { it.isNotEmpty() }?.let { options ->
-            val optionDesc = options.joinToString("<br>") { opt ->
-                if (opt.desc.isNullOrBlank()) "${opt.value}" else "${opt.value} :${opt.desc}"
-            }
-            parts.add(optionDesc)
-        }
-        return parts.joinToString("<br>")
-    }
-
-    /**
-     * Mirrors `DefaultMarkdownFormatter.formatType`: Single→type, Array→`<item>[]`,
-     * Object→"object", Map→"map".
-     */
-    private fun formatType(model: ObjectModel): String = when (model) {
-        is ObjectModel.Single -> model.type
-        is ObjectModel.Array -> "${formatType(model.item)}[]"
-        is ObjectModel.Object -> "object"
-        is ObjectModel.MapModel -> "map"
-    }
 }

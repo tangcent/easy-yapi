@@ -1,6 +1,7 @@
 ---
 id: postman.prerequest
 key: postman.prerequest
+scheme-stamp: 2334a9162742
 title: Postman pre-request script
 cue: JavaScript fired BEFORE the request, used to inject headers / compute signatures / mutate pm.request
 channel: postman
@@ -40,3 +41,34 @@ Signer + signed-consumer rules MUST be proposed together in a single
 `propose_rule_content` call. Proposing half a chain is forbidden — a
 consumer header referencing a signature no script computes is a silent
 bug.
+
+## Shared-env-var rule
+
+When the pre-request script reads a credential via `pm.environment.get(...)`
+or interpolates `${<name>}`, use the **same** `<name>` the user sets in the
+Postman Environments panel. Reuse an existing name when the project already
+references one; never invent a second name for the same credential.
+
+## No hardcoded secrets
+
+Every credential is an env-var reference (`${Authorization}`, `${appSecret}`,
+`${apiKey}`). Never emit a literal token, key, or password in rule content.
+
+## Script-context isolation (CRITICAL — silent-failure trap)
+
+`postman.prerequest`/`postman.test` rule values MUST be **literal scripts**
+(NO `groovy:` prefix). A `groovy:` prefix routes the value to
+`Jsr223ScriptParser` at export time, where `pm` is NOT bound — the script
+throws and the failure is **silently swallowed**, so no script lands in the
+Postman collection. (Conversely, `http.call.before`/`http.call.after` values
+MUST use `groovy:` — see `http.call.after`.)
+
+Use `pm.request.headers.upsert(name, value)` (add-or-replace,
+case-insensitive) rather than `.add(...)`, which would duplicate the header.
+
+## Anti-duplication
+
+Before proposing any script/header rule, call `get_existing_rules_for_key`
+for each key in the bundle; skip any rule already present in any source
+(project / global / extension / remote), naming the source it already lives
+in. See the agent base quality rule "Check existing rules before writing".

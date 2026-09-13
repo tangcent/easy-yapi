@@ -1,8 +1,9 @@
 package com.itangcent.easyapi.core.script.pm
 
 import com.itangcent.easyapi.core.http.HttpClient
-import com.itangcent.easyapi.core.http.HttpRequest
 import com.itangcent.easyapi.core.http.HttpResponse
+import com.itangcent.easyapi.core.http.execute
+import com.itangcent.easyapi.core.http.get
 import com.itangcent.easyapi.core.http.KeyValue
 import groovy.lang.Closure
 
@@ -42,9 +43,10 @@ class PmSendRequest(private val httpClient: HttpClient?) {
     operator fun invoke(url: String, closure: PmSendRequestCallback) {
         if (httpClient == null) return
         try {
-            val request = HttpRequest(url = url, method = "GET")
             val response = kotlinx.coroutines.runBlocking {
-                httpClient.execute(request)
+                httpClient.get {
+                    this.url = url
+                }
             }
             closure.call(response.toPmResponse())
         } catch (e: Exception) {
@@ -109,14 +111,13 @@ class PmSendRequest(private val httpClient: HttpClient?) {
                 KeyValue(it["key"] ?: "", it["value"] ?: "")
             } ?: emptyList()
             val body = (options["body"] as? Map<String, Any?>)?.get("raw")?.toString()
-            val request = HttpRequest(
-                url = url,
-                method = method,
-                headers = headerList,
-                body = body
-            )
             val response = kotlinx.coroutines.runBlocking {
-                httpClient.execute(request)
+                httpClient.execute {
+                    this.url = url
+                    this.method = method
+                    headers(headerList)
+                    this.body = body
+                }
             }
             closure.call(response.toPmResponse())
         } catch (e: Exception) {

@@ -9,7 +9,7 @@ search this list.
 - **AI provider configuration** → [settings-guide §AI](settings-guide.md#ai)
 - **Aggregation modes (MERGE / MERGE_DISTINCT)** → [rule-guide §Aggregation Modes](rule-guide.md#aggregation-modes)
 - **Annotations, detecting custom** → [rule-guide §Custom-Pattern Catalog](rule-guide.md#custom-pattern-catalog)
-- **`api.*` rule keys** → [rule-guide §API metadata](rule-guide.md#api-metadata)
+- **`api.*` rule keys** → [rule-guide §Rule Key Catalog](rule-guide.md#rule-key-catalog)
 
 ## B
 
@@ -26,7 +26,7 @@ search this list.
 ## D
 
 - **Dashboard** → [usage-guide §API Dashboard](usage-guide.md#api-dashboard)
-- **`doc.*` rule keys** → [rule-guide §Field rules](rule-guide.md#field-rules)
+- **`doc.*` rule keys** → [rule-guide §Rule Key Catalog](rule-guide.md#rule-key-catalog)
 - **Disabled rule files** → [README §Where rules live](README.md#where-rules-live-30-model)
 
 ## E
@@ -38,7 +38,7 @@ search this list.
 ## F
 
 - **Field conversion / type unwrapping** → [usage-guide §Field Conversion](usage-guide.md#field-conversion) · [rule-guide §Recipes](rule-guide.md#recipes)
-- **`field.*` rule keys** → [rule-guide §Field rules](rule-guide.md#field-rules)
+- **`field.*` rule keys** → [rule-guide §Rule Key Catalog](rule-guide.md#rule-key-catalog)
 - **Filter (jakarta.servlet.Filter)** → [rule-guide §Custom-Pattern Catalog](rule-guide.md#custom-pattern-catalog)
 - **Filter syntax (rule predicates)** → [rule-guide §Filter Syntax](rule-guide.md#filter-syntax)
 
@@ -61,14 +61,14 @@ search this list.
 ## J
 
 - **JAX-RS** → [settings-guide §General](settings-guide.md#general)
-- **JSON rule keys (`json.*`)** → [rule-guide §JSON rules](rule-guide.md#json-rules)
+- **JSON rule keys (`json.*`)** → [rule-guide §Rule Key Catalog](rule-guide.md#rule-key-catalog)
 
 ## M
 
 - **Magic button (Rules tab)** → [README §AI-assisted rule authoring](README.md#ai-assisted-rule-authoring)
 - **Markdown export** → [usage-guide §First Export](usage-guide.md#first-export)
-- **Markdown language template** → [rule-guide §Markdown rules](rule-guide.md#markdown-rules)
-- **`markdown.*` rule keys** → [rule-guide §Markdown rules](rule-guide.md#markdown-rules)
+- **Markdown language template** → [rule-guide §Rule Key Catalog](rule-guide.md#rule-key-catalog)
+- **`markdown.*` rule keys** → [rule-guide §Rule Key Catalog](rule-guide.md#rule-key-catalog)
 - **Merge modes** → [rule-guide §Aggregation Modes](rule-guide.md#aggregation-modes)
 
 ## O
@@ -78,7 +78,7 @@ search this list.
 ## P
 
 - **Path multi** → [settings-guide §General](settings-guide.md#general)
-- **`postman.*` rule keys** → [rule-guide §Postman rules](rule-guide.md#postman-rules)
+- **`postman.*` rule keys** → [rule-guide §Rule Key Catalog](rule-guide.md#rule-key-catalog)
 - **Postman settings** → [settings-guide §Postman](settings-guide.md#postman)
 - **Pre/post scripts** → [usage-guide §Pre/Post Scripts](usage-guide.md#prepost-scripts) · [pm script reference](postman-script-reference.md)
 - **Project rules (`.easyapi/`)** → [README §Where rules live](README.md#where-rules-live-30-model)

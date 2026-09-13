@@ -8,9 +8,10 @@ import org.junit.Test
  * Content-assertion test for the `rule-guide.md` "Multi-Application Namespace"
  * section.
  *
- * The existing `RuleGuideWorkflowCatalogTest.kt` is an empty stub (a single
- * `package com.itangcent` line) and cannot be extended; this dedicated test is
- * the canonical assertion that the section exists and covers the load-bearing
+ * Companion to `RuleGuideWorkflowCatalogTest`, which guards the workflow
+ * recipes and the script-context isolation invariants across the knowledge
+ * surface. This test is the canonical assertion that the
+ * "Multi-Application Namespace" section exists and covers the load-bearing
  * topics the agent relies on at authoring time.
  *
  * Reads the resource via [ResourceLoader.readRaw] (CRLF→LF collapse) per the

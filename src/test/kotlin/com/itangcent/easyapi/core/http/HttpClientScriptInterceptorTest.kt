@@ -58,8 +58,7 @@ class HttpClientScriptInterceptorTest {
             query = listOf(kv("page", "1")),
             body = """{"key":"value"}""",
             formParams = listOf(FormParam.Text("field", "val")),
-            cookies = listOf(HttpCookie("session", "abc")),
-            contentType = "application/json"
+            cookies = listOf(HttpCookie("session", "abc"))
         )
         val wrapper = HttpRequestWrapper(request)
 

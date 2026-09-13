@@ -21,10 +21,9 @@ import java.net.URLEncoder
  * ## Usage
  * ```kotlin
  * val client = IntelliJHttpClient(timeoutMs = 30000)
- * val response = client.execute(HttpRequest(
- *     method = "GET",
+ * val response = client.get {
  *     url = "https://api.example.com/users"
- * ))
+ * }
  * ```
  *
  * @param timeoutMs Request timeout in milliseconds
