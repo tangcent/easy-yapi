@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.format.yaml
 
+import com.itangcent.easyapi.core.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.core.psi.DefaultPsiClassHelper
 import com.itangcent.easyapi.core.psi.JsonOption
 import com.itangcent.easyapi.format.spi.toYaml
@@ -17,7 +18,17 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
  */
 class YamlFormatterTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    override fun createConfigReader() = TestConfigReader.empty(project)
+    /**
+     * The shipped `converts` extension, which is default-enabled in production. It is what maps
+     * `UserInfo`'s `java.time.LocalDate`/`LocalDateTime` fields (`birthDay`/`regtime`) to
+     * `java.lang.String` — i.e. to the `""` the golden holds. Without it those fields are an
+     * unmapped type and render `null`, which is not what a user sees.
+     */
+    override fun createConfigReader(): TestConfigReader {
+        val extension = ExtensionConfigRegistry.getExtension("converts")
+        assertNotNull("converts extension should exist", extension)
+        return TestConfigReader.fromConfigText(project, extension?.content ?: "")
+    }
 
     fun testGoldenParity() = runTest {
         loadFile("model/UserInfo.java")

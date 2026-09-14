@@ -219,6 +219,8 @@ Type: `com.itangcent.easyapi.core.rule.context.ScriptFieldPathContext` — Curre
 Type: `com.itangcent.easyapi.core.http.ScriptHttpClient` — Synchronous adapter to the EasyAPI HTTP client.
 
 - `executeSync(request: com.itangcent.easyapi.core.http.HttpRequest): com.itangcent.easyapi.core.http.HttpResponse`
+- `newRequest(): com.itangcent.easyapi.core.http.HttpRequestBuilder`
+- `newRequest(url: String): com.itangcent.easyapi.core.http.HttpRequestBuilder`
 
 ### object: helper
 

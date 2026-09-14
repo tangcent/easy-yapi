@@ -4,8 +4,9 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.components.service
 import com.itangcent.easyapi.core.internal.threading.IdeDispatchers
-import com.itangcent.easyapi.core.http.HttpRequest
 import com.itangcent.easyapi.core.http.UrlConnectionHttpClient
+import com.itangcent.easyapi.core.http.execute
+import com.itangcent.easyapi.core.http.get
 import com.itangcent.easyapi.core.logging.IdeaConsole
 import com.itangcent.easyapi.core.logging.console
 import com.itangcent.easyapi.core.settings.module.HttpSettings
@@ -74,12 +75,10 @@ class CachedResourceResolver(
     private suspend fun fetch(url: String, timeoutMs: Long): String {
         return withTimeout(timeoutMs.milliseconds) {
             withContext(IdeDispatchers.Background) {
-                val request = HttpRequest(
-                    url = url,
-                    method = "GET",
-                    headers = listOf("Accept" to "text/plain, */*")
-                )
-                val response = UrlConnectionHttpClient.execute(request)
+                val response = UrlConnectionHttpClient.get {
+                    this.url = url
+                    header("Accept", "text/plain, */*")
+                }
                 response.body
                     ?: throw IllegalStateException("Empty response from $url, code=${response.code}")
             }

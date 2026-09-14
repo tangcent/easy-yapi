@@ -85,6 +85,17 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         /** Default max elements (total fields) per build operation. */
         const val DEFAULT_MAX_ELEMENTS = 512
 
+        /**
+         * JSON-native scalars that [SpecialTypeHandler] does not know about — it covers
+         * files, dates and every primitive wrapper, so only the plain `java.lang` / `java.math`
+         * scalars are listed here.
+         */
+        private val JSON_NATIVE_TYPES = setOf(
+            "java.lang.String",
+            "java.math.BigInteger",
+            "java.math.BigDecimal"
+        )
+
         fun getInstance(project: Project): DefaultPsiClassHelper =
             project.getService(DefaultPsiClassHelper::class.java)
     }
@@ -209,7 +220,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 val elementModel = buildObjectModelFromConvertedType(
                     elementResolved, option, maxDepth, genericContext, elementCounter
                 )
-                return if (elementModel != null) ObjectModel.array(elementModel) else null
+                return if (elementModel != null) ObjectModel.array(elementModel, trimmed) else null
             }
         }
 
@@ -293,12 +304,15 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         visited: MutableSet<String>,
         genericContext: GenericContext = GenericContext.EMPTY,
         parentPath: String? = null,
-        elementCounter: ElementCounter
+        elementCounter: ElementCounter,
+        /** Declared type of the node this class is being expanded for; see [ObjectModel.ref]. */
+        ref: String? = null
     ): ObjectModel.Object? {
         val qualifiedName = psiClass.qualifiedName ?: psiClass.name ?: return null
 
         if (qualifiedName == "java.lang.Object") {
-            return ObjectModel.emptyObject()
+            // An empty object *is* the right shape for `java.lang.Object`, so the ref is carried.
+            return ObjectModel.emptyObject(qualifiedName)
         }
 
         if (genericContext == GenericContext.EMPTY) {
@@ -342,7 +356,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         // (e.g., Node.parent -> Node) can resolve via cache lookup instead of
         // returning an empty object. The fields map is mutable and will be
         // populated as fields are processed below.
-        val result = ObjectModel.Object(fields)
+        val result = ObjectModel.Object(fields, ref = ref)
         if (genericContext == GenericContext.EMPTY) {
             val cacheKey = "$qualifiedName@$option"
             cache.put(cacheKey, result)
@@ -524,8 +538,10 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                     val addFieldDesc = additionalField["desc"]?.toString()
                     if (!addFieldName.isNullOrBlank() && !addFieldType.isNullOrBlank()) {
                         if (!fields.containsKey(addFieldName)) {
+                            // No `ref`: this field is declared by configuration, not by a type, and
+                            // `addFieldType` is a JSON-Schema *word* (`number`), not a declaration.
                             val addFieldModel = FieldModel(
-                                model = ObjectModel.single(JsonType.fromJavaType(addFieldType)),
+                                model = ObjectModel.single(IrType.fromJavaType(addFieldType)),
                                 comment = if (!addFieldDesc.isNullOrBlank()) addFieldDesc else null
                             )
                             fields[addFieldName] = addFieldModel
@@ -844,12 +860,13 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             val resolved = SeeTagResolver(project).resolveOptionsWithType(psiElement, docHelper)
             if (resolved != null) {
                 options = resolved.options
-                val valueFieldJsonType = resolved.valueFieldJsonType
-                if (valueFieldJsonType != null && model is ObjectModel.Single) {
+                val valueFieldIrType = resolved.valueFieldIrType
+                if (valueFieldIrType != null && model is ObjectModel.Single) {
                     val reconciledType = EnumValueResolver.getInstance(project)
-                        .reconcileType(model.type, valueFieldJsonType)
+                        .reconcileType(model.type, valueFieldIrType)
                     if (reconciledType != model.type) {
-                        reconciledModel = ObjectModel.single(reconciledType)
+                        // Only the JSON word is reconciled; the declared type is untouched.
+                        reconciledModel = ObjectModel.single(reconciledType, model.ref)
                     }
                 }
             }
@@ -926,27 +943,34 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         if (elementCounter.isExceeded()) {
             return ObjectModel.emptyObject()
         }
+        // The one place the declared type is still known: downstream of this function only the
+        // projected JSON word survives (`com.acme.User` → `object`). Computing `ref` once, here,
+        // and handing it to every branch is what keeps "a branch forgot to record the source"
+        // structurally impossible — branches only choose `type`.
+        val ref = resolvedType.declaredText()
         return when (resolvedType) {
-            is ResolvedType.PrimitiveType -> getDefaultValueForPrimitive(resolvedType.kind)
+            is ResolvedType.PrimitiveType -> getDefaultValueForPrimitive(resolvedType.kind, ref)
             is ResolvedType.ArrayType -> {
                 val componentModel = buildFieldValue(
                     resolvedType.componentType,
                     engine, docHelper, cache, option, maxDepth, depth, visited,
                     elementCounter = elementCounter
                 )
-                ObjectModel.array(componentModel)
+                ObjectModel.array(componentModel, ref)
             }
 
             is ResolvedType.ClassType -> {
                 val psiClass = resolvedType.psiClass
-                val qualifiedName = psiClass.qualifiedName
 
-                if (qualifiedName != null && SpecialTypeHandler.isDateTimeAsString(qualifiedName)) {
-                    return ObjectModel.single(JsonType.STRING)
-                }
-
+                // No date/time special case here: `TypeResolver` resolves every date/time FQN
+                // to a `UnresolvedType` (see `SpecialTypeHandler.resolveSpecialType`), so dates
+                // arrive on the `UnresolvedType` branch below — which answers `date`/`datetime`
+                // via `IrType.fromJavaType`. A `Single(STRING)` guard used to sit here and
+                // contradicted that branch while being unreachable; deleting it leaves one
+                // answer for dates and keeps both branches consistent if `TypeResolver` ever
+                // starts producing a `ClassType` for them.
                 if (isSimpleType(psiClass)) {
-                    getDefaultValueForSimpleType(psiClass)
+                    getDefaultValueForSimpleType(psiClass, ref)
                 } else if (isCollection(psiClass)) {
                     val elementType = resolvedType.typeArgs.firstOrNull()
                     val elementModel = if (elementType != null) {
@@ -955,8 +979,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                             option, maxDepth, depth, visited,
                             elementCounter = elementCounter
                         )
-                    } else ObjectModel.single(JsonType.OBJECT)
-                    ObjectModel.array(elementModel)
+                    } else ObjectModel.single(IrType.OBJECT)
+                    ObjectModel.array(elementModel, ref)
                 } else if (isMap(psiClass)) {
                     val keyType = resolvedType.typeArgs.getOrNull(0)
                     val valueType = resolvedType.typeArgs.getOrNull(1)
@@ -966,37 +990,44 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                             option, maxDepth, depth, visited,
                             elementCounter = elementCounter
                         )
-                    } else ObjectModel.single(JsonType.STRING)
+                    } else ObjectModel.single(IrType.STRING)
                     val valueModel = if (valueType != null) {
                         buildFieldValue(
                             valueType, engine, docHelper, cache,
                             option, maxDepth, depth, visited,
                             elementCounter = elementCounter
                         )
-                    } else ObjectModel.single(JsonType.OBJECT)
-                    ObjectModel.map(keyModel, valueModel)
+                    } else ObjectModel.single(IrType.OBJECT)
+                    ObjectModel.map(keyModel, valueModel, ref)
                 } else if (isEnum(psiClass)) {
                     // Delegate JSON type resolution to EnumValueResolver.
                     val resolver = EnumValueResolver.getInstance(project)
                     val resolution = resolver.resolve(psiClass)
-                    val jsonType = resolver.resolveJsonType(psiClass, resolution)
-                    ObjectModel.single(jsonType)
+                    val jsonType = resolver.resolveIrType(psiClass, resolution)
+                    ObjectModel.single(jsonType, ref)
                 } else {
                     val nestedContext = if (resolvedType.typeArgs.isNotEmpty()) {
                         GenericContext(TypeResolver.resolveGenericParams(psiClass, resolvedType.typeArgs))
                     } else {
                         GenericContext.EMPTY
                     }
+                    // A bail-out (depth/element limit) yields an object with no fields, so it
+                    // records no `ref`: claiming the class name while carrying none of its fields
+                    // would misrepresent the shape, and in OpenAPI would register a phantom
+                    // component under that name.
                     buildTypeObject(
                         psiClass, engine, docHelper, cache,
                         option, maxDepth, depth, visited, nestedContext,
-                        elementCounter = elementCounter
+                        elementCounter = elementCounter,
+                        ref = ref
                     ) ?: ObjectModel.emptyObject()
                 }
             }
 
-            is ResolvedType.UnresolvedType -> ObjectModel.single(JsonType.fromJavaType(resolvedType.canonicalText))
+            is ResolvedType.UnresolvedType -> ObjectModel.single(IrType.fromJavaType(resolvedType.canonicalText), ref)
             is ResolvedType.WildcardType -> {
+                // Deliberately reuses the bound's own model — and therefore the bound's own `ref`.
+                // The wildcard has no declaration of its own to record.
                 resolvedType.upper?.let {
                     buildFieldValue(
                         it, engine, docHelper, cache,
@@ -1008,18 +1039,9 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         }
     }
 
-    private fun getDefaultValueForPrimitive(kind: PrimitiveKind): ObjectModel.Single {
-        return when (kind) {
-            PrimitiveKind.BOOLEAN -> ObjectModel.single(JsonType.BOOLEAN)
-            PrimitiveKind.BYTE -> ObjectModel.single(JsonType.INT)
-            PrimitiveKind.CHAR -> ObjectModel.single(JsonType.STRING)
-            PrimitiveKind.SHORT -> ObjectModel.single(JsonType.SHORT)
-            PrimitiveKind.INT -> ObjectModel.single(JsonType.INT)
-            PrimitiveKind.LONG -> ObjectModel.single(JsonType.LONG)
-            PrimitiveKind.FLOAT -> ObjectModel.single(JsonType.FLOAT)
-            PrimitiveKind.DOUBLE -> ObjectModel.single(JsonType.DOUBLE)
-            PrimitiveKind.VOID -> ObjectModel.nullValue()
-        }
+    private fun getDefaultValueForPrimitive(kind: PrimitiveKind, ref: String? = null): ObjectModel.Single {
+        val jsonType = IrType.fromPrimitiveKind(kind) ?: return ObjectModel.nullValue()
+        return ObjectModel.single(jsonType, ref)
     }
 
     private fun isCollection(psiClass: PsiClass): Boolean = InheritanceHelper.isCollection(psiClass)
@@ -1030,45 +1052,29 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         return psiClass.isEnum || psiClass.supers.any { it.qualifiedName == ClassNameConstants.JAVA_LANG_ENUM }
     }
 
+    /**
+     * Whether [psiClass] maps to a JSON scalar rather than a structural object.
+     *
+     * [SpecialTypeHandler] already covers every file / date / **primitive-wrapper** FQN
+     * (`Integer`, `Long`, `Byte`, `Character`, …), so only the remaining JSON-native
+     * `java.lang` / `java.math` scalars have to be named here. They were previously spelled
+     * out alongside the wrappers, which duplicated `PrimitiveFamilies` and drifted silently.
+     */
     private fun isSimpleType(psiClass: PsiClass): Boolean {
         val qualifiedName = psiClass.qualifiedName ?: return false
-        return SpecialTypeHandler.isSpecialType(qualifiedName) ||
-                qualifiedName == "java.lang.String" ||
-                qualifiedName == "java.lang.Integer" ||
-                qualifiedName == "java.lang.Long" ||
-                qualifiedName == "java.lang.Double" ||
-                qualifiedName == "java.lang.Float" ||
-                qualifiedName == "java.lang.Boolean" ||
-                qualifiedName == "java.lang.Byte" ||
-                qualifiedName == "java.lang.Short" ||
-                qualifiedName == "java.lang.Character" ||
-                qualifiedName == "java.math.BigInteger" ||
-                qualifiedName == "java.math.BigDecimal"
+        return SpecialTypeHandler.isSpecialType(qualifiedName) || qualifiedName in JSON_NATIVE_TYPES
     }
 
-    private fun getDefaultValueForSimpleType(psiClass: PsiClass): ObjectModel.Single {
-        val qualifiedName = psiClass.qualifiedName ?: return ObjectModel.single(JsonType.OBJECT)
-        return when (qualifiedName) {
-            "java.lang.String", "java.lang.Character" -> ObjectModel.single(JsonType.STRING)
-            "java.lang.Integer", "java.lang.Byte" -> ObjectModel.single(JsonType.INT)
-            "java.lang.Long", "java.math.BigInteger" -> ObjectModel.single(JsonType.LONG)
-            "java.lang.Float" -> ObjectModel.single(JsonType.FLOAT)
-            "java.lang.Double", "java.math.BigDecimal" -> ObjectModel.single(JsonType.DOUBLE)
-            "java.lang.Boolean" -> ObjectModel.single(JsonType.BOOLEAN)
-            "java.lang.Short" -> ObjectModel.single(JsonType.SHORT)
-            else -> {
-                if (SpecialTypeHandler.isFileType(qualifiedName)) {
-                    ObjectModel.single(JsonType.FILE)
-                } else {
-                    val specialDefault = SpecialTypeHandler.getDefaultValueForSpecialType(qualifiedName)
-                    if (specialDefault != null) {
-                        ObjectModel.single(JsonType.STRING)
-                    } else {
-                        ObjectModel.single(JsonType.OBJECT)
-                    }
-                }
-            }
-        }
+    /**
+     * JSON type of a [isSimpleType] class. Delegates to [IrType.fromJavaType] — the single
+     * owner of the FQN → JSON vocabulary — instead of keeping a parallel FQN table here.
+     *
+     * Safe despite [IrType.fromJavaType]'s fuzzy suffix matching: the input is gated by
+     * [isSimpleType], so it is always one of a closed set of names for which the mapping is exact.
+     */
+    private fun getDefaultValueForSimpleType(psiClass: PsiClass, ref: String? = null): ObjectModel.Single {
+        val qualifiedName = psiClass.qualifiedName ?: return ObjectModel.single(IrType.OBJECT, ref)
+        return ObjectModel.single(IrType.fromJavaType(qualifiedName), ref)
     }
 
     /**

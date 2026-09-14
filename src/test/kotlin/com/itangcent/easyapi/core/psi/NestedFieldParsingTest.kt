@@ -408,7 +408,7 @@ class NestedFieldParsingTest : EasyApiLightCodeInsightFixtureTestCase() {
         // Add a field that references the same object (simulating circular reference from cache)
         fields["self"] = com.itangcent.easyapi.core.psi.model.FieldModel(model = obj)
         fields["name"] = com.itangcent.easyapi.core.psi.model.FieldModel(
-            model = ObjectModel.single(com.itangcent.easyapi.core.psi.type.JsonType.STRING)
+            model = ObjectModel.single(com.itangcent.easyapi.core.psi.type.IrType.STRING)
         )
 
         // Should not stack overflow
@@ -432,7 +432,7 @@ class NestedFieldParsingTest : EasyApiLightCodeInsightFixtureTestCase() {
         val obj = ObjectModel.Object(fields)
         fields["self"] = com.itangcent.easyapi.core.psi.model.FieldModel(model = obj)
         fields["name"] = com.itangcent.easyapi.core.psi.model.FieldModel(
-            model = ObjectModel.single(com.itangcent.easyapi.core.psi.type.JsonType.STRING)
+            model = ObjectModel.single(com.itangcent.easyapi.core.psi.type.IrType.STRING)
         )
 
         // Should not stack overflow

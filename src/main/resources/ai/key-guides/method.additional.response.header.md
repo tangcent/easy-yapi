@@ -1,6 +1,7 @@
 ---
 id: method.additional.response.header
 key: method.additional.response.header
+scheme-stamp: af5e3d78adea
 title: Additional response header
 cue: JSON object header attached to every matching endpoint's response
 ---

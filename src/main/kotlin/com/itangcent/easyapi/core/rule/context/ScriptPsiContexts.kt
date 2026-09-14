@@ -91,9 +91,32 @@ interface ClassContext : ItContext {
     fun isInterface(): Boolean
     fun isAnnotationType(): Boolean
     fun isEnum(): Boolean
+
+    /**
+     * Whether this class *is* a primitive keyword (`int`, `boolean`, …).
+     *
+     * Always `false` for a [ClassContext]: a PSI class cannot be named by a reserved
+     * keyword. Primitives and their wrappers are only observable through [type]
+     * ([ScriptTypeContext]), where [ScriptTypeContext.isPrimitive] and
+     * [ScriptTypeContext.isPrimitiveWrapper] split the two.
+     */
     fun isPrimitive(): Boolean
+
+    /**
+     * Whether this class is a boxed primitive wrapper (`java.lang.Integer`, …).
+     *
+     * Compared against the **fully qualified** class name — the shared
+     * [SpecialTypeHandler] table is keyed by FQN, so a class merely *named* `Integer`
+     * (e.g. `com.test.Integer`) must not match.
+     */
     fun isPrimitiveWrapper(): Boolean
+
+    /**
+     * Whether this class is a "normal" scalar leaf: a boxed wrapper, `java.lang.String`
+     * or `java.lang.Object`.
+     */
     fun isNormalType(): Boolean
+
     fun qualifiedName(): String?
     fun packageName(): String?
     fun isPublic(): Boolean
@@ -295,13 +318,18 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
 
     override fun isEnum(): Boolean = readSync { psiClass().isEnum }
 
-    override fun isPrimitive(): Boolean = SpecialTypeHandler.isPrimitive(name())
+    /** Always `false` — see [ClassContext.isPrimitive]. */
+    override fun isPrimitive(): Boolean = false
 
-    override fun isPrimitiveWrapper(): Boolean = SpecialTypeHandler.isPrimitiveWrapper(name())
+    // NOTE: must compare the *qualified* name. These tables are keyed by FQN, while
+    // `name()` here is the simple name (inherited from ScriptItContext) — using it made
+    // both predicates unconditionally false for real JDK types such as java.lang.Integer,
+    // a bug the (negative-only) tests never caught.
+    override fun isPrimitiveWrapper(): Boolean = SpecialTypeHandler.isPrimitiveWrapper(qualifiedName())
 
     override fun isNormalType(): Boolean {
-        val n = name()
-        return isPrimitive() || isPrimitiveWrapper() || n == "java.lang.String" || n == "java.lang.Object"
+        val qn = qualifiedName() ?: return false
+        return isPrimitiveWrapper() || qn == "java.lang.String" || qn == "java.lang.Object"
     }
 
     override fun qualifiedName(): String? = readSync { psiClass().qualifiedName }
@@ -729,34 +757,38 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
         return resolvedType is ResolvedType.ArrayType
     }
 
+    /**
+     * True only for a **primitive keyword** (`int`, `boolean`, …) — not for its boxed
+     * wrapper. [isPrimitive] and [isPrimitiveWrapper] are mutually exclusive: `int` is
+     * primitive, `java.lang.Integer` is a wrapper.
+     *
+     * Read from [ResolvedType.PrimitiveType.boxed], which
+     * [SpecialTypeHandler.resolveSpecialType] and `TypeResolver.resolveFromCanonicalText`
+     * set when the declaration was a wrapper class.
+     */
     fun isPrimitive(): Boolean {
-        return resolvedType is ResolvedType.PrimitiveType
+        val type = resolvedType
+        return type is ResolvedType.PrimitiveType && !type.boxed
     }
 
+    /**
+     * True for a boxed wrapper (`java.lang.Integer`, …) — the counterpart of [isPrimitive].
+     */
     fun isPrimitiveWrapper(): Boolean {
-        return when (resolvedType) {
-            is ResolvedType.ClassType -> {
-                val name = name()
-                name == "java.lang.Integer" ||
-                        name == "java.lang.Long" ||
-                        name == "java.lang.Float" ||
-                        name == "java.lang.Double" ||
-                        name == "java.lang.Boolean" ||
-                        name == "java.lang.Byte" ||
-                        name == "java.lang.Short" ||
-                        name == "java.lang.Character"
-            }
-
-            else -> false
-        }
+        val type = resolvedType
+        return type is ResolvedType.PrimitiveType && type.boxed
     }
 
+    /**
+     * Whether this type is a scalar leaf: any primitive or wrapper, `java.lang.String`
+     * or `java.lang.Object`.
+     */
     fun isNormalType(): Boolean {
         return when (resolvedType) {
             is ResolvedType.PrimitiveType -> true
             is ResolvedType.ClassType -> {
                 val name = name()
-                isPrimitiveWrapper() || name == "java.lang.String" || name == "java.lang.Object"
+                name == "java.lang.String" || name == "java.lang.Object"
             }
 
             else -> false

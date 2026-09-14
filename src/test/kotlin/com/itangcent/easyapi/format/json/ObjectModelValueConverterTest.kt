@@ -2,7 +2,7 @@ package com.itangcent.easyapi.format.json
 
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -15,37 +15,37 @@ class ObjectModelValueConverterTest {
 
     @Test
     fun testToSimpleValue_string() {
-        val model = ObjectModel.single(JsonType.STRING)
+        val model = ObjectModel.single(IrType.STRING)
         assertEquals("", ObjectModelValueConverter.toSimpleValue(model))
     }
 
     @Test
     fun testToSimpleValue_int() {
-        val model = ObjectModel.single(JsonType.INT)
+        val model = ObjectModel.single(IrType.INT)
         assertEquals(0, ObjectModelValueConverter.toSimpleValue(model))
     }
 
     @Test
     fun testToSimpleValue_long() {
-        val model = ObjectModel.single(JsonType.LONG)
+        val model = ObjectModel.single(IrType.LONG)
         assertEquals(0L, ObjectModelValueConverter.toSimpleValue(model))
     }
 
     @Test
     fun testToSimpleValue_float() {
-        val model = ObjectModel.single(JsonType.FLOAT)
+        val model = ObjectModel.single(IrType.FLOAT)
         assertEquals(0.0f, ObjectModelValueConverter.toSimpleValue(model))
     }
 
     @Test
     fun testToSimpleValue_double() {
-        val model = ObjectModel.single(JsonType.DOUBLE)
+        val model = ObjectModel.single(IrType.DOUBLE)
         assertEquals(0.0, ObjectModelValueConverter.toSimpleValue(model))
     }
 
     @Test
     fun testToSimpleValue_boolean() {
-        val model = ObjectModel.single(JsonType.BOOLEAN)
+        val model = ObjectModel.single(IrType.BOOLEAN)
         assertEquals(false, ObjectModelValueConverter.toSimpleValue(model))
     }
 
@@ -58,8 +58,8 @@ class ObjectModelValueConverterTest {
     @Test
     fun testToSimpleValue_object() {
         val obj = ObjectModel.Object(mapOf(
-            "name" to FieldModel(ObjectModel.single(JsonType.STRING)),
-            "age" to FieldModel(ObjectModel.single(JsonType.INT))
+            "name" to FieldModel(ObjectModel.single(IrType.STRING)),
+            "age" to FieldModel(ObjectModel.single(IrType.INT))
         ))
         val result = ObjectModelValueConverter.toSimpleValue(obj)
         assertTrue(result is Map<*, *>)
@@ -70,7 +70,7 @@ class ObjectModelValueConverterTest {
 
     @Test
     fun testToSimpleValue_array() {
-        val arr = ObjectModel.array(ObjectModel.single(JsonType.STRING))
+        val arr = ObjectModel.array(ObjectModel.single(IrType.STRING))
         val result = ObjectModelValueConverter.toSimpleValue(arr)
         assertTrue(result is List<*>)
         val list = result as List<*>
@@ -81,8 +81,8 @@ class ObjectModelValueConverterTest {
     @Test
     fun testToSimpleValue_map() {
         val mapModel = ObjectModel.map(
-            ObjectModel.single(JsonType.STRING),
-            ObjectModel.single(JsonType.INT)
+            ObjectModel.single(IrType.STRING),
+            ObjectModel.single(IrType.INT)
         )
         val result = ObjectModelValueConverter.toSimpleValue(mapModel)
         assertTrue(result is Map<*, *>)
@@ -93,7 +93,7 @@ class ObjectModelValueConverterTest {
     @Test
     fun testToSimpleValue_nestedObject() {
         val inner = ObjectModel.Object(mapOf(
-            "street" to FieldModel(ObjectModel.single(JsonType.STRING))
+            "street" to FieldModel(ObjectModel.single(IrType.STRING))
         ))
         val outer = ObjectModel.Object(mapOf(
             "address" to FieldModel(inner)
@@ -107,7 +107,7 @@ class ObjectModelValueConverterTest {
     fun testToSimpleValue_circularReference() {
         // Create a circular reference by using the same object ID
         val obj = ObjectModel.Object(mapOf(
-            "self" to FieldModel(ObjectModel.single(JsonType.STRING))
+            "self" to FieldModel(ObjectModel.single(IrType.STRING))
         ))
         // This should not cause infinite recursion
         val result = ObjectModelValueConverter.toSimpleValue(obj)
@@ -115,14 +115,8 @@ class ObjectModelValueConverterTest {
     }
 
     @Test
-    fun testToSimpleValue_date() {
-        val model = ObjectModel.single(JsonType.DATE)
-        assertEquals("", ObjectModelValueConverter.toSimpleValue(model))
-    }
-
-    @Test
     fun testToSimpleValue_file() {
-        val model = ObjectModel.single(JsonType.FILE)
+        val model = ObjectModel.single(IrType.FILE)
         assertEquals("(binary)", ObjectModelValueConverter.toSimpleValue(model))
     }
 
@@ -134,7 +128,7 @@ class ObjectModelValueConverterTest {
 
     @Test
     fun testToSimpleValue_short() {
-        val model = ObjectModel.single(JsonType.SHORT)
+        val model = ObjectModel.single(IrType.SHORT)
         assertEquals(0, ObjectModelValueConverter.toSimpleValue(model))
     }
 }

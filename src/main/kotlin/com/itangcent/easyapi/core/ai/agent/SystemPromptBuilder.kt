@@ -73,9 +73,8 @@ object SystemPromptBuilder : IdeaLog {
      * - [EntryPath.REACTIVE] → base prompt + detection index + rule index +
      *   L0 rule-key name menu. Agent has a menu to browse; pulls detail on
      *   demand.
-     * - [EntryPath.TASK_LIST_MAGIC] / [EntryPath.TASK_LIST_PROGRAMMATIC]
-     *   → base prompt only. Detection/rule detail is pulled inside tasks
-     *   as needed.
+     * - [EntryPath.TASK_LIST_PROGRAMMATIC] → base prompt only.
+     *   Detection/rule detail is pulled inside tasks as needed.
      * - [EntryPath.SUB_AGENT] → the sub-agent base prompt only. It advertises
      *   only the sub-agent's registered tools (perception + `report_findings`)
      *   and omits the orchestrator/Reactive tools it cannot call, so the model
@@ -100,7 +99,7 @@ object SystemPromptBuilder : IdeaLog {
             indexMessage("key-guides", amb),
             keyIndexMessage()
         )
-        EntryPath.TASK_LIST_MAGIC, EntryPath.TASK_LIST_PROGRAMMATIC -> listOf(build())
+        EntryPath.TASK_LIST_PROGRAMMATIC -> listOf(build())
         EntryPath.SUB_AGENT -> listOf(buildSubAgent())
     }
 

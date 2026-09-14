@@ -4,7 +4,7 @@ import com.itangcent.easyapi.core.export.MutableExtension
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.FieldOption
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.core.util.json.GsonUtils
 import com.google.gson.JsonParser
 import org.junit.Assert.*
@@ -30,8 +30,8 @@ class JsonSchemaBuilderTest {
     fun testBuildSimpleObject() {
         val model = ObjectModel.Object(
             mapOf(
-                "code" to FieldModel(ObjectModel.Single(JsonType.INT), comment = "status code"),
-                "msg" to FieldModel(ObjectModel.Single(JsonType.STRING), comment = "message"),
+                "code" to FieldModel(ObjectModel.Single(IrType.INT), comment = "status code"),
+                "msg" to FieldModel(ObjectModel.Single(IrType.STRING), comment = "message"),
                 "data" to FieldModel(ObjectModel.Object(emptyMap()), comment = "response data")
             )
         )
@@ -80,13 +80,13 @@ class JsonSchemaBuilderTest {
                 "user" to FieldModel(
                     ObjectModel.Object(
                         mapOf(
-                            "name" to FieldModel(ObjectModel.Single(JsonType.STRING), comment = "user name"),
-                            "age" to FieldModel(ObjectModel.Single(JsonType.INT), comment = "user age")
+                            "name" to FieldModel(ObjectModel.Single(IrType.STRING), comment = "user name"),
+                            "age" to FieldModel(ObjectModel.Single(IrType.INT), comment = "user age")
                         )
                     ),
                     comment = "user info"
                 ),
-                "status" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                "status" to FieldModel(ObjectModel.Single(IrType.STRING))
             )
         )
         val schema = parseJson(builder.build(model))
@@ -113,9 +113,9 @@ class JsonSchemaBuilderTest {
     fun testBuildWithRequiredFields() {
         val model = ObjectModel.Object(
             mapOf(
-                "id" to FieldModel(ObjectModel.Single(JsonType.LONG), required = true, comment = "primary key"),
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), required = true),
-                "nickname" to FieldModel(ObjectModel.Single(JsonType.STRING), required = false)
+                "id" to FieldModel(ObjectModel.Single(IrType.LONG), required = true, comment = "primary key"),
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), required = true),
+                "nickname" to FieldModel(ObjectModel.Single(IrType.STRING), required = false)
             )
         )
         val schema = parseJson(builder.build(model))
@@ -132,8 +132,8 @@ class JsonSchemaBuilderTest {
     fun testBuildWithDefaultValue() {
         val model = ObjectModel.Object(
             mapOf(
-                "page" to FieldModel(ObjectModel.Single(JsonType.INT), defaultValue = "1"),
-                "size" to FieldModel(ObjectModel.Single(JsonType.INT), defaultValue = "20")
+                "page" to FieldModel(ObjectModel.Single(IrType.INT), defaultValue = "1"),
+                "size" to FieldModel(ObjectModel.Single(IrType.INT), defaultValue = "20")
             )
         )
         val schema = parseJson(builder.build(model))
@@ -153,8 +153,8 @@ class JsonSchemaBuilderTest {
     fun testBuildWithMock() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), extensions = MutableExtension().apply { this["mock"] = "@cname" }),
-                "id" to FieldModel(ObjectModel.Single(JsonType.INT), extensions = MutableExtension().apply { this["mock"] = "@integer(1,100)" })
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), extensions = MutableExtension().apply { this["mock"] = "@cname" }),
+                "id" to FieldModel(ObjectModel.Single(IrType.INT), extensions = MutableExtension().apply { this["mock"] = "@integer(1,100)" })
             )
         )
         val schema = parseJson(builder.build(model))
@@ -173,7 +173,7 @@ class JsonSchemaBuilderTest {
         val model = ObjectModel.Object(
             mapOf(
                 "status" to FieldModel(
-                    ObjectModel.Single(JsonType.INT),
+                    ObjectModel.Single(IrType.INT),
                     comment = "status code",
                     options = listOf(
                         FieldOption(0, "disabled"),
@@ -204,8 +204,8 @@ class JsonSchemaBuilderTest {
         val model = ObjectModel.Array(
             ObjectModel.Object(
                 mapOf(
-                    "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                    "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                    "id" to FieldModel(ObjectModel.Single(IrType.INT)),
+                    "name" to FieldModel(ObjectModel.Single(IrType.STRING))
                 )
             )
         )
@@ -224,8 +224,8 @@ class JsonSchemaBuilderTest {
     @Test
     fun testBuildMapModel() {
         val model = ObjectModel.MapModel(
-            ObjectModel.Single(JsonType.STRING),
-            ObjectModel.Single(JsonType.INT)
+            ObjectModel.Single(IrType.STRING),
+            ObjectModel.Single(IrType.INT)
         )
         val schema = parseJson(builder.build(model))
 
@@ -238,7 +238,7 @@ class JsonSchemaBuilderTest {
     @Test
     fun testBuildWithRootDescription() {
         val model = ObjectModel.Object(
-            mapOf("name" to FieldModel(ObjectModel.Single(JsonType.STRING)))
+            mapOf("name" to FieldModel(ObjectModel.Single(IrType.STRING)))
         )
         val schema = parseJson(builder.build(model, rootDesc = "User object"))
 
@@ -250,8 +250,8 @@ class JsonSchemaBuilderTest {
     fun testBuildOutputIsValidJson() {
         val model = ObjectModel.Object(
             mapOf(
-                "code" to FieldModel(ObjectModel.Single(JsonType.INT), comment = "status code"),
-                "msg" to FieldModel(ObjectModel.Single(JsonType.STRING)),
+                "code" to FieldModel(ObjectModel.Single(IrType.INT), comment = "status code"),
+                "msg" to FieldModel(ObjectModel.Single(IrType.STRING)),
                 "data" to FieldModel(ObjectModel.Object(emptyMap()))
             )
         )
@@ -271,7 +271,7 @@ class JsonSchemaBuilderTest {
         val model = ObjectModel.Object(
             mapOf(
                 "score" to FieldModel(
-                    ObjectModel.Single(JsonType.DOUBLE),
+                    ObjectModel.Single(IrType.DOUBLE),
                     advanced = mapOf("minimum" to 0, "maximum" to 100)
                 )
             )
@@ -305,7 +305,7 @@ class JsonSchemaBuilderTest {
     fun testBuildAsMap() {
         val model = ObjectModel.Object(
             mapOf(
-                "name" to FieldModel(ObjectModel.Single(JsonType.STRING), comment = "user name")
+                "name" to FieldModel(ObjectModel.Single(IrType.STRING), comment = "user name")
             )
         )
         val schemaMap = builder.buildAsMap(model)

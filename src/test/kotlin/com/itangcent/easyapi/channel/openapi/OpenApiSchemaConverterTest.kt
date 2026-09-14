@@ -3,6 +3,8 @@ package com.itangcent.easyapi.channel.openapi
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.FieldOption
 import com.itangcent.easyapi.core.psi.model.ObjectModel
+import com.itangcent.easyapi.core.psi.type.IrType
+import com.itangcent.easyapi.core.rule.parser.toSchemaType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -19,180 +21,136 @@ import org.junit.Test
 class OpenApiSchemaConverterTest {
 
     // ─── primitive type table ──────────────────────────────────────
+    //
+    // `ObjectModel.Single.type` has a CLOSED vocabulary: every construction site in `main/`
+    // normalises through `IrType.fromJavaType` / `fromPsiType` / `fromPrimitiveKind` /
+    // `resolveIrType`, so only the values in [REACHABLE_SINGLE_TYPES] can ever reach
+    // `primitiveSchema`. These tests enumerate that domain — not the Java type spellings the
+    // old substring matcher tolerated (`byte[]`, `LocalDateTime`, …, none of which production
+    // can produce) — and assert every one lands on a legal OAS 3.0.3 schema.
 
     @Test
-    fun primitiveStringMapsToStringWithNullFormat() {
-        val schema = converter().convert(ObjectModel.single("string"))!!
+    fun reachableSingleTypesMapToTheExpectedOasSchema() {
+        // Drift guard: adding a `IrType` constant must force a decision about its OAS shape.
+        val unmapped = REACHABLE_SINGLE_TYPES - EXPECTED_PRIMITIVE_SCHEMAS.keys
+        assertTrue("IrType values with no OAS mapping: $unmapped", unmapped.isEmpty())
+
+        for (type in REACHABLE_SINGLE_TYPES) {
+            val expected = EXPECTED_PRIMITIVE_SCHEMAS.getValue(type)
+            val schema = converter().convert(ObjectModel.single(type))!!
+
+            assertEquals("type for '$type'", expected.first, schema.type)
+            assertEquals("format for '$type'", expected.second, schema.format)
+            assertTrue(
+                "'$type' produced type '${schema.type}', not a legal OAS 3.0.3 type",
+                schema.type in OAS_SCHEMA_TYPES,
+            )
+        }
+    }
+
+    /**
+     * The OAS table and the draft-04 `toSchemaType` — the table the YApi channel emits —
+     * are deliberately separate, because OAS denies `type: "null"` and needs `items` on an
+     * `array`. This pins the *relationship* between them: the same `type` for every reachable
+     * value, with the draft-04-only `"null"` as the single, documented divergence.
+     *
+     * The failure mode guarded here is the silent one — someone gives `float` a `type` of
+     * `integer` on one side, or adds an IR type to one table only, and YApi and OpenAPI start
+     * describing the same field differently.
+     */
+    @Test
+    fun oasTypeAgreesWithTheDraft04VocabularyExceptForNull() {
+        for (type in REACHABLE_SINGLE_TYPES) {
+            val oas = converter().convert(ObjectModel.single(type))!!.type
+            if (type == "null") {
+                assertEquals("draft-04's `null` is illegal in OAS and must degrade", "string", oas)
+                continue
+            }
+            assertEquals(
+                "'$type': the two dialect tables must agree on `type`",
+                toSchemaType(type),
+                oas,
+            )
+        }
+    }
+
+    @Test
+    fun singleArrayCarriesItemsBecauseOasRequiresThemForTypeArray() {
+        // OAS 3.0.3: "items MUST be present if the type is array".
+        // `Single("array")` means "a container whose element type was lost" — `fromJavaType`
+        // returns it for unresolved list/set/collection spellings — so the widest legal
+        // element schema is the honest choice.
+        val schema = converter().convert(ObjectModel.single(IrType.ARRAY))!!
+        assertEquals("array", schema.type)
+        assertNotNull("type=array is invalid without items", schema.items)
+    }
+
+    @Test
+    fun singleNullDoesNotLeakTheDraft04OnlyNullTypeIntoOas() {
+        // `"null"` is a legal JSON Schema draft-04 type — and draft-04 is what the YApi channel
+        // declares in its `$schema` — but OAS 3.0.3 limits `type` to six values. It must
+        // degrade rather than emit `{"type": "null"}`.
+        val schema = converter().convert(ObjectModel.single("null"))!!
         assertEquals("string", schema.type)
         assertNull(schema.format)
     }
 
     @Test
-    fun primitiveIntMapsToIntegerInt32() {
-        val schema = converter().convert(ObjectModel.single("int"))!!
-        assertEquals("integer", schema.type)
-        assertEquals("int32", schema.format)
-    }
-
-    @Test
-    fun primitiveIntegerMapsToIntegerInt32() {
-        val schema = converter().convert(ObjectModel.single("integer"))!!
-        assertEquals("integer", schema.type)
-        assertEquals("int32", schema.format)
-    }
-
-    @Test
-    fun primitiveLongMapsToIntegerInt64() {
-        val schema = converter().convert(ObjectModel.single("long"))!!
-        assertEquals("integer", schema.type)
-        assertEquals("int64", schema.format)
-    }
-
-    @Test
-    fun primitiveShortMapsToIntegerInt32() {
-        val schema = converter().convert(ObjectModel.single("short"))!!
-        assertEquals("integer", schema.type)
-        assertEquals("int32", schema.format)
-    }
-
-    @Test
-    fun primitiveByteMapsToIntegerInt32() {
-        val schema = converter().convert(ObjectModel.single("byte"))!!
-        assertEquals("integer", schema.type)
-        assertEquals("int32", schema.format)
-    }
-
-    @Test
-    fun primitiveFloatMapsToNumberFloat() {
-        val schema = converter().convert(ObjectModel.single("float"))!!
-        assertEquals("number", schema.type)
-        assertEquals("float", schema.format)
-    }
-
-    @Test
-    fun primitiveDoubleMapsToNumberDouble() {
-        val schema = converter().convert(ObjectModel.single("double"))!!
-        assertEquals("number", schema.type)
-        assertEquals("double", schema.format)
-    }
-
-    @Test
-    fun primitiveDecimalMapsToNumberDouble() {
-        val schema = converter().convert(ObjectModel.single("decimal"))!!
-        assertEquals("number", schema.type)
-        assertEquals("double", schema.format)
-    }
-
-    @Test
-    fun primitiveBigdecimalMapsToNumberDouble() {
-        val schema = converter().convert(ObjectModel.single("bigdecimal"))!!
-        assertEquals("number", schema.type)
-        assertEquals("double", schema.format)
-    }
-
-    @Test
-    fun primitiveNumberMapsToNumberDouble() {
-        val schema = converter().convert(ObjectModel.single("number"))!!
-        assertEquals("number", schema.type)
-        assertEquals("double", schema.format)
-    }
-
-    @Test
-    fun primitiveBooleanMapsToBooleanWithNullFormat() {
-        val schema = converter().convert(ObjectModel.single("boolean"))!!
-        assertEquals("boolean", schema.type)
-        assertNull(schema.format)
-    }
-
-    @Test
-    fun primitiveDateMapsToStringDate() {
-        val schema = converter().convert(ObjectModel.single("date"))!!
-        assertEquals("string", schema.type)
-        assertEquals("date", schema.format)
-    }
-
-    @Test
-    fun primitiveDatetimeMapsToStringDateTime() {
-        val schema = converter().convert(ObjectModel.single("datetime"))!!
-        assertEquals("string", schema.type)
-        assertEquals("date-time", schema.format)
-    }
-
-    @Test
-    fun primitiveDateTimeWithHyphenMapsToStringDateTime() {
-        val schema = converter().convert(ObjectModel.single("date-time"))!!
-        assertEquals("string", schema.type)
-        assertEquals("date-time", schema.format)
-    }
-
-    @Test
-    fun primitiveTimestampMapsToStringDateTime() {
-        val schema = converter().convert(ObjectModel.single("timestamp"))!!
-        assertEquals("string", schema.type)
-        assertEquals("date-time", schema.format)
-    }
-
-    @Test
-    fun primitiveInstantMapsToStringDateTime() {
-        val schema = converter().convert(ObjectModel.single("instant"))!!
-        assertEquals("string", schema.type)
-        assertEquals("date-time", schema.format)
-    }
-
-    @Test
-    fun primitiveZoneddatetimeMapsToStringDateTime() {
-        val schema = converter().convert(ObjectModel.single("zoneddatetime"))!!
-        assertEquals("string", schema.type)
-        assertEquals("date-time", schema.format)
-    }
-
-    @Test
-    fun primitiveUuidMapsToStringUuid() {
-        val schema = converter().convert(ObjectModel.single("uuid"))!!
-        assertEquals("string", schema.type)
-        assertEquals("uuid", schema.format)
-    }
-
-    @Test
-    fun primitiveByteArrayMapsToStringBinary() {
-        val schema = converter().convert(ObjectModel.single("byte[]"))!!
-        assertEquals("string", schema.type)
-        assertEquals("binary", schema.format)
-    }
-
-    @Test
-    fun primitiveBinaryMapsToStringBinary() {
-        val schema = converter().convert(ObjectModel.single("binary"))!!
-        assertEquals("string", schema.type)
-        assertEquals("binary", schema.format)
-    }
-
-    @Test
-    fun primitiveCharMapsToStringWithNullFormat() {
-        val schema = converter().convert(ObjectModel.single("char"))!!
-        assertEquals("string", schema.type)
-        assertNull(schema.format)
-    }
-
-    @Test
-    fun primitiveCharacterMapsToStringWithNullFormat() {
-        val schema = converter().convert(ObjectModel.single("character"))!!
-        assertEquals("string", schema.type)
-        assertNull(schema.format)
-    }
-
-    @Test
-    fun primitiveUnknownTypeDefaultsToStringWithNullFormat() {
+    fun unknownSingleTypeDegradesToStringInsteadOfBeingGuessed() {
+        // Total-function safety net: a third-party classExporter/channel extension can hand us a
+        // `Single` carrying an arbitrary string. It has no known OAS shape, so it must degrade to
+        // `string` rather than be pattern-matched into a confident-but-wrong answer.
         val schema = converter().convert(ObjectModel.single("totallyUnknownThing"))!!
         assertEquals("string", schema.type)
         assertNull(schema.format)
     }
 
+    // ─── format derived from ref (the retired date/uuid words live here now) ──
+
+    /**
+     * The IR vocabulary has no date/uuid words — the declaration (`ref`) is the ground truth,
+     * and the OAS `format` annotation is derived from it. Only the `java.time` types whose
+     * conventional serialization is an ISO-8601 string are in the table, plus `java.util.UUID`.
+     */
     @Test
-    fun primitiveTypeMatchIsCaseInsensitive() {
-        val schema = converter().convert(ObjectModel.single("INTEGER"))!!
+    fun stringFieldsDeriveTheOasFormatFromTheDeclaredRef() {
+        fun formatOf(ref: String?) = converter().convert(ObjectModel.single(IrType.STRING, ref))!!.format
+        assertEquals("date", formatOf("java.time.LocalDate"))
+        assertEquals("date-time", formatOf("java.time.LocalDateTime"))
+        assertEquals("date-time", formatOf("java.time.OffsetDateTime"))
+        assertEquals("date-time", formatOf("java.time.ZonedDateTime"))
+        assertEquals("uuid", formatOf("java.util.UUID"))
+    }
+
+    /**
+     * Jackson's default for these is an epoch *number*, so a `format: date-time` would describe
+     * a wire shape they do not have — they carry no format even when converted to a string.
+     */
+    @Test
+    fun epochSerializingDeclarationsCarryNoFormat() {
+        fun formatOf(ref: String?) = converter().convert(ObjectModel.single(IrType.STRING, ref))!!.format
+        assertNull(formatOf("java.util.Date"))
+        assertNull(formatOf("java.util.Calendar"))
+        assertNull(formatOf("java.sql.Timestamp"))
+        assertNull(formatOf("java.time.Instant"))
+    }
+
+    /**
+     * The ref table answers only when the word is `string`: a project mapping a date type to
+     * `long` (epoch timestamps, `json.rule.convert[X]=long`) is unaffected by the derivation.
+     */
+    @Test
+    fun formatDerivationRequiresTheStringWord() {
+        val schema = converter().convert(ObjectModel.single(IrType.LONG, "java.time.LocalDateTime"))!!
         assertEquals("integer", schema.type)
-        assertEquals("int32", schema.format)
+        assertEquals("int64", schema.format)
+    }
+
+    @Test
+    fun unknownAndMissingRefsCarryNoFormat() {
+        fun formatOf(ref: String?) = converter().convert(ObjectModel.single(IrType.STRING, ref))!!.format
+        assertNull(formatOf("com.acme.MyStringLike"))
+        assertNull(formatOf(null))
     }
 
     // ─── Object with fields + required ────────────────────────────
@@ -372,6 +330,57 @@ class OpenApiSchemaConverterTest {
     }
 
     @Test
+    fun nestedObjectNamesItselfThroughItsOwnRef() {
+        // The endpoint metadata names the top-level body only, so a nested class is converted
+        // with no `nameHint` at all. Before the converter could fall back to `ref`, such a class
+        // had no name and was therefore inlined into every place it appeared — and if it was
+        // *also* a top-level type it ended up in the document twice, once inline and once as a
+        // component under the other name.
+        val user = ObjectModel.Object(
+            linkedMapOf("id" to FieldModel(model = ObjectModel.single("long"))),
+            ref = "com.acme.model.User",
+        )
+        val envelope = ObjectModel.Object(
+            linkedMapOf("data" to FieldModel(model = user)),
+            ref = "com.acme.model.Result",
+        )
+        val converter = converter()
+
+        val schema = converter.convert(envelope, nameHint = "Result")!!
+
+        // The top-level body still takes the caller's name...
+        assertEquals("#/components/schemas/Result", schema.`$ref`)
+        val schemas = converter.buildComponents().schemas!!
+        // ...but the nested class now registers under its own *simple* name (package stripped),
+        // and the field points at it instead of inlining a second copy.
+        assertTrue(schemas.containsKey("User"))
+        assertEquals(
+            "#/components/schemas/User",
+            schemas["Result"]!!.properties!!["data"]!!.`$ref`
+        )
+
+        // Referencing the same class at top level reuses the component the nested visit created
+        // rather than registering a duplicate.
+        val topLevel = converter.convert(user, nameHint = "User")!!
+        assertEquals("#/components/schemas/User", topLevel.`$ref`)
+        assertEquals(setOf("Result", "User"), schemas.keys)
+    }
+
+    @Test
+    fun anObjectWithNoRefAndNoNameHintIsStillInlined() {
+        // The fallback is not a licence to invent a name: nothing declared this shape, so it
+        // stays anonymous.
+        val anonymous = ObjectModel.Object(
+            linkedMapOf("id" to FieldModel(model = ObjectModel.single("long")))
+        )
+
+        val schema = converter().convert(anonymous, nameHint = null)!!
+
+        assertEquals("object", schema.type)
+        assertNull(schema.`$ref`)
+    }
+
+    @Test
     fun nameHintPresentSecondUseSameShapeReturnsExistingDollarRefWithoutDuplicate() {
         val model1 = ObjectModel.Object(
             linkedMapOf("id" to FieldModel(model = ObjectModel.single("long")))
@@ -489,5 +498,38 @@ class OpenApiSchemaConverterTest {
         val node = ObjectModel.Object(fields = fields)
         fields["next"] = FieldModel(model = node)
         return node
+    }
+
+    private companion object {
+        /** The six `type` values OAS 3.0.3 allows — `null` is deliberately absent. */
+        private val OAS_SCHEMA_TYPES = setOf(
+            "string", "number", "integer", "boolean", "array", "object",
+        )
+
+        /**
+         * Every value [ObjectModel.Single.type] can actually hold: `IrType`'s own vocabulary
+         * plus the two `fromJavaType` spellings that sit outside it — the file-array marker
+         * `file[]` and the `null` placeholder produced by `ObjectModel.nullValue()`.
+         */
+        private val REACHABLE_SINGLE_TYPES = IrType.ALL_TYPES + setOf("file[]", "null")
+
+        /** Expected OAS `(type, format)` for each reachable value. */
+        private val EXPECTED_PRIMITIVE_SCHEMAS: Map<String, Pair<String, String?>> = mapOf(
+            IrType.STRING to ("string" to null),
+            IrType.FILE to ("string" to null),
+            // Lossy but unchanged: the model has already dropped the element type here, and
+            // `type: array` would need `items` to say anything more precise.
+            "file[]" to ("string" to null),
+            IrType.SHORT to ("integer" to "int32"),
+            IrType.INT to ("integer" to "int32"),
+            IrType.LONG to ("integer" to "int64"),
+            IrType.FLOAT to ("number" to "float"),
+            IrType.DOUBLE to ("number" to "double"),
+            IrType.BOOLEAN to ("boolean" to null),
+            IrType.ARRAY to ("array" to null),
+            IrType.OBJECT to ("object" to null),
+            // Legal in JSON Schema draft-04, illegal in OAS 3.0.3 → must degrade.
+            "null" to ("string" to null),
+        )
     }
 }

@@ -9,7 +9,8 @@ import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.logging.console
 import com.itangcent.easyapi.core.psi.helper.DocHelper
 import com.itangcent.easyapi.core.psi.model.FieldOption
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
+import com.itangcent.easyapi.core.psi.type.TypeNameComparison
 import com.itangcent.easyapi.core.rule.RuleKeys
 import com.itangcent.easyapi.core.rule.engine.RuleEngine
 import com.itangcent.easyapi.core.settings.module.ParsingOutputSettings
@@ -40,8 +41,8 @@ import com.itangcent.easyapi.core.settings.settings
  * 3. **`INTELLIGENT` heuristics** (mode-gated):
  *    - Case 1 (`context == null`): exactly one non-static non-enum instance
  *      field → [ValueField.Instance]
- *    - Case 2 (`context != null`): adapt `findEnumFieldByType` logic
- *      (type + name coincidence)
+ *    - Case 2 (`context != null`): [findEnumFieldByType] — same-kind type
+ *      match, then name coincidence
  * 4. **Fallback** → [ValueField.Name] (Spring default).
  *
  * Annotation intent enters at step 1 *via config*, so it
@@ -265,11 +266,16 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
     }
 
     /**
-     * Find an enum instance field whose type matches the referencing element's
-     * declared type (Case 2 INTELLIGENT type-match).
+     * Find an enum instance field whose declared type is the **same kind** as the
+     * referencing element's declared type (Case 2 INTELLIGENT type-match).
      *
-     * When multiple fields match, prefers the one whose name matches the
-     * referencing field name.
+     * The comparison is a deliberately coarse *candidate filter*: it bridges the
+     * Java/Kotlin spelling of the same type (`int` ≡ `Integer` ≡ `Int?`) and ignores
+     * qualification and type arguments — see [TypeNameComparison] for the exact rules,
+     * the reasons, and what it must not be used for.
+     *
+     * When multiple fields match, prefers the one whose name matches the referencing
+     * field name, then the first declared.
      */
     private fun findEnumFieldByType(enumClass: PsiClass, contextElement: PsiElement): PsiField? {
         val targetCanonical = readSync {
@@ -283,7 +289,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
 
         val instanceFields = instanceFields(enumClass)
         val candidates = instanceFields.filter { field ->
-            isTypeCompatible(field.type.canonicalText, targetCanonical)
+            TypeNameComparison.isSameKind(field.type.canonicalText, targetCanonical)
         }
 
         if (candidates.isEmpty()) return null
@@ -441,20 +447,20 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
     /**
      * Derive the JSON type for the resolved [ValueField].
      *
-     * Returns the JSON type as a `String` (e.g. [JsonType.STRING], [JsonType.INT]).
+     * Returns the JSON type as a `String` (e.g. [IrType.STRING], [IrType.INT]).
      * Callers wrap the result in `ObjectModel.single(...)`.
      *
-     * - [ValueField.Name] → [JsonType.STRING]
-     * - [ValueField.Ordinal] → [JsonType.INT]
-     * - [ValueField.Instance] → [JsonType.fromJavaType] of the field's PSI type
+     * - [ValueField.Name] → [IrType.STRING]
+     * - [ValueField.Ordinal] → [IrType.INT]
+     * - [ValueField.Instance] → [IrType.fromJavaType] of the field's PSI type
      */
-    fun resolveJsonType(enumClass: PsiClass, resolution: Resolution): String {
+    fun resolveIrType(enumClass: PsiClass, resolution: Resolution): String {
         return when (val vf = resolution.valueField) {
-            is ValueField.Name -> JsonType.STRING
-            is ValueField.Ordinal -> JsonType.INT
+            is ValueField.Name -> IrType.STRING
+            is ValueField.Ordinal -> IrType.INT
             is ValueField.Instance -> {
                 val typeName = readSync { vf.field.type.canonicalText }
-                JsonType.fromJavaType(typeName)
+                IrType.fromJavaType(typeName)
             }
         }
     }
@@ -462,7 +468,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
     /**
      * Reconcile a Case 2 declaring type against the value-field type.
      *
-     * Takes the already-computed value-field JSON type (from [resolveJsonType])
+     * Takes the already-computed value-field JSON type (from [resolveIrType])
      * rather than re-accessing PSI — this keeps the function non-suspend and
      * avoids a redundant read action.
      *
@@ -476,53 +482,53 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
      *
      * Logs at DEBUG when a reconciliation changes the declared type.
      */
-    fun reconcileType(declared: String, valueFieldJsonType: String): String {
-        if (declared == valueFieldJsonType) return declared
+    fun reconcileType(declared: String, valueFieldIrType: String): String {
+        if (declared == valueFieldIrType) return declared
 
-        val normalizedDeclared = normalizeJsonType(declared)
-        val normalizedValue = normalizeJsonType(valueFieldJsonType)
+        val normalizedDeclared = normalizeIrType(declared)
+        val normalizedValue = normalizeIrType(valueFieldIrType)
 
         if (normalizedDeclared == normalizedValue) {
             // primitive↔boxed normalization — keep the value-field's form.
-            if (declared != valueFieldJsonType) {
-                LOG.info("Reconciled enum JSON type: $declared → $valueFieldJsonType (primitive↔boxed)")
+            if (declared != valueFieldIrType) {
+                LOG.info("Reconciled enum JSON type: $declared → $valueFieldIrType (primitive↔boxed)")
             }
-            return valueFieldJsonType
+            return valueFieldIrType
         }
 
         // Declared is wider/uninformative → value-field wins.
-        val widerTypes = setOf(JsonType.OBJECT, "object")
+        val widerTypes = setOf(IrType.OBJECT, "object")
         if (normalizedDeclared in widerTypes) {
-            LOG.info("Reconciled enum JSON type: $declared → $valueFieldJsonType (declared is Object/uninformative)")
-            return valueFieldJsonType
+            LOG.info("Reconciled enum JSON type: $declared → $valueFieldIrType (declared is Object/uninformative)")
+            return valueFieldIrType
         }
 
         // Numeric widening/narrowing → narrower (value-field).
-        if (JsonType.isNumber(normalizedDeclared) && JsonType.isNumber(normalizedValue)) {
-            LOG.info("Reconciled enum JSON type: $declared → $valueFieldJsonType (numeric narrowing)")
-            return valueFieldJsonType
+        if (IrType.isNumber(normalizedDeclared) && IrType.isNumber(normalizedValue)) {
+            LOG.info("Reconciled enum JSON type: $declared → $valueFieldIrType (numeric narrowing)")
+            return valueFieldIrType
         }
 
         // String↔numeric → value-field wins (incompatible; values authoritative).
         // Default → value-field wins.
-        LOG.info("Reconciled enum JSON type: $declared → $valueFieldJsonType (value-field authoritative)")
-        return valueFieldJsonType
+        LOG.info("Reconciled enum JSON type: $declared → $valueFieldIrType (value-field authoritative)")
+        return valueFieldIrType
     }
 
     /**
      * Normalize a JSON type string for comparison (handles primitive↔boxed).
      */
-    private fun normalizeJsonType(type: String): String {
+    private fun normalizeIrType(type: String): String {
         return when (type) {
-            "int", "integer", "java.lang.Integer" -> JsonType.INT
-            "long", "java.lang.Long" -> JsonType.LONG
-            "short", "java.lang.Short" -> JsonType.SHORT
-            "byte", "java.lang.Byte" -> JsonType.INT
-            "float", "java.lang.Float" -> JsonType.FLOAT
-            "double", "java.lang.Double" -> JsonType.DOUBLE
-            "boolean", "java.lang.Boolean" -> JsonType.BOOLEAN
-            "char", "character", "java.lang.Character" -> JsonType.STRING
-            "string", "java.lang.String" -> JsonType.STRING
+            "int", "integer", "java.lang.Integer" -> IrType.INT
+            "long", "java.lang.Long" -> IrType.LONG
+            "short", "java.lang.Short" -> IrType.SHORT
+            "byte", "java.lang.Byte" -> IrType.INT
+            "float", "java.lang.Float" -> IrType.FLOAT
+            "double", "java.lang.Double" -> IrType.DOUBLE
+            "boolean", "java.lang.Boolean" -> IrType.BOOLEAN
+            "char", "character", "java.lang.Character" -> IrType.STRING
+            "string", "java.lang.String" -> IrType.STRING
             else -> type
         }
     }
@@ -533,32 +539,6 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
     private fun instanceFields(enumClass: PsiClass): List<PsiField> = readSync {
         enumClass.allFields.filter {
             it !is PsiEnumConstant && !it.hasModifierProperty(PsiModifier.STATIC)
-        }
-    }
-
-    /**
-     * Check whether two type canonical texts are compatible (same or
-     * primitive↔boxed of the same kind).
-     */
-    private fun isTypeCompatible(fieldType: String, targetType: String): Boolean {
-        if (fieldType == targetType) return true
-        return normalizeBoxedType(fieldType) == normalizeBoxedType(targetType)
-    }
-
-    /**
-     * Normalize a canonical type text to its boxed form for comparison.
-     */
-    private fun normalizeBoxedType(type: String): String {
-        return when (type) {
-            "int", "Integer", "java.lang.Integer" -> "java.lang.Integer"
-            "long", "Long", "java.lang.Long" -> "java.lang.Long"
-            "short", "Short", "java.lang.Short" -> "java.lang.Short"
-            "byte", "Byte", "java.lang.Byte" -> "java.lang.Byte"
-            "float", "Float", "java.lang.Float" -> "java.lang.Float"
-            "double", "Double", "java.lang.Double" -> "java.lang.Double"
-            "boolean", "Boolean", "java.lang.Boolean" -> "java.lang.Boolean"
-            "char", "Character", "java.lang.Character" -> "java.lang.Character"
-            else -> type
         }
     }
 

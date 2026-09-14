@@ -279,6 +279,12 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
         loadJDKClass("java.lang.SuppressWarnings")
         // Common interface
         loadJDKClass("java.io.Serializable")
+        // Kotlin's own @Deprecated: Kotlin source resolves the unqualified name
+        // via the implicit `kotlin.*` import, so a Kotlin test source using
+        // `@Deprecated(...)` needs this stub — without it the annotation type is
+        // unresolvable and the K2 light PSI reports its FQN as the literal
+        // "<error>" instead of a usable name.
+        loadJDKClass("kotlin.Deprecated")
     }
 
     protected fun loadSource(clazz: Class<*>): PsiClass {
@@ -555,6 +561,9 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
             ),
             "java.lang.Deprecated" to JdkStub(
                 "package java.lang; public @interface Deprecated {}"
+            ),
+            "kotlin.Deprecated" to JdkStub(
+                "package kotlin; public @interface Deprecated { String value(); }"
             ),
             "java.lang.Override" to JdkStub(
                 "package java.lang; public @interface Override {}"

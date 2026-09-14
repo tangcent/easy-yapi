@@ -9,7 +9,8 @@ import com.itangcent.easyapi.core.internal.threading.backgroundAsync
 import com.itangcent.easyapi.core.internal.threading.swing
 import com.itangcent.easyapi.channel.hoppscotch.HoppscotchSettings
 import com.itangcent.easyapi.core.http.HttpClientProvider
-import com.itangcent.easyapi.core.http.HttpRequest
+import com.itangcent.easyapi.core.http.get
+import com.itangcent.easyapi.core.http.post
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.settings.SettingBinder
 import com.itangcent.easyapi.core.settings.settings
@@ -222,13 +223,11 @@ class HoppscotchAuthService(private val project: Project) : IdeaLog {
                 val requestBody = com.itangcent.easyapi.core.util.json.GsonUtils.GSON.toJson(
                     mapOf("email" to email)
                 )
-                val request = HttpRequest(
-                    url = "$apiBaseUrl/auth/signin?origin=app",
-                    method = "POST",
-                    headers = listOf("Content-Type" to "application/json"),
+                val response = httpClient.post {
+                    url = "$apiBaseUrl/auth/signin?origin=app"
+                    contentType = "application/json"
                     body = requestBody
-                )
-                val response = httpClient.execute(request)
+                }
 
                 when {
                     response.code == 200 -> {
@@ -278,13 +277,11 @@ class HoppscotchAuthService(private val project: Project) : IdeaLog {
                 val requestBody = com.itangcent.easyapi.core.util.json.GsonUtils.GSON.toJson(
                     mapOf("deviceIdentifier" to deviceIdentifier, "token" to token)
                 )
-                val request = HttpRequest(
-                    url = "$apiBaseUrl/auth/verify",
-                    method = "POST",
-                    headers = listOf("Content-Type" to "application/json"),
+                val response = httpClient.post {
+                    url = "$apiBaseUrl/auth/verify"
+                    contentType = "application/json"
                     body = requestBody
-                )
-                val response = httpClient.execute(request)
+                }
 
                 when {
                     response.code == 200 -> {
@@ -362,11 +359,9 @@ class HoppscotchAuthService(private val project: Project) : IdeaLog {
                 val apiBaseUrl = HoppscotchApiClient.resolveApiV1BaseUrl(serverUrl, backendUrl)
                 val httpClient = HttpClientProvider.getInstance(project).getClient()
 
-                val request = HttpRequest(
-                    url = "$apiBaseUrl/auth/providers",
-                    method = "GET"
-                )
-                val response = httpClient.execute(request)
+                val response = httpClient.get {
+                    url = "$apiBaseUrl/auth/providers"
+                }
 
                 if (response.code == 200) {
                     val json = parseJson(response.body)
@@ -411,11 +406,9 @@ class HoppscotchAuthService(private val project: Project) : IdeaLog {
                 val httpClient = HttpClientProvider.getInstance(project).getClient()
 
                 // Step 1: Fetch the main page to find the JS bundle URL
-                val pageRequest = HttpRequest(
-                    url = "https://hoppscotch.io",
-                    method = "GET"
-                )
-                val pageResponse = httpClient.execute(pageRequest)
+                val pageResponse = httpClient.get {
+                    url = "https://hoppscotch.io"
+                }
                 if (pageResponse.code != 200) return@withContext null
 
                 val pageBody = pageResponse.body ?: return@withContext null
@@ -424,11 +417,9 @@ class HoppscotchAuthService(private val project: Project) : IdeaLog {
                 val jsBundleUrl = "https://hoppscotch.io${jsBundleMatch.groupValues[1]}"
 
                 // Step 2: Fetch the JS bundle and extract Firebase config
-                val jsRequest = HttpRequest(
-                    url = jsBundleUrl,
-                    method = "GET"
-                )
-                val jsResponse = httpClient.execute(jsRequest)
+                val jsResponse = httpClient.get {
+                    url = jsBundleUrl
+                }
                 if (jsResponse.code != 200) return@withContext null
 
                 val jsBody = jsResponse.body ?: return@withContext null
@@ -468,17 +459,13 @@ class HoppscotchAuthService(private val project: Project) : IdeaLog {
                         "continueUrl" to "https://hoppscotch.io/enter"
                     )
                 )
-                val request = HttpRequest(
-                    url = "https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${firebaseConfig.apiKey}",
-                    method = "POST",
-                    headers = listOf(
-                        "Content-Type" to "application/json",
-                        "Referer" to "https://hoppscotch.io/",
-                        "Origin" to "https://hoppscotch.io"
-                    ),
+                val response = httpClient.post {
+                    url = "https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${firebaseConfig.apiKey}"
+                    contentType = "application/json"
+                    header("Referer", "https://hoppscotch.io/")
+                    header("Origin", "https://hoppscotch.io")
                     body = requestBody
-                )
-                val response = httpClient.execute(request)
+                }
 
                 when {
                     response.code == 200 -> {
@@ -531,17 +518,13 @@ class HoppscotchAuthService(private val project: Project) : IdeaLog {
                         "oobCode" to oobCode
                     )
                 )
-                val request = HttpRequest(
-                    url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithEmailLink?key=${firebaseConfig.apiKey}",
-                    method = "POST",
-                    headers = listOf(
-                        "Content-Type" to "application/json",
-                        "Referer" to "https://hoppscotch.io/",
-                        "Origin" to "https://hoppscotch.io"
-                    ),
+                val response = httpClient.post {
+                    url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithEmailLink?key=${firebaseConfig.apiKey}"
+                    contentType = "application/json"
+                    header("Referer", "https://hoppscotch.io/")
+                    header("Origin", "https://hoppscotch.io")
                     body = requestBody
-                )
-                val response = httpClient.execute(request)
+                }
 
                 when {
                     response.code == 200 -> {
@@ -597,17 +580,13 @@ class HoppscotchAuthService(private val project: Project) : IdeaLog {
                         "refresh_token" to firebaseRefreshToken
                     )
                 )
-                val request = HttpRequest(
-                    url = "https://securetoken.googleapis.com/v1/token?key=${firebaseConfig.apiKey}",
-                    method = "POST",
-                    headers = listOf(
-                        "Content-Type" to "application/json",
-                        "Referer" to "https://hoppscotch.io/",
-                        "Origin" to "https://hoppscotch.io"
-                    ),
+                val response = httpClient.post {
+                    url = "https://securetoken.googleapis.com/v1/token?key=${firebaseConfig.apiKey}"
+                    contentType = "application/json"
+                    header("Referer", "https://hoppscotch.io/")
+                    header("Origin", "https://hoppscotch.io")
                     body = requestBody
-                )
-                val response = httpClient.execute(request)
+                }
 
                 if (response.code == 200) {
                     val json = parseJson(response.body)
@@ -724,14 +703,10 @@ class HoppscotchAuthService(private val project: Project) : IdeaLog {
             val backendUrl = project.settings<HoppscotchSettings>().hoppscotchBackendUrl?.takeIf { it.isNotBlank() }
             val apiBaseUrl = HoppscotchApiClient.resolveApiV1BaseUrl(serverUrl, backendUrl)
             val httpClient = com.itangcent.easyapi.core.http.HttpClientProvider.getInstance(project).getClient()
-            val request = com.itangcent.easyapi.core.http.HttpRequest(
-                url = "$apiBaseUrl/auth/refresh",
-                method = "GET",
-                headers = listOf(
-                    "Cookie" to "refresh_token=$storedRefreshToken"
-                )
-            )
-            val response = httpClient.execute(request)
+            val response = httpClient.get {
+                url = "$apiBaseUrl/auth/refresh"
+                header("Cookie", "refresh_token=$storedRefreshToken")
+            }
             if (response.code == 200) {
                 val newAccessToken = extractTokenFromCookieHeader(response, "access_token")
                     ?: extractTokenFromResponseBody(response)

@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.format.yaml
 
+import com.itangcent.easyapi.core.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.core.ide.PropertiesService
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.ResourceLoader
@@ -21,8 +22,19 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
  */
 class YamlFieldFormatWithPrefixTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    override fun createConfigReader() =
-        TestConfigReader.fromRules(project, "properties.prefix" to "demo")
+    /**
+     * The shipped `converts` extension (default-enabled in production, and what maps
+     * `UserInfo`'s `java.time` fields to the `""` the golden holds — see
+     * [YamlFormatterTest]) plus this class' own `properties.prefix` rule.
+     */
+    override fun createConfigReader(): TestConfigReader {
+        val extension = ExtensionConfigRegistry.getExtension("converts")
+        assertNotNull("converts extension should exist", extension)
+        return TestConfigReader.fromConfigText(
+            project,
+            (extension?.content ?: "") + "\nproperties.prefix=demo"
+        )
+    }
 
     fun testToYamlWithPrefix() = runTest {
         loadFile("model/UserInfo.java")

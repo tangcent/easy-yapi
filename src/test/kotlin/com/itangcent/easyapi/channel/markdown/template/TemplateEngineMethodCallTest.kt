@@ -3,7 +3,7 @@ package com.itangcent.easyapi.channel.markdown.template
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.format.json.ObjectModelJsonConverter
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -83,7 +83,7 @@ class TemplateEngineMethodCallTest {
     }
 
     private val simpleBodyModel: ObjectModel = ObjectModel.Object(
-        mapOf("name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name"))
+        mapOf("name" to FieldModel(ObjectModel.single(IrType.STRING), comment = "user name"))
     )
 
     private val modelWithSimpleBody: TemplateModel = modelWithBody(simpleBodyModel)

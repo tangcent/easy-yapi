@@ -261,18 +261,23 @@ class RequestExecutor(private val project: Project) : IdeaLog {
         val modifiedUrl = pmRequest.url.ifBlank { originalUrl }
         val modifiedHeaders = pmRequest.headers.toPairs().map { KeyValue(it.first, it.second) }
         val modifiedBody = pmRequest.body.raw
+        val effectiveMethod = pmRequest.method.ifBlank { originalMethod }
 
-        val request = HttpRequest(
-            url = modifiedUrl,
-            method = pmRequest.method.ifBlank { originalMethod },
-            headers = modifiedHeaders.ifEmpty { originalHeaders },
-            query = query,
-            body = modifiedBody ?: originalBody,
-            formParams = formParams,
-            contentType = input.contentType
-        )
-        LOG.info("Request (after pre-script): ${request.method} ${request.url}")
-        val response = httpClient.execute(request)
+        LOG.info("Request (after pre-script): $effectiveMethod $modifiedUrl")
+        val response = httpClient.execute {
+            url = modifiedUrl
+            method = effectiveMethod
+            headers(modifiedHeaders.ifEmpty { originalHeaders })
+            query(query)
+            body = modifiedBody ?: originalBody
+            formParams(formParams)
+            // `input.contentType` is endpoint metadata — a hint, not a command. A null/blank
+            // value means "no metadata value", NOT "clear the header": the (user-editable)
+            // headers are the source of truth for Content-Type, so only fill the gap.
+            if (contentType == null) {
+                input.contentType?.takeIf { it.isNotBlank() }?.let { contentType = it }
+            }
+        }
         LOG.info("Response: status=${response.code}, bodyLength=${response.body?.length ?: 0}")
 
         val responseBody = response.responseBody
@@ -340,6 +345,10 @@ class RequestExecutor(private val project: Project) : IdeaLog {
         )
     }
 
+    /**
+     * @param contentTypeHint endpoint-metadata content type; applied only when the
+     *   request headers do not already declare a `Content-Type`
+     */
     private suspend fun executeWithoutScripts(
         fullUrl: String,
         method: String,
@@ -347,19 +356,21 @@ class RequestExecutor(private val project: Project) : IdeaLog {
         query: List<KeyValue>,
         body: String?,
         formParams: List<FormParam>,
-        contentType: String?
+        contentTypeHint: String?
     ): RequestResult {
-        val request = HttpRequest(
-            url = fullUrl,
-            method = method,
-            headers = headers,
-            query = query,
-            body = body,
-            formParams = formParams,
-            contentType = contentType
-        )
-        LOG.info("Request: ${request.method} ${request.url}, headers=${request.headers.size}, hasBody=${request.body != null}")
-        val response = httpClient.execute(request)
+        LOG.info("Request: $method $fullUrl, headers=${headers.size}, hasBody=${body != null}")
+        val response = httpClient.execute {
+            url = fullUrl
+            this.method = method
+            headers(headers)
+            query(query)
+            this.body = body
+            formParams(formParams)
+            // Metadata hint only: never clear a Content-Type the headers already declare.
+            if (contentType == null) {
+                contentTypeHint?.takeIf { it.isNotBlank() }?.let { contentType = it }
+            }
+        }
         LOG.info("Response: status=${response.code}, bodyLength=${response.body?.length ?: 0}")
 
         return RequestResult(

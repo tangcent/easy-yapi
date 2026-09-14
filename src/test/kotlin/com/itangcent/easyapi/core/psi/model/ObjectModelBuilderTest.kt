@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.core.psi.model
 
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -19,7 +19,7 @@ class ObjectModelBuilderTest {
             .build()
         assertTrue(model.fields.containsKey("name"))
         val field = model.fields["name"]!!
-        assertEquals(JsonType.STRING, (field.model as ObjectModel.Single).type)
+        assertEquals(IrType.STRING, (field.model as ObjectModel.Single).type)
         assertEquals("User name", field.comment)
         assertTrue(field.required)
     }
@@ -30,7 +30,7 @@ class ObjectModelBuilderTest {
             .intField("age", "User age")
             .build()
         val field = model.fields["age"]!!
-        assertEquals(JsonType.INT, (field.model as ObjectModel.Single).type)
+        assertEquals(IrType.INT, (field.model as ObjectModel.Single).type)
         assertEquals("User age", field.comment)
     }
 
@@ -40,7 +40,7 @@ class ObjectModelBuilderTest {
             .longField("id")
             .build()
         val field = model.fields["id"]!!
-        assertEquals(JsonType.LONG, (field.model as ObjectModel.Single).type)
+        assertEquals(IrType.LONG, (field.model as ObjectModel.Single).type)
     }
 
     @Test
@@ -49,7 +49,7 @@ class ObjectModelBuilderTest {
             .floatField("price")
             .build()
         val field = model.fields["price"]!!
-        assertEquals(JsonType.FLOAT, (field.model as ObjectModel.Single).type)
+        assertEquals(IrType.FLOAT, (field.model as ObjectModel.Single).type)
     }
 
     @Test
@@ -58,7 +58,7 @@ class ObjectModelBuilderTest {
             .doubleField("score")
             .build()
         val field = model.fields["score"]!!
-        assertEquals(JsonType.DOUBLE, (field.model as ObjectModel.Single).type)
+        assertEquals(IrType.DOUBLE, (field.model as ObjectModel.Single).type)
     }
 
     @Test
@@ -67,7 +67,7 @@ class ObjectModelBuilderTest {
             .booleanField("active", "Is active")
             .build()
         val field = model.fields["active"]!!
-        assertEquals(JsonType.BOOLEAN, (field.model as ObjectModel.Single).type)
+        assertEquals(IrType.BOOLEAN, (field.model as ObjectModel.Single).type)
         assertEquals("Is active", field.comment)
     }
 

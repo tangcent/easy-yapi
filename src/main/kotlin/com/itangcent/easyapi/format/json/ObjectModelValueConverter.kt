@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.format.json
 
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 
 /**
  * Converts ObjectModel structures to simple Kotlin values.
@@ -48,20 +48,14 @@ object ObjectModelValueConverter {
      * Converts a Single type to its default primitive value.
      */
     private fun singleToValue(single: ObjectModel.Single): Any? {
+        // Structural shapes have no scalar default; every scalar is owned by
+        // IrType.defaultValueForType. This used to be a second, parallel table that
+        // disagreed with it on date/datetime/file (`""` here, `null` there).
         return when (single.type) {
-            JsonType.STRING -> ""
-            JsonType.INT, JsonType.SHORT -> 0
-            JsonType.LONG -> 0L
-            JsonType.FLOAT -> 0.0f
-            JsonType.DOUBLE -> 0.0
-            JsonType.BOOLEAN -> false
-            JsonType.DATE -> ""
-            JsonType.DATETIME -> ""
-            JsonType.FILE -> "(binary)"
-            JsonType.OBJECT -> emptyMap<String, Any?>()
-            JsonType.ARRAY -> emptyList<Any?>()
+            IrType.OBJECT -> emptyMap<String, Any?>()
+            IrType.ARRAY -> emptyList<Any?>()
             "null" -> null
-            else -> null
+            else -> IrType.defaultValueForType(single.type)
         }
     }
     

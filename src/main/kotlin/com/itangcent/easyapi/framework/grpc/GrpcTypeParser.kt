@@ -4,6 +4,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiType
 import com.intellij.psi.util.PsiTypesUtil
+import com.itangcent.easyapi.core.grpc.ProtoUtils
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 
@@ -64,23 +65,6 @@ class GrpcTypeParser {
             "getOneofFieldDescriptor",
             "getField",
             "getClass"
-        )
-
-        /** Maps protobuf Java type names to human-readable type names. */
-        private val TYPE_MAPPINGS = mapOf(
-            "java.lang.String" to "string",
-            "int" to "int32",
-            "java.lang.Integer" to "int32",
-            "long" to "int64",
-            "java.lang.Long" to "int64",
-            "float" to "float",
-            "java.lang.Float" to "float",
-            "double" to "double",
-            "java.lang.Double" to "double",
-            "boolean" to "bool",
-            "java.lang.Boolean" to "bool",
-            "com.google.protobuf.ByteString" to "bytes",
-            "byte[]" to "bytes"
         )
     }
 
@@ -162,11 +146,14 @@ class GrpcTypeParser {
      * - `"int"` → `"int32"`
      * - `"com.google.protobuf.ByteString"` → `"bytes"`
      *
-     * Unknown types are returned as-is.
+     * Scalars come from the shared [ProtoUtils.PROTO_SCALAR_TYPES] table. Anything else — a
+     * message, an enum, a generic type, an empty string — is returned **verbatim**: here the
+     * value is a type *reference* rendered into documentation, so keeping the fully qualified
+     * name is intentional. Descriptor building instead uses [ProtoUtils.mapJavaTypeToProto],
+     * which strips to a simple name because a `.proto` message is referenced that way.
      */
-    fun mapProtobufType(typeName: String): String {
-        return TYPE_MAPPINGS[typeName] ?: typeName
-    }
+    fun mapProtobufType(typeName: String): String =
+        ProtoUtils.protoScalarType(typeName) ?: typeName
 
     // ── Private helpers ──────────────────────────────────────────────
 
@@ -185,36 +172,40 @@ class GrpcTypeParser {
             )
         }
 
-        return ObjectModel.Object(fields = fieldModels)
+        return ObjectModel.Object(fields = fieldModels, ref = psiClass.qualifiedName)
     }
 
     private fun resolveFieldModel(field: ProtobufField, depth: Int): ObjectModel {
+        // `field.typeName` is the declared canonical text (`com.foo.Bar`, `java.util.List<...>`,
+        // `int`), so it is what every node here records as its ref.
         return when {
             field.isRepeated -> {
                 val itemModel = resolveElementModel(field.elementType, depth)
-                ObjectModel.Array(item = itemModel)
+                ObjectModel.Array(item = itemModel, ref = field.typeName)
             }
             field.isMap -> {
-                val keyModel = ObjectModel.Single(mapProtobufType(field.keyType ?: "string"))
+                val keyModel = ObjectModel.Single(mapProtobufType(field.keyType ?: "string"), ref = field.keyType)
                 val valueModel = resolveElementModel(field.valueType, depth)
-                ObjectModel.MapModel(keyType = keyModel, valueType = valueModel)
+                ObjectModel.MapModel(keyType = keyModel, valueType = valueModel, ref = field.typeName)
             }
             field.isMessage -> {
                 resolveNestedMessage(field.type, depth)
-                    ?: ObjectModel.Single(mapProtobufType(field.typeName))
+                    ?: ObjectModel.Single(mapProtobufType(field.typeName), ref = field.typeName)
             }
-            else -> ObjectModel.Single(mapProtobufType(field.typeName))
+            else -> ObjectModel.Single(mapProtobufType(field.typeName), ref = field.typeName)
         }
     }
 
     private fun resolveElementModel(type: PsiType?, depth: Int): ObjectModel {
+        // No declaration to point at — a repeated field's element type is recorded on the
+        // enclosing `Array`'s ref instead.
         if (type == null) return ObjectModel.Single("unknown")
         val psiClass = PsiTypesUtil.getPsiClass(type)
         if (psiClass != null && isProtobufMessage(psiClass)) {
             return parseMessageTypeInternal(psiClass, depth + 1)
-                ?: ObjectModel.Single(mapProtobufType(type.canonicalText))
+                ?: ObjectModel.Single(mapProtobufType(type.canonicalText), ref = type.canonicalText)
         }
-        return ObjectModel.Single(mapProtobufType(type.canonicalText))
+        return ObjectModel.Single(mapProtobufType(type.canonicalText), ref = type.canonicalText)
     }
 
     private fun resolveNestedMessage(type: PsiType?, depth: Int): ObjectModel? {
@@ -272,8 +263,11 @@ class GrpcTypeParser {
     /**
      * Checks if a getter name is a "Count" getter for a repeated field.
      * e.g., `getItemsCount` when `getItemsList` exists.
+     *
+     * `internal` (not `private`) so it can be unit-tested directly — its companion test
+     * used to assert against a *local copy* of this logic, which proved nothing.
      */
-    private fun isCountGetter(name: String, allGetterNames: Set<String>): Boolean {
+    internal fun isCountGetter(name: String, allGetterNames: Set<String>): Boolean {
         if (!name.endsWith("Count")) return false
         val baseName = name.removeSuffix("Count")
         return "${baseName}List" in allGetterNames
@@ -282,8 +276,10 @@ class GrpcTypeParser {
     /**
      * Checks if a getter name is a "Bytes" getter for a string field.
      * e.g., `getNameBytes` when `getName` exists.
+     *
+     * `internal` for the same reason as [isCountGetter].
      */
-    private fun isBytesGetter(name: String, allGetterNames: Set<String>): Boolean {
+    internal fun isBytesGetter(name: String, allGetterNames: Set<String>): Boolean {
         if (!name.endsWith("Bytes")) return false
         val baseName = name.removeSuffix("Bytes")
         return baseName in allGetterNames

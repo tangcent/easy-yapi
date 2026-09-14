@@ -309,13 +309,20 @@ class RunSubAgentTool(
             appendLine()
             appendLine(
                 "Run the suggested searches to confirm whether the pattern is " +
-                    "present in this project's PSI. When done, call " +
-                    "report_findings with detected=true (if found, include " +
-                    "evidence in findings and any concrete rule proposals in " +
-                    "proposedRules) or detected=false (if not found). Do NOT " +
-                    "call propose_rule_content — the orchestrator merges " +
-                    "findings from all sub-agents and proposes the final " +
-                    "rule content once."
+                    "present in this project's PSI. If it is, draft the concrete " +
+                    "rule proposals for it: confirm the key name with " +
+                    "list_rule_keys, fetch its value-format guide with " +
+                    "get_rule_detail(key=...), and check for existing rules with " +
+                    "get_existing_rules_for_key — never propose a duplicate. " +
+                    "When done, call report_findings with detected=true — put " +
+                    "the evidence (located classes, signatures, why the pattern " +
+                    "applies) in findings and the drafted rules in proposedRules " +
+                    "(each {key, rules}, where rules is the COMPLETE rule line to " +
+                    "append verbatim — not a summary) — or detected=false with " +
+                    "your search notes in findings if nothing matched. Do NOT call " +
+                    "propose_rule_content — the orchestrator merges the " +
+                    "sub-agents' findings and proposals and stages the final " +
+                    "proposal once."
             )
         }
     }
@@ -335,7 +342,8 @@ class RunSubAgentTool(
             appendLine()
             appendLine("proposedRules:")
             result.proposedRules.forEach { rp ->
-                appendLine("- ${rp.key}: ${rp.preview}")
+                appendLine("- ${rp.key}")
+                rp.rules.trim().lines().forEach { appendLine("    $it") }
             }
         }
     }

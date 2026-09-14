@@ -5,8 +5,8 @@ import com.google.gson.JsonObject
 import com.itangcent.easyapi.channel.hoppscotch.model.HoppCollection
 import com.itangcent.easyapi.channel.hoppscotch.model.hoppscotchGson
 import com.itangcent.easyapi.core.http.HttpClient
-import com.itangcent.easyapi.core.http.HttpRequest
-import com.itangcent.easyapi.core.http.KeyValue
+import com.itangcent.easyapi.core.http.execute
+import com.itangcent.easyapi.core.http.post
 import com.itangcent.easyapi.core.logging.IdeaLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -219,17 +219,12 @@ class HoppscotchApiClient(
 
         LOG.info("call:$graphqlUrl \nbody:$body")
 
-        val request = HttpRequest(
-            url = graphqlUrl,
-            method = "POST",
-            headers = listOf(
-                KeyValue("Content-Type", "application/json"),
-                KeyValue("Authorization", "Bearer $token")
-            ),
-            body = body
-        )
-
-        val response = httpClient.execute(request)
+        val response = httpClient.post {
+            url = graphqlUrl
+            contentType = "application/json"
+            header("Authorization", "Bearer $token")
+            this.body = body
+        }
 
         if (response.code == 401) {
             LOG.warn("Hoppscotch API returned 401 Unauthorized")

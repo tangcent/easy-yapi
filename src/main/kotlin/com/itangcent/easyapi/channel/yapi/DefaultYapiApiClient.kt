@@ -12,9 +12,9 @@ import com.itangcent.easyapi.channel.yapi.model.YapiApiDoc
 import com.itangcent.easyapi.channel.yapi.model.YapiCart
 import com.itangcent.easyapi.channel.yapi.model.YapiResponse
 import com.itangcent.easyapi.core.http.HttpClient
-import com.itangcent.easyapi.core.http.HttpRequest
 import com.itangcent.easyapi.core.http.HttpResponse
-import com.itangcent.easyapi.core.http.KeyValue
+import com.itangcent.easyapi.core.http.get
+import com.itangcent.easyapi.core.http.post
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.logging.console
 import com.itangcent.easyapi.core.util.json.GsonUtils
@@ -86,7 +86,9 @@ class DefaultYapiApiClient(
 
     /** Tries to extract the project ID from the standard [GET_PROJECT] endpoint. */
     private suspend fun resolveProjectIdFromGetProject(): String? = runCatching {
-        val resp = httpClient.execute(HttpRequest(url = "$serverUrl$GET_PROJECT?token=${enc(token)}", method = "GET"))
+        val resp = httpClient.get {
+            url = "$serverUrl$GET_PROJECT?token=${enc(token)}"
+        }
         parseResponse(resp) { it.getAsJsonObject("data")?.get("_id")?.asString }.getOrNull()
     }.onFailure { console.warn("YApi: resolveProjectIdFromGetProject failed", it) }.getOrNull()
 
@@ -95,7 +97,9 @@ class DefaultYapiApiClient(
      * Used when [GET_PROJECT] returns a success response but no project data.
      */
     private suspend fun resolveProjectIdFromListMenu(): String? = runCatching {
-        val resp = httpClient.execute(HttpRequest(url = "$serverUrl$LIST_MENU?token=${enc(token)}", method = "GET"))
+        val resp = httpClient.get {
+            url = "$serverUrl$LIST_MENU?token=${enc(token)}"
+        }
         parseResponse(resp) { json ->
             json.getAsJsonArray("data")?.firstOrNull()?.asJsonObject?.get("project_id")?.asString
         }.getOrNull()
@@ -112,7 +116,9 @@ class DefaultYapiApiClient(
         return withContext(Dispatchers.IO) {
             runCatching {
                 val url = "$serverUrl$GET_CAT_MENU?project_id=${enc(projectId)}&token=${enc(token)}"
-                val resp = httpClient.execute(HttpRequest(url = url, method = "GET"))
+                val resp = httpClient.get {
+                    this.url = url
+                }
                 parseResponse(resp) { json ->
                     json.getAsJsonArray("data")?.map { element ->
                         val obj = element.asJsonObject
@@ -133,14 +139,11 @@ class DefaultYapiApiClient(
                 val body = GsonUtils.toJson(
                     linkedMapOf("desc" to desc, "project_id" to projectId, "name" to name, "token" to token)
                 )
-                val resp = httpClient.execute(
-                    HttpRequest(
-                        url = "$serverUrl$ADD_CAT",
-                        method = "POST",
-                        headers = listOf(KeyValue("Content-Type", "application/json")),
-                        body = body
-                    )
-                )
+                val resp = httpClient.post {
+                    url = "$serverUrl$ADD_CAT"
+                    contentType = "application/json"
+                    this.body = body
+                }
                 parseResponse(resp) { json ->
                     val data = json.getAsJsonObject("data")
                     YapiCart(id = data.get("_id").asLong, name = data.get("name").asString)
@@ -175,7 +178,9 @@ class DefaultYapiApiClient(
         return withContext(Dispatchers.IO) {
             runCatching {
                 val url = "$serverUrl$LIST_CAT?token=${enc(token)}&catid=${enc(catId)}&limit=$limit"
-                val resp = httpClient.execute(HttpRequest(url = url, method = "GET"))
+                val resp = httpClient.get {
+                    this.url = url
+                }
                 val result = parseResponse(resp) { json ->
                     json.getAsJsonObject("data")?.getAsJsonArray("list") ?: JsonArray()
                 }
@@ -246,14 +251,11 @@ class DefaultYapiApiClient(
         return withContext(Dispatchers.IO) {
             runCatching {
                 val existingId = findExistingApi(catId, doc.path, doc.method)
-                val resp = httpClient.execute(
-                    HttpRequest(
-                        url = "$serverUrl$SAVE_API",
-                        method = "POST",
-                        headers = listOf("Content-Type" to "application/json"),
-                        body = yapiFormatter.buildApiDocBody(doc, token, catId, existingId)
-                    )
-                )
+                val resp = httpClient.post {
+                    url = "$serverUrl$SAVE_API"
+                    contentType = "application/json"
+                    body = yapiFormatter.buildApiDocBody(doc, token, catId, existingId)
+                }
                 parseResponse(resp) { Unit }
             }.onFailure { console.warn("YApi: uploadApi failed for path='${doc.path}', method='${doc.method}'", it) }
                 .getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
@@ -285,14 +287,11 @@ class DefaultYapiApiClient(
         return withContext(Dispatchers.IO) {
             runCatching {
                 val existingId = findExistingApi(catId, doc.path, doc.method)
-                val resp = httpClient.execute(
-                    HttpRequest(
-                        url = "$serverUrl$SAVE_API",
-                        method = "POST",
-                        headers = listOf("Content-Type" to "application/json"),
-                        body = yapiFormatter.buildApiDocBody(doc, token, catId, existingId)
-                    )
-                )
+                val resp = httpClient.post {
+                    url = "$serverUrl$SAVE_API"
+                    contentType = "application/json"
+                    body = yapiFormatter.buildApiDocBody(doc, token, catId, existingId)
+                }
                 parseResponse(resp) { Unit }
             }.onFailure { console.warn("YApi: uploadApi failed for path='${doc.path}', method='${doc.method}'", it) }
                 .getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }

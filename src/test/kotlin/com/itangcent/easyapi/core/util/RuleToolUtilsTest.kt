@@ -5,6 +5,18 @@ import org.junit.Test
 
 class RuleToolUtilsTest {
 
+    /**
+     * Nested (not local) on purpose: [RuleToolUtils.debug] needs a non-null
+     * `qualifiedName`, which local classes do not have.
+     *
+     * Declares *functions* rather than properties: `KClass.functions` does not
+     * surface property accessors, so only function signatures reach `typeName`.
+     */
+    private class BooleanProbe {
+        fun flag(): Boolean = true
+        fun nullableFlag(): Boolean? = null
+    }
+
     // ── isNullOrEmpty / notNullOrEmpty ────────────────────────────────
 
     @Test
@@ -398,5 +410,22 @@ class RuleToolUtilsTest {
         assertNotNull(result)
         // debug output contains type information
         assertTrue(result.isNotEmpty())
+    }
+
+    @Test
+    fun testDebugBooleanUsesJsonVocabulary() {
+        // `bool` is the protobuf scalar spelling (see ProtoUtils); here the mapper
+        // must use the JSON-ish vocabulary, so Boolean renders as "boolean".
+        assertEquals("type: boolean", RuleToolUtils.debug(true).lineSequence().first())
+    }
+
+    @Test
+    fun testDebugBooleanSignatureUsesJsonVocabulary() {
+        // Covers the typeName(KType) path (params / return types), including the
+        // nullable spelling `Boolean?`.
+        val result = RuleToolUtils.debug(BooleanProbe())
+        assertTrue(result, result.contains("boolean flag()"))
+        assertTrue(result, result.contains("boolean nullableFlag()"))
+        assertFalse(result, result.contains(Regex("\\bbool\\b")))
     }
 }

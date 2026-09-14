@@ -22,7 +22,8 @@ import com.itangcent.easyapi.format.json.ObjectModelJsonConverter
  * - `typeOf model` → `Single`→type, `Array`→`<item>[]`, `Object`→"object", `Map`→"map".
  * - `indent depth` → empty at 0; `&ensp;&ensp;`×depth + `&#124;─` otherwise.
  * - `fieldDesc field` → comment + options joined with `<br>`; options as `value :desc` / `value`.
- *   Mirrors `DefaultMarkdownFormatter.buildFieldDescription` (byte-parity).
+ *   Shares [MarkdownFieldFormatter] with the model builder, so a user template renders the
+ *   `desc` column exactly like the default template.
  * - `jsonDemo model` → ``` ```json … ``` ``` fence around `ObjectModelJsonConverter.toJson`.
  */
 object TemplateHelpers : IdeaLog {
@@ -71,7 +72,7 @@ object TemplateHelpers : IdeaLog {
 
     // ------------------------------------------------------------------
     // typeOf model → Single→type, Array→<item>[], Object→"object", Map→"map"
-    // Mirrors DefaultMarkdownFormatter.formatType.
+    // Shares MarkdownFieldFormatter with TemplateModelBuilder's `type` column.
     // ------------------------------------------------------------------
 
     private fun typeOf(args: List<Any?>): String {
@@ -82,14 +83,7 @@ object TemplateHelpers : IdeaLog {
             }
             return ""
         }
-        return formatType(model)
-    }
-
-    private fun formatType(model: ObjectModel): String = when (model) {
-        is ObjectModel.Single -> model.type
-        is ObjectModel.Array -> "${formatType(model.item)}[]"
-        is ObjectModel.Object -> "object"
-        is ObjectModel.MapModel -> "map"
+        return MarkdownFieldFormatter.formatType(model)
     }
 
     // ------------------------------------------------------------------
@@ -104,7 +98,6 @@ object TemplateHelpers : IdeaLog {
 
     // ------------------------------------------------------------------
     // fieldDesc field → comment + options joined with <br>
-    // Mirrors DefaultMarkdownFormatter.buildFieldDescription (byte-parity).
     // ------------------------------------------------------------------
 
     private fun fieldDesc(args: List<Any?>): String {
@@ -115,19 +108,7 @@ object TemplateHelpers : IdeaLog {
             }
             return ""
         }
-        return buildFieldDescription(field)
-    }
-
-    private fun buildFieldDescription(fieldModel: FieldModel): String {
-        val parts = mutableListOf<String>()
-        fieldModel.comment?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-        fieldModel.options?.takeIf { it.isNotEmpty() }?.let { options ->
-            val optionDesc = options.joinToString("<br>") { opt ->
-                if (opt.desc.isNullOrBlank()) "${opt.value}" else "${opt.value} :${opt.desc}"
-            }
-            parts.add(optionDesc)
-        }
-        return parts.joinToString("<br>")
+        return MarkdownFieldFormatter.buildFieldDescription(field)
     }
 
     // ------------------------------------------------------------------

@@ -3,7 +3,7 @@ package com.itangcent.easyapi.core.psi
 import com.itangcent.easyapi.core.psi.helper.DocHelper
 import com.itangcent.easyapi.core.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
@@ -48,7 +48,7 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'count' field", countField)
         assertTrue(
             "count should be int, got: ${countField!!.model}",
-            countField.model is ObjectModel.Single && (countField.model as ObjectModel.Single).type == JsonType.INT
+            countField.model is ObjectModel.Single && (countField.model as ObjectModel.Single).type == IrType.INT
         )
 
         // Inherited field with resolved generic
@@ -56,7 +56,7 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have inherited 'data' field", dataField)
         assertTrue(
             "data should be string (T resolved to String), got: ${dataField!!.model}",
-            dataField.model is ObjectModel.Single && (dataField.model as ObjectModel.Single).type == JsonType.STRING
+            dataField.model is ObjectModel.Single && (dataField.model as ObjectModel.Single).type == IrType.STRING
         )
     }
 
@@ -87,7 +87,7 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'active' field", activeField)
         assertTrue(
             "active should be boolean, got: ${activeField!!.model}",
-            activeField.model is ObjectModel.Single && (activeField.model as ObjectModel.Single).type == JsonType.BOOLEAN
+            activeField.model is ObjectModel.Single && (activeField.model as ObjectModel.Single).type == IrType.BOOLEAN
         )
 
         // MiddleChild's own field
@@ -95,7 +95,7 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have 'middleName' field from MiddleChild", middleNameField)
         assertTrue(
             "middleName should be string, got: ${middleNameField!!.model}",
-            middleNameField.model is ObjectModel.Single && (middleNameField.model as ObjectModel.Single).type == JsonType.STRING
+            middleNameField.model is ObjectModel.Single && (middleNameField.model as ObjectModel.Single).type == IrType.STRING
         )
 
         // Inherited from TwoTypeBase: T first → X → Long
@@ -103,7 +103,7 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have inherited 'first' field", firstField)
         assertTrue(
             "first should be long (T→X→Long), got: ${firstField!!.model}",
-            firstField.model is ObjectModel.Single && (firstField.model as ObjectModel.Single).type == JsonType.LONG
+            firstField.model is ObjectModel.Single && (firstField.model as ObjectModel.Single).type == IrType.LONG
         )
 
         // Inherited from TwoTypeBase: R second → String
@@ -111,7 +111,7 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should have inherited 'second' field", secondField)
         assertTrue(
             "second should be string (R→String), got: ${secondField!!.model}",
-            secondField.model is ObjectModel.Single && (secondField.model as ObjectModel.Single).type == JsonType.STRING
+            secondField.model is ObjectModel.Single && (secondField.model as ObjectModel.Single).type == IrType.STRING
         )
     }
 

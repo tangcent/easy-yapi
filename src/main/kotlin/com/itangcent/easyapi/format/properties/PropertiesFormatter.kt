@@ -4,7 +4,7 @@ import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.FieldOption
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.core.psi.model.ObjectModelVisitTracker
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.core.util.text.append
 
 /**
@@ -90,7 +90,7 @@ class PropertiesFormatter {
                 if (prefix.isEmpty()) return
                 sb.appendComment(fieldModel?.comment)
                 sb.appendOptions(fieldModel?.options)
-                val value = fieldModel?.defaultValue ?: JsonType.defaultValueForType(model.type)?.toString() ?: ""
+                val value = fieldModel?.defaultValue ?: IrType.defaultValueForType(model.type)?.toString() ?: ""
                 sb.appendKV(prefix, value)
             }
         }

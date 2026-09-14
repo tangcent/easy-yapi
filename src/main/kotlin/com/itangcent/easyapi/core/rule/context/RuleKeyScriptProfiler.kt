@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.core.rule.context
 
+import com.itangcent.easyapi.core.http.HttpRequestBuilder
 import com.itangcent.easyapi.core.http.HttpRequestWrapper
 import com.itangcent.easyapi.core.http.HttpResponseWrapper
 import com.itangcent.easyapi.core.http.ScriptHttpClient
@@ -112,8 +113,9 @@ object RuleKeyScriptProfiler {
     /**
      * The complete static dictionary of script objects the profiler can
      * describe: every it-context object (one per [ContextKind]), the common
-     * helper objects, and every additional binding with a reflected wrapper
-     * class.
+     * helper objects, every additional binding with a reflected wrapper class,
+     * and the [chainedGroovyObjects] reached by chaining (e.g.
+     * `httpClient.newRequest(...)` → `httpRequestBuilder`).
      *
      * `get_script_object_api` resolves ids against this dictionary. It is
      * derived purely from the code — not from any particular rule key — so
@@ -128,6 +130,9 @@ object RuleKeyScriptProfiler {
             if (seen.add(kind.id)) result.add(objectApi(kind.id, kind.typeClass, kind.description))
         }
         commonGroovyObjects.forEach { obj ->
+            if (seen.add(obj.id)) result.add(obj)
+        }
+        chainedGroovyObjects.forEach { obj ->
             if (seen.add(obj.id)) result.add(obj)
         }
         additionalBindingSchemes.forEach { (id, s) ->
@@ -484,6 +489,22 @@ object RuleKeyScriptProfiler {
 
     /** Ids of [commonGroovyObjects] — the shared helper objects every dynamic key references. */
     private val commonObjectIds get() = commonGroovyObjects.map { it.id }
+
+    /**
+     * Objects a script reaches by **chaining off another object** rather than
+     * through a binding — `httpClient.newRequest(url)` returns an
+     * [HttpRequestBuilder]. They are resolvable through `get_script_object_api`
+     * like any other object, but they are deliberately kept out of
+     * [commonObjectIds]: no key binds them directly, so listing them in every
+     * key's `objectRefs` would only bloat the per-key context catalogs.
+     */
+    private val chainedGroovyObjects = listOf(
+        objectApi(
+            "httpRequestBuilder",
+            HttpRequestBuilder::class,
+            "Fluent HTTP request builder returned by httpClient.newRequest(...)."
+        )
+    )
 
     private data class ProfileDefinition(
         val executionMode: String,

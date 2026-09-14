@@ -3,7 +3,7 @@ package com.itangcent.easyapi.format.yaml
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.core.psi.model.ObjectModelVisitTracker
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 
 /**
  * Renders an [ObjectModel] as YAML (block style, 2-space indent).
@@ -303,7 +303,7 @@ object YamlFormatter {
         // Prefer field-level default value; otherwise use the type's default.
         // Note: do NOT stringify defaultValueForType's result here — we need
         // the original type (String vs Number vs Boolean) to format correctly.
-        val defaultValue = fieldModel?.defaultValue ?: JsonType.defaultValueForType(model.type)
+        val defaultValue = fieldModel?.defaultValue ?: IrType.defaultValueForType(model.type)
             ?: return "null"
 
         return when (defaultValue) {

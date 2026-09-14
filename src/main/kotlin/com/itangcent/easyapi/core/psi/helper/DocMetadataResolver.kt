@@ -13,7 +13,7 @@ import com.itangcent.easyapi.core.export.ApiParameter
 import com.itangcent.easyapi.core.export.Folder
 import com.itangcent.easyapi.core.export.ParameterType
 import com.itangcent.easyapi.core.export.PathSelector
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.core.rule.RuleKeys
 import com.itangcent.easyapi.core.rule.engine.RuleEngine
 import com.itangcent.easyapi.core.settings.module.ParsingOutputSettings
@@ -251,9 +251,9 @@ class DocMetadataResolver internal constructor(
     suspend fun resolveParamType(parameter: PsiParameter, defaultType: String): String {
         val ruleType = engine.evaluate(RuleKeys.PARAM_TYPE, parameter)?.takeIf { it.isNotBlank() }
         if (ruleType != null) {
-            return if (JsonType.isValid(ruleType)) ruleType else JsonType.fromJavaType(ruleType)
+            return if (IrType.isValid(ruleType)) ruleType else IrType.fromJavaType(ruleType)
         }
-        return JsonType.fromJavaType(defaultType)
+        return IrType.fromJavaType(defaultType)
     }
 
     suspend fun resolveParamDefaultValue(parameter: PsiParameter): String? {

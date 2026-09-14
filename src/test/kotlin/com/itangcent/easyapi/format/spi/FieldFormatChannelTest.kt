@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.format.spi
 
+import com.itangcent.easyapi.core.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.format.json.JsonFieldFormatChannel
 import com.itangcent.easyapi.format.json5.Json5FieldFormatChannel
 import com.itangcent.easyapi.format.properties.PropertiesFieldFormatChannel
@@ -23,7 +24,17 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
  */
 class FieldFormatChannelTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    override fun createConfigReader() = TestConfigReader.empty(project)
+    /**
+     * The shipped `converts` extension, which is default-enabled in production. It is what maps
+     * `UserInfo`'s `java.time.LocalDate`/`LocalDateTime` fields (`birthDay`/`regtime`) to
+     * `java.lang.String` — i.e. to the `""` the goldens hold. Without it those fields are an
+     * unmapped type and render `null`, which is not what a user sees.
+     */
+    override fun createConfigReader(): TestConfigReader {
+        val extension = ExtensionConfigRegistry.getExtension("converts")
+        assertNotNull("converts extension should exist", extension)
+        return TestConfigReader.fromConfigText(project, extension?.content ?: "")
+    }
 
     private lateinit var userInfoClass: com.intellij.psi.PsiClass
 

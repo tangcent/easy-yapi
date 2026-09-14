@@ -152,10 +152,14 @@ class SpringParameterBindingResolver(
         }
     }
 
-    private fun isFileType(typeText: String): Boolean {
-        if (SpecialTypeHandler.isFileTypeCanonical(typeText)) return true
-        return typeText.contains("MultipartFile") || typeText.contains("Part")
-    }
+    /**
+     * A `@RequestParam` carrying files is a multipart form field, not a query parameter.
+     *
+     * Delegates to [SpecialTypeHandler.mentionsFileType], which recognises both a bare file
+     * type and one nested in a container (`List<MultipartFile>`, `MultipartFile[]`) without
+     * false positives on names that merely contain "Part"/"File" (`Department`).
+     */
+    private fun isFileType(typeText: String): Boolean = SpecialTypeHandler.mentionsFileType(typeText)
 
     private fun isIgnoredType(typeText: String): Boolean {
         val t = typeText.removeSuffix("?")

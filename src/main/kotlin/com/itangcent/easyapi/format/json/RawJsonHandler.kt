@@ -2,7 +2,7 @@ package com.itangcent.easyapi.format.json
 
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 
 /**
  * Handler for generating standard JSON output.
@@ -115,7 +115,7 @@ object RawJsonHandler : ObjectModelJsonHandler {
     }
     
     override fun handleSingleValue(builder: StringBuilder, value: ObjectModel.Single, indent: Int) {
-        val defaultValue = JsonType.defaultValueForType(value.type)
+        val defaultValue = IrType.defaultValueForType(value.type)
         when (defaultValue) {
             is String -> builder.append("\"$defaultValue\"")
             is Number, is Boolean -> builder.append(defaultValue)

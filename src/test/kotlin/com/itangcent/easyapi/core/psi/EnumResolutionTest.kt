@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.core.psi
 
 import com.itangcent.easyapi.core.psi.model.ObjectModel
-import com.itangcent.easyapi.core.psi.type.JsonType
+import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.core.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.core.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
@@ -115,7 +115,7 @@ class EnumResolutionTest {
 
         override fun createConfigReader() = TestConfigReader.empty(project)
 
-        fun testEnumFieldDefaultJsonType() = runBlocking {
+        fun testEnumFieldDefaultIrType() = runBlocking {
             myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
             myFixture.addFileToProject(
                 "model/UserDto.java", """
@@ -142,7 +142,7 @@ class EnumResolutionTest {
             )
             assertEquals(
                 "Default enum JSON type should be STRING",
-                JsonType.STRING, (typeField.model as ObjectModel.Single).type
+                IrType.STRING, (typeField.model as ObjectModel.Single).type
             )
         }
 
@@ -188,7 +188,7 @@ class EnumResolutionTest {
                 .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val statusField = (result as ObjectModel.Object).fields["status"]!!
-            assertEquals(JsonType.STRING, (statusField.model as ObjectModel.Single).type)
+            assertEquals(IrType.STRING, (statusField.model as ObjectModel.Single).type)
             assertNotNull(statusField.options)
             assertEquals(
                 listOf("ACTIVE", "INACTIVE", "PENDING"),
@@ -207,7 +207,7 @@ class EnumResolutionTest {
             project, "enum.use.custom" to "code"
         )
 
-        fun testEnumFieldCustomCodeJsonType() = runBlocking {
+        fun testEnumFieldCustomCodeIrType() = runBlocking {
             myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
             myFixture.addFileToProject(
                 "model/UserDto.java", """
@@ -226,7 +226,7 @@ class EnumResolutionTest {
             // code is Integer → JSON type should be INT
             assertEquals(
                 "enum.use.custom=code should produce INT type",
-                JsonType.INT, (typeField.model as ObjectModel.Single).type
+                IrType.INT, (typeField.model as ObjectModel.Single).type
             )
         }
 
@@ -265,7 +265,7 @@ class EnumResolutionTest {
             project, "enum.use.custom" to "desc"
         )
 
-        fun testEnumFieldCustomDescJsonType() = runBlocking {
+        fun testEnumFieldCustomDescIrType() = runBlocking {
             myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
             myFixture.addFileToProject(
                 "model/UserDto.java", """
@@ -284,7 +284,7 @@ class EnumResolutionTest {
             // desc is String → JSON type should be STRING
             assertEquals(
                 "enum.use.custom=desc should produce STRING type",
-                JsonType.STRING, (typeField.model as ObjectModel.Single).type
+                IrType.STRING, (typeField.model as ObjectModel.Single).type
             )
         }
 
@@ -323,7 +323,7 @@ class EnumResolutionTest {
             project, "enum.use.custom" to "name"
         )
 
-        fun testEnumFieldCustomNameJsonType() = runBlocking {
+        fun testEnumFieldCustomNameIrType() = runBlocking {
             myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
             myFixture.addFileToProject(
                 "model/UserDto.java", """
@@ -341,7 +341,7 @@ class EnumResolutionTest {
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertEquals(
                 "enum.use.custom=name should produce STRING type",
-                JsonType.STRING, (typeField.model as ObjectModel.Single).type
+                IrType.STRING, (typeField.model as ObjectModel.Single).type
             )
         }
 
@@ -380,7 +380,7 @@ class EnumResolutionTest {
             project, "enum.use.custom" to "ordinal"
         )
 
-        fun testEnumFieldCustomOrdinalJsonType() = runBlocking {
+        fun testEnumFieldCustomOrdinalIrType() = runBlocking {
             myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
             myFixture.addFileToProject(
                 "model/UserDto.java", """
@@ -398,7 +398,7 @@ class EnumResolutionTest {
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertEquals(
                 "enum.use.custom=ordinal should produce INT type",
-                JsonType.INT, (typeField.model as ObjectModel.Single).type
+                IrType.INT, (typeField.model as ObjectModel.Single).type
             )
         }
 
@@ -457,7 +457,7 @@ class EnumResolutionTest {
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             // JSON type is int (from the field declaration), not from enum
-            assertEquals(JsonType.INT, (typeField.model as ObjectModel.Single).type)
+            assertEquals(IrType.INT, (typeField.model as ObjectModel.Single).type)
             // Options should use code field values
             assertNotNull("Should have options from @see", typeField.options)
             assertEquals(
@@ -725,7 +725,7 @@ class EnumResolutionTest {
             // `name` resolves to the Integer instance field, not the pseudo-field
             assertEquals(
                 "enum.use.custom=name with instance field `name` should produce INT type",
-                JsonType.INT, (field.model as ObjectModel.Single).type
+                IrType.INT, (field.model as ObjectModel.Single).type
             )
             assertNotNull(field.options)
             assertEquals(
@@ -761,7 +761,7 @@ class EnumResolutionTest {
             // `name()` is unambiguous → pseudo-field → STRING
             assertEquals(
                 "enum.use.custom=name() should produce STRING type",
-                JsonType.STRING, (field.model as ObjectModel.Single).type
+                IrType.STRING, (field.model as ObjectModel.Single).type
             )
             assertNotNull(field.options)
             assertEquals(
@@ -807,7 +807,7 @@ class EnumResolutionTest {
             val field = (result as ObjectModel.Object).fields["value"]!!
             assertEquals(
                 "INTELLIGENT mode should pick the single Integer field → INT",
-                JsonType.INT, (field.model as ObjectModel.Single).type
+                IrType.INT, (field.model as ObjectModel.Single).type
             )
             assertNotNull(field.options)
             assertEquals(
@@ -836,7 +836,7 @@ class EnumResolutionTest {
             // UserType has two instance fields (code, desc) → fall back to name()
             assertEquals(
                 "INTELLIGENT mode should fall back to STRING when multiple instance fields exist",
-                JsonType.STRING, (field.model as ObjectModel.Single).type
+                IrType.STRING, (field.model as ObjectModel.Single).type
             )
             assertEquals(
                 "Options should be enum constant names",
@@ -876,7 +876,7 @@ class EnumResolutionTest {
             // NAME mode → always enum constant name, even with a single instance field
             assertEquals(
                 "NAME mode should produce STRING type",
-                JsonType.STRING, (field.model as ObjectModel.Single).type
+                IrType.STRING, (field.model as ObjectModel.Single).type
             )
             assertEquals(
                 "Options should be enum constant names",
@@ -996,7 +996,7 @@ class EnumResolutionTest {
                 .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val field = (result as ObjectModel.Object).fields["status"]!!
-            assertEquals(JsonType.STRING, (field.model as ObjectModel.Single).type)
+            assertEquals(IrType.STRING, (field.model as ObjectModel.Single).type)
             assertEquals(
                 listOf("ACTIVE", "INACTIVE", "PENDING"),
                 field.options!!.map { it.value }
@@ -1023,7 +1023,7 @@ class EnumResolutionTest {
 
             val field = (result as ObjectModel.Object).fields["status"]!!
             // No instance fields → falls back to name regardless of mode
-            assertEquals(JsonType.STRING, (field.model as ObjectModel.Single).type)
+            assertEquals(IrType.STRING, (field.model as ObjectModel.Single).type)
             assertEquals(
                 listOf("ACTIVE", "INACTIVE", "PENDING"),
                 field.options!!.map { it.value }
@@ -1104,7 +1104,7 @@ class EnumResolutionTest {
 
             val field = (result as ObjectModel.Object).fields["status"]!!
             // @JsonValue on getCode() → code field → INT type, code values
-            assertEquals(JsonType.INT, (field.model as ObjectModel.Single).type)
+            assertEquals(IrType.INT, (field.model as ObjectModel.Single).type)
             assertEquals(
                 listOf(30, 1100, 1200),
                 field.options!!.map { it.value }
@@ -1178,7 +1178,7 @@ class EnumResolutionTest {
                 .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val field = (result as ObjectModel.Object).fields["status"]!!
-            assertEquals(JsonType.INT, (field.model as ObjectModel.Single).type)
+            assertEquals(IrType.INT, (field.model as ObjectModel.Single).type)
             assertEquals(
                 listOf(30, 1100),
                 field.options!!.map { it.value }
@@ -1246,7 +1246,7 @@ class EnumResolutionTest {
                 .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val field = (result as ObjectModel.Object).fields["status"]!!
-            assertEquals(JsonType.INT, (field.model as ObjectModel.Single).type)
+            assertEquals(IrType.INT, (field.model as ObjectModel.Single).type)
             assertEquals(
                 listOf(30, 1100),
                 field.options!!.map { it.value }
@@ -1282,7 +1282,7 @@ class EnumResolutionTest {
 
             val field = (result as ObjectModel.Object).fields["type"]!!
             // int field + @see Enum#code (Integer) → INT (primitive↔boxed normalize)
-            assertEquals(JsonType.INT, (field.model as ObjectModel.Single).type)
+            assertEquals(IrType.INT, (field.model as ObjectModel.Single).type)
             assertEquals(
                 listOf(30, 1100, 1200),
                 field.options!!.map { it.value }
@@ -1311,7 +1311,7 @@ class EnumResolutionTest {
             // String field + @see Enum#code (Integer) → INT (incompatible, values authoritative)
             assertEquals(
                 "String field with @see Enum#code (Integer) should reconcile to INT",
-                JsonType.INT, (field.model as ObjectModel.Single).type
+                IrType.INT, (field.model as ObjectModel.Single).type
             )
             assertEquals(
                 listOf(30, 1100, 1200),
@@ -1341,7 +1341,7 @@ class EnumResolutionTest {
             // long field + @see Enum#code (Integer) → INT (numeric narrowing, value-field wins)
             assertEquals(
                 "long field with @see Enum#code (Integer) should reconcile to INT",
-                JsonType.INT, (field.model as ObjectModel.Single).type
+                IrType.INT, (field.model as ObjectModel.Single).type
             )
         }
     }
@@ -1374,7 +1374,7 @@ class EnumResolutionTest {
 
             val field = (result as ObjectModel.Object).fields["value"]!!
             // name() → pseudo-field → STRING, constant names
-            assertEquals(JsonType.STRING, (field.model as ObjectModel.Single).type)
+            assertEquals(IrType.STRING, (field.model as ObjectModel.Single).type)
             assertEquals(
                 listOf("ONE", "TWO", "THREE"),
                 field.options!!.map { it.value }
@@ -1401,7 +1401,7 @@ class EnumResolutionTest {
 
             val field = (result as ObjectModel.Object).fields["value"]!!
             // bare name → instance field wins (issue #1383) → INT, field values
-            assertEquals(JsonType.INT, (field.model as ObjectModel.Single).type)
+            assertEquals(IrType.INT, (field.model as ObjectModel.Single).type)
             assertEquals(
                 listOf(1, 2, 3),
                 field.options!!.map { it.value }

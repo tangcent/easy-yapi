@@ -86,9 +86,9 @@ class ToolRegistry(private val tools: List<AiTool>) : IdeaLog {
             LOG.warn("tool '$name' failed after ${System.currentTimeMillis() - started}ms", e)
             ToolResult.Error("Tool '$name' failed: ${e.message}")
         }.also { result ->
-            // Log the result body at DEBUG level. Text results are truncated
-            // to avoid flooding idea.log with huge tool outputs; errors are
-            // logged in full (they're short and diagnostic).
+            // Log the result at INFO level — per AGENTS.md §Logging, INFO is the
+            // floor for diagnostics that must be visible in idea.log. Text bodies
+            // are truncated to avoid flooding the log with huge tool output.
             val elapsed = System.currentTimeMillis() - started
             when (result) {
                 is ToolResult.Text -> LOG.info(
@@ -110,18 +110,7 @@ class ToolRegistry(private val tools: List<AiTool>) : IdeaLog {
         /** Default per-tool timeout (30s). Tools may override via [AiTool.timeoutMs]. */
         const val DEFAULT_TOOL_TIMEOUT_MS = 30_000L
 
-        /** Max chars of a Text result body to log at DEBUG level. */
+        /** Max chars of a Text result body to log in [dispatch]. */
         const val MAX_LOGGED_BODY_CHARS = 500
     }
-}
-
-/**
- * Body-free label for a [ToolResult] used in diagnostic logs.
- * Mirrors [RuleAuthoringAgent]'s `resultKind()` but lives next to the
- * registry's own dispatch trace for cohesion.
- */
-private fun ToolResult.kindLabel(): String = when (this) {
-    is ToolResult.Text -> "text(len=${value.length})"
-    is ToolResult.Error -> "error"
-    is ToolResult.Stateful -> "stateful(section=${section}, n=${entries.size})"
 }

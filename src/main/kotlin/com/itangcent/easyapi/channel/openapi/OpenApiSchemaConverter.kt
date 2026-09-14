@@ -4,6 +4,7 @@ import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.FieldOption
 import com.itangcent.easyapi.core.psi.model.ObjectModel
+import com.itangcent.easyapi.core.psi.type.IrType
 
 /**
  * Cycle-safe converter from EasyApi's [ObjectModel] to an OAS [SchemaObject]
@@ -16,15 +17,15 @@ import com.itangcent.easyapi.core.psi.model.ObjectModel
  * on revisit, the converter returns a `$ref` rather than recursing infinitely.
  *
  * Schema-name resolution:
- * - When a [nameHint] is provided, the FIRST occurrence registers the full
- *   inlined schema in `components.schemas[<name>]` and the caller receives a
- *   `$ref` to it. Subsequent calls with the same [nameHint] and matching
- *   shape return the existing `$ref`.
- * - When the shape differs, a `_2`, `_3`, … suffix is appended and a `warn`
- *   is logged.
- * - When no [nameHint] is available (anonymous body), the schema is inlined
- *   at the call site; only on recursion (cycle) does it get a
- *   `GeneratedSchemaN` name and a `$ref`.
+ * - The name comes from the [nameHint] when the caller has one (it is the endpoint metadata's
+ *   type name), otherwise from the model's own [ObjectModel.ref] — a nested class knows its own
+ *   name even though the endpoint metadata only names the top-level body.
+ * - When a name is available, the FIRST occurrence registers the full inlined schema in
+ *   `components.schemas[<name>]` and the caller receives a `$ref` to it. Subsequent calls with
+ *   the same name and matching shape return the existing `$ref`.
+ * - When the shape differs, a `_2`, `_3`, … suffix is appended and a `warn` is logged.
+ * - When neither is available (anonymous body), the schema is inlined at the call site; only on
+ *   recursion (cycle) does it get a `GeneratedSchemaN` name and a `$ref`.
  */
 class OpenApiSchemaConverter : IdeaLog {
 
@@ -68,16 +69,23 @@ class OpenApiSchemaConverter : IdeaLog {
                     return SchemaObject(`$ref` = "#/components/schemas/$existingName")
                 }
 
-                // First visit.
-                if (nameHint != null) {
-                    val simpleName = stripPackageAndGenerics(nameHint)
+                // First visit. The endpoint metadata names the top-level body; a nested class
+                // names itself through `ref`. Without that fallback every nested class could only
+                // be inlined into each place it appears — and a class that is *also* a top-level
+                // type would be emitted twice, once inline and once as a component.
+                //
+                // This is the one place a name is genuinely required: an OAS object without one
+                // can never become a `$ref`. Channels that only render the JSON word (Markdown's
+                // type column, YApi's draft-04 `type: object`) do not consult `ref` at all.
+                val simpleName = componentName(nameHint) ?: componentName(model.ref)
+                if (simpleName != null) {
                     registerWithShapeCheck(model, simpleName, seenIds)
                 } else {
                     // Anonymous first visit — inline at the call site.
                     buildObjectSchema(model, LinkedHashSet(seenIds).apply { add(model.id) })
                 }
             }
-            is ObjectModel.Single -> primitiveSchema(model.type)
+            is ObjectModel.Single -> primitiveSchema(model)
             is ObjectModel.Array -> SchemaObject(
                 type = "array",
                 items = convert(model.item, nameHint = null, seenIds = seenIds),
@@ -166,14 +174,16 @@ class OpenApiSchemaConverter : IdeaLog {
     }
 
     /**
-     * Strips package prefix and generic args from [name].
-     * `com.acme.Result<User>` → `Result`. `Result` → `Result`.
+     * Reduces a type spelling to a bare class name for use as a `components.schemas` key:
+     * package prefix and generic arguments are stripped (`java.util.List<com.acme.User>` →
+     * `List`, `com.acme.User` → `User`).
+     *
+     * Returns null for a null/blank input, in which case the caller leaves the node anonymous
+     * rather than inventing a name. Serves both the [nameHint] path (endpoint metadata's type
+     * name) and the [ObjectModel.ref] path (a nested class naming itself).
      */
-    private fun stripPackageAndGenerics(name: String): String {
-        val noGenerics = name.substringBefore('<').trim()
-        val simple = noGenerics.substringAfterLast('.').trim()
-        return simple.ifBlank { name }
-    }
+    private fun componentName(name: String?): String? =
+        name?.substringBefore('<')?.substringAfterLast('.')?.trim()?.takeIf { it.isNotBlank() }
 
     // ─── Inline schema construction ──────────────────────────────────────────
 
@@ -239,58 +249,80 @@ class OpenApiSchemaConverter : IdeaLog {
     // ─── Primitive type table ─────────────────────────────────────
 
     /**
-     * Maps a Java/Kotlin type name to its OAS `(type, format)` pair. Match is
-     * case-insensitive substring. Unknown types default to
-     * `(string, null)`.
+     * OAS 3.0.3 schema for an [ObjectModel.Single].
+     *
+     * The input vocabulary is **closed and matched by equality**: every construction site in
+     * `main/` normalises `Single.type` through `IrType.fromJavaType` / `fromPsiType` /
+     * `fromPrimitiveKind` / `resolveIrType`, so the table below enumerates exactly those
+     * values. No substring matching — that would also fire on unrelated names (`Department`
+     * contains `part`, `PageList` contains `list`).
+     *
+     * Why not delegate to the draft-04 `toSchemaType` (the rule-script API's table, in
+     * `core/rule/parser`), which looks like the same table: that one is
+     * the **JSON Schema draft-04** vocabulary the YApi channel emits (`$schema: draft-04`), and
+     * draft-04 permits `type: "null"`. OAS 3.0.3 permits only six types and additionally
+     * requires `items` whenever `type` is `array`. The two vocabularies are not
+     * interchangeable — sharing one function let the draft-04-only `null` leak into OAS output.
+     *
+     * They are not independent either: for every reachable `Single.type` the `type` chosen
+     * below is exactly the draft-04 `toSchemaType` of that same value, the sole exception being the
+     * draft-04-only `"null"`, which must degrade. `OpenApiSchemaConverterTest` asserts that
+     * relationship across the whole closed vocabulary, so a type added to one table cannot
+     * silently miss the other.
+     *
+     * `Single("null")` — the placeholder for an unresolved / `void` type
+     * ([ObjectModel.nullValue]) — is listed explicitly so the `else` below covers only
+     * genuinely-unknown spellings. OAS 3.0.3 has no `null` type, so it degrades to `string`
+     * just like the draft-04-only `null` the two vocabularies split on.
+     *
+     * The `else` branch is a total-function safety net, not a guess: a third-party
+     * `classExporter` / `channel` extension can hand us a `Single` carrying an arbitrary string.
+     * Such a value has no known OAS shape, so it degrades to `string` rather than being
+     * pattern-matched into a confident but wrong answer — and logs at `info`, so the
+     * degradation is diagnosable instead of silent.
      */
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
-    private fun primitiveSchema(type: String): SchemaObject {
-        val t = type.lowercase()
-        return when {
-            // `byte[]` must be checked before `byte` (the latter → integer/int32).
-            t.contains("byte[]") || t.contains("binary") ->
-                SchemaObject(type = "string", format = "binary")
-
-            // datetime-family → string/date-time. Checked before `date` so that
-            // "datetime"/"date-time"/"zoneddatetime" all land here.
-            t.contains("datetime") || t.contains("date-time") ||
-                t.contains("timestamp") || t.contains("instant") ||
-                t.contains("zoneddatetime") ->
-                SchemaObject(type = "string", format = "date-time")
-
-            // Plain `date` (not `date-time`) → string/date.
-            t.contains("date") ->
-                SchemaObject(type = "string", format = "date")
-
-            t.contains("uuid") ->
-                SchemaObject(type = "string", format = "uuid")
-
-            // `char` / `character` → string/null. Must be checked before default.
-            t.contains("char") ->
-                SchemaObject(type = "string", format = null)
-
-            // `long` must be checked before `int` (no substring overlap, but
-            // explicit for clarity).
-            t.contains("long") ->
-                SchemaObject(type = "integer", format = "int64")
-
-            t.contains("int") ->
-                SchemaObject(type = "integer", format = "int32")
-
-            t.contains("short") || t.contains("byte") ->
-                SchemaObject(type = "integer", format = "int32")
-
-            t.contains("float") ->
-                SchemaObject(type = "number", format = "float")
-
-            t.contains("double") || t.contains("decimal") || t.contains("number") ->
-                SchemaObject(type = "number", format = "double")
-
-            t.contains("boolean") ->
-                SchemaObject(type = "boolean", format = null)
-
-            // Explicit `string` and unknown types default to (string, null).
-            else -> SchemaObject(type = "string", format = null)
+    @Suppress("CyclomaticComplexMethod")
+    private fun primitiveSchema(model: ObjectModel.Single): SchemaObject = when (model.type) {
+        IrType.STRING -> SchemaObject(type = "string", format = formatForRef(model.ref))
+        IrType.FILE, "file[]" -> SchemaObject(type = "string")
+        IrType.SHORT, IrType.INT -> SchemaObject(type = "integer", format = "int32")
+        IrType.LONG -> SchemaObject(type = "integer", format = "int64")
+        IrType.FLOAT -> SchemaObject(type = "number", format = "float")
+        IrType.DOUBLE -> SchemaObject(type = "number", format = "double")
+        IrType.BOOLEAN -> SchemaObject(type = "boolean")
+        // `Single("array")` means "a container whose element type was lost" — `fromJavaType`
+        // returns it for unresolved list/set/collection spellings. OAS requires `items` whenever
+        // `type` is `array`, so emit the widest legal element schema rather than omit it.
+        IrType.ARRAY -> SchemaObject(type = "array", items = SchemaObject())
+        IrType.OBJECT -> SchemaObject(type = "object")
+        // Unresolved / `void` placeholder — no OAS `null` type exists, so render as `string`.
+        "null" -> SchemaObject(type = "string")
+        else -> {
+            LOG.info("Unknown IrType '${model.type}' in OpenAPI schema; degrading to 'string'")
+            SchemaObject(type = "string")
         }
+    }
+
+    /**
+     * The OAS `format` a **string-typed** field with declaration [ref] carries, or `null`.
+     *
+     * The IR vocabulary no longer has date/uuid words — the declaration (`ObjectModel.ref`) is
+     * the ground truth, and this table is where it becomes an annotation. It is consulted only
+     * from the [IrType.STRING] branch of [primitiveSchema], so a project mapping a date type to
+     * `long` (epoch timestamps, `json.rule.convert[X]=long`) is unaffected.
+     *
+     * Deliberately minimal: only the `java.time` types whose conventional serialization is an
+     * ISO-8601 string, plus `java.util.UUID`. Excluded on purpose are `java.util.Date`,
+     * `java.util.Calendar`, `java.sql.Timestamp` (extends `java.util.Date`) and
+     * `java.time.Instant` — Jackson's default for those is an epoch *number*, so a
+     * `format: date-time` would describe a wire shape they do not have.
+     */
+    private fun formatForRef(ref: String?): String? = when (ref) {
+        "java.time.LocalDate" -> "date"
+        "java.time.LocalDateTime", "java.time.OffsetDateTime", "java.time.ZonedDateTime" -> "date-time"
+        // Not one of the six core OAS formats, but the one every toolchain emits for a UUID
+        // (springdoc, swagger-ui's `uuid` display); OAS explicitly allows additional values.
+        "java.util.UUID" -> "uuid"
+        else -> null
     }
 }

@@ -40,6 +40,19 @@ sealed class ResolvedType {
     abstract fun qualifiedName(): String
 
     /**
+     * Returns the *declared* spelling of this resolved type, for recording on [com.itangcent.easyapi.core.psi.model.ObjectModel] nodes.
+     *
+     * Differs from [qualifiedName] in exactly one case: a [PrimitiveType] keeps the keyword/boxed
+     * distinction, so `Integer` is `java.lang.Integer` here while [qualifiedName] answers `int`
+     * for both. Everywhere else the two agree.
+     *
+     * The result is **not guaranteed to be a fully-qualified name** — an unresolved type carries
+     * whatever text the parser had (`User`, `com.acme.User`, `List<MultipartFile>` all occur).
+     * Consumers that need a FQN must check for it.
+     */
+    open fun declaredText(): String = qualifiedName()
+
+    /**
      * Returns the simple (unqualified) name of this resolved type.
      *
      * For class types, returns just the class name without package (e.g., `List`, `String`).
@@ -310,24 +323,63 @@ sealed class ResolvedType {
     }
 
     /**
-     * Represents a type that could not be resolved.
+     * Represents a type that is deliberately **not** a class: either resolution failed, or the
+     * resolver replaced a class with an IR word *before* a [ClassType] could form — a file upload
+     * becomes `__file__`, a type the configuration maps to a scalar becomes that target
+     * (`date`, `string`, …).
      *
-     * @param canonicalText The canonical text representation of the unresolved type
+     * @param canonicalText The spelling this node resolved to, and what [qualifiedName] answers.
+     *   For a file it is the `__file__` marker, for a configured scalar the target word, and for
+     *   a genuine resolution failure whatever text the parser had.
+     * @param declaration The type actually written in the source. It differs from [canonicalText]
+     *   exactly when the resolver substituted a marker: a `MultipartFile` field resolves to
+     *   `__file__`, and without this the class name would be gone for good — which is what
+     *   [com.itangcent.easyapi.core.psi.model.ObjectModel.ref] records, so that a document can
+     *   still say *which* type a file field was declared as. Defaults to [canonicalText], the
+     *   honest answer whenever the two do not differ.
      */
-    data class UnresolvedType(val canonicalText: String) : ResolvedType() {
+    data class UnresolvedType(
+        val canonicalText: String,
+        val declaration: String = canonicalText
+    ) : ResolvedType() {
         override fun qualifiedName(): String = canonicalText
         override fun simpleName(): String = canonicalText.substringAfterLast('.')
+        override fun declaredText(): String = declaration
         override fun contextElement(): PsiElement? = null
     }
 
     /**
-     * Represents a primitive type (boolean, int, etc.).
+     * Represents a primitive type (`boolean`, `int`, …) **or one of its boxed wrappers**
+     * (`java.lang.Integer`, …).
+     *
+     * Both are collapsed into one type because everything downstream cares about the value
+     * domain, not the wrapper: `Integer` and `int` map to the same JSON type, the same
+     * proto type, the same default value. What differs is only the language-level question
+     * "was it declared boxed?" — which is what [boxed] preserves. Collapsing without
+     * recording it made that question unanswerable, so `ScriptTypeContext.isPrimitiveWrapper()`
+     * could never be true (see `SpecialTypeHandler.resolveSpecialType`).
+     *
+     * [qualifiedName]/[simpleName] intentionally keep returning the *primitive* name
+     * (`int`, not `java.lang.Integer`) — they feed rule keys and script `type().name()`
+     * output, and changing them would be a behaviour change nothing asked for.
+     * [declaredText] is the one accessor that *does* preserve the difference, so that a model
+     * recording its origin does not silently lose [boxed].
      *
      * @param kind The specific primitive kind
+     * @param boxed True when the declaration was the wrapper class rather than the keyword
      */
-    data class PrimitiveType(val kind: PrimitiveKind) : ResolvedType() {
+    data class PrimitiveType(
+        val kind: PrimitiveKind,
+        val boxed: Boolean = false
+    ) : ResolvedType() {
         override fun qualifiedName(): String = kind.name.lowercase()
         override fun simpleName(): String = kind.name.lowercase()
+        override fun declaredText(): String = if (boxed) {
+            PrimitiveFamilies.WRAPPER_FQN_BY_KIND[kind] ?: kind.name.lowercase()
+        } else {
+            kind.name.lowercase()
+        }
+
         override fun contextElement(): PsiElement? = null
     }
 
@@ -677,20 +729,14 @@ object TypeResolver : com.itangcent.easyapi.core.logging.IdeaLog {
                 val specialType = SpecialTypeHandler.resolveSpecialType(psiClass)
                 if (specialType != null) return specialType
 
-                val qualifiedName = psiClass.qualifiedName
-                if (qualifiedName != null && SpecialTypeHandler.isDateTimeAsString(qualifiedName)) {
-                    return ResolvedType.UnresolvedType(qualifiedName)
-                }
-
                 val args = classType.parameters.map { resolve(it, context) }
                 return ResolvedType.ClassType(psiClass, args)
             }
             val canonicalText = classType.canonicalText
             if (SpecialTypeHandler.isFileType(canonicalText) || SpecialTypeHandler.isFileTypeCanonical(canonicalText)) {
-                return ResolvedType.UnresolvedType("__file__")
-            }
-            if (SpecialTypeHandler.isDateTimeAsString(canonicalText)) {
-                return ResolvedType.UnresolvedType(canonicalText)
+                // The class did not resolve, but its spelling is a known file type: keep that
+                // spelling as the declaration while the marker answers `file`.
+                return ResolvedType.UnresolvedType("__file__", canonicalText)
             }
             context.genericMap[classType.canonicalText]?.let { return it }
             context.genericMap[classType.className]?.let { return it }
@@ -745,12 +791,37 @@ object TypeResolver : com.itangcent.easyapi.core.logging.IdeaLog {
         val trimmed = canonicalText.trim()
 
         if (SpecialTypeHandler.isFileTypeName(trimmed)) {
-            return ResolvedType.UnresolvedType("__file__")
+            return ResolvedType.UnresolvedType("__file__", trimmed)
         }
 
-        val primitiveKind = resolvePrimitiveKind(trimmed)
-        if (primitiveKind != null) {
-            return ResolvedType.PrimitiveType(primitiveKind)
+        PrimitiveFamilies.KIND_BY_SPELLING[trimmed]?.let { primitiveKind ->
+            return ResolvedType.PrimitiveType(
+                kind = primitiveKind,
+                boxed = PrimitiveFamilies.isWrapperFqn(trimmed)
+            )
+        }
+
+        // A pre-3.x `json.rule.convert` rule may still target the retired `date` / `datetime` /
+        // `uuid` words. They are no longer IR spellings, so without this branch they would fall
+        // through to `createTypeFromText`, making the answer depend on no class of that name
+        // existing. Shim them to `java.lang.String` — the wire shape they always denoted.
+        // Matched exactly and case-sensitively: a bare `Date` / `Boolean` spelling is a real
+        // class that must keep resolving as one.
+        if (trimmed == "date" || trimmed == "datetime" || trimmed == "uuid") {
+            return resolveFromCanonicalText("java.lang.String", project, contextElement, context)
+        }
+
+        // An IR spelling (`string`, `file`, …) is not a Java type: a `json.rule.convert` rule
+        // may target it, and it reaches `IrType.fromJavaType` verbatim — the same way
+        // `__file__` does above. Waiting for `createTypeFromText` to fail on it would make the
+        // answer depend on no class of that name existing.
+        //
+        // Matched exactly, not case-insensitively: the IR vocabulary is lowercase by
+        // construction, and a bare `Date` / `Boolean` spelling is a real class that must keep
+        // resolving as one. Every other `IrType.isValid` call site is exact for the same
+        // reason.
+        if (IrType.isValid(trimmed)) {
+            return ResolvedType.UnresolvedType(trimmed)
         }
 
         if (trimmed.endsWith("[]")) {
@@ -791,10 +862,6 @@ object TypeResolver : com.itangcent.easyapi.core.logging.IdeaLog {
         if (psiClass != null) {
             val specialType = SpecialTypeHandler.resolveSpecialType(psiClass)
             if (specialType != null) return specialType
-            val qualifiedName = psiClass.qualifiedName
-            if (qualifiedName != null && SpecialTypeHandler.isDateTimeAsString(qualifiedName)) {
-                return ResolvedType.UnresolvedType(qualifiedName)
-            }
             return ResolvedType.ClassType(psiClass)
         }
 
@@ -885,21 +952,6 @@ object TypeResolver : com.itangcent.easyapi.core.logging.IdeaLog {
         val last = current.toString().trim()
         if (last.isNotEmpty()) result.add(last)
         return result
-    }
-
-    private fun resolvePrimitiveKind(typeName: String): PrimitiveKind? {
-        return when (typeName) {
-            "boolean", "java.lang.Boolean" -> PrimitiveKind.BOOLEAN
-            "byte", "java.lang.Byte" -> PrimitiveKind.BYTE
-            "char", "java.lang.Character" -> PrimitiveKind.CHAR
-            "short", "java.lang.Short" -> PrimitiveKind.SHORT
-            "int", "java.lang.Integer" -> PrimitiveKind.INT
-            "long", "java.lang.Long" -> PrimitiveKind.LONG
-            "float", "java.lang.Float" -> PrimitiveKind.FLOAT
-            "double", "java.lang.Double" -> PrimitiveKind.DOUBLE
-            "void", "java.lang.Void" -> PrimitiveKind.VOID
-            else -> null
-        }
     }
 
     /**
@@ -1043,7 +1095,10 @@ object TypeResolver : com.itangcent.easyapi.core.logging.IdeaLog {
                 for ((name, resolved) in context.genericMap) {
                     text = text.replace("\\b$name\\b".toRegex(), canonicalNameOf(resolved))
                 }
-                if (text == type.canonicalText) type else ResolvedType.UnresolvedType(text)
+                // `copy` rather than a fresh node: a marker (`__file__`) or configured scalar
+                // reached here must keep the declaration it was built with, not lose it to a
+                // text-only rebuild.
+                if (text == type.canonicalText) type else type.copy(canonicalText = text)
             }
 
             is ResolvedType.ArrayType -> ResolvedType.ArrayType(substitute(type.componentType, context))

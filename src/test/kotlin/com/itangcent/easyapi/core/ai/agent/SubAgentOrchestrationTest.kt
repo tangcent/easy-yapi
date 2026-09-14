@@ -356,7 +356,7 @@ class SubAgentOrchestrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         fake.enqueueToolCalls(
             AiToolCall(
                 "s1b", "report_findings",
-                """{"detected":true,"findings":"SPRING_FILTER_FINDINGS_FOR_T1"}"""
+                """{"detected":true,"findings":"SPRING_FILTER_FINDINGS_FOR_T1","proposedRules":[{"key":"method.additional.header","rules":"method.additional.header={\"name\":\"X-Spring-Test\",\"value\":\"1\",\"desc\":\"\",\"required\":true}"}]}"""
             )
         )
         // Step 4 (orchestrator): mark t1 done + run sub-agent 2.
@@ -377,7 +377,7 @@ class SubAgentOrchestrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         fake.enqueueToolCalls(
             AiToolCall(
                 "s2b", "report_findings",
-                """{"detected":true,"findings":"JAXRS_FILTER_FINDINGS_FOR_T2"}"""
+                """{"detected":true,"findings":"JAXRS_FILTER_FINDINGS_FOR_T2","proposedRules":[{"key":"method.additional.header","rules":"method.additional.header={\"name\":\"X-Jaxrs-Test\",\"value\":\"2\",\"desc\":\"\",\"required\":true}"}]}"""
             )
         )
         // Step 7 (orchestrator): mark t2 done + propose merged content.
@@ -539,7 +539,7 @@ class SubAgentOrchestrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         fake.enqueueToolCalls(
             AiToolCall(
                 "s1a", "report_findings",
-                """{"detected":true,"findings":"STATIC_AUTH_FINDINGS"}"""
+                """{"detected":true,"findings":"STATIC_AUTH_FINDINGS","proposedRules":[{"key":"method.additional.header","rules":"method.additional.header={\"name\":\"X-Api-Key\",\"value\":\"k\",\"desc\":\"\",\"required\":true}"}]}"""
             ),
             AiToolCall("s1b", "list_rule_keys", "{}")
         )
@@ -1034,7 +1034,12 @@ class SubAgentOrchestrationTest : EasyApiLightCodeInsightFixtureTestCase() {
                 proposedRules = if (detected) listOf(
                     RuleProposal(
                         key = "method.additional.header",
-                        preview = "{\"name\":\"X-Test\",\"value\":\"${task.id}\"}"
+                        // Must be a COMPLETE rule line: the orchestrator
+                        // concatenates it verbatim and the merged content now
+                        // goes through CompositeRuleValidator, so a fragment
+                        // would be rejected (and no proposal staged).
+                        rules = "method.additional.header[\$class:com.example.TestController]=" +
+                            "{\"name\":\"X-Test\",\"value\":\"${task.id}\",\"desc\":\"\",\"required\":true}"
                     )
                 ) else emptyList()
             )

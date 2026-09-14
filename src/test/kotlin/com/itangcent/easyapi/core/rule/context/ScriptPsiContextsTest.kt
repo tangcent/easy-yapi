@@ -146,6 +146,50 @@ class ScriptPsiContextsTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertFalse("Custom class should not be normal type", context.isNormalType())
     }
 
+    // ==================== primitive / wrapper predicates ====================
+    // These are the *positive* cases the old tests lacked: they only ever asserted `false` on
+    // synthetic classes named Integer/String, which passed even while all three predicates were
+    // dead branches (they compared the simple class name against FQN-keyed tables, and the type
+    // context had already lost the boxed/primitive distinction).
+
+    fun testTypeContext_primitiveAndWrapperAreExclusive() {
+        // `Integer` must resolve to a PsiClass to take the wrapper path in
+        // SpecialTypeHandler.resolveSpecialType; otherwise it degrades to UnresolvedType,
+        // which is neither primitive nor wrapper.
+        loadJDKClass("java.lang.Integer")
+        fixture.configureByText(
+            "PrimitiveHolder.java",
+            """
+            package com.test;
+            public class PrimitiveHolder {
+                private int primitiveInt;
+                private Integer boxedInt;
+            }
+            """.trimIndent()
+        )
+
+        val primitive = createFieldContext("com.test.PrimitiveHolder", "primitiveInt").type()
+        assertTrue("int is primitive", primitive.isPrimitive())
+        assertFalse("int is not a wrapper", primitive.isPrimitiveWrapper())
+        assertTrue("int is a normal type", primitive.isNormalType())
+
+        val boxed = createFieldContext("com.test.PrimitiveHolder", "boxedInt").type()
+        assertFalse("Integer is not primitive", boxed.isPrimitive())
+        assertTrue("Integer is a wrapper", boxed.isPrimitiveWrapper())
+        assertTrue("Integer is a normal type", boxed.isNormalType())
+    }
+
+    fun testClassContext_usesQualifiedNameForPrimitivePredicates() {
+        val integerContext = ScriptPsiClassContext(RuleContext.from(project, loadJDKClass("java.lang.Integer")))
+        assertTrue("java.lang.Integer is a wrapper", integerContext.isPrimitiveWrapper())
+        assertTrue("java.lang.Integer is a normal type", integerContext.isNormalType())
+        assertFalse("a class is never a primitive keyword", integerContext.isPrimitive())
+
+        val stringContext = ScriptPsiClassContext(RuleContext.from(project, loadJDKClass("java.lang.String")))
+        assertFalse("java.lang.String is not a wrapper", stringContext.isPrimitiveWrapper())
+        assertTrue("java.lang.String is a normal type", stringContext.isNormalType())
+    }
+
     fun testQualifiedName() {
         val classSource = """
             package com.test.example;

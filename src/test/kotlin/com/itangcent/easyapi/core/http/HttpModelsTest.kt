@@ -108,7 +108,7 @@ class HttpRequestTest {
             url = "http://api.example.com/users",
             method = "POST",
             body = "{\"name\": \"John\"}",
-            contentType = "application/json"
+            headers = listOf(kv("Content-Type", "application/json"))
         )
         assertEquals("POST", request.method)
         assertEquals("{\"name\": \"John\"}", request.body)
@@ -144,7 +144,7 @@ class HttpRequestExtensionsTest {
     fun testIsMultipartWithContentType() {
         val request = HttpRequest(
             url = "http://example.com/upload",
-            contentType = "multipart/form-data"
+            headers = listOf(kv("Content-Type", "multipart/form-data"))
         )
         assertTrue(request.isMultipart())
     }
