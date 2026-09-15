@@ -245,6 +245,11 @@ class EndpointBuilder(private val project: Project) {
      *    - `description` from method param takes priority; path param used as fallback if blank
      * 2. Appends any path params not already present in the method params list
      *
+     * `required` is deliberately **not** merged: the path params derived from the URL
+     * pattern carry the framework default (`true`), while a method parameter already
+     * carries the resolved `rule > annotation > default` chain. Merging the two would
+     * let the framework default silently win over an explicit `param.required` rule.
+     *
      * @param methodParams Parameters resolved from the method signature
      * @param pathParams Parameters extracted from the URL path pattern
      * @return Merged parameter list with enriched path parameters

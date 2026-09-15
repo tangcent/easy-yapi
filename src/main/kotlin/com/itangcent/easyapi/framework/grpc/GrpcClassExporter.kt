@@ -48,7 +48,7 @@ class GrpcClassExporter(
     private val endpointBuilder = EndpointBuilder.getInstance(project)
     private val recognizer = GrpcServiceRecognizer(engine)
     private val methodResolver = GrpcMethodResolver.getInstance(project)
-    private val typeParser = GrpcTypeParser()
+    private val typeParser = GrpcTypeParser(metadataResolver)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isGrpcService(psiClass)) return emptyList()

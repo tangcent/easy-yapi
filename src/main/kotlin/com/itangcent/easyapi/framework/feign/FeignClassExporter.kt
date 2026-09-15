@@ -10,6 +10,7 @@ import com.itangcent.easyapi.core.export.ClassExporter
 import com.itangcent.easyapi.core.export.EndpointBuilder
 import com.itangcent.easyapi.core.export.*
 import com.itangcent.easyapi.framework.springmvc.RequestMappingResolver
+import com.itangcent.easyapi.framework.springmvc.SpringParamRequired
 import com.itangcent.easyapi.framework.springmvc.SpringParameterBindingResolver
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.psi.helper.DocMetadataResolver
@@ -60,12 +61,12 @@ class FeignClassExporter(
 
     private val annotationHelper = UnifiedAnnotationHelper()
     private val engine = RuleEngine.getInstance(project)
+    private val metadataResolver = DocMetadataResolver.getInstance(project)
     private val recognizer = FeignClientRecognizer(engine)
     private val pathResolver = FeignPathResolver(annotationHelper)
-    private val nativeParser = NativeFeignAnnotationParser(annotationHelper)
+    private val nativeParser = NativeFeignAnnotationParser(annotationHelper, metadataResolver)
     private val springMappingResolver = RequestMappingResolver(annotationHelper, engine)
     private val springParamResolver = SpringParameterBindingResolver(annotationHelper, engine)
-    private val metadataResolver = DocMetadataResolver.getInstance(project)
     private val endpointBuilder = EndpointBuilder.getInstance(project)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
@@ -322,7 +323,10 @@ class FeignClassExporter(
             LOG.info("before parse param:$paramName")
 
             val name = metadataResolver.resolveParamName(p, paramName)
-            val required = metadataResolver.isParamRequired(p)
+            // `param.required` wins when configured; otherwise fall back to the Spring
+            // annotation value, then to the Spring default.
+            val required = metadataResolver.resolveParamRequired(p)
+                ?: SpringParamRequired.resolve(p, binding)
             val rawType = metadataResolver.resolveParamType(p, p.type.canonicalText)
             val type = ParameterType.fromTypeName(rawType)
             val doc = metadataResolver.resolveParamDoc(p)

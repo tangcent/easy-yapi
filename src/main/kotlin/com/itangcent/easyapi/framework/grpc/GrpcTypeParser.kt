@@ -2,9 +2,11 @@ package com.itangcent.easyapi.framework.grpc
 
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiType
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.easyapi.core.grpc.ProtoUtils
+import com.itangcent.easyapi.core.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.core.psi.model.FieldModel
 import com.itangcent.easyapi.core.psi.model.ObjectModel
 
@@ -15,6 +17,8 @@ private data class ProtobufField(
     val name: String,
     val typeName: String,
     val type: PsiType?,
+    /** The getter the field was derived from — the element `field.required` is evaluated against. */
+    val psi: PsiElement? = null,
     val isRepeated: Boolean = false,
     val isMap: Boolean = false,
     val isMessage: Boolean = false,
@@ -35,7 +39,13 @@ private data class ProtobufField(
  *
  * Returns `null` for non-protobuf classes.
  */
-class GrpcTypeParser {
+class GrpcTypeParser(
+    /**
+     * Optional rule source: when present, `field.required` can override the
+     * protobuf3 default. Left null by callers that only need the structural parse.
+     */
+    private val metadataResolver: DocMetadataResolver? = null
+) {
 
     companion object {
         /** Maximum recursion depth to prevent circular references. */
@@ -74,7 +84,7 @@ class GrpcTypeParser {
      * @param psiClass The class to parse
      * @return An [ObjectModel.Object] with all message fields, or `null` if not a protobuf message
      */
-    fun parseMessageType(psiClass: PsiClass): ObjectModel? {
+    suspend fun parseMessageType(psiClass: PsiClass): ObjectModel? {
         if (!isProtobufMessage(psiClass)) return null
         return parseMessageTypeInternal(psiClass, depth = 0)
     }
@@ -134,7 +144,7 @@ class GrpcTypeParser {
                 val returnType = getter.returnType ?: return@mapNotNull null
                 val typeName = returnType.canonicalText
 
-                classifyField(fieldName, typeName, returnType)
+                classifyField(fieldName, typeName, returnType, getter)
             }
     }
 
@@ -157,7 +167,7 @@ class GrpcTypeParser {
 
     // ── Private helpers ──────────────────────────────────────────────
 
-    private fun parseMessageTypeInternal(psiClass: PsiClass, depth: Int): ObjectModel? {
+    private suspend fun parseMessageTypeInternal(psiClass: PsiClass, depth: Int): ObjectModel? {
         if (depth >= MAX_DEPTH) return null
 
         val fields = extractFieldsFromGetters(psiClass)
@@ -168,14 +178,15 @@ class GrpcTypeParser {
             val model = resolveFieldModel(field, depth)
             fieldModels[field.name] = FieldModel(
                 model = model,
-                required = false // protobuf3 fields are all optional
+                // protobuf3 fields are all optional — unless `field.required` says otherwise
+                required = field.psi?.let { metadataResolver?.resolveFieldRequired(it) } ?: false
             )
         }
 
         return ObjectModel.Object(fields = fieldModels, ref = psiClass.qualifiedName)
     }
 
-    private fun resolveFieldModel(field: ProtobufField, depth: Int): ObjectModel {
+    private suspend fun resolveFieldModel(field: ProtobufField, depth: Int): ObjectModel {
         // `field.typeName` is the declared canonical text (`com.foo.Bar`, `java.util.List<...>`,
         // `int`), so it is what every node here records as its ref.
         return when {
@@ -196,7 +207,7 @@ class GrpcTypeParser {
         }
     }
 
-    private fun resolveElementModel(type: PsiType?, depth: Int): ObjectModel {
+    private suspend fun resolveElementModel(type: PsiType?, depth: Int): ObjectModel {
         // No declaration to point at — a repeated field's element type is recorded on the
         // enclosing `Array`'s ref instead.
         if (type == null) return ObjectModel.Single("unknown")
@@ -208,14 +219,19 @@ class GrpcTypeParser {
         return ObjectModel.Single(mapProtobufType(type.canonicalText), ref = type.canonicalText)
     }
 
-    private fun resolveNestedMessage(type: PsiType?, depth: Int): ObjectModel? {
+    private suspend fun resolveNestedMessage(type: PsiType?, depth: Int): ObjectModel? {
         if (type == null) return null
         val psiClass = PsiTypesUtil.getPsiClass(type) ?: return null
         if (!isProtobufMessage(psiClass)) return null
         return parseMessageTypeInternal(psiClass, depth + 1)
     }
 
-    private fun classifyField(fieldName: String, typeName: String, returnType: PsiType): ProtobufField {
+    private fun classifyField(
+        fieldName: String,
+        typeName: String,
+        returnType: PsiType,
+        psi: PsiElement? = null
+    ): ProtobufField {
         // Check for repeated fields (List<T>)
         if (typeName.startsWith("java.util.List")) {
             val elementType = extractTypeArgument(returnType, 0)
@@ -223,6 +239,7 @@ class GrpcTypeParser {
                 name = fieldName.removeSuffix("List"),
                 typeName = typeName,
                 type = returnType,
+                psi = psi,
                 isRepeated = true,
                 elementType = elementType
             )
@@ -236,6 +253,7 @@ class GrpcTypeParser {
                 name = fieldName.removeSuffix("Map"),
                 typeName = typeName,
                 type = returnType,
+                psi = psi,
                 isMap = true,
                 keyType = keyType?.canonicalText,
                 valueType = valueType
@@ -250,6 +268,7 @@ class GrpcTypeParser {
             name = fieldName,
             typeName = typeName,
             type = returnType,
+            psi = psi,
             isMessage = isMessage
         )
     }

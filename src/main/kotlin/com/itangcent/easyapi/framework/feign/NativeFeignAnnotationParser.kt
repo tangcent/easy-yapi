@@ -8,6 +8,7 @@ import com.itangcent.easyapi.core.export.HttpMethod
 import com.itangcent.easyapi.core.export.ParameterBinding
 import com.itangcent.easyapi.core.export.ParameterType
 import com.itangcent.easyapi.core.psi.helper.AnnotationHelper
+import com.itangcent.easyapi.core.psi.helper.DocMetadataResolver
 
 /**
  * Parser for native Feign annotations.
@@ -23,7 +24,12 @@ import com.itangcent.easyapi.core.psi.helper.AnnotationHelper
  * @param annotationHelper Helper for accessing annotation attributes
  */
 class NativeFeignAnnotationParser(
-    private val annotationHelper: AnnotationHelper
+    private val annotationHelper: AnnotationHelper,
+    /**
+     * Optional rule source: when present, `param.required` can override the
+     * framework default. Left null by callers that only need the structural parse.
+     */
+    private val metadataResolver: DocMetadataResolver? = null
 ) {
     /**
      * Parses the @RequestLine annotation to extract HTTP method and path.
@@ -111,6 +117,9 @@ class NativeFeignAnnotationParser(
                 ApiParameter(
                     name = v,
                     type = ParameterType.TEXT,
+                    // A URI template variable is always present, so it is required by
+                    // default — `param.required` still wins when configured.
+                    required = param?.let { metadataResolver?.resolveParamRequired(it) } ?: true,
                     binding = ParameterBinding.Path
                 )
             )

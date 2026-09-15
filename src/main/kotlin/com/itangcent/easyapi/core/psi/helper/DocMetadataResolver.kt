@@ -244,6 +244,17 @@ class DocMetadataResolver internal constructor(
         return engine.evaluateOrNull(RuleKeys.PARAM_REQUIRED, parameter)
     }
 
+    /**
+     * Resolves the raw `field.required` rule result for a field-like element
+     * (a field, a getter, or a method parameter used as a synthetic field).
+     *
+     * Returns `null` when no rule is configured, so the caller can apply a
+     * framework-specific default (protobuf3 fields, for instance, are all optional).
+     */
+    suspend fun resolveFieldRequired(element: PsiElement): Boolean? {
+        return engine.evaluateOrNull(RuleKeys.FIELD_REQUIRED, element)
+    }
+
     suspend fun isParamIgnored(parameter: PsiParameter): Boolean {
         return engine.evaluate(RuleKeys.PARAM_IGNORE, parameter)
     }

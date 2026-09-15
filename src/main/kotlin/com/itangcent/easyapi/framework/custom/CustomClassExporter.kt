@@ -356,7 +356,9 @@ class CustomClassExporter(
             }
             try {
                 val name = resolveParamName(p, paramName, binding)
-                val required = metadataResolver.isParamRequired(p)
+                // The custom framework has no required notion of its own, so
+                // `param.required` is the only source of truth here.
+                val required = metadataResolver.resolveParamRequired(p) ?: false
                 val rawType = metadataResolver.resolveParamType(p, p.type.canonicalText)
                 val type = ParameterType.fromTypeName(rawType)
                 val doc = metadataResolver.resolveParamDoc(p)
@@ -417,9 +419,10 @@ class CustomClassExporter(
                 ApiHeader(
                     name = name,
                     value = defaultValue ?: example,
-                    // Honour `param.required` for header-bound parameters instead of
-                    // always emitting false.
-                    required = metadataResolver.isParamRequired(p)
+                    // Honour `param.required` for header-bound parameters. The custom
+                    // framework declares no required attribute, so the fallback stays
+                    // optional.
+                    required = metadataResolver.resolveParamRequired(p) ?: false
                 )
             )
         }
