@@ -126,13 +126,21 @@ class ActuatorEndpointScanner(
                         type = ParameterType.fromTypeName(paramType.presentableText),
                         description = paramComment,
                         binding = ParameterBinding.Path,
-                        required = true
+                        // A selector is part of the path, so it is required by default —
+                        // `param.required` still wins when configured.
+                        required = metadataResolver.resolveParamRequired(parameter) ?: true
                     )
                 )
             } else if (hasBody) {
                 val jsonType = IrType.fromPsiType(paramType)
                 val objectModel = ObjectModel.Single(jsonType, ref = paramType.canonicalText)
-                bodyFields[paramName] = FieldModel(objectModel, paramComment)
+                // Written operations assemble the body from the method parameters;
+                // `field.required` decides whether a synthesized field is mandatory.
+                bodyFields[paramName] = FieldModel(
+                    model = objectModel,
+                    comment = paramComment,
+                    required = metadataResolver.resolveFieldRequired(parameter) ?: false
+                )
             }
         }
 

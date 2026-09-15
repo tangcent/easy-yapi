@@ -126,8 +126,8 @@ class SpringMvcClassExporter(
                 val folder = methodFolderName.takeIf { it.isNotBlank() } ?: classFolder.name
 
                 val resolvedBindings = resolveParameterBindings(resolvedMethod)
-                val params = buildParameters(resolvedBindings)
-                val paramHeaders = extractParamHeaders(resolvedBindings)
+                val params = buildParameters(resolvedBindings, resolvedMethod)
+                val paramHeaders = extractParamHeaders(resolvedBindings, resolvedMethod)
                 val body = buildRequestBody(resolvedBindings)
                 val response = read { ReturnTypeUnwrapper.unwrap(method.returnType) }
                 val responseBody = buildResponseBody(resolvedMethod)
@@ -249,7 +249,9 @@ class SpringMvcClassExporter(
      */
     private data class ResolvedParamBinding(
         val param: ResolvedParam,
-        val binding: ParameterBinding
+        val binding: ParameterBinding,
+        /** Index in [ResolvedMethod.params], used to look annotations up the super-method chain. */
+        val index: Int
     )
 
     /**
@@ -265,15 +267,16 @@ class SpringMvcClassExporter(
         return resolvedMethod.params.mapIndexedNotNull { index, param ->
             val binding = bindingResolver.resolve(param.psiParameter, resolvedMethod, index) ?: ParameterBinding.Query
             if (binding == ParameterBinding.Ignored) return@mapIndexedNotNull null
-            ResolvedParamBinding(param, binding)
+            ResolvedParamBinding(param, binding, index)
         }
     }
 
     private suspend fun buildParameters(
-        bindings: List<ResolvedParamBinding>
+        bindings: List<ResolvedParamBinding>,
+        resolvedMethod: ResolvedMethod
     ): List<ApiParameter> {
         val result = ArrayList<ApiParameter>()
-        for ((param, binding) in bindings) {
+        for ((param, binding, index) in bindings) {
             if (binding == ParameterBinding.Body) continue
 
             val p = param.psiParameter
@@ -295,17 +298,17 @@ class SpringMvcClassExporter(
                     if (expandedParams.isNotEmpty()) {
                         result.addAll(expandedParams)
                     } else {
-                        result.add(buildSingleParameter(p, paramName, binding))
+                        result.add(buildSingleParameter(p, paramName, binding, resolvedMethod, index))
                     }
                 } else if (binding == ParameterBinding.Query) {
                     val expandedParams = expandQueryParameter(resolvedParamType)
                     if (expandedParams.isNotEmpty()) {
                         result.addAll(expandedParams)
                     } else {
-                        result.add(buildSingleParameter(p, paramName, binding))
+                        result.add(buildSingleParameter(p, paramName, binding, resolvedMethod, index))
                     }
                 } else {
-                    result.add(buildSingleParameter(p, paramName, binding))
+                    result.add(buildSingleParameter(p, paramName, binding, resolvedMethod, index))
                 }
             } finally {
                 engine.evaluate(RuleKeys.API_PARAM_PARSE_AFTER, p)
@@ -318,10 +321,15 @@ class SpringMvcClassExporter(
     private suspend fun buildSingleParameter(
         p: PsiParameter,
         paramName: String,
-        binding: ParameterBinding
+        binding: ParameterBinding,
+        resolvedMethod: ResolvedMethod,
+        index: Int
     ): ApiParameter {
         val name = metadataResolver.resolveParamName(p, paramName)
-        val required = metadataResolver.isParamRequired(p)
+        // `param.required` wins when configured; otherwise fall back to the value
+        // declared on the Spring annotation, then to the Spring default.
+        val required = metadataResolver.resolveParamRequired(p)
+            ?: SpringParamRequired.resolve(p, binding, resolvedMethod, index)
         val rawType = metadataResolver.resolveParamType(p, p.type.canonicalText)
         val type = ParameterType.fromTypeName(rawType)
         val doc = metadataResolver.resolveParamDoc(p)
@@ -427,9 +435,12 @@ class SpringMvcClassExporter(
     }
 
 
-    private suspend fun extractParamHeaders(bindings: List<ResolvedParamBinding>): List<ApiHeader> {
+    private suspend fun extractParamHeaders(
+        bindings: List<ResolvedParamBinding>,
+        resolvedMethod: ResolvedMethod
+    ): List<ApiHeader> {
         val headers = ArrayList<ApiHeader>()
-        for ((param, binding) in bindings) {
+        for ((param, binding, index) in bindings) {
             if (binding != ParameterBinding.Header) continue
             val p = param.psiParameter
             val name = metadataResolver.resolveParamName(p, param.name)
@@ -443,27 +454,11 @@ class SpringMvcClassExporter(
                     // the Spring default (@RequestHeader is required unless declared
                     // otherwise).
                     required = metadataResolver.resolveParamRequired(p)
-                        ?: isRequestHeaderRequiredByDefault(p)
+                        ?: SpringParamRequired.resolve(p, binding, resolvedMethod, index)
                 )
             )
         }
         return headers
-    }
-
-    /**
-     * Spring default for `@RequestHeader`: the header is required unless
-     * `required = false` is declared explicitly. Only consulted when no
-     * `param.required` rule is configured.
-     */
-    private suspend fun isRequestHeaderRequiredByDefault(parameter: PsiParameter): Boolean {
-        if (!annotationHelper.hasAnn(parameter, SpringMvcConstants.Annotations.REQUEST_HEADER)) {
-            return false
-        }
-        return annotationHelper.findAttrAsString(
-            parameter,
-            SpringMvcConstants.Annotations.REQUEST_HEADER,
-            "required"
-        ) != "false"
     }
 
     /**

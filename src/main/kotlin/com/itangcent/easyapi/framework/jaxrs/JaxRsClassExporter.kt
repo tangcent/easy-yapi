@@ -211,7 +211,9 @@ class JaxRsClassExporter(
                                 // from the PsiParameter because the entries returned by
                                 // the parameter resolver are produced before
                                 // `param.required` is applied to the ApiParameter list.
-                                required = metadataResolver.isParamRequired(p)
+                                // `@HeaderParam` carries no required attribute, so the
+                                // fallback stays optional.
+                                required = metadataResolver.resolveParamRequired(p) ?: false
                             )
                         )
                     }
@@ -249,7 +251,17 @@ class JaxRsClassExporter(
                 LOG.info("before parse param:$paramName")
 
                 val resolved = parameterResolver.resolve(p)
-                result.addAll(resolved.map { it.copy(required = metadataResolver.isParamRequired(p)) })
+                // `param.required` wins when configured; otherwise fall back to the
+                // JAX-RS default: a `@PathParam` is part of the URI template, every
+                // other binding has no required notion and stays optional.
+                result.addAll(
+                    resolved.map {
+                        it.copy(
+                            required = metadataResolver.resolveParamRequired(p)
+                                ?: (it.binding == ParameterBinding.Path)
+                        )
+                    }
+                )
 
                 LOG.info("after parse param:$paramName")
             }
