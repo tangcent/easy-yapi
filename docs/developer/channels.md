@@ -11,7 +11,7 @@ operation plus one `plugin.xml` line.
 ## When to write a channel
 
 Write a channel when you have a new **output destination** for `ApiEndpoint`
-models. The 6 built-in channels:
+models. The 7 built-in channels:
 
 | Channel | HTTP | gRPC | Output |
 |---------|:----:|:----:|--------|
@@ -21,6 +21,7 @@ models. The 6 built-in channels:
 | [HttpClientChannel](../../src/main/kotlin/com/itangcent/easyapi/channel/httpclient/HttpClientChannel.kt) | ✓ | ✓ | IntelliJ HTTP Client scratch file |
 | [HoppscotchChannel](../../src/main/kotlin/com/itangcent/easyapi/channel/hoppscotch/HoppscotchChannel.kt) | ✓ | — | JSON file or direct upload to Hoppscotch |
 | [OpenApiChannel](../../src/main/kotlin/com/itangcent/easyapi/channel/openapi/OpenApiChannel.kt) | ✓ | — | `.json` or `.yaml` OpenAPI 3.0.3 document |
+| [ApipostChannel](../../src/main/kotlin/com/itangcent/easyapi/channel/apipost/ApipostChannel.kt) | ✓ | — | `.json` file or direct upload to an ApiPost project via its open API |
 
 If you just need to *serialize fields* of a `PsiClass` to a new representation
 (JSON, YAML, …), that's a [format](formats.md), not a channel.

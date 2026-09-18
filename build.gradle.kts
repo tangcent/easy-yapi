@@ -117,6 +117,15 @@ dependencies {
     testImplementation("com.google.guava:guava:33.0.0-jre")
     testImplementation("com.google.guava:failureaccess:1.0.2")
     testImplementation("javax.annotation:javax.annotation-api:1.3.2")
+
+    // OAS 3.0 compliance verification for the channel/openapi output (test only
+    // — see NFR-6 / AC-10). Deliberately NOT on `implementation`: it transitively
+    // pulls jackson and snakeyaml newer than the versions pinned for the plugin
+    // runtime, so shipping it would bloat the JAR and raise classpath-conflict
+    // risk. Compliance must fail CI, not surface as a runtime warning.
+    testImplementation("io.swagger.parser.v3:swagger-parser:2.1.27") {
+        exclude(group = "org.slf4j", module = "slf4j-simple")
+    }
 }
 
 protobuf {

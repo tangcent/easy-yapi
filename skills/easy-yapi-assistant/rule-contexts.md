@@ -329,6 +329,34 @@ Type: `com.itangcent.easyapi.core.rule.context.ParameterContext` — PSI paramet
 - `sourceCode(): String?`
 - `type(): com.itangcent.easyapi.core.rule.context.ScriptTypeContext`
 
+### object: empty
+
+Type: `com.itangcent.easyapi.core.rule.context.ItContext` — No PSI element is supplied; common helper bindings remain available.
+
+- `ann(name: String): String?`
+- `ann(name: String, attr: String): String?`
+- `annMap(name: String): Map<String, Any?>?`
+- `annMaps(name: String): List<Map<String, Any?>>?`
+- `annValue(name: String): Any?`
+- `annValue(name: String, attr: String): Any?`
+- `canonicalText(): String`
+- `contextType(): String`
+- `defineCode(): String?`
+- `doc(): String?`
+- `doc(tag: String): String?`
+- `doc(tag: String, subTag: String): String?`
+- `docs(tag: String): List<String>?`
+- `getExt(name: String): Any?`
+- `getName(): String?`
+- `hasAnn(name: String): Boolean`
+- `hasDoc(tag: String): Boolean`
+- `hasModifier(modifier: String): Boolean`
+- `modifiers(): List<String>`
+- `name(): String`
+- `psi(): com.intellij.psi.PsiElement?`
+- `setExt(name: String, value: Any?): Unit`
+- `sourceCode(): String?`
+
 ### object: field
 
 Type: `com.itangcent.easyapi.core.rule.context.FieldContext` — PSI field context; object-model fields may also be represented by a method context.
@@ -367,34 +395,6 @@ Type: `com.itangcent.easyapi.core.rule.context.FieldContext` — PSI field conte
 - `setExt(name: String, value: Any?): Unit`
 - `sourceCode(): String?`
 - `type(): com.itangcent.easyapi.core.rule.context.ScriptTypeContext`
-
-### object: empty
-
-Type: `com.itangcent.easyapi.core.rule.context.ItContext` — No PSI element is supplied; common helper bindings remain available.
-
-- `ann(name: String): String?`
-- `ann(name: String, attr: String): String?`
-- `annMap(name: String): Map<String, Any?>?`
-- `annMaps(name: String): List<Map<String, Any?>>?`
-- `annValue(name: String): Any?`
-- `annValue(name: String, attr: String): Any?`
-- `canonicalText(): String`
-- `contextType(): String`
-- `defineCode(): String?`
-- `doc(): String?`
-- `doc(tag: String): String?`
-- `doc(tag: String, subTag: String): String?`
-- `docs(tag: String): List<String>?`
-- `getExt(name: String): Any?`
-- `getName(): String?`
-- `hasAnn(name: String): Boolean`
-- `hasDoc(tag: String): Boolean`
-- `hasModifier(modifier: String): Boolean`
-- `modifiers(): List<String>`
-- `name(): String`
-- `psi(): com.intellij.psi.PsiElement?`
-- `setExt(name: String, value: Any?): Unit`
-- `sourceCode(): String?`
 
 ### object: api
 
@@ -725,6 +725,153 @@ Tag(s) attached to the API (e.g. for YApi grouping/filtering).
 - `runtime` (aliases: `R`) — Project, module, and source-file metadata. (availability: always)
 
 **Object APIs:** `method`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`
+
+## apipost.export.before
+
+**Source:** `apipost`  
+**Execution mode:** `dynamic`
+**Bindings:** `it`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`  
+**`it` context types:** `empty`
+Fires once before an ApiPost export starts.
+
+**Bindings:**
+- `it` — Current rule context. Its concrete type depends on this rule key. (availability: always)
+- `logger` (aliases: `LOG`) — EasyAPI console logger. (availability: always)
+- `session` (aliases: `S`, `sessionStorage`) — Operation session storage. (availability: always)
+- `tool` (aliases: `T`) — RuleToolUtils conversion, collection, JSON, string, and date helpers. (availability: always)
+- `regex` (aliases: `RE`) — Regular-expression helpers. (availability: always)
+- `files` (aliases: `F`) — File save helper. (availability: always)
+- `config` (aliases: `C`) — Resolved EasyAPI configuration values. (availability: always)
+- `localStorage` — Persistent local storage. (availability: always)
+- `fieldContext` — Current object-model field path. (availability: always)
+- `httpClient` — Blocking HTTP adapter for Groovy rules. (availability: when an HTTP client is configured)
+- `helper` (aliases: `H`) — PSI class and documentation-link lookup helper. (availability: always)
+- `runtime` (aliases: `R`) — Project, module, and source-file metadata. (availability: always)
+
+**Object APIs:** `empty`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`
+
+## apipost.host
+
+**Source:** `apipost`  
+**Execution mode:** `dynamic`
+**Bindings:** `it`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`  
+**`it` context types:** `class`, `empty`
+ApiPost open API base URL override; used ONLY to assemble /open/apis/* requests.
+
+**Bindings:**
+- `it` — Current rule context. Its concrete type depends on this rule key. Discriminate with it.contextType(), which returns 'class'/'empty'. (availability: always)
+- `logger` (aliases: `LOG`) — EasyAPI console logger. (availability: always)
+- `session` (aliases: `S`, `sessionStorage`) — Operation session storage. (availability: always)
+- `tool` (aliases: `T`) — RuleToolUtils conversion, collection, JSON, string, and date helpers. (availability: always)
+- `regex` (aliases: `RE`) — Regular-expression helpers. (availability: always)
+- `files` (aliases: `F`) — File save helper. (availability: always)
+- `config` (aliases: `C`) — Resolved EasyAPI configuration values. (availability: always)
+- `localStorage` — Persistent local storage. (availability: always)
+- `fieldContext` — Current object-model field path. (availability: always)
+- `httpClient` — Blocking HTTP adapter for Groovy rules. (availability: when an HTTP client is configured)
+- `helper` (aliases: `H`) — PSI class and documentation-link lookup helper. (availability: always)
+- `runtime` (aliases: `R`) — Project, module, and source-file metadata. (availability: always)
+
+**Object APIs:** `class`, `empty`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`
+
+## apipost.project
+
+**Source:** `apipost`  
+**Execution mode:** `dynamic`
+**Bindings:** `it`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`  
+**`it` context types:** `method`, `class`
+ApiPost target project id; overrides the configured project for this export.
+
+**Bindings:**
+- `it` — Current rule context. Its concrete type depends on this rule key. Discriminate with it.contextType(), which returns 'method'/'class'. (availability: always)
+- `logger` (aliases: `LOG`) — EasyAPI console logger. (availability: always)
+- `session` (aliases: `S`, `sessionStorage`) — Operation session storage. (availability: always)
+- `tool` (aliases: `T`) — RuleToolUtils conversion, collection, JSON, string, and date helpers. (availability: always)
+- `regex` (aliases: `RE`) — Regular-expression helpers. (availability: always)
+- `files` (aliases: `F`) — File save helper. (availability: always)
+- `config` (aliases: `C`) — Resolved EasyAPI configuration values. (availability: always)
+- `localStorage` — Persistent local storage. (availability: always)
+- `fieldContext` — Current object-model field path. (availability: always)
+- `httpClient` — Blocking HTTP adapter for Groovy rules. (availability: when an HTTP client is configured)
+- `helper` (aliases: `H`) — PSI class and documentation-link lookup helper. (availability: always)
+- `runtime` (aliases: `R`) — Project, module, and source-file metadata. (availability: always)
+
+**Object APIs:** `method`, `class`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`
+
+## apipost.save.after
+
+**Source:** `apipost`  
+**Execution mode:** `dynamic`
+**Bindings:** `it`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`, `content`, `result`  
+**`it` context types:** `empty`
+Fires after an endpoint is pushed to ApiPost; `content` and `result` are exposed.
+
+**Bindings:**
+- `it` — Current rule context. Its concrete type depends on this rule key. (availability: always)
+- `logger` (aliases: `LOG`) — EasyAPI console logger. (availability: always)
+- `session` (aliases: `S`, `sessionStorage`) — Operation session storage. (availability: always)
+- `tool` (aliases: `T`) — RuleToolUtils conversion, collection, JSON, string, and date helpers. (availability: always)
+- `regex` (aliases: `RE`) — Regular-expression helpers. (availability: always)
+- `files` (aliases: `F`) — File save helper. (availability: always)
+- `config` (aliases: `C`) — Resolved EasyAPI configuration values. (availability: always)
+- `localStorage` — Persistent local storage. (availability: always)
+- `fieldContext` — Current object-model field path. (availability: always)
+- `httpClient` — Blocking HTTP adapter for Groovy rules. (availability: when an HTTP client is configured)
+- `helper` (aliases: `H`) — PSI class and documentation-link lookup helper. (availability: always)
+- `runtime` (aliases: `R`) — Project, module, and source-file metadata. (availability: always)
+- `content` — Key-specific runtime binding. (availability: key-specific)
+- `result` — Key-specific runtime binding. (availability: key-specific)
+
+**Object APIs:** `empty`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`
+
+## apipost.save.before
+
+**Source:** `apipost`  
+**Execution mode:** `dynamic`
+**Bindings:** `it`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`, `document`  
+**`it` context types:** `empty`
+Fires before an endpoint is pushed to ApiPost; the `document` binding can be mutated.
+
+**Bindings:**
+- `it` — Current rule context. Its concrete type depends on this rule key. (availability: always)
+- `logger` (aliases: `LOG`) — EasyAPI console logger. (availability: always)
+- `session` (aliases: `S`, `sessionStorage`) — Operation session storage. (availability: always)
+- `tool` (aliases: `T`) — RuleToolUtils conversion, collection, JSON, string, and date helpers. (availability: always)
+- `regex` (aliases: `RE`) — Regular-expression helpers. (availability: always)
+- `files` (aliases: `F`) — File save helper. (availability: always)
+- `config` (aliases: `C`) — Resolved EasyAPI configuration values. (availability: always)
+- `localStorage` — Persistent local storage. (availability: always)
+- `fieldContext` — Current object-model field path. (availability: always)
+- `httpClient` — Blocking HTTP adapter for Groovy rules. (availability: when an HTTP client is configured)
+- `helper` (aliases: `H`) — PSI class and documentation-link lookup helper. (availability: always)
+- `runtime` (aliases: `R`) — Project, module, and source-file metadata. (availability: always)
+- `document` — Mutable channel-owned document model. (availability: always for this event)
+
+**Object APIs:** `empty`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`
+
+## apipost.server.url
+
+**Source:** `apipost`  
+**Execution mode:** `dynamic`
+**Bindings:** `it`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`  
+**`it` context types:** `class`, `empty`
+Base URL of the API being exported; written to the document's host/base_path (ApiPost's pre-URL). Left empty when unset. Never derived from apipost.host.
+
+**Bindings:**
+- `it` — Current rule context. Its concrete type depends on this rule key. Discriminate with it.contextType(), which returns 'class'/'empty'. (availability: always)
+- `logger` (aliases: `LOG`) — EasyAPI console logger. (availability: always)
+- `session` (aliases: `S`, `sessionStorage`) — Operation session storage. (availability: always)
+- `tool` (aliases: `T`) — RuleToolUtils conversion, collection, JSON, string, and date helpers. (availability: always)
+- `regex` (aliases: `RE`) — Regular-expression helpers. (availability: always)
+- `files` (aliases: `F`) — File save helper. (availability: always)
+- `config` (aliases: `C`) — Resolved EasyAPI configuration values. (availability: always)
+- `localStorage` — Persistent local storage. (availability: always)
+- `fieldContext` — Current object-model field path. (availability: always)
+- `httpClient` — Blocking HTTP adapter for Groovy rules. (availability: when an HTTP client is configured)
+- `helper` (aliases: `H`) — PSI class and documentation-link lookup helper. (availability: always)
+- `runtime` (aliases: `R`) — Project, module, and source-file metadata. (availability: always)
+
+**Object APIs:** `class`, `empty`, `logger`, `session`, `tool`, `regex`, `files`, `config`, `localStorage`, `fieldContext`, `httpClient`, `helper`, `runtime`
 
 ## class.doc
 
