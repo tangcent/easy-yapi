@@ -63,3 +63,41 @@ data class RuleFileSettings(
             ExtensionConfigRegistry.codesToString(ExtensionConfigRegistry.defaultCodes())
     }
 }
+
+/**
+ * The raw `extensionConfigs` codes — positive codes mixed with `-<code>`
+ * exclusions, exactly as persisted.
+ *
+ * This is the form [com.itangcent.easyapi.core.config.source.ExtensionConfigSource]
+ * consumes. Do **not** hand it [enabledExtensionCodes] instead: that expansion
+ * drops the `-<code>` entries, and an excluded default extension is then absent
+ * from the set too, so the source's `defaultEnabled` fallback re-enables it and
+ * issue #1461 comes straight back.
+ */
+fun RuleFileSettings.extensionCodes(): Array<String> =
+    ExtensionConfigRegistry.stringToCodes(extensionConfigs)
+
+/**
+ * The extension codes that are actually enabled — [extensionCodes] expanded
+ * through `defaultEnabled` and its `-<code>` exclusions. This is the form the
+ * Extensions tab shows and edits; persist an edit with [updateExtensionCodes].
+ */
+fun RuleFileSettings.enabledExtensionCodes(): List<String> =
+    ExtensionConfigRegistry.selectedCodes(extensionCodes()).toList()
+
+/**
+ * Persists [checkedCodes] into `extensionConfigs` — the encode counterpart of
+ * [enabledExtensionCodes].
+ *
+ * Checked extensions are written as plain codes. An extension that is unchecked
+ * but enabled by default must be written as an explicit `-<code>` exclusion:
+ * writing only the checked codes drops the deselection, and the next read falls
+ * back to `defaultEnabled` and silently re-checks it (issue #1461). Unchecked
+ * extensions that are disabled by default need no entry.
+ */
+fun RuleFileSettings.updateExtensionCodes(checkedCodes: Collection<String>) {
+    val checked = checkedCodes.toSet()
+    extensionConfigs = ExtensionConfigRegistry.allExtensions()
+        .filter { it.code.isNotBlank() && (checked.contains(it.code) || it.defaultEnabled) }
+        .joinToString(",") { if (checked.contains(it.code)) it.code else "-${it.code}" }
+}

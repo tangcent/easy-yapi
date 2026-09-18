@@ -5,6 +5,8 @@ import com.itangcent.easyapi.core.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.core.settings.module.GeneralSettings
 import com.itangcent.easyapi.core.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.core.settings.module.RuleFileSettings
+import com.itangcent.easyapi.core.settings.module.enabledExtensionCodes
+import com.itangcent.easyapi.core.settings.module.extensionCodes
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -211,7 +213,7 @@ class SettingsPanelsCoverageTest {
         panel.applyTo(saved)
         assertTrue(
             "the deselection must be persisted as a '-$defaultCode' exclusion, got: '${saved.extensionConfigs}'",
-            ExtensionConfigRegistry.stringToCodes(saved.extensionConfigs).contains("-$defaultCode")
+            saved.extensionCodes().contains("-$defaultCode")
         )
 
         // Reopening the settings dialog re-reads whatever was persisted.
@@ -249,9 +251,7 @@ class SettingsPanelsCoverageTest {
 
         assertTrue(
             "explicitly disabling every extension must not fall back to the defaults",
-            ExtensionConfigRegistry
-                .selectedCodes(ExtensionConfigRegistry.stringToCodes(target.extensionConfigs))
-                .isEmpty()
+            target.enabledExtensionCodes().isEmpty()
         )
         assertFalse(panel.isModified(target))
     }

@@ -4,9 +4,9 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.config.parser.ConfigTextParser
 import com.itangcent.easyapi.core.config.source.*
-import com.itangcent.easyapi.core.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.core.settings.module.EnvironmentSettings
 import com.itangcent.easyapi.core.settings.module.RuleFileSettings
+import com.itangcent.easyapi.core.settings.module.extensionCodes
 import com.itangcent.easyapi.core.settings.settings
 
 /**
@@ -73,7 +73,9 @@ class DefaultConfigReader(
                 ),
                 ExtensionConfigSource(
                     project,
-                    ExtensionConfigRegistry.stringToCodes(ruleFileSettings.extensionConfigs),
+                    // Raw codes, `-<code>` exclusions included — ExtensionConfigSource
+                    // applies `defaultEnabled` itself. Never pass enabledExtensionCodes().
+                    ruleFileSettings.extensionCodes(),
                     configTextParser
                 ),
                 UrlConfigSource(

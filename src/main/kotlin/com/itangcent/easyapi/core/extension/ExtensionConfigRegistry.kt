@@ -219,27 +219,4 @@ object ExtensionConfigRegistry : IdeaLog {
     fun stringToCodes(codes: String): Array<String> {
         return codes.split(",").map { it.trim() }.filter { it.isNotBlank() }.toTypedArray()
     }
-
-    /**
-     * Encodes a set of user-checked extension codes into the persisted
-     * `extensionConfigs` representation — the encode counterpart of
-     * [selectedCodes], which a reader applies to the [stringToCodes] output.
-     *
-     * Checked extensions are written as plain codes. An extension that the user
-     * unchecked but that is enabled by default must be written as an explicit
-     * `-<code>` exclusion: writing only the checked codes would drop the
-     * deselection, and the next read would fall back to `defaultEnabled` and
-     * silently re-check it (issue #1461). Unchecked extensions that are disabled
-     * by default need no entry.
-     *
-     * [codesToString] is deliberately kept as the plain (unencoded) joiner it has
-     * always been — it is used for the default value, where every entry is a
-     * positive code.
-     */
-    fun encodeSelection(checkedCodes: Collection<String>): String {
-        val checked = checkedCodes.toSet()
-        return extensions
-            .filter { it.code.isNotBlank() && (checked.contains(it.code) || it.defaultEnabled) }
-            .joinToString(",") { if (checked.contains(it.code)) it.code else "-${it.code}" }
-    }
 }
