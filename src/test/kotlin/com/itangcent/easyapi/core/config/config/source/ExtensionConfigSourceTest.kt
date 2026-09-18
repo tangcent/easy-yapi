@@ -51,4 +51,35 @@ class ExtensionConfigSourceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         assertTrue("converts config should be included", entries.isNotEmpty())
     }
+
+    /**
+     * The export path is the reader that actually matters for #1461: the
+     * Extensions tab persists a deselection as `-<code>`, so [ExtensionConfigSource]
+     * must honour the exclusion instead of falling back to `defaultEnabled`.
+     * It carries its own copy of the code grammar, hence the dedicated test
+     * rather than relying on [ExtensionConfigRegistry.selectedCodes].
+     */
+    fun testSourceHonoursExclusionCode() = runBlocking {
+        val code = "converts"
+        val extension = ExtensionConfigRegistry.getExtension(code)
+        assertNotNull("$code extension should exist", extension)
+        assertTrue("$code should be enabled by default", extension!!.defaultEnabled)
+
+        val baselineKeys = ExtensionConfigSource(project, emptyArray(), configTextParser)
+            .collect().map { it.key }.toSet()
+        val excludedKeys = ExtensionConfigSource(project, arrayOf("-$code"), configTextParser)
+            .collect().map { it.key }.toSet()
+
+        assertTrue("baseline should carry $code rules", baselineKeys.isNotEmpty())
+        val dropped = baselineKeys - excludedKeys
+        assertTrue(
+            "'-$code' must drop that extension's rules at export time (issue #1461)",
+            dropped.isNotEmpty()
+        )
+        assertEquals(
+            "excluding $code must leave every other extension untouched",
+            baselineKeys - dropped,
+            excludedKeys
+        )
+    }
 }

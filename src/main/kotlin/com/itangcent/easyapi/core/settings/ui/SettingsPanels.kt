@@ -566,7 +566,7 @@ class ParsingOutputSettingsPanel : SettingsPanel<ParsingOutputSettings> {
 }
 
 class ExtensionConfigPanel : SettingsPanel<RuleFileSettings> {
-    private val extensionList = CheckBoxList<String>()
+    internal val extensionList = CheckBoxList<String>()
     private val preview = JBTextArea()
 
     override val component: JComponent = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
@@ -622,12 +622,6 @@ class ExtensionConfigPanel : SettingsPanel<RuleFileSettings> {
     /** Expands raw codes (positive and `-` exclusion entries) into enabled codes. */
     private fun effectiveCodes(codes: Collection<String>): List<String> =
         ExtensionConfigRegistry.selectedCodes(codes.toTypedArray()).toList()
-
-    internal fun isCheckedForTest(code: String): Boolean = extensionList.isItemSelected(code)
-
-    internal fun setCheckedForTest(code: String, checked: Boolean) {
-        extensionList.setItemSelected(code, checked)
-    }
 
     private fun refreshPreview() {
         val selectedIndex = extensionList.selectedIndex

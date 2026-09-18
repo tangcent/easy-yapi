@@ -204,9 +204,9 @@ class SettingsPanelsCoverageTest {
 
         val panel = ExtensionConfigPanel()
         panel.resetFrom(RuleFileSettings().apply { extensionConfigs = "" })
-        assertTrue(panel.isCheckedForTest(defaultCode))
+        assertTrue(panel.extensionList.isItemSelected(defaultCode))
 
-        panel.setCheckedForTest(defaultCode, false)
+        panel.extensionList.setItemSelected(defaultCode, false)
         val saved = RuleFileSettings()
         panel.applyTo(saved)
         assertTrue(
@@ -219,7 +219,7 @@ class SettingsPanelsCoverageTest {
         reopened.resetFrom(saved)
         assertFalse(
             "unchecked extension '$defaultCode' must stay unchecked after save + reopen",
-            reopened.isCheckedForTest(defaultCode)
+            reopened.extensionList.isItemSelected(defaultCode)
         )
         assertFalse(reopened.isModified(saved))
     }
@@ -231,7 +231,7 @@ class SettingsPanelsCoverageTest {
         val target = RuleFileSettings().apply { extensionConfigs = "" }
         panel.resetFrom(target)
 
-        panel.setCheckedForTest(defaultCode, false)
+        panel.extensionList.setItemSelected(defaultCode, false)
         assertTrue("unchecking an extension must enable Apply", panel.isModified(target))
 
         panel.applyTo(target)
@@ -244,7 +244,7 @@ class SettingsPanelsCoverageTest {
         val target = RuleFileSettings().apply { extensionConfigs = "" }
         panel.resetFrom(target)
 
-        ExtensionConfigRegistry.allExtensions().forEach { panel.setCheckedForTest(it.code, false) }
+        ExtensionConfigRegistry.allExtensions().forEach { panel.extensionList.setItemSelected(it.code, false) }
         panel.applyTo(target)
 
         assertTrue(

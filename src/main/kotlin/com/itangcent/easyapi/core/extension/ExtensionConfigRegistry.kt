@@ -222,7 +222,8 @@ object ExtensionConfigRegistry : IdeaLog {
 
     /**
      * Encodes a set of user-checked extension codes into the persisted
-     * `extensionConfigs` representation — the inverse of [stringToCodes].
+     * `extensionConfigs` representation — the encode counterpart of
+     * [selectedCodes], which a reader applies to the [stringToCodes] output.
      *
      * Checked extensions are written as plain codes. An extension that the user
      * unchecked but that is enabled by default must be written as an explicit

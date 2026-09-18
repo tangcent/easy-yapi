@@ -134,7 +134,8 @@ class ExtensionConfigRegistryTest {
     @Test
     fun testEncodeSelection_uncheckedDefaultExtension_writtenAsExclusion() {
         val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
-        val encoded = ExtensionConfigRegistry.encodeSelection(emptyList())
+        val stillChecked = ExtensionConfigRegistry.defaultCodes().filter { it != defaultCode }
+        val encoded = ExtensionConfigRegistry.encodeSelection(stillChecked)
         assertTrue(
             "unchecking '$defaultCode' must be persisted as an exclusion, got: $encoded",
             encoded.split(",").contains("-$defaultCode")
