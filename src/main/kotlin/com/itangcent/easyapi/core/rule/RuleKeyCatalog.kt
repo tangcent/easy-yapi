@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.core.rule
 
+import com.itangcent.easyapi.channel.apipost.ApipostRuleKeys
 import com.itangcent.easyapi.channel.hoppscotch.HoppscotchRuleKeys
 import com.itangcent.easyapi.channel.openapi.OpenApiRuleKeys
 import com.itangcent.easyapi.channel.postman.PostmanRuleKeys
@@ -59,6 +60,7 @@ object RuleKeyCatalog {
         "hoppscotch" to { RuleKey.collectFrom(HoppscotchRuleKeys) },
         "openapi" to { RuleKey.collectFrom(OpenApiRuleKeys) },
         "yapi" to { RuleKey.collectFrom(YapiRuleKeys) + RuleKey.collectFrom(YapiMetaRuleKeys) },
+        "apipost" to { RuleKey.collectFrom(ApipostRuleKeys) },
         FRAMEWORK_NAME to { RuleKey.collectFrom(CustomRuleKeys) },
         "implicit" to { ImplicitConfigKeys.all }
     )

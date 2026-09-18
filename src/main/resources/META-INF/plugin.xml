@@ -57,6 +57,7 @@
         <channel implementation="com.itangcent.easyapi.channel.httpclient.HttpClientChannel"/>
         <channel implementation="com.itangcent.easyapi.channel.hoppscotch.HoppscotchChannel"/>
         <channel implementation="com.itangcent.easyapi.channel.openapi.OpenApiChannel"/>
+        <channel implementation="com.itangcent.easyapi.channel.apipost.ApipostChannel"/>
         <fieldFormatChannel implementation="com.itangcent.easyapi.format.json.JsonFieldFormatChannel"/>
         <fieldFormatChannel implementation="com.itangcent.easyapi.format.json5.Json5FieldFormatChannel"/>
         <fieldFormatChannel implementation="com.itangcent.easyapi.format.properties.PropertiesFieldFormatChannel"/>

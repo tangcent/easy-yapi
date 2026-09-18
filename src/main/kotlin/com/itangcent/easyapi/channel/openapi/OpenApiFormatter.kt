@@ -66,7 +66,14 @@ class OpenApiFormatter(private val project: Project) : IdeaLog {
             // Resolve a document-unique operationId.
             val opIdResult = OperationIdResolver.resolve(meta, endpoint.sourceMethod, usedOperationIds)
 
-            val operation = buildOperation(endpoint, meta, opIdResult.operationId, schemaConverter, tagOrder)
+            val operation = buildOperation(
+                endpoint,
+                meta,
+                opIdResult.operationId,
+                schemaConverter,
+                tagOrder,
+                normalizedPath,
+            )
 
             // Collapse by normalized path (one PathItem per path).
             // PathItemObject is val-only; withMethod returns a copy.
@@ -99,9 +106,10 @@ class OpenApiFormatter(private val project: Project) : IdeaLog {
         opId: String,
         schemaConverter: OpenApiSchemaConverter,
         tagOrder: MutableSet<String>,
+        normalizedPath: String,
     ): OperationObject {
         val tag = resolveTag(endpoint, tagOrder)
-        val parameters = buildParameters(meta)
+        val parameters = ensurePathParameters(normalizedPath, buildParameters(meta))
         val requestBody = buildRequestBody(meta, schemaConverter)
         val responses = buildResponses(meta, schemaConverter)
 
@@ -114,6 +122,37 @@ class OpenApiFormatter(private val project: Project) : IdeaLog {
             requestBody = requestBody,
             responses = responses,
         )
+    }
+
+    /**
+     * Fills in `in: path` parameters for path-template variables the endpoint
+     * did not declare.
+     *
+     * OAS 3.0 requires every `{var}` in a path template to be defined as a path
+     * parameter. Without this, a document containing `/users/{id}` with no
+     * matching parameter is rejected by validators and strict consumers — which
+     * is what the `OpenApiComplianceTest` check caught in four fixtures. It
+     * happens in practice when the variable is contributed by a parent mapping
+     * the framework did not surface.
+     *
+     * A string-typed placeholder keeps the document legal; a declared parameter
+     * of the same name always wins, so nothing that already works changes.
+     */
+    private fun ensurePathParameters(path: String, parameters: List<ParameterObject>): List<ParameterObject> {
+        val declared = parameters.filter { it.`in` == "path" }.map { it.name }.toSet()
+        val missing = PATH_VARIABLE_PATTERN.findAll(path)
+            .map { it.groupValues[1] }
+            .filterNot { it in declared }
+            .toList()
+        if (missing.isEmpty()) return parameters
+        return parameters + missing.map { name ->
+            ParameterObject(
+                name = name,
+                `in` = "path",
+                required = true,
+                schema = SchemaObject(type = "string"),
+            )
+        }
     }
 
     /**
@@ -400,5 +439,8 @@ class OpenApiFormatter(private val project: Project) : IdeaLog {
             HttpMethod.HEAD,
             HttpMethod.DELETE,
         )
+
+        /** Matches an OAS path-template variable — `{id}` in `/users/{id}`. */
+        private val PATH_VARIABLE_PATTERN = Regex("\\{([^/{}]+)}")
     }
 }

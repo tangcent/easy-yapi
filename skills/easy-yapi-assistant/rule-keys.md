@@ -94,6 +94,17 @@ Automatically generated from every rule key's self-describing scheme (`RuleKeySc
 | `yapi.save.after` | EventKey | `THROW_IN_ERROR` | `METHOD`/`CLASS` | `` | Fires after an endpoint is uploaded to YApi; the upload result is exposed. |
 | `yapi.save.before` | EventKey | `THROW_IN_ERROR` | `METHOD`/`CLASS` | `` | Fires before an endpoint is uploaded to YApi; the document can be mutated. |
 
+## apipost rules
+
+| Key | Type | Mode | Context | Aliases | Summary |
+|-----|------|------|---------|---------|---------|
+| `apipost.export.before` | EventKey | `THROW_IN_ERROR` | `EMPTY` | `` | Fires once before an ApiPost export starts. |
+| `apipost.host` | StringKey | `SINGLE` | `CLASS`/`EMPTY` | `` | ApiPost open API base URL override; used ONLY to assemble /open/apis/* requests. |
+| `apipost.project` | StringKey | `SINGLE` | `METHOD`/`CLASS` | `` | ApiPost target project id; overrides the configured project for this export. |
+| `apipost.save.after` | EventKey | `THROW_IN_ERROR` | `EMPTY` | `` | Fires after an endpoint is pushed to ApiPost; `content` and `result` are exposed. |
+| `apipost.save.before` | EventKey | `THROW_IN_ERROR` | `EMPTY` | `` | Fires before an endpoint is pushed to ApiPost; the `document` binding can be mutated. |
+| `apipost.server.url` | StringKey | `SINGLE` | `CLASS`/`EMPTY` | `` | Base URL of the API being exported; written to the document's host/base_path (ApiPost's pre-URL). Left empty when unset. Never derived from apipost.host. |
+
 ## Custom Framework rules
 
 | Key | Type | Mode | Context | Aliases | Summary |

@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.tooling
 
+import com.itangcent.easyapi.channel.apipost.ApipostRuleKeys
 import com.itangcent.easyapi.channel.hoppscotch.HoppscotchRuleKeys
 import com.itangcent.easyapi.channel.openapi.OpenApiRuleKeys
 import com.itangcent.easyapi.channel.postman.PostmanRuleKeys
@@ -34,7 +35,8 @@ class RuleKeySchemeExporterTest {
             "postman" to { RuleKey.collectFrom(PostmanRuleKeys) },
             "hoppscotch" to { RuleKey.collectFrom(HoppscotchRuleKeys) },
             "openapi" to { RuleKey.collectFrom(OpenApiRuleKeys) },
-            "yapi" to { RuleKey.collectFrom(YapiRuleKeys) + RuleKey.collectFrom(YapiMetaRuleKeys) }
+            "yapi" to { RuleKey.collectFrom(YapiRuleKeys) + RuleKey.collectFrom(YapiMetaRuleKeys) },
+            "apipost" to { RuleKey.collectFrom(ApipostRuleKeys) }
         )
         val KNOWN_FRAMEWORKS = listOf(
             CustomApiRecognizer.FRAMEWORK_NAME to { RuleKey.collectFrom(CustomRuleKeys) }
