@@ -193,6 +193,69 @@ class SettingsPanelsCoverageTest {
         assertFalse(target.extensionConfigs.isEmpty())
     }
 
+    /**
+     * Regression for #1461: unchecking a default-enabled extension must survive
+     * save + reopen. Persisting only the checked codes dropped the deselection,
+     * so the next read fell back to `defaultEnabled` and re-checked the box.
+     */
+    @Test
+    fun testExtensionConfigPanel_uncheckDefaultExtension_survivesReopen() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+
+        val panel = ExtensionConfigPanel()
+        panel.resetFrom(RuleFileSettings().apply { extensionConfigs = "" })
+        assertTrue(panel.isCheckedForTest(defaultCode))
+
+        panel.setCheckedForTest(defaultCode, false)
+        val saved = RuleFileSettings()
+        panel.applyTo(saved)
+        assertTrue(
+            "the deselection must be persisted as a '-$defaultCode' exclusion, got: '${saved.extensionConfigs}'",
+            ExtensionConfigRegistry.stringToCodes(saved.extensionConfigs).contains("-$defaultCode")
+        )
+
+        // Reopening the settings dialog re-reads whatever was persisted.
+        val reopened = ExtensionConfigPanel()
+        reopened.resetFrom(saved)
+        assertFalse(
+            "unchecked extension '$defaultCode' must stay unchecked after save + reopen",
+            reopened.isCheckedForTest(defaultCode)
+        )
+        assertFalse(reopened.isModified(saved))
+    }
+
+    @Test
+    fun testExtensionConfigPanel_uncheckDefaultExtension_applyClearsModifiedFlag() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val panel = ExtensionConfigPanel()
+        val target = RuleFileSettings().apply { extensionConfigs = "" }
+        panel.resetFrom(target)
+
+        panel.setCheckedForTest(defaultCode, false)
+        assertTrue("unchecking an extension must enable Apply", panel.isModified(target))
+
+        panel.applyTo(target)
+        assertFalse("Apply must not leave the panel dirty", panel.isModified(target))
+    }
+
+    @Test
+    fun testExtensionConfigPanel_uncheckAllExtensions_doesNotFallBackToDefaults() {
+        val panel = ExtensionConfigPanel()
+        val target = RuleFileSettings().apply { extensionConfigs = "" }
+        panel.resetFrom(target)
+
+        ExtensionConfigRegistry.allExtensions().forEach { panel.setCheckedForTest(it.code, false) }
+        panel.applyTo(target)
+
+        assertTrue(
+            "explicitly disabling every extension must not fall back to the defaults",
+            ExtensionConfigRegistry
+                .selectedCodes(ExtensionConfigRegistry.stringToCodes(target.extensionConfigs))
+                .isEmpty()
+        )
+        assertFalse(panel.isModified(target))
+    }
+
     // =====================================================================
     // RemoteConfigPanel — null/default/disabled URLs + round-trip
     // =====================================================================

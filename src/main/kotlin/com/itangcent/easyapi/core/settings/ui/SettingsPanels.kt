@@ -588,35 +588,45 @@ class ExtensionConfigPanel : SettingsPanel<RuleFileSettings> {
     }
 
     override fun resetFrom(settings: RuleFileSettings?) {
-        val selected = ExtensionConfigRegistry.stringToCodes(settings?.extensionConfigs ?: "").toSet()
-        ExtensionConfigRegistry.allExtensions().forEachIndexed { index, extension ->
-            val isSelected =
-                selected.contains(extension.code) || (extension.defaultEnabled && !selected.contains("-${extension.code}"))
-            extensionList.setItemSelected(extension.code, isSelected)
+        val enabled = effectiveCodes(
+            ExtensionConfigRegistry.stringToCodes(settings?.extensionConfigs ?: "").toList()
+        ).toSet()
+        ExtensionConfigRegistry.allExtensions().forEach { extension ->
+            extensionList.setItemSelected(extension.code, enabled.contains(extension.code))
         }
         refreshPreview()
     }
 
     override fun applyTo(settings: RuleFileSettings) {
-        settings.extensionConfigs = ExtensionConfigRegistry.codesToString(selectedCodes().toTypedArray())
+        settings.extensionConfigs = ExtensionConfigRegistry.encodeSelection(checkedCodes())
     }
 
     override fun isModified(settings: RuleFileSettings?): Boolean {
         val s = settings ?: return false
-        val currentSelected = selectedCodes().toSet()
-        val savedSelected = ExtensionConfigRegistry.stringToCodes(s.extensionConfigs ?: "").toSet()
-        val defaultEnabled = ExtensionConfigRegistry.allExtensions()
-            .filter { it.defaultEnabled }
-            .map { it.code }
-            .toSet()
-        val effectiveSaved = savedSelected + defaultEnabled
-        return currentSelected != effectiveSaved
+        // Only the persisted value goes through [effectiveCodes]: it is a raw code
+        // list, so the `defaultEnabled` fallback (and `-<code>` exclusions) still
+        // have to be applied to it. The list itself is already the concrete
+        // selection the user sees, so expanding it would re-add the very defaults
+        // that were unchecked. Both sides are registry-ordered, hence comparable.
+        return checkedCodes() !=
+                effectiveCodes(ExtensionConfigRegistry.stringToCodes(s.extensionConfigs ?: "").toList())
     }
 
-    private fun selectedCodes(): List<String> {
+    /** The codes currently ticked in the list. */
+    private fun checkedCodes(): List<String> {
         return ExtensionConfigRegistry.allExtensions().mapNotNull { extension ->
             if (extensionList.isItemSelected(extension.code)) extension.code else null
         }
+    }
+
+    /** Expands raw codes (positive and `-` exclusion entries) into enabled codes. */
+    private fun effectiveCodes(codes: Collection<String>): List<String> =
+        ExtensionConfigRegistry.selectedCodes(codes.toTypedArray()).toList()
+
+    internal fun isCheckedForTest(code: String): Boolean = extensionList.isItemSelected(code)
+
+    internal fun setCheckedForTest(code: String, checked: Boolean) {
+        extensionList.setItemSelected(code, checked)
     }
 
     private fun refreshPreview() {

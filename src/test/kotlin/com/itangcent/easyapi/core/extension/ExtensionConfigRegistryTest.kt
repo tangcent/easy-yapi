@@ -127,6 +127,70 @@ class ExtensionConfigRegistryTest {
         assertEquals("spring,mvc,jaxrs", str)
     }
 
+    // =====================================================================
+    // encodeSelection — inverse of stringToCodes (issue #1461)
+    // =====================================================================
+
+    @Test
+    fun testEncodeSelection_uncheckedDefaultExtension_writtenAsExclusion() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val encoded = ExtensionConfigRegistry.encodeSelection(emptyList())
+        assertTrue(
+            "unchecking '$defaultCode' must be persisted as an exclusion, got: $encoded",
+            encoded.split(",").contains("-$defaultCode")
+        )
+    }
+
+    @Test
+    fun testEncodeSelection_allCheckedDefaultExtensions_matchesDefaultCodes() {
+        val defaultCodes = ExtensionConfigRegistry.defaultCodes().toList()
+        val encoded = ExtensionConfigRegistry.encodeSelection(defaultCodes)
+        assertEquals(
+            ExtensionConfigRegistry.codesToString(ExtensionConfigRegistry.defaultCodes()),
+            encoded
+        )
+    }
+
+    @Test
+    fun testEncodeSelection_roundTrip_preservesDeselection() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val checked = ExtensionConfigRegistry.defaultCodes().filter { it != defaultCode }
+
+        val encoded = ExtensionConfigRegistry.encodeSelection(checked)
+        val decoded = ExtensionConfigRegistry.selectedCodes(ExtensionConfigRegistry.stringToCodes(encoded))
+
+        assertFalse(
+            "'$defaultCode' must stay disabled after an encode/decode round trip",
+            decoded.contains(defaultCode)
+        )
+        assertEquals(checked.toSet(), decoded.toSet())
+    }
+
+    @Test
+    fun testEncodeSelection_blankCodesIgnored() {
+        val encoded = ExtensionConfigRegistry.encodeSelection(listOf("", "   "))
+        assertFalse(encoded.contains(",,"))
+    }
+
+    /**
+     * Characterisation of the #1461 root cause: a positive-only code list cannot
+     * express a deselection, because the reader falls back to `defaultEnabled` for
+     * any code it does not find. This is why [encodeSelection] has to emit
+     * `-<code>` exclusions.
+     */
+    @Test
+    fun testSelectedCodes_positiveOnlyList_cannotExpressDeselection() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val positiveOnly = ExtensionConfigRegistry.defaultCodes().filter { it != defaultCode }
+
+        val enabled = ExtensionConfigRegistry.selectedCodes(positiveOnly.toTypedArray())
+
+        assertTrue(
+            "a positive-only list silently re-enables '$defaultCode' — the #1461 bug",
+            enabled.contains(defaultCode)
+        )
+    }
+
     @Test
     fun testStringToCodes() {
         val str = "spring,mvc,jaxrs"

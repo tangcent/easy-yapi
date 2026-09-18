@@ -107,6 +107,13 @@ Plugin extension codes for custom behavior.
 |-------|---------|--------|----------|
 | Extension Configs | *(default codes)* | Extension configuration codes (comma-separated) | `extensionConfigs` |
 
+Codes are comma-separated. An extension that is enabled by default stays
+enabled unless it is written as `-<code>` — for example `spring,-swagger` keeps
+every default extension except `swagger`. Unchecking an extension in the
+**Extensions** tab persists an explicit `-<code>` entry, so a deselected
+default extension stays deselected after save + reopen instead of falling back
+to its default.
+
 ---
 
 ## Rules
