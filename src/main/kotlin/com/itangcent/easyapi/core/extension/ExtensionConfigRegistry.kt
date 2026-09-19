@@ -4,6 +4,33 @@ import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.channel.spi.ChannelRegistry
 import com.itangcent.easyapi.core.logging.IdeaLog
 
+/**
+ * The built-in extension catalogue: every extension config shipped under the
+ * `extensions` resource directory, loaded once from the classpath.
+ *
+ * An extension is switched on or off through a **code list** — a comma-separated
+ * list of extension codes in which every entry has one of three meanings:
+ *
+ * - `<code>` — explicitly enabled, even when the extension is not `defaultEnabled`;
+ * - `-<code>` — explicitly disabled; the only way to turn off an extension that
+ *   *is* `defaultEnabled`;
+ * - absent — falls back to the extension's own `defaultEnabled` flag.
+ *
+ * One and the same list is what the Extensions tab edits and what the rule engine
+ * consumes, persisted verbatim in `RuleFileSettings.extensionConfigs`. A code that
+ * appears both positively and as an exclusion (`spring,-spring`) counts as enabled,
+ * because [buildConfig] and [selectedCodes] OR the two branches.
+ *
+ * Encoding a *user selection* into such a list is deliberately not done here: the
+ * `extensionConfigs` field belongs to the settings module, so the encoder lives
+ * there as `RuleFileSettings.updateExtensionCodes`. This object only parses the
+ * grammar ([selectedCodes], [buildConfig]) and mutates code lists
+ * ([addSelectedConfig], [removeSelectedConfig]).
+ *
+ * Note: `ExtensionConfigSource.collect()` re-implements the same three-way filter
+ * inline instead of calling [selectedCodes], so a grammar change has to be applied
+ * there too.
+ */
 object ExtensionConfigRegistry : IdeaLog {
 
     private var extensions: List<ExtensionConfig> = emptyList()
@@ -164,12 +191,16 @@ object ExtensionConfigRegistry : IdeaLog {
         return general + channelConfigs
     }
 
+    /** The catalogue in load order. Every code list below keeps this order. */
     fun allExtensions(): List<ExtensionConfig> = extensions
 
+    /** The extension registered under [code], or `null` when no `.config` declares it. */
     fun getExtension(code: String): ExtensionConfig? = extensions.find { it.code == code }
 
+    /** Every known code, in catalogue order, regardless of `defaultEnabled`. */
     fun codes(): Array<String> = extensions.map { it.code }.toTypedArray()
 
+    /** The codes of the extensions that are enabled by default — what an empty code list reads as. */
     fun defaultCodes(): Array<String> {
         return extensions
             .filter { it.defaultEnabled }
@@ -177,6 +208,14 @@ object ExtensionConfigRegistry : IdeaLog {
             .toTypedArray()
     }
 
+    /**
+     * The rule text of every enabled extension, joined by [separator].
+     *
+     * @param selectedCodes A code list, filtered by the grammar described on this
+     *   object. An empty array means "nothing recorded yet" and enables exactly
+     *   [defaultCodes]; a non-empty array overrides that default entry by entry.
+     * @return The concatenated [ExtensionConfig.content], or `""` when nothing is enabled.
+     */
     fun buildConfig(selectedCodes: Array<String>, separator: CharSequence = "\n"): String {
         if (selectedCodes.isEmpty()) {
             return extensions
@@ -190,6 +229,15 @@ object ExtensionConfigRegistry : IdeaLog {
             .joinToString(separator) { it.content }
     }
 
+    /**
+     * The enabled codes for [codes], in catalogue order, with the `-<code>`
+     * exclusions already resolved.
+     *
+     * The result is always positive and registry-ordered, so two selections can be
+     * compared as lists. It is a projection for reading only: persisting it back via
+     * [codesToString] would drop every exclusion and let the `defaultEnabled`
+     * fallback switch the excluded extension on again.
+     */
     fun selectedCodes(codes: Array<String>): Array<String> {
         val set = codes.toSet()
         return extensions
@@ -198,6 +246,10 @@ object ExtensionConfigRegistry : IdeaLog {
             .toTypedArray()
     }
 
+    /**
+     * Returns [codes] with each of [code] enabled: the code is added positively and
+     * any `-<code>` exclusion for it is dropped. Blank entries are removed.
+     */
     fun addSelectedConfig(codes: Array<String>, vararg code: String): Array<String> {
         val set = LinkedHashSet(codes.toList())
         set.addAll(code.map { it.trim() })
@@ -205,6 +257,15 @@ object ExtensionConfigRegistry : IdeaLog {
         return set.filter { it.isNotBlank() }.toTypedArray()
     }
 
+    /**
+     * Returns [codes] with each of [code] disabled: the code is removed and an
+     * explicit `-<code>` exclusion is added, which is what keeps a `defaultEnabled`
+     * extension off on the next read. Blank entries are removed.
+     *
+     * An exclusion is written even for a code that is not `defaultEnabled`. Such an
+     * entry changes nothing on read (the code is off when absent); it only matters
+     * if the extension later becomes enabled by default.
+     */
     fun removeSelectedConfig(codes: Array<String>, vararg code: String): Array<String> {
         val set = LinkedHashSet(codes.toList())
         set.removeAll(code.map { it.trim() }.toSet())
@@ -212,10 +273,20 @@ object ExtensionConfigRegistry : IdeaLog {
         return set.filter { it.isNotBlank() }.toTypedArray()
     }
 
+    /**
+     * Joins [codes] with commas and no encoding at all — an entry that is already an
+     * exclusion stays one.
+     *
+     * Only lossless for lists that are entirely positive, which is why it serves the
+     * default value (`codesToString(defaultCodes())`) and not a user selection: a
+     * deselection has to be encoded, and `RuleFileSettings.updateExtensionCodes` is
+     * what does that.
+     */
     fun codesToString(codes: Array<String>): String {
         return codes.filter { it.isNotBlank() }.joinToString(",")
     }
 
+    /** Splits a persisted code list back into codes, dropping blanks. Inverse of [codesToString]. */
     fun stringToCodes(codes: String): Array<String> {
         return codes.split(",").map { it.trim() }.filter { it.isNotBlank() }.toTypedArray()
     }
