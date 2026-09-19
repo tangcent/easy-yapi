@@ -52,7 +52,7 @@
 
 ### 搜索 API
 
-双击 `Shift` 打开 Search Everywhere，切到 **APIs** 标签页：
+双击 `Shift` 打开 Search Everywhere。接口有独立的 **APIs** 标签页，同时也会出现在 **All** 页：
 
 - 支持 HTTP 方法前缀（如 `GET /users`）
 - 关键词可组合，且一个词可以命中不同字段 —— `user 用户` 能找到路径为 `/api/user/get`、名称为

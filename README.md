@@ -53,7 +53,8 @@ Call any API endpoint directly from the editor:
 
 ### API Search Everywhere
 
-Find API endpoints from anywhere in the IDE using IntelliJ's Search Everywhere (Double Shift):
+Find API endpoints from anywhere in the IDE using IntelliJ's Search Everywhere (**Double Shift**).
+Endpoints appear under the **APIs** tab of their own, and in **All** as well:
 
 - Search by HTTP method prefix (e.g., `GET /users`)
 - Search across path, endpoint name, class name, folder and description — a single query may combine

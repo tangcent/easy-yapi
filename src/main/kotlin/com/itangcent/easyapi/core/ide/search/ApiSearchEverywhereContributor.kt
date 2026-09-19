@@ -29,6 +29,7 @@ import javax.swing.ListCellRenderer
  * match score, best first.
  *
  * ## Features
+ * - An "APIs" tab of its own in Search Everywhere, and results in "All" too
  * - Search by HTTP method prefix (e.g., "GET /users")
  * - Search by path, name, class name, or description, in any combination —
  *   `user 用户` matches an endpoint whose path and name each supply one token
@@ -60,6 +61,16 @@ class ApiSearchEverywhereContributor(
     override fun getGroupName(): String = "APIs"
 
     override fun getSortWeight(): Int = 180
+
+    /**
+     * Claims a tab of its own, named after [getGroupName].
+     *
+     * The platform default is `false`, which would bury endpoint results in the
+     * "All" tab among classes, files, symbols and actions, leaving the
+     * contributor filter as the only way to isolate them. Results still appear
+     * in "All" too — the tab adds a place to browse endpoints without a query.
+     */
+    override fun isShownInSeparateTab(): Boolean = true
 
     override fun getElementsRenderer(): ListCellRenderer<in ApiEndpoint> {
         return ApiSearchResultRenderer()
