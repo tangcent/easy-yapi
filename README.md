@@ -77,6 +77,9 @@ Endpoints appear under the **APIs** tab of their own, and in **All** as well:
 
 The Dashboard's search box uses the same rules.
 
+Turn the whole integration off in **Settings → EasyApi → Features → Search Everywhere** — the tab and
+its results disappear, and the Dashboard search box keeps working.
+
 ### Gutter Icons
 
 API methods are marked with a gutter icon in the editor. Click it to open the endpoint in the API Dashboard.

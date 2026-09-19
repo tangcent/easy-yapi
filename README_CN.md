@@ -75,6 +75,9 @@
 
 API 仪表盘的搜索框使用同一套规则。
 
+不需要这个集成时，可在 **Settings → EasyApi → Features** 里取消 **Search Everywhere** —— 标签页和
+搜索结果一并消失，仪表盘搜索框不受影响。
+
 ### 转换字段
 
 右键点击类 → **EasyApi → To…**（JSON / JSON5 / Properties / YAML 等）。各格式的语义与取舍见

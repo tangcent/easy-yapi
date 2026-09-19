@@ -15,6 +15,7 @@ class FeatureDescriptorTest {
                 concurrentScanEnabled = false,
                 gutterIconEnabled = false,
                 copyApiUrlEnabled = false,
+                searchEverywhereEnabled = false,
                 switchNotice = true,
                 enabledChannels = arrayOf("unchanged")
             )
@@ -54,6 +55,11 @@ class FeatureDescriptorTest {
                 "Copy API URL field should match only its bridge",
                 setting == DirectBooleanSetting.COPY_API_URL_ENABLED,
                 settings.copyApiUrlEnabled
+            )
+            assertEquals(
+                "Search Everywhere field should match only its bridge",
+                setting == DirectBooleanSetting.SEARCH_EVERYWHERE_ENABLED,
+                settings.searchEverywhereEnabled
             )
             assertEquals("Unrelated Boolean fields must remain unchanged", true, settings.switchNotice)
             assertEquals("Unrelated arrays must remain unchanged", listOf("unchanged"), settings.enabledChannels.toList())

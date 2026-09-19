@@ -1392,6 +1392,7 @@ class BackupSettingsPanel(private val project: com.intellij.openapi.project.Proj
             obj.get("concurrentScanEnabled")?.asBoolean?.let { concurrentScanEnabled = it }
             obj.get("gutterIconEnabled")?.asBoolean?.let { gutterIconEnabled = it }
             obj.get("copyApiUrlEnabled")?.asBoolean?.let { copyApiUrlEnabled = it }
+            obj.get("searchEverywhereEnabled")?.asBoolean?.let { searchEverywhereEnabled = it }
             obj.get("switchNotice")?.asBoolean?.let { switchNotice = it }
             obj.get("logLevel")?.asInt?.let { logLevel = it }
             obj.get("outputCharset")?.asString?.let { outputCharset = it }
@@ -1480,6 +1481,7 @@ class BackupSettingsPanel(private val project: com.intellij.openapi.project.Proj
         obj.addProperty("concurrentScanEnabled", general.concurrentScanEnabled)
         obj.addProperty("gutterIconEnabled", general.gutterIconEnabled)
         obj.addProperty("copyApiUrlEnabled", general.copyApiUrlEnabled)
+        obj.addProperty("searchEverywhereEnabled", general.searchEverywhereEnabled)
         obj.addProperty("switchNotice", general.switchNotice)
         obj.addProperty("logLevel", general.logLevel)
         obj.addProperty("outputCharset", general.outputCharset)

@@ -40,6 +40,7 @@ Framework recognition and output formatting.
 | API Scanning | `true` | Master toggle for API scanning. When `false`, auto-scan, concurrent scan, and the gutter icon (which navigates via the API index) are all forced off. | `apiScanEnabled` |
 | Gutter Icon | `true` | Show gutter icons for API endpoints in the editor (only effective when API scanning is enabled) | `gutterIconEnabled` |
 | Copy API URL | `true` | Show the **Copy API URL** context-menu action, which copies the address (`METHOD /path`) of every selected endpoint | `copyApiUrlEnabled` |
+| Search Everywhere | `true` | List API endpoints in IntelliJ's Search Everywhere under their own **APIs** tab. Reads the retained API index, which a Dashboard refresh refills even while API scanning is off, so it is independent of the API Scanning toggle. | `searchEverywhereEnabled` |
 | Switch Notice | `true` | Show a notification when switching settings scope | `switchNotice` |
 
 ---

@@ -9,6 +9,7 @@ object CoreFeatureIds {
     val CONCURRENT_SCANNING = FeatureId("core.api-scanning.concurrent")
     val EDITOR_INTEGRATION = FeatureId("core.editor-integration")
     val COPY_API_URL = FeatureId("core.copy-api-url")
+    val SEARCH_EVERYWHERE = FeatureId("core.search-everywhere")
 }
 
 /** Declares built-in scanning and editor capabilities. */
@@ -71,9 +72,27 @@ class CoreFeatureContributor : FeatureContributor {
             source = SOURCE,
             description = "Add the Copy API URL action to the EasyApi context menu, copying the address of every endpoint in the selection."
         )
+        // Declares no dependency on API_SCANNING either, even though it reads the
+        // same ApiIndex as editorIntegration. It only reads: fetchElements goes
+        // straight to ApiIndex.endpoints() and never passes the scan admission
+        // checks that reject gutter requests. The index is not cleared when
+        // scanning stops (ApiIndex.invalidate has no production callers), and the
+        // Dashboard's Refresh runs an isolated one-shot scan that refills it while
+        // scanning is off - so the tab keeps returning endpoints for the rest of
+        // the session. Tying it to API_SCANNING would grey out a surface that
+        // still works.
+        val searchEverywhere = FeatureDescriptor(
+            id = CoreFeatureIds.SEARCH_EVERYWHERE,
+            displayName = "Search Everywhere",
+            defaultEnabled = true,
+            group = CORE_GROUP,
+            stateBridge = DirectBooleanStateBridge(DirectBooleanSetting.SEARCH_EVERYWHERE_ENABLED),
+            source = SOURCE,
+            description = "List API endpoints in IntelliJ's Search Everywhere, under their own APIs tab."
+        )
         return FeatureContribution(
             groups = listOf(CORE_GROUP),
-            descriptors = listOf(apiScanning, editorIntegration, copyApiUrl)
+            descriptors = listOf(apiScanning, editorIntegration, copyApiUrl, searchEverywhere)
         )
     }
 

@@ -31,19 +31,20 @@ class FeatureRegistryTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
-    fun testCopyApiUrlFeatureIsDeclaredWithoutDependencies() {
+    fun testSearchEverywhereFeatureIsDeclaredWithoutDependencies() {
         val contribution = CoreFeatureContributor().contribution()
-        val descriptor = contribution.descriptors.single { it.id == CoreFeatureIds.COPY_API_URL }
+        val descriptor = contribution.descriptors.single { it.id == CoreFeatureIds.SEARCH_EVERYWHERE }
 
-        assertEquals("Copy API URL", descriptor.displayName)
-        assertTrue("Copy API URL should be enabled by default", descriptor.defaultEnabled)
+        assertEquals("Search Everywhere", descriptor.displayName)
+        assertTrue("Search Everywhere should be enabled by default", descriptor.defaultEnabled)
         assertEquals(CoreFeatureContributor.CORE_GROUP, descriptor.group)
         assertTrue(
-            "Copy API URL scans on demand like the export actions, so it must not depend on API scanning",
+            "Search Everywhere only reads the retained index, which survives API scanning being off, " +
+                "so it must not depend on API scanning",
             descriptor.dependencyIds.isEmpty()
         )
         assertEquals(
-            DirectBooleanSetting.COPY_API_URL_ENABLED,
+            DirectBooleanSetting.SEARCH_EVERYWHERE_ENABLED,
             (descriptor.stateBridge as DirectBooleanStateBridge).setting
         )
     }

@@ -2,6 +2,10 @@ package com.itangcent.easyapi.core.ide.search
 
 import com.itangcent.easyapi.core.export.*
 import com.itangcent.easyapi.core.export.httpMetadata
+import com.itangcent.easyapi.core.feature.CoreFeatureIds
+import com.itangcent.easyapi.core.feature.FeatureStateService
+import com.itangcent.easyapi.core.settings.module.GeneralSettings
+import com.itangcent.easyapi.core.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -117,6 +121,14 @@ class ApiSearchEverywhereContributorPlatformTest : EasyApiLightCodeInsightFixtur
 
 class ApiSearchEverywhereContributorFactoryTest : EasyApiLightCodeInsightFixtureTestCase() {
 
+    override fun tearDown() {
+        settingBinder.update(GeneralSettings::class) {
+            apiScanEnabled = true
+            searchEverywhereEnabled = true
+        }
+        super.tearDown()
+    }
+
     fun testCreateContributor() {
         val factory = ApiSearchEverywhereContributorFactory()
         val presentation = Presentation()
@@ -130,5 +142,51 @@ class ApiSearchEverywhereContributorFactoryTest : EasyApiLightCodeInsightFixture
         val contributor = factory.createContributor(event)
         assertNotNull("Contributor should not be null", contributor)
         assertTrue("Should be ApiSearchEverywhereContributor", contributor is ApiSearchEverywhereContributor)
+    }
+
+    fun testAvailableWhileTheFeatureIsEnabled() {
+        settingBinder.update(GeneralSettings::class) {
+            apiScanEnabled = true
+            searchEverywhereEnabled = true
+        }
+
+        assertTrue(
+            "The platform should be offered the contributor while the feature is effective",
+            ApiSearchEverywhereContributorFactory().isAvailable(project)
+        )
+    }
+
+    fun testUnavailableWhenTheFeatureIsDisabled() {
+        settingBinder.update(GeneralSettings::class) {
+            apiScanEnabled = true
+            searchEverywhereEnabled = false
+        }
+
+        assertFalse(
+            "FeatureStateService should report the feature as ineffective",
+            FeatureStateService.getInstance(project).isEffective(CoreFeatureIds.SEARCH_EVERYWHERE)
+        )
+        assertFalse(
+            "A disabled feature must keep the contributor out of Search Everywhere entirely",
+            ApiSearchEverywhereContributorFactory().isAvailable(project)
+        )
+    }
+
+    fun testAvailableWhileApiScanningIsOff() {
+        settingBinder.update(GeneralSettings::class) {
+            apiScanEnabled = false
+            searchEverywhereEnabled = true
+        }
+
+        assertTrue(
+            "The contributor only reads the retained index, which the Dashboard can refill while " +
+                "scanning is off, so this toggle must stay independent of API scanning",
+            ApiSearchEverywhereContributorFactory().isAvailable(project)
+        )
+    }
+
+    fun testAvailabilityReadsTheInjectedSeam() {
+        assertFalse(ApiSearchEverywhereContributorFactory { false }.isAvailable(project))
+        assertTrue(ApiSearchEverywhereContributorFactory { true }.isAvailable(project))
     }
 }
