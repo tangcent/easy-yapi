@@ -44,6 +44,12 @@ enum class DirectBooleanSetting {
         override fun write(settings: GeneralSettings, value: Boolean) {
             settings.copyApiUrlEnabled = value
         }
+    },
+    SEARCH_EVERYWHERE_ENABLED {
+        override fun read(settings: GeneralSettings): Boolean = settings.searchEverywhereEnabled
+        override fun write(settings: GeneralSettings, value: Boolean) {
+            settings.searchEverywhereEnabled = value
+        }
     };
 
     internal abstract fun read(settings: GeneralSettings): Boolean

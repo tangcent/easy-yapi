@@ -43,6 +43,8 @@ class FeaturesSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase
             assertEquals(true, panel.desiredStateForTest(CoreFeatureIds.EDITOR_INTEGRATION))
             assertEquals(true, panel.desiredStateForTest(CoreFeatureIds.COPY_API_URL))
             assertEquals(true, panel.isControlEnabledForTest(CoreFeatureIds.COPY_API_URL))
+            assertEquals(true, panel.desiredStateForTest(CoreFeatureIds.SEARCH_EVERYWHERE))
+            assertEquals(true, panel.isControlEnabledForTest(CoreFeatureIds.SEARCH_EVERYWHERE))
         }
     }
 
@@ -60,6 +62,12 @@ class FeaturesSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase
             assertEquals(false, panel.isControlEnabledForTest(CoreFeatureIds.AUTO_SCANNING))
             assertEquals(false, panel.isControlEnabledForTest(CoreFeatureIds.CONCURRENT_SCANNING))
             assertEquals(false, panel.isControlEnabledForTest(CoreFeatureIds.EDITOR_INTEGRATION))
+            assertEquals(
+                "Search Everywhere reads the retained index only, so turning scanning off must not " +
+                    "disable its control",
+                true,
+                panel.isControlEnabledForTest(CoreFeatureIds.SEARCH_EVERYWHERE)
+            )
             assertEquals(
                 "Requires API Scanning to be enabled.",
                 panel.dependencyTextForTest(CoreFeatureIds.EDITOR_INTEGRATION)
@@ -127,6 +135,11 @@ class FeaturesSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase
                 "Editor Integration tooltip should come from the descriptor description",
                 "Show gutter icons and line markers next to API methods in the editor.",
                 panel.toolTipTextForTest(CoreFeatureIds.EDITOR_INTEGRATION)
+            )
+            assertEquals(
+                "Search Everywhere tooltip should come from the descriptor description",
+                "List API endpoints in IntelliJ's Search Everywhere, under their own APIs tab.",
+                panel.toolTipTextForTest(CoreFeatureIds.SEARCH_EVERYWHERE)
             )
         }
     }

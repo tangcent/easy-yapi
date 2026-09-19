@@ -25,6 +25,7 @@ class FeatureSettingsTransactionPropertyTest {
                 concurrentScanEnabled = random.nextBoolean(),
                 gutterIconEnabled = random.nextBoolean(),
                 copyApiUrlEnabled = random.nextBoolean(),
+                searchEverywhereEnabled = random.nextBoolean(),
                 switchNotice = random.nextBoolean(),
                 logLevel = random.nextInt(),
                 outputCharset = "charset-$seed",

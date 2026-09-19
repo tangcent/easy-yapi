@@ -13,6 +13,8 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.editor.ScrollType
 import com.itangcent.easyapi.core.cache.api.ApiIndex
 import com.itangcent.easyapi.core.export.ApiEndpoint
+import com.itangcent.easyapi.core.feature.CoreFeatureIds
+import com.itangcent.easyapi.core.feature.FeatureStateService
 import com.itangcent.easyapi.core.logging.IdeaLog
 import kotlinx.coroutines.runBlocking
 import javax.swing.ListCellRenderer
@@ -36,6 +38,10 @@ import javax.swing.ListCellRenderer
  * - Fuzzy (subsequence) matching for tokens of three characters or more
  * - Click to navigate to source method
  * - Uses cached [ApiIndex] for fast searching
+ *
+ * The whole surface can be switched off in Settings → EasyApi → Features →
+ * `Search Everywhere`; see [ApiSearchEverywhereContributorFactory.isAvailable]
+ * for how the platform is told to skip it.
  *
  * @see ApiSearchQuery for query parsing
  * @see ApiEndpointMatcher for the matching rules
@@ -163,9 +169,36 @@ class ApiSearchEverywhereContributor(
  * Factory for creating [ApiSearchEverywhereContributor] instances.
  *
  * Registered via plugin.xml to integrate with IntelliJ's Search Everywhere feature.
+ *
+ * The platform asks [isAvailable] before creating a contributor for a project
+ * and skips the factory entirely when it returns `false`, so switching the
+ * `Search Everywhere` feature off removes the APIs tab and its results from
+ * "All" instead of leaving a permanently empty tab behind.
  */
-class ApiSearchEverywhereContributorFactory : SearchEverywhereContributorFactory<ApiEndpoint> {
+class ApiSearchEverywhereContributorFactory internal constructor(
+    private val searchEverywhereEffective: (Project) -> Boolean
+) : SearchEverywhereContributorFactory<ApiEndpoint> {
+
+    constructor() : this(
+        searchEverywhereEffective = { project ->
+            FeatureStateService.getInstance(project)
+                .isEffective(CoreFeatureIds.SEARCH_EVERYWHERE)
+        }
+    )
+
     companion object : IdeaLog
+
+    /** @see SearchEverywhereContributorFactory.isAvailable */
+    override fun isAvailable(project: Project): Boolean {
+        val available = searchEverywhereEffective(project)
+        if (!available) {
+            LOG.info(
+                "Search Everywhere contributor featureId=${CoreFeatureIds.SEARCH_EVERYWHERE.value} " +
+                    "result=disabled"
+            )
+        }
+        return available
+    }
 
     override fun createContributor(event: AnActionEvent): SearchEverywhereContributor<ApiEndpoint> {
         LOG.info("createContributor called")

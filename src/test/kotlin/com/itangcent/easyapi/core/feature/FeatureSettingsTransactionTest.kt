@@ -44,7 +44,8 @@ class FeatureSettingsTransactionTest {
         assertEquals("Unedited automatic scanning should be preserved", true, settings.autoScanEnabled)
         assertEquals("Unedited editor integration should be preserved", true, settings.gutterIconEnabled)
         assertEquals(
-            "Desired and effective deltas should include all affected identities",
+            "Desired and effective deltas should include every affected identity. " +
+                "Copy API URL and Search Everywhere are independent of API scanning, so they stay out.",
             setOf(
                 CoreFeatureIds.API_SCANNING,
                 CoreFeatureIds.AUTO_SCANNING,
