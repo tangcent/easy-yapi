@@ -12,6 +12,78 @@ class RuleFileSettingsTest {
         ExtensionConfigRegistry.loadExtensions()
     }
 
+    // =====================================================================
+    // extensionCodes / enabledExtensionCodes / updateExtensionCodes (#1461)
+    // =====================================================================
+
+    @Test
+    fun testUpdateExtensionCodes_uncheckedDefaultExtension_writtenAsExclusion() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val stillChecked = ExtensionConfigRegistry.defaultCodes().filter { it != defaultCode }
+
+        val settings = RuleFileSettings()
+        settings.updateExtensionCodes(stillChecked)
+
+        assertTrue(
+            "unchecking '$defaultCode' must be persisted as an exclusion, got: ${settings.extensionConfigs}",
+            settings.extensionCodes().contains("-$defaultCode")
+        )
+    }
+
+    @Test
+    fun testUpdateExtensionCodes_allCheckedDefaultExtensions_matchesDefaultCodes() {
+        val settings = RuleFileSettings().apply { extensionConfigs = "" }
+        settings.updateExtensionCodes(ExtensionConfigRegistry.defaultCodes().toList())
+
+        assertEquals(
+            ExtensionConfigRegistry.codesToString(ExtensionConfigRegistry.defaultCodes()),
+            settings.extensionConfigs
+        )
+    }
+
+    @Test
+    fun testUpdateExtensionCodes_roundTrip_preservesDeselection() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val checked = ExtensionConfigRegistry.defaultCodes().filter { it != defaultCode }
+
+        val settings = RuleFileSettings()
+        settings.updateExtensionCodes(checked)
+
+        val decoded = settings.enabledExtensionCodes()
+        assertFalse(
+            "'$defaultCode' must stay disabled after an encode/decode round trip",
+            decoded.contains(defaultCode)
+        )
+        assertEquals(checked.toSet(), decoded.toSet())
+    }
+
+    @Test
+    fun testUpdateExtensionCodes_blankCodesIgnored() {
+        val settings = RuleFileSettings()
+        settings.updateExtensionCodes(listOf("", "   "))
+        assertFalse(settings.extensionConfigs.contains(",,"))
+    }
+
+    /**
+     * The two accessors are not interchangeable: [extensionCodes] keeps the
+     * `-<code>` exclusions, which is what `ExtensionConfigSource` needs, while
+     * [enabledExtensionCodes] resolves them away. Passing the latter to the
+     * source would let `defaultEnabled` re-enable the excluded extension —
+     * issue #1461 would come back.
+     */
+    @Test
+    fun testExtensionCodes_keepsExclusionThatEnabledCodesDrops() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val settings = RuleFileSettings()
+        settings.updateExtensionCodes(
+            ExtensionConfigRegistry.defaultCodes().filter { it != defaultCode }
+        )
+
+        assertTrue(settings.extensionCodes().contains("-$defaultCode"))
+        assertFalse(settings.enabledExtensionCodes().contains("-$defaultCode"))
+        assertFalse(settings.enabledExtensionCodes().contains(defaultCode))
+    }
+
     @Test
     fun testDefaults() {
         val settings = RuleFileSettings()

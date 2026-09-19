@@ -127,6 +127,85 @@ class ExtensionConfigRegistryTest {
         assertEquals("spring,mvc,jaxrs", str)
     }
 
+    /**
+     * Characterisation of the #1461 root cause: a positive-only code list cannot
+     * express a deselection, because the reader falls back to `defaultEnabled` for
+     * any code it does not find. This is why `RuleFileSettings.updateExtensionCodes`
+     * has to emit `-<code>` exclusions.
+     */
+    @Test
+    fun testSelectedCodes_positiveOnlyList_cannotExpressDeselection() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val positiveOnly = ExtensionConfigRegistry.defaultCodes().filter { it != defaultCode }
+
+        val enabled = ExtensionConfigRegistry.selectedCodes(positiveOnly.toTypedArray())
+
+        assertTrue(
+            "a positive-only list silently re-enables '$defaultCode' — the #1461 bug",
+            enabled.contains(defaultCode)
+        )
+    }
+
+    /**
+     * [ExtensionConfigRegistry.enabledExtensions] is the single grammar decision;
+     * every other query has to be a projection of it, in every code-list shape —
+     * empty, positive, negative, mixed, and a code listed both ways (positive wins).
+     */
+    @Test
+    fun testEnabledExtensions_isTheOnlyGrammarDecision() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val codeLists: List<Array<String>> = listOf(
+            emptyArray(),
+            arrayOf(defaultCode),
+            arrayOf("-$defaultCode"),
+            ExtensionConfigRegistry.defaultCodes(),
+            ExtensionConfigRegistry.codes(),
+            arrayOf(defaultCode, "-$defaultCode")
+        )
+
+        codeLists.forEach { codes ->
+            assertArrayEquals(
+                "selectedCodes must be enabledExtensions projected onto codes, for ${codes.toList()}",
+                ExtensionConfigRegistry.enabledExtensions(codes).map { it.code }.toTypedArray(),
+                ExtensionConfigRegistry.selectedCodes(codes)
+            )
+        }
+    }
+
+    /**
+     * "An empty code list reads as the defaults" is a consequence of the grammar, not
+     * a special case of it: with an empty list both OR branches collapse to
+     * `defaultEnabled`. Pinned so the branch that used to spell this out separately
+     * cannot quietly come back.
+     */
+    @Test
+    fun testBuildConfig_emptyListReadsAsDefaults() {
+        assertEquals(
+            ExtensionConfigRegistry.buildConfig(ExtensionConfigRegistry.defaultCodes()),
+            ExtensionConfigRegistry.buildConfig(emptyArray())
+        )
+    }
+
+    /**
+     * The grammar owner's two halves have to stay inverse: a selection that turned a
+     * default-enabled extension off must survive being persisted and read back.
+     */
+    @Test
+    fun testEncodeAndDecodeAreInverse() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val checked = ExtensionConfigRegistry.defaultCodes().filter { it != defaultCode }
+
+        val encoded = ExtensionConfigRegistry.encodeSelection(checked)
+
+        assertTrue("'$defaultCode' must be written as an exclusion, got: $encoded", encoded.contains("-$defaultCode"))
+        assertEquals(
+            checked.toSet(),
+            ExtensionConfigRegistry
+                .selectedCodes(ExtensionConfigRegistry.stringToCodes(encoded))
+                .toSet()
+        )
+    }
+
     @Test
     fun testStringToCodes() {
         val str = "spring,mvc,jaxrs"

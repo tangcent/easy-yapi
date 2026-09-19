@@ -5,6 +5,8 @@ import com.itangcent.easyapi.core.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.core.settings.module.GeneralSettings
 import com.itangcent.easyapi.core.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.core.settings.module.RuleFileSettings
+import com.itangcent.easyapi.core.settings.module.enabledExtensionCodes
+import com.itangcent.easyapi.core.settings.module.extensionCodes
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -191,6 +193,67 @@ class SettingsPanelsCoverageTest {
         panel.applyTo(target)
         // Default-enabled extensions exist (swagger, jackson, gson, spring, etc.)
         assertFalse(target.extensionConfigs.isEmpty())
+    }
+
+    /**
+     * Regression for #1461: unchecking a default-enabled extension must survive
+     * save + reopen. Persisting only the checked codes dropped the deselection,
+     * so the next read fell back to `defaultEnabled` and re-checked the box.
+     */
+    @Test
+    fun testExtensionConfigPanel_uncheckDefaultExtension_survivesReopen() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+
+        val panel = ExtensionConfigPanel()
+        panel.resetFrom(RuleFileSettings().apply { extensionConfigs = "" })
+        assertTrue(panel.extensionList.isItemSelected(defaultCode))
+
+        panel.extensionList.setItemSelected(defaultCode, false)
+        val saved = RuleFileSettings()
+        panel.applyTo(saved)
+        assertTrue(
+            "the deselection must be persisted as a '-$defaultCode' exclusion, got: '${saved.extensionConfigs}'",
+            saved.extensionCodes().contains("-$defaultCode")
+        )
+
+        // Reopening the settings dialog re-reads whatever was persisted.
+        val reopened = ExtensionConfigPanel()
+        reopened.resetFrom(saved)
+        assertFalse(
+            "unchecked extension '$defaultCode' must stay unchecked after save + reopen",
+            reopened.extensionList.isItemSelected(defaultCode)
+        )
+        assertFalse(reopened.isModified(saved))
+    }
+
+    @Test
+    fun testExtensionConfigPanel_uncheckDefaultExtension_applyClearsModifiedFlag() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val panel = ExtensionConfigPanel()
+        val target = RuleFileSettings().apply { extensionConfigs = "" }
+        panel.resetFrom(target)
+
+        panel.extensionList.setItemSelected(defaultCode, false)
+        assertTrue("unchecking an extension must enable Apply", panel.isModified(target))
+
+        panel.applyTo(target)
+        assertFalse("Apply must not leave the panel dirty", panel.isModified(target))
+    }
+
+    @Test
+    fun testExtensionConfigPanel_uncheckAllExtensions_doesNotFallBackToDefaults() {
+        val panel = ExtensionConfigPanel()
+        val target = RuleFileSettings().apply { extensionConfigs = "" }
+        panel.resetFrom(target)
+
+        ExtensionConfigRegistry.allExtensions().forEach { panel.extensionList.setItemSelected(it.code, false) }
+        panel.applyTo(target)
+
+        assertTrue(
+            "explicitly disabling every extension must not fall back to the defaults",
+            target.enabledExtensionCodes().isEmpty()
+        )
+        assertFalse(panel.isModified(target))
     }
 
     // =====================================================================

@@ -63,3 +63,39 @@ data class RuleFileSettings(
             ExtensionConfigRegistry.codesToString(ExtensionConfigRegistry.defaultCodes())
     }
 }
+
+/**
+ * The raw `extensionConfigs` codes — positive codes mixed with `-<code>`
+ * exclusions, exactly as persisted.
+ *
+ * This is the form [com.itangcent.easyapi.core.config.source.ExtensionConfigSource]
+ * consumes. Do **not** hand it [enabledExtensionCodes] instead: that expansion
+ * drops the `-<code>` entries, and an excluded default extension is then absent
+ * from the set too, so the source's `defaultEnabled` fallback re-enables it and
+ * issue #1461 comes straight back.
+ */
+fun RuleFileSettings.extensionCodes(): Array<String> =
+    ExtensionConfigRegistry.stringToCodes(extensionConfigs)
+
+/**
+ * The extension codes that are actually enabled — [extensionCodes] expanded
+ * through `defaultEnabled` and its `-<code>` exclusions. This is the form the
+ * Extensions tab shows and edits; persist an edit with [updateExtensionCodes].
+ */
+fun RuleFileSettings.enabledExtensionCodes(): List<String> =
+    ExtensionConfigRegistry.selectedCodes(extensionCodes()).toList()
+
+/**
+ * Persists [checkedCodes] into `extensionConfigs` — the encode counterpart of
+ * [enabledExtensionCodes], delegated to [ExtensionConfigRegistry.encodeSelection].
+ *
+ * The grammar deliberately stays in the catalogue. Encoding a selection means
+ * knowing which *unchecked* codes are on by default, so an encoder written here
+ * would have to read `ExtensionConfig.defaultEnabled` itself and become a second
+ * class deciding the same question — which is how the Extensions tab and the rule
+ * engine ended up with divergent copies in the first place (#1461). This function
+ * exists only so callers do not have to name the field.
+ */
+fun RuleFileSettings.updateExtensionCodes(checkedCodes: Collection<String>) {
+    extensionConfigs = ExtensionConfigRegistry.encodeSelection(checkedCodes)
+}

@@ -32,31 +32,22 @@ class ExtensionConfigSource(
     /**
      * Collects configuration entries from selected extensions.
      *
-     * This method builds configuration text from extension codes and parses it into config entries.
-     * Extensions with `on-class` conditions are filtered based on project classpath availability.
+     * The code-list grammar is not this class's business: [ExtensionConfigRegistry.enabledExtensions]
+     * resolves the positives, the `-<code>` exclusions and the `defaultEnabled`
+     * fallback, and this source only layers on the one question it can answer —
+     * whether an extension's `on-class` is present on the project classpath.
      *
      * @return Sequence of parsed config entries, or empty sequence if no config is available
      */
     override suspend fun collect(): Sequence<ConfigEntry> {
         val classAvailabilityService = ProjectClassAvailabilityService.getInstance(project)
 
-        // Filter extensions by onClass availability
-        val availableExtensions = ExtensionConfigRegistry.allExtensions().filter { extension ->
-            extension.onClass?.let { classAvailabilityService.hasClassInProject(it) } ?: true
-        }
+        val enabled = ExtensionConfigRegistry.enabledExtensions(selectedCodes ?: emptyArray())
+            .filter { extension ->
+                extension.onClass?.let { classAvailabilityService.hasClassInProject(it) } ?: true
+            }
 
-        // Build config from available extensions
-        val codes = selectedCodes ?: emptyArray()
-        val config = if (codes.isEmpty()) {
-            availableExtensions
-                .filter { it.defaultEnabled }
-                .joinToString("\n") { it.content }
-        } else {
-            val set = codes.toSet()
-            availableExtensions
-                .filter { set.contains(it.code) || (it.defaultEnabled && !set.contains("-${it.code}")) }
-                .joinToString("\n") { it.content }
-        }
+        val config = enabled.joinToString("\n") { it.content }
 
         LOG.info("Load extension config:\n $config\n")
         if (config.isBlank()) return emptySequence()

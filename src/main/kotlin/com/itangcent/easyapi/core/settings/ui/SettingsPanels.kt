@@ -1,57 +1,43 @@
 package com.itangcent.easyapi.core.settings.ui
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
-import com.intellij.icons.AllIcons
 import com.intellij.ui.CheckBoxList
+import com.intellij.ui.JBIntSpinner
 import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.*
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.FormBuilder
-import com.intellij.ui.JBIntSpinner
 import com.intellij.util.ui.ListTableModel
 import com.intellij.util.ui.UIUtil
-import com.itangcent.easyapi.core.ai.AiApiKeyStore
-import com.itangcent.easyapi.core.ai.AIService
-import com.itangcent.easyapi.core.ai.AIServiceFactory
-import com.itangcent.easyapi.core.ai.AiProvider
-import com.itangcent.easyapi.core.ai.AiRuntimeConfig
-import com.itangcent.easyapi.core.ai.TokenSizeUtils
+import com.itangcent.easyapi.core.ai.*
 import com.itangcent.easyapi.core.ai.credentials.CredentialScanner
 import com.itangcent.easyapi.core.ai.credentials.DefaultCredentialScanner
 import com.itangcent.easyapi.core.ai.credentials.DetectionResult
 import com.itangcent.easyapi.core.cache.AppCacheRepository
 import com.itangcent.easyapi.core.cache.ProjectCacheRepository
+import com.itangcent.easyapi.core.export.PathSelector
+import com.itangcent.easyapi.core.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.core.internal.threading.backgroundAsync
 import com.itangcent.easyapi.core.internal.threading.swingAsync
+import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.repository.DefaultRepositories
 import com.itangcent.easyapi.core.repository.RepositoryConfig
 import com.itangcent.easyapi.core.repository.RepositoryType
-import com.itangcent.easyapi.core.export.PathSelector
-import com.itangcent.easyapi.core.http.ApacheHttpClient
-import com.itangcent.easyapi.core.extension.ExtensionConfigRegistry
-import com.itangcent.easyapi.core.logging.IdeaLog
-import com.itangcent.easyapi.core.util.json.GsonUtils
-import com.itangcent.easyapi.core.util.text.ByteSizeUtil
 import com.itangcent.easyapi.core.settings.HttpClientType
 import com.itangcent.easyapi.core.settings.SettingBinder
-import com.itangcent.easyapi.core.settings.PostmanExportMode
-import com.itangcent.easyapi.core.settings.PostmanJson5FormatType
 import com.itangcent.easyapi.core.settings.Settings
-import com.itangcent.easyapi.core.settings.module.AiSettings
-import com.itangcent.easyapi.core.settings.module.EnvironmentSettings
-import com.itangcent.easyapi.core.settings.module.GeneralSettings
-import com.itangcent.easyapi.framework.grpc.GrpcSettings
-import com.itangcent.easyapi.core.settings.module.HttpSettings
-import com.itangcent.easyapi.core.settings.module.ParsingOutputSettings
-import com.itangcent.easyapi.core.settings.module.RuleFileSettings
-import com.itangcent.easyapi.core.settings.settings
+import com.itangcent.easyapi.core.settings.module.*
 import com.itangcent.easyapi.core.settings.update
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
+import com.itangcent.easyapi.core.util.json.GsonUtils
+import com.itangcent.easyapi.core.util.text.ByteSizeUtil
+import com.itangcent.easyapi.framework.grpc.GrpcSettings
 import java.awt.*
 import java.io.File
 import javax.swing.*
@@ -566,7 +552,7 @@ class ParsingOutputSettingsPanel : SettingsPanel<ParsingOutputSettings> {
 }
 
 class ExtensionConfigPanel : SettingsPanel<RuleFileSettings> {
-    private val extensionList = CheckBoxList<String>()
+    internal val extensionList = CheckBoxList<String>()
     private val preview = JBTextArea()
 
     override val component: JComponent = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
@@ -588,32 +574,28 @@ class ExtensionConfigPanel : SettingsPanel<RuleFileSettings> {
     }
 
     override fun resetFrom(settings: RuleFileSettings?) {
-        val selected = ExtensionConfigRegistry.stringToCodes(settings?.extensionConfigs ?: "").toSet()
-        ExtensionConfigRegistry.allExtensions().forEachIndexed { index, extension ->
-            val isSelected =
-                selected.contains(extension.code) || (extension.defaultEnabled && !selected.contains("-${extension.code}"))
-            extensionList.setItemSelected(extension.code, isSelected)
+        val enabled = (settings ?: RuleFileSettings()).enabledExtensionCodes().toSet()
+        ExtensionConfigRegistry.allExtensions().forEach { extension ->
+            extensionList.setItemSelected(extension.code, enabled.contains(extension.code))
         }
         refreshPreview()
     }
 
     override fun applyTo(settings: RuleFileSettings) {
-        settings.extensionConfigs = ExtensionConfigRegistry.codesToString(selectedCodes().toTypedArray())
+        settings.updateExtensionCodes(checkedCodes())
     }
 
     override fun isModified(settings: RuleFileSettings?): Boolean {
         val s = settings ?: return false
-        val currentSelected = selectedCodes().toSet()
-        val savedSelected = ExtensionConfigRegistry.stringToCodes(s.extensionConfigs ?: "").toSet()
-        val defaultEnabled = ExtensionConfigRegistry.allExtensions()
-            .filter { it.defaultEnabled }
-            .map { it.code }
-            .toSet()
-        val effectiveSaved = savedSelected + defaultEnabled
-        return currentSelected != effectiveSaved
+        // The list is the concrete selection the user sees, so it must not be
+        // expanded — that would re-add the very defaults that were unchecked.
+        // `enabledExtensionCodes` is the persisted value expanded through
+        // `defaultEnabled` / `-<code>`. Both sides are registry-ordered.
+        return checkedCodes() != s.enabledExtensionCodes()
     }
 
-    private fun selectedCodes(): List<String> {
+    /** The codes currently ticked in the list. */
+    private fun checkedCodes(): List<String> {
         return ExtensionConfigRegistry.allExtensions().mapNotNull { extension ->
             if (extensionList.isItemSelected(extension.code)) extension.code else null
         }
