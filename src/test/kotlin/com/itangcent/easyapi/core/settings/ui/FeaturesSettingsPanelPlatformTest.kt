@@ -41,6 +41,8 @@ class FeaturesSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase
             assertEquals(true, panel.desiredStateForTest(CoreFeatureIds.AUTO_SCANNING))
             assertEquals(false, panel.desiredStateForTest(CoreFeatureIds.CONCURRENT_SCANNING))
             assertEquals(true, panel.desiredStateForTest(CoreFeatureIds.EDITOR_INTEGRATION))
+            assertEquals(true, panel.desiredStateForTest(CoreFeatureIds.COPY_API_URL))
+            assertEquals(true, panel.isControlEnabledForTest(CoreFeatureIds.COPY_API_URL))
         }
     }
 

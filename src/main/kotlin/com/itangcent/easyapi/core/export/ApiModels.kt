@@ -149,6 +149,28 @@ val ApiEndpoint.path: String
     }
 
 /**
+ * The address of this endpoint as shown to the user — `METHOD /path` for HTTP
+ * (e.g. `GET /api/user/get`), the bare path for gRPC.
+ *
+ * The HTTP method is part of the address because a path alone is ambiguous for
+ * the most common REST shape: `GET /user/{id}` and `PUT /user/{id}` share a
+ * path and differ only by method. Endpoints declared without an explicit
+ * method ([HttpMethod.NO_METHOD]) degrade to the bare path rather than
+ * printing a meaningless `NO_METHOD` prefix.
+ *
+ * No host is included, deliberately: the host is a deployment concern owned by
+ * the dashboard's environment panel (and resolved by the cURL channel against
+ * the rule environment), not something the source code this address is derived
+ * from can answer. Use [ApiEndpoint.path] when only the path is wanted.
+ */
+val ApiEndpoint.address: String
+    get() = when (val meta = metadata) {
+        is HttpMetadata ->
+            if (meta.method == HttpMethod.NO_METHOD) meta.path else "${meta.method.name} ${meta.path}"
+        is GrpcMetadata -> meta.path
+    }
+
+/**
  * The wire-level type of an HTTP parameter.
  *
  * Only two values matter at the HTTP layer:

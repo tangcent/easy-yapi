@@ -8,6 +8,7 @@ object CoreFeatureIds {
     val AUTO_SCANNING = FeatureId("core.api-scanning.auto")
     val CONCURRENT_SCANNING = FeatureId("core.api-scanning.concurrent")
     val EDITOR_INTEGRATION = FeatureId("core.editor-integration")
+    val COPY_API_URL = FeatureId("core.copy-api-url")
 }
 
 /** Declares built-in scanning and editor capabilities. */
@@ -56,9 +57,23 @@ class CoreFeatureContributor : FeatureContributor {
             source = SOURCE,
             description = "Show gutter icons and line markers next to API methods in the editor."
         )
+        // Declares no dependency on API_SCANNING: the action resolves the
+        // selection through ApiScanner.scanSelection, which scans on demand
+        // exactly like the export actions do. API_SCANNING only gates
+        // background scanning, so tying this entry to it would hide a feature
+        // that still works.
+        val copyApiUrl = FeatureDescriptor(
+            id = CoreFeatureIds.COPY_API_URL,
+            displayName = "Copy API URL",
+            defaultEnabled = true,
+            group = CORE_GROUP,
+            stateBridge = DirectBooleanStateBridge(DirectBooleanSetting.COPY_API_URL_ENABLED),
+            source = SOURCE,
+            description = "Add the Copy API URL action to the EasyApi context menu, copying the address of every endpoint in the selection."
+        )
         return FeatureContribution(
             groups = listOf(CORE_GROUP),
-            descriptors = listOf(apiScanning, editorIntegration)
+            descriptors = listOf(apiScanning, editorIntegration, copyApiUrl)
         )
     }
 

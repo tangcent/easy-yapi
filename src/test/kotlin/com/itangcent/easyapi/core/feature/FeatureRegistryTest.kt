@@ -31,6 +31,23 @@ class FeatureRegistryTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    fun testCopyApiUrlFeatureIsDeclaredWithoutDependencies() {
+        val contribution = CoreFeatureContributor().contribution()
+        val descriptor = contribution.descriptors.single { it.id == CoreFeatureIds.COPY_API_URL }
+
+        assertEquals("Copy API URL", descriptor.displayName)
+        assertTrue("Copy API URL should be enabled by default", descriptor.defaultEnabled)
+        assertEquals(CoreFeatureContributor.CORE_GROUP, descriptor.group)
+        assertTrue(
+            "Copy API URL scans on demand like the export actions, so it must not depend on API scanning",
+            descriptor.dependencyIds.isEmpty()
+        )
+        assertEquals(
+            DirectBooleanSetting.COPY_API_URL_ENABLED,
+            (descriptor.stateBridge as DirectBooleanStateBridge).setting
+        )
+    }
+
     fun testDiscoveredLegacyDescriptorsPreserveProductionMetadata() {
         val snapshot = FeatureRegistry.getInstance(project).snapshot()
 

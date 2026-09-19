@@ -39,6 +39,7 @@ Framework recognition and output formatting.
 | Log Level | `100` (SILENT) | Console verbosity. Lower = more verbose. `100`=SILENT, `50`=WARN, `20`=INFO, `10`=DEBUG, `0`=TRACE | `logLevel` |
 | API Scanning | `true` | Master toggle for API scanning. When `false`, auto-scan, concurrent scan, and the gutter icon (which navigates via the API index) are all forced off. | `apiScanEnabled` |
 | Gutter Icon | `true` | Show gutter icons for API endpoints in the editor (only effective when API scanning is enabled) | `gutterIconEnabled` |
+| Copy API URL | `true` | Show the **Copy API URL** context-menu action, which copies the address (`METHOD /path`) of every selected endpoint | `copyApiUrlEnabled` |
 | Switch Notice | `true` | Show a notification when switching settings scope | `switchNotice` |
 
 ---
