@@ -3,7 +3,6 @@ package com.itangcent.easyapi.core.ide.search
 import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.GrpcMetadata
 import com.itangcent.easyapi.core.export.GrpcStreamingType
-import com.itangcent.easyapi.core.export.HttpMetadata
 import com.itangcent.easyapi.core.export.HttpMethod
 import com.itangcent.easyapi.core.export.httpMetadata
 import org.junit.Assert.*
@@ -480,45 +479,14 @@ class ApiSearchEverywhereContributorTest {
         assertEquals("deleteUser", matched[0].name)
     }
 
-    // --- matchesQuery implementation matching ApiSearchEverywhereContributor ---
+    // --- matching rules ---
 
-    private fun matchesQuery(endpoint: ApiEndpoint, query: ApiSearchQuery): Boolean {
-        if (query.httpMethod != null && endpoint.httpMetadata?.method != query.httpMethod) {
-            return false
-        }
-
-        if (query.searchText.isBlank()) {
-            return true
-        }
-
-        val searchLower = query.searchText.lowercase()
-        val path = when (val meta = endpoint.metadata) {
-            is HttpMetadata -> meta.path
-            is GrpcMetadata -> meta.path
-            else -> ""
-        }
-
-        if (query.isPathQuery && searchLower.startsWith("/")) {
-            if (matchesPathWithVariables(searchLower, path.lowercase())) {
-                return true
-            }
-        }
-
-        return path.lowercase().contains(searchLower) ||
-                endpoint.name?.lowercase()?.contains(searchLower) == true ||
-                endpoint.className?.lowercase()?.contains(searchLower) == true ||
-                endpoint.description?.lowercase()?.contains(searchLower) == true ||
-                endpoint.folder?.lowercase()?.contains(searchLower) == true
-    }
-
-    private fun matchesPathWithVariables(concretePath: String, patternPath: String): Boolean {
-        val regex = pathPatternToRegex(patternPath)
-        return regex.matches(concretePath)
-    }
-
-    private fun pathPatternToRegex(pattern: String): Regex {
-        val parts = pattern.split(Regex("\\{[^}]*\\}"))
-        val regexStr = parts.joinToString("[^/]+") { Regex.escape(it) }
-        return Regex("^$regexStr$")
-    }
+    /**
+     * Delegates to the shared matcher. This file used to carry its own copy of
+     * the matching logic, which meant a rule change had to be made twice (and
+     * could silently diverge); the assertions below are about the *rules*, so
+     * they belong to [ApiEndpointMatcher].
+     */
+    private fun matchesQuery(endpoint: ApiEndpoint, query: ApiSearchQuery): Boolean =
+        ApiEndpointMatcher.matches(endpoint, query)
 }

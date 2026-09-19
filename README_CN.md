@@ -52,7 +52,17 @@
 
 ### 搜索 API
 
-双击 `Shift` 打开 Search Everywhere，切到 **APIs** 标签页，输入 HTTP 方法前缀（如 `GET /users`）或任意关键词。
+双击 `Shift` 打开 Search Everywhere，切到 **APIs** 标签页：
+
+- 支持 HTTP 方法前缀（如 `GET /users`）
+- 关键词可组合，且一个词可以命中不同字段 —— `user 用户` 能找到路径为 `/api/user/get`、名称为
+  `获取用户信息` 的接口
+- 三个字符及以上的词支持模糊（子序列）匹配 —— `aus用户` 能命中同一个接口
+- 可直接粘贴完整 URL、无 scheme 的 `host:port/path` 或带查询参数的路径；具体路径也能匹配路径模板
+  （`/api/users/42` → `/api/users/{id}`）
+- 结果按匹配质量排序：字面命中在前，模糊命中在后
+
+API 仪表盘的搜索框使用同一套规则。
 
 ### 转换字段
 

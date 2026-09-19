@@ -13,9 +13,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.editor.ScrollType
 import com.itangcent.easyapi.core.cache.api.ApiIndex
 import com.itangcent.easyapi.core.export.ApiEndpoint
-import com.itangcent.easyapi.core.export.GrpcMetadata
-import com.itangcent.easyapi.core.export.HttpMetadata
-import com.itangcent.easyapi.core.export.httpMetadata
 import com.itangcent.easyapi.core.logging.IdeaLog
 import kotlinx.coroutines.runBlocking
 import javax.swing.ListCellRenderer
@@ -27,13 +24,20 @@ import javax.swing.ListCellRenderer
  * paths, names, class names, or descriptions. Results are rendered with HTTP method
  * badges and path information.
  *
+ * Matching itself lives in [ApiEndpointMatcher], shared with the Dashboard's
+ * search box, so the two surfaces agree on what matches. Results are ordered by
+ * match score, best first.
+ *
  * ## Features
  * - Search by HTTP method prefix (e.g., "GET /users")
- * - Search by path, name, class name, or description
+ * - Search by path, name, class name, or description, in any combination —
+ *   `user 用户` matches an endpoint whose path and name each supply one token
+ * - Fuzzy (subsequence) matching for tokens of three characters or more
  * - Click to navigate to source method
  * - Uses cached [ApiIndex] for fast searching
  *
  * @see ApiSearchQuery for query parsing
+ * @see ApiEndpointMatcher for the matching rules
  * @see ApiSearchResultRenderer for result display
  */
 class ApiSearchEverywhereContributor(
@@ -46,6 +50,9 @@ class ApiSearchEverywhereContributor(
 
     companion object : IdeaLog {
         const val CONTRIBUTOR_ID = "com.itangcent.easyapi.search.apis"
+
+        /** Maximum number of endpoints contributed to a single query. */
+        private const val MAX_RESULTS = 10
     }
 
     override fun getSearchProviderId(): String = CONTRIBUTOR_ID
@@ -80,54 +87,21 @@ class ApiSearchEverywhereContributor(
 
         val query = ApiSearchQuery.parse(pattern)
 
-        val filteredCount = endpoints
+        val matched = endpoints
             .asSequence()
-            .filter { endpoint -> matchesQuery(endpoint, query) }
-            .take(10)
-            .onEach { consumer.process(it) }
+            .mapNotNull { endpoint ->
+                val score = ApiEndpointMatcher.score(endpoint, query)
+                if (score == ApiEndpointMatcher.NO_MATCH) null else endpoint to score
+            }
+            // Best match first: a literal path hit outranks a fuzzy one, so
+            // "user" lists /user/get before an endpoint that merely happens to
+            // contain u-s-e-r in order.
+            .sortedByDescending { (_, score) -> score }
+            .take(MAX_RESULTS)
+            .onEach { (endpoint, _) -> consumer.process(endpoint) }
             .count()
 
-        LOG.info("Filtered to $filteredCount endpoints")
-    }
-
-    private fun matchesQuery(endpoint: ApiEndpoint, query: ApiSearchQuery): Boolean {
-        if (query.httpMethod != null && endpoint.httpMetadata?.method != query.httpMethod) {
-            return false
-        }
-
-        if (query.searchText.isBlank()) {
-            return true
-        }
-
-        val searchLower = query.searchText.lowercase()
-        val path = when (val meta = endpoint.metadata) {
-            is HttpMetadata -> meta.path
-            is GrpcMetadata -> meta.path
-            else -> ""
-        }
-
-        if (query.isPathQuery && searchLower.startsWith("/")) {
-            if (matchesPathWithVariables(searchLower, path.lowercase())) {
-                return true
-            }
-        }
-
-        return path.lowercase().contains(searchLower) ||
-                endpoint.name?.lowercase()?.contains(searchLower) == true ||
-                endpoint.className?.lowercase()?.contains(searchLower) == true ||
-                endpoint.description?.lowercase()?.contains(searchLower) == true ||
-                endpoint.folder?.lowercase()?.contains(searchLower) == true
-    }
-
-    private fun matchesPathWithVariables(concretePath: String, patternPath: String): Boolean {
-        val regex = pathPatternToRegex(patternPath)
-        return regex.matches(concretePath)
-    }
-
-    private fun pathPatternToRegex(pattern: String): Regex {
-        val parts = pattern.split(Regex("\\{[^}]*\\}"))
-        val regexStr = parts.joinToString("[^/]+") { Regex.escape(it) }
-        return Regex("^$regexStr$")
+        LOG.info("Filtered to $matched endpoints")
     }
 
     override fun getDataForItem(element: ApiEndpoint, dataId: String): Any? {
