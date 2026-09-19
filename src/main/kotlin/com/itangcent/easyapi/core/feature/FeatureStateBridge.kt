@@ -38,6 +38,12 @@ enum class DirectBooleanSetting {
         override fun write(settings: GeneralSettings, value: Boolean) {
             settings.gutterIconEnabled = value
         }
+    },
+    COPY_API_URL_ENABLED {
+        override fun read(settings: GeneralSettings): Boolean = settings.copyApiUrlEnabled
+        override fun write(settings: GeneralSettings, value: Boolean) {
+            settings.copyApiUrlEnabled = value
+        }
     };
 
     internal abstract fun read(settings: GeneralSettings): Boolean

@@ -22,6 +22,11 @@ data class GeneralSettings(
     @StorageScope(Scope.APPLICATION) var autoScanEnabled: Boolean = true,
     @StorageScope(Scope.APPLICATION) var concurrentScanEnabled: Boolean = false,
     @StorageScope(Scope.APPLICATION) var gutterIconEnabled: Boolean = true,
+    /**
+     * Enables the `Copy API URL` context-menu entry, which copies the address
+     * (`METHOD /path`) of every endpoint in the selection to the clipboard.
+     */
+    @StorageScope(Scope.APPLICATION) var copyApiUrlEnabled: Boolean = true,
     @StorageScope(Scope.APPLICATION) var switchNotice: Boolean = true,
     @StorageScope(Scope.APPLICATION) var logLevel: Int = 100,
     @StorageScope(Scope.APPLICATION) var outputCharset: String = "UTF-8",
@@ -40,6 +45,7 @@ data class GeneralSettings(
         if (autoScanEnabled != other.autoScanEnabled) return false
         if (concurrentScanEnabled != other.concurrentScanEnabled) return false
         if (gutterIconEnabled != other.gutterIconEnabled) return false
+        if (copyApiUrlEnabled != other.copyApiUrlEnabled) return false
         if (switchNotice != other.switchNotice) return false
         if (logLevel != other.logLevel) return false
         if (outputCharset != other.outputCharset) return false
@@ -57,6 +63,7 @@ data class GeneralSettings(
         result = 31 * result + autoScanEnabled.hashCode()
         result = 31 * result + concurrentScanEnabled.hashCode()
         result = 31 * result + gutterIconEnabled.hashCode()
+        result = 31 * result + copyApiUrlEnabled.hashCode()
         result = 31 * result + switchNotice.hashCode()
         result = 31 * result + logLevel
         result = 31 * result + outputCharset.hashCode()

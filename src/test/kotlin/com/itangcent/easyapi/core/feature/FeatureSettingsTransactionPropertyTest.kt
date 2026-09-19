@@ -24,6 +24,7 @@ class FeatureSettingsTransactionPropertyTest {
                 autoScanEnabled = random.nextBoolean(),
                 concurrentScanEnabled = random.nextBoolean(),
                 gutterIconEnabled = random.nextBoolean(),
+                copyApiUrlEnabled = random.nextBoolean(),
                 switchNotice = random.nextBoolean(),
                 logLevel = random.nextInt(),
                 outputCharset = "charset-$seed",
@@ -33,7 +34,9 @@ class FeatureSettingsTransactionPropertyTest {
             val before = settings.deepCopy()
             val transaction = FeatureSettingsTransaction(snapshot, settings)
             val expected = transaction.initialDesiredStates.toMutableMap()
-            val editMask = random.nextInt(0, 16)
+            // One bit per identity, so every core feature stays reachable by the
+            // edit mask as new identities are added.
+            val editMask = random.nextInt(0, 1 shl snapshot.stateIdentities.size)
 
             snapshot.stateIdentities.forEachIndexed { index, identity ->
                 if (editMask and (1 shl index) != 0) {

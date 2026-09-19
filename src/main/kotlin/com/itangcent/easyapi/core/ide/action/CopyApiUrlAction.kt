@@ -6,6 +6,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.easyapi.core.dashboard.ApiScanner
 import com.itangcent.easyapi.core.export.address
+import com.itangcent.easyapi.core.feature.CoreFeatureIds
+import com.itangcent.easyapi.core.feature.FeatureStateService
 import com.itangcent.easyapi.core.ide.DumbModeHelper
 import com.itangcent.easyapi.core.ide.support.NotificationUtils
 import com.itangcent.easyapi.core.ide.support.SelectionScope
@@ -31,6 +33,20 @@ import java.awt.datatransfer.StringSelection
  * @see EasyApiAction for the selection-based visibility contract
  */
 class CopyApiUrlAction : EasyApiAction("Copy API URL"), IdeaLog {
+
+    /**
+     * Hides the entry when the `Copy API URL` feature is switched off in
+     * Settings → EasyApi → Features, so opting out removes the menu item
+     * instead of leaving a dead action behind.
+     */
+    override fun update(e: AnActionEvent) {
+        super.update(e)
+        if (!e.presentation.isEnabledAndVisible) return
+        val state = e.project?.let { FeatureStateService.getInstance(it) } ?: return
+        if (!state.isEffective(CoreFeatureIds.COPY_API_URL)) {
+            e.presentation.isEnabledAndVisible = false
+        }
+    }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return

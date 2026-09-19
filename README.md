@@ -58,6 +58,7 @@ Copy the address of the selected endpoints to the clipboard without leaving the 
 - Right-click a controller method, class, or file → **Copy API URL**
 - Endpoints are copied as `METHOD /path` (e.g. `GET /api/user/get`), one per line
 - The HTTP method is included so `GET /user/{id}` and `PUT /user/{id}` stay distinguishable
+- Turn the entry off in **Settings → EasyApi → Features → Copy API URL** if you don't want it in the menus
 
 ### API Search Everywhere
 

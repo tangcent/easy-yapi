@@ -9,6 +9,8 @@ import com.intellij.pom.Navigatable
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.core.ide.support.SelectionScope
+import com.itangcent.easyapi.core.settings.module.GeneralSettings
+import com.itangcent.easyapi.core.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 /**
@@ -40,6 +42,13 @@ class CopyApiUrlActionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         userCtrl = findClass("com.itangcent.api.UserCtrl")!!
         greetingMethod = findMethod(userCtrl, "greeting")!!
+    }
+
+    override fun tearDown() {
+        settingBinder.update(GeneralSettings::class) {
+            copyApiUrlEnabled = true
+        }
+        super.tearDown()
     }
 
     fun testActionExtendsEasyApiAction() {
@@ -95,6 +104,21 @@ class CopyApiUrlActionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         assertFalse(
             "Action should be hidden without a selection",
+            event.presentation.isEnabledAndVisible
+        )
+    }
+
+    fun testUpdateHidesActionWhenFeatureIsDisabled() {
+        settingBinder.update(GeneralSettings::class) {
+            copyApiUrlEnabled = false
+        }
+        val action = CopyApiUrlAction()
+        val event = createEvent(psiElement = greetingMethod, psiFile = userCtrl.containingFile)
+
+        action.update(event)
+
+        assertFalse(
+            "Action should be hidden when the Copy API URL feature is disabled",
             event.presentation.isEnabledAndVisible
         )
     }

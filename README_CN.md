@@ -55,6 +55,8 @@
 地址里**不含 host**：host 是部署期的事，由仪表盘的环境面板负责；需要可直接运行的请求时用那里的
 **Copy as cURL**。
 
+不需要这个菜单项时，可在 **Settings → EasyApi → Features** 里取消 **Copy API URL**。
+
 ### 打开 API 仪表盘
 
 **Tools → Open API Dashboard**，或点击 IDE 底部的 **API Dashboard** 标签页。
