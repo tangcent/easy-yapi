@@ -5,6 +5,35 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.5] - 2026-09-19
+
+### Added
+- feat(settings): turn off Search Everywhere (#1466)
+- feat(editor): copy API URL from context menu (#1464)
+- feat(search): match endpoints by address and name (#1465)
+- feat(channel): export APIs to ApiPost (#1462)
+- feat(dashboard): preview and save binary responses (#1453)
+
+### Fixed
+- fix(settings): save unchecked extensions (#1463)
+- fix(export): let param.required override framework defaults for params and fields (#1459)
+- fix(docs): keep com.itangcent.easyapi package name in rule guide
+- fix(scan): eliminate API scan hangs and reduce scan cost (#1450)
+- fix(dashboard): format XML and HTML request/response bodies (#1451)
+- fix(dashboard): refresh pristine snapshot after Reset to Default (#1449)
+- fix(dashboard): merge model body with cached edits so new DTO fields appear (#1448)
+
+### Changed
+- refactor: Rename API Dashboard to API Explorer (#1467)
+- refactor(psi): remove dead @see tag resolution helpers (#1457)
+- refactor(rules): fluent HTTP, IR type vocabulary with declared-type refs; document and guard the AI subsystem (#1456)
+
+### Improved
+- chore(scripts): stop daemons on memory pressure (#1454)
+- chore(ci): skip CI/CO/packaging for release PRs (#1445)
+
+---
+
 ## [3.2.4] - 2026-09-05
 
 ### Added
