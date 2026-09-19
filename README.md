@@ -35,7 +35,8 @@ Export API endpoints from your source code to multiple formats:
 A built-in tool window that provides a tree view of all API endpoints in your project:
 
 - Browse endpoints organized by module and class
-- Search and filter endpoints by path, name, or HTTP method
+- Search and filter endpoints — same rules as Search Everywhere: method prefix, several keywords that
+  may hit different fields, fuzzy subsequences, pasted URLs
 - View endpoint details (parameters, headers, body, response)
 - Send HTTP requests directly from the dashboard
 - Navigate to source code with a single click
@@ -52,11 +53,20 @@ Call any API endpoint directly from the editor:
 
 ### API Search Everywhere
 
-Find API endpoints from anywhere in the IDE using IntelliJ's Search Everywhere (Double Shift):
+Find API endpoints from anywhere in the IDE using IntelliJ's Search Everywhere (**Double Shift**).
+Endpoints appear under the **APIs** tab of their own, and in **All** as well:
 
 - Search by HTTP method prefix (e.g., `GET /users`)
-- Search by path, endpoint name, class name, or description
+- Search across path, endpoint name, class name, folder and description — a single query may combine
+  them, so `user 用户` finds `/api/user/get` whose name is `获取用户信息`
+- Fuzzy matching: a token of three or more characters also matches as a subsequence, so `aus用户`
+  finds that same endpoint
+- Paste a full URL, a scheme-less `host:port/path`, or a path with query params to jump straight to
+  the endpoint; a concrete path also matches a path template (`/api/users/42` → `/api/users/{id}`)
+- Results are ordered by match quality — literal hits first, fuzzy ones last
 - Click a result to navigate directly to the source method
+
+The Dashboard's search box uses the same rules.
 
 ### Gutter Icons
 
@@ -159,7 +169,8 @@ for the full rule surface and a Spring-equivalent reference ruleset.
 
 1. Press **Double Shift** to open Search Everywhere
 2. Switch to the **APIs** tab
-3. Type an HTTP method prefix (e.g., `GET /users`) or any keyword
+3. Type an HTTP method prefix (e.g., `GET /users`), one or more keywords (e.g., `user 用户`, where
+   each keyword may hit a different field), or paste a URL
 
 ### Convert Fields
 

@@ -3,7 +3,6 @@ package com.itangcent.easyapi.core.ide.search
 import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.GrpcMetadata
 import com.itangcent.easyapi.core.export.GrpcStreamingType
-import com.itangcent.easyapi.core.export.HttpMetadata
 import com.itangcent.easyapi.core.export.HttpMethod
 import com.itangcent.easyapi.core.export.httpMetadata
 import org.junit.Assert.*
@@ -480,45 +479,33 @@ class ApiSearchEverywhereContributorTest {
         assertEquals("deleteUser", matched[0].name)
     }
 
-    // --- matchesQuery implementation matching ApiSearchEverywhereContributor ---
+    /**
+     * The query from #1460, end to end: parsed from the raw text the way the
+     * platform hands it over, then matched against a two-endpoint list. The
+     * second endpoint shares the `/api/user/` prefix but carries no Chinese name,
+     * so it must not come back.
+     */
+    @Test
+    fun `realistic - fuzzy address plus name query finds the endpoint`() {
+        val endpoints = listOf(
+            createEndpoint("/api/user/get", name = "获取用户信息"),
+            createEndpoint("/api/user/add", HttpMethod.POST, name = "createUser")
+        )
 
-    private fun matchesQuery(endpoint: ApiEndpoint, query: ApiSearchQuery): Boolean {
-        if (query.httpMethod != null && endpoint.httpMetadata?.method != query.httpMethod) {
-            return false
-        }
+        val matched = endpoints.filter { matchesQuery(it, ApiSearchQuery.parse("aus用户")) }
 
-        if (query.searchText.isBlank()) {
-            return true
-        }
-
-        val searchLower = query.searchText.lowercase()
-        val path = when (val meta = endpoint.metadata) {
-            is HttpMetadata -> meta.path
-            is GrpcMetadata -> meta.path
-            else -> ""
-        }
-
-        if (query.isPathQuery && searchLower.startsWith("/")) {
-            if (matchesPathWithVariables(searchLower, path.lowercase())) {
-                return true
-            }
-        }
-
-        return path.lowercase().contains(searchLower) ||
-                endpoint.name?.lowercase()?.contains(searchLower) == true ||
-                endpoint.className?.lowercase()?.contains(searchLower) == true ||
-                endpoint.description?.lowercase()?.contains(searchLower) == true ||
-                endpoint.folder?.lowercase()?.contains(searchLower) == true
+        assertEquals(1, matched.size)
+        assertEquals("获取用户信息", matched[0].name)
     }
 
-    private fun matchesPathWithVariables(concretePath: String, patternPath: String): Boolean {
-        val regex = pathPatternToRegex(patternPath)
-        return regex.matches(concretePath)
-    }
+    // --- matching rules ---
 
-    private fun pathPatternToRegex(pattern: String): Regex {
-        val parts = pattern.split(Regex("\\{[^}]*\\}"))
-        val regexStr = parts.joinToString("[^/]+") { Regex.escape(it) }
-        return Regex("^$regexStr$")
-    }
+    /**
+     * Delegates to the shared matcher. This file used to carry its own copy of
+     * the matching logic, which meant a rule change had to be made twice (and
+     * could silently diverge); the assertions below are about the *rules*, so
+     * they belong to [ApiEndpointMatcher].
+     */
+    private fun matchesQuery(endpoint: ApiEndpoint, query: ApiSearchQuery): Boolean =
+        ApiEndpointMatcher.matches(endpoint, query)
 }

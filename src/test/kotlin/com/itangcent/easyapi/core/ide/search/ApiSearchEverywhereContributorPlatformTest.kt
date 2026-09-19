@@ -38,6 +38,14 @@ class ApiSearchEverywhereContributorPlatformTest : EasyApiLightCodeInsightFixtur
         assertEquals(180, contributor.sortWeight)
     }
 
+    fun testIsShownInSeparateTab() {
+        assertTrue(
+            "Endpoints must get their own Search Everywhere tab; the platform " +
+                "default is false, which would bury them in the All tab",
+            contributor.isShownInSeparateTab()
+        )
+    }
+
     fun testShowInFindResults() {
         assertTrue(contributor.showInFindResults())
     }

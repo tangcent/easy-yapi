@@ -8,6 +8,7 @@ import com.itangcent.easyapi.core.cache.api.ApiScanLifecycleSnapshot
 import com.itangcent.easyapi.core.cache.api.ApiScanLifecycleState
 import com.itangcent.easyapi.core.cache.api.ApiScanResult
 import com.itangcent.easyapi.core.export.ApiEndpoint
+import com.itangcent.easyapi.core.export.HttpMethod
 import com.itangcent.easyapi.core.internal.threading.swing
 import com.itangcent.easyapi.core.internal.threading.swingBlocking
 import com.itangcent.easyapi.testFramework.ApiFixtures
@@ -128,6 +129,49 @@ class ApiDashboardPanelTest : EasyApiLightCodeInsightFixtureTestCase() {
             ApiScanLifecycleState.STOPPED,
             controller.snapshot().state
         )
+    }
+
+    fun testSearchSharesTheMatchingRulesWithSearchEverywhere() {
+        val getUser = ApiFixtures.createEndpoint(name = "获取用户信息", path = "/api/user/get")
+        val createUser = ApiFixtures.createEndpoint(
+            name = "createUser",
+            path = "/api/user/add",
+            method = HttpMethod.POST
+        )
+        val panel = createPanel(FakeDashboardRuntime(listOf(getUser, createUser), scanningEffective = false))
+
+        swingBlocking {
+            assertEquals(
+                "A method prefix should filter by HTTP method",
+                listOf(getUser),
+                panel.endpointsMatching("GET /api/user/get")
+            )
+            assertEquals(
+                "Tokens may land on different fields",
+                listOf(getUser),
+                panel.endpointsMatching("user 用户")
+            )
+            assertEquals(
+                "One token may span the path and the name as a subsequence (#1460)",
+                listOf(getUser),
+                panel.endpointsMatching("aus用户")
+            )
+            assertEquals(
+                "The same query written with a space matches too",
+                listOf(getUser),
+                panel.endpointsMatching("aus 用户")
+            )
+            assertEquals(
+                "A pasted URL should match its endpoint",
+                listOf(getUser),
+                panel.endpointsMatching("http://localhost:8080/api/user/get")
+            )
+            assertEquals(
+                "Unrelated text should match nothing",
+                emptyList<ApiEndpoint>(),
+                panel.endpointsMatching("orders")
+            )
+        }
     }
 
     private fun createPanel(runtime: ApiDashboardRuntime): ApiDashboardPanel = swingBlocking {

@@ -32,6 +32,8 @@ import com.itangcent.easyapi.core.export.ExportResult
 import com.itangcent.easyapi.core.export.path
 import com.itangcent.easyapi.core.ide.dialog.EndpointSelection
 import com.itangcent.easyapi.core.ide.dialog.ExportDialog
+import com.itangcent.easyapi.core.ide.search.ApiEndpointMatcher
+import com.itangcent.easyapi.core.ide.search.ApiSearchQuery
 import com.itangcent.easyapi.core.ide.support.NotificationUtils
 import com.itangcent.easyapi.core.ide.support.runWithProgress
 import com.itangcent.easyapi.core.logging.IdeaLog
@@ -792,23 +794,23 @@ class ApiDashboardPanel internal constructor(
 
     /**
      * Filters the tree based on the current search field text.
-     * Searches across endpoint name, path, folder, description, and class name.
-     * Uses case-insensitive matching.
+     *
+     * The query is parsed by [ApiSearchQuery.parse] and scored by
+     * [ApiEndpointMatcher] — the same pair the Search Everywhere contributor
+     * uses, so the Dashboard and Search Everywhere agree on what matches. That
+     * means the box accepts a method prefix (`GET /users`), a pasted URL, and
+     * multi-token queries whose tokens land on different fields (`user 用户`).
+     *
+     * @requires Swing context
      */
     private fun filterTree() {
-        val searchText = searchField.text.lowercase().trim()
+        val searchText = searchField.text.trim()
         if (searchText.isEmpty()) {
             updateTree(cachedEndpoints)
             return
         }
 
-        val filtered = cachedEndpoints.filter { endpoint ->
-            endpoint.name?.lowercase()?.contains(searchText) == true ||
-                    endpoint.path.lowercase().contains(searchText) ||
-                    endpoint.folder?.lowercase()?.contains(searchText) == true ||
-                    endpoint.description?.lowercase()?.contains(searchText) == true ||
-                    endpoint.className?.lowercase()?.contains(searchText) == true
-        }
+        val filtered = endpointsMatching(searchText)
 
         if (filtered.isEmpty()) {
             val root = DefaultMutableTreeNode("No results for '$searchText'")
@@ -816,6 +818,20 @@ class ApiDashboardPanel internal constructor(
         } else {
             updateTree(filtered)
         }
+    }
+
+    /**
+     * The endpoints whose address, name, class, folder or description match
+     * [searchText] — the filter behind the search box.
+     *
+     * Exposed to tests so the search contract can be asserted without driving
+     * Swing key events; the box itself is a thin debounced wrapper around this.
+     *
+     * @requires Swing context
+     */
+    internal fun endpointsMatching(searchText: String): List<ApiEndpoint> {
+        val query = ApiSearchQuery.parse(searchText.trim())
+        return cachedEndpoints.filter { ApiEndpointMatcher.matches(it, query) }
     }
 
     /**

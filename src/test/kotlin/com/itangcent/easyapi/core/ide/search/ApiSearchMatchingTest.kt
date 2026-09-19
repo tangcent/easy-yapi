@@ -1,41 +1,24 @@
 package com.itangcent.easyapi.core.ide.search
 
 import com.itangcent.easyapi.core.export.*
-import com.itangcent.easyapi.core.export.httpMetadata
 import org.junit.Assert.*
 import org.junit.Test
 
 /**
- * Tests for ApiSearchEverywhereContributor's matching logic.
- * Uses reflection to test private methods since they contain the core branch logic.
+ * Tests for [ApiEndpointMatcher] — the matching rules shared by the Search
+ * Everywhere contributor and the Dashboard's search box.
+ *
+ * These cases used to be asserted through a reflection call into
+ * `ApiSearchEverywhereContributor.matchesQuery`; they now exercise the matcher
+ * directly, because that is where the rules live.
  */
 class ApiSearchMatchingTest {
 
-    private val contributorClass = ApiSearchEverywhereContributor::class.java
+    private fun matchesQuery(endpoint: ApiEndpoint, query: ApiSearchQuery): Boolean =
+        ApiEndpointMatcher.matches(endpoint, query)
 
-    private fun matchesQuery(endpoint: ApiEndpoint, query: ApiSearchQuery): Boolean {
-        val method = contributorClass.getDeclaredMethod(
-            "matchesQuery", ApiEndpoint::class.java, ApiSearchQuery::class.java
-        )
-        method.isAccessible = true
-        // Need an instance - create with null project (only used for apiIndex which we don't call)
-        val constructor = contributorClass.getConstructor(com.intellij.openapi.project.Project::class.java)
-        // Use a mock project
-        val mockProject = org.mockito.Mockito.mock(com.intellij.openapi.project.Project::class.java)
-        val instance = constructor.newInstance(mockProject)
-        return method.invoke(instance, endpoint, query) as Boolean
-    }
-
-    private fun matchesPathWithVariables(concretePath: String, patternPath: String): Boolean {
-        val method = contributorClass.getDeclaredMethod(
-            "matchesPathWithVariables", String::class.java, String::class.java
-        )
-        method.isAccessible = true
-        val constructor = contributorClass.getConstructor(com.intellij.openapi.project.Project::class.java)
-        val mockProject = org.mockito.Mockito.mock(com.intellij.openapi.project.Project::class.java)
-        val instance = constructor.newInstance(mockProject)
-        return method.invoke(instance, concretePath, patternPath) as Boolean
-    }
+    private fun matchesPathWithVariables(concretePath: String, patternPath: String): Boolean =
+        ApiEndpointMatcher.matchesPathWithVariables(concretePath, patternPath)
 
     // --- matchesQuery tests ---
 
@@ -186,6 +169,192 @@ class ApiSearchMatchingTest {
         )
         val query = ApiSearchQuery(null, "getuser", false)
         assertTrue("Should match case-insensitively", matchesQuery(endpoint, query))
+    }
+
+    // --- Multi-token (AND across fields) tests ---
+
+    /**
+     * The shape requested in #1460: the path and the name each supply one of the
+     * tokens, so neither field alone would satisfy the query.
+     */
+    @Test
+    fun testTokensMayLandOnDifferentFields() {
+        val endpoint = ApiEndpoint(
+            name = "获取用户信息",
+            metadata = httpMetadata(path = "/api/user/get", method = HttpMethod.GET)
+        )
+        assertTrue(
+            "Path token + name token should match together",
+            matchesQuery(endpoint, ApiSearchQuery(null, "user 用户", false))
+        )
+    }
+
+    @Test
+    fun testEveryTokenMustMatch() {
+        val endpoint = ApiEndpoint(
+            name = "获取用户信息",
+            metadata = httpMetadata(path = "/api/user/get", method = HttpMethod.GET)
+        )
+        assertFalse(
+            "A token that matches nothing must reject the whole query",
+            matchesQuery(endpoint, ApiSearchQuery(null, "user order", false))
+        )
+    }
+
+    @Test
+    fun testTokenOrderDoesNotMatter() {
+        val endpoint = ApiEndpoint(
+            name = "获取用户信息",
+            metadata = httpMetadata(path = "/api/user/get", method = HttpMethod.GET)
+        )
+        assertTrue(
+            "Tokens are independent, so their order is irrelevant",
+            matchesQuery(endpoint, ApiSearchQuery(null, "用户 user", false))
+        )
+    }
+
+    // --- Fuzzy (subsequence) tests ---
+
+    /**
+     * The literal example from #1460: `aus` matches `/api/user/get` as a
+     * subsequence, and the trailing Chinese characters come from the name.
+     */
+    @Test
+    fun testTokenMaySpanPathAndNameAsSubsequence() {
+        val endpoint = ApiEndpoint(
+            name = "获取用户信息",
+            description = "get user info",
+            metadata = httpMetadata(path = "/api/user/get", method = HttpMethod.GET)
+        )
+        assertTrue(
+            "A single token should match across the path/name join",
+            matchesQuery(endpoint, ApiSearchQuery(null, "aus用户", false))
+        )
+    }
+
+    /**
+     * The same `aus用户` query as it actually reaches the matcher — through
+     * [ApiSearchQuery.parse], which is how both search surfaces build it.
+     *
+     * The case above passes `isPathQuery = false` by hand, so it would stay green
+     * even if the parser started classifying `aus用户` as a path; a path query
+     * deliberately skips the fuzzy rule, so the #1460 shape would break silently.
+     * Going through the parser keeps that dependency covered.
+     */
+    @Test
+    fun testIssue1460QueryStillMatchesAfterParsing() {
+        val endpoint = ApiEndpoint(
+            name = "获取用户信息",
+            metadata = httpMetadata(path = "/api/user/get", method = HttpMethod.GET)
+        )
+
+        val query = ApiSearchQuery.parse("aus用户")
+
+        assertFalse(
+            "Not a URL and not a /path, so it must not be treated as a path query",
+            query.isPathQuery
+        )
+        assertEquals("aus用户", query.searchText)
+        assertTrue(
+            "The parsed query must still match the endpoint from #1460",
+            matchesQuery(endpoint, query)
+        )
+    }
+
+    @Test
+    fun testSubsequenceWithGapsMatches() {
+        val endpoint = ApiEndpoint(
+            name = "getUser",
+            metadata = httpMetadata(path = "/api/user/get", method = HttpMethod.GET)
+        )
+        assertTrue(
+            "Characters may be matched with gaps",
+            matchesQuery(endpoint, ApiSearchQuery(null, "uget", false))
+        )
+    }
+
+    @Test
+    fun testShortTokensMustMatchLiterally() {
+        val endpoint = ApiEndpoint(
+            name = "updateOrder",
+            metadata = httpMetadata(path = "/api/orders/update", method = HttpMethod.GET)
+        )
+        assertFalse(
+            "Below the fuzzy length floor a token must appear literally",
+            matchesQuery(endpoint, ApiSearchQuery(null, "us", false))
+        )
+    }
+
+    @Test
+    fun testSubsequenceMatchingNeedsTheCharactersInOrder() {
+        val endpoint = ApiEndpoint(
+            name = "getUser",
+            metadata = httpMetadata(path = "/api/user/get", method = HttpMethod.GET)
+        )
+        assertFalse(
+            "Reversed characters ('teg' against 'get') are not a subsequence",
+            matchesQuery(endpoint, ApiSearchQuery(null, "teg", false))
+        )
+    }
+
+    /**
+     * A path query is precise: it matches literally (so a shortened URL still
+     * finds its endpoint) but is never fuzzed. The same text typed as free text
+     * does match fuzzily — that contrast is the whole point of the rule.
+     */
+    @Test
+    fun testPathQueriesMatchLiterallyButNeverFuzzily() {
+        val endpoint = ApiEndpoint(
+            name = "updateOrder",
+            metadata = httpMetadata(path = "/api/orders/update", method = HttpMethod.GET)
+        )
+
+        assertTrue(
+            "Free text may match as a subsequence",
+            matchesQuery(endpoint, ApiSearchQuery(null, "order/upt", false))
+        )
+        assertFalse(
+            "The same text as a pasted path must not",
+            matchesQuery(endpoint, ApiSearchQuery(null, "/order/upt", true))
+        )
+    }
+
+    // --- Scoring tests ---
+
+    @Test
+    fun testLiteralPathHitOutranksFuzzyHit() {
+        val literal = ApiEndpoint(
+            name = "getUser",
+            metadata = httpMetadata(path = "/api/user/get", method = HttpMethod.GET)
+        )
+        val fuzzy = ApiEndpoint(
+            name = "listOrders",
+            description = "Usually returns sorted rows",
+            metadata = httpMetadata(path = "/api/orders", method = HttpMethod.GET)
+        )
+        val query = ApiSearchQuery(null, "user", false)
+
+        val literalScore = ApiEndpointMatcher.score(literal, query)
+        val fuzzyScore = ApiEndpointMatcher.score(fuzzy, query)
+
+        assertTrue("The literal hit must match", literalScore > ApiEndpointMatcher.NO_MATCH)
+        assertTrue("The fuzzy hit must match", fuzzyScore > ApiEndpointMatcher.NO_MATCH)
+        assertTrue(
+            "Ranking must favour the literal hit ($literalScore vs $fuzzyScore)",
+            literalScore > fuzzyScore
+        )
+    }
+
+    @Test
+    fun testScoreIsZeroForNoMatch() {
+        val endpoint = ApiEndpoint(
+            name = "getUser",
+            metadata = httpMetadata(path = "/api/users", method = HttpMethod.GET)
+        )
+        assertEquals(
+            ApiEndpointMatcher.NO_MATCH,
+            ApiEndpointMatcher.score(endpoint, ApiSearchQuery(null, "orders", false))
+        )
     }
 
     // --- matchesPathWithVariables tests ---
