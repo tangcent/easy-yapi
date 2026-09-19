@@ -87,17 +87,15 @@ fun RuleFileSettings.enabledExtensionCodes(): List<String> =
 
 /**
  * Persists [checkedCodes] into `extensionConfigs` — the encode counterpart of
- * [enabledExtensionCodes].
+ * [enabledExtensionCodes], delegated to [ExtensionConfigRegistry.encodeSelection].
  *
- * Checked extensions are written as plain codes. An extension that is unchecked
- * but enabled by default must be written as an explicit `-<code>` exclusion:
- * writing only the checked codes drops the deselection, and the next read falls
- * back to `defaultEnabled` and silently re-checks it (issue #1461). Unchecked
- * extensions that are disabled by default need no entry.
+ * The grammar deliberately stays in the catalogue. Encoding a selection means
+ * knowing which *unchecked* codes are on by default, so an encoder written here
+ * would have to read `ExtensionConfig.defaultEnabled` itself and become a second
+ * class deciding the same question — which is how the Extensions tab and the rule
+ * engine ended up with divergent copies in the first place (#1461). This function
+ * exists only so callers do not have to name the field.
  */
 fun RuleFileSettings.updateExtensionCodes(checkedCodes: Collection<String>) {
-    val checked = checkedCodes.toSet()
-    extensionConfigs = ExtensionConfigRegistry.allExtensions()
-        .filter { it.code.isNotBlank() && (checked.contains(it.code) || it.defaultEnabled) }
-        .joinToString(",") { if (checked.contains(it.code)) it.code else "-${it.code}" }
+    extensionConfigs = ExtensionConfigRegistry.encodeSelection(checkedCodes)
 }

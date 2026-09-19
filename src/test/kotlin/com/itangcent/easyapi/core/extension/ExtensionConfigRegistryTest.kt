@@ -146,6 +146,66 @@ class ExtensionConfigRegistryTest {
         )
     }
 
+    /**
+     * [ExtensionConfigRegistry.enabledExtensions] is the single grammar decision;
+     * every other query has to be a projection of it, in every code-list shape —
+     * empty, positive, negative, mixed, and a code listed both ways (positive wins).
+     */
+    @Test
+    fun testEnabledExtensions_isTheOnlyGrammarDecision() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val codeLists: List<Array<String>> = listOf(
+            emptyArray(),
+            arrayOf(defaultCode),
+            arrayOf("-$defaultCode"),
+            ExtensionConfigRegistry.defaultCodes(),
+            ExtensionConfigRegistry.codes(),
+            arrayOf(defaultCode, "-$defaultCode")
+        )
+
+        codeLists.forEach { codes ->
+            assertArrayEquals(
+                "selectedCodes must be enabledExtensions projected onto codes, for ${codes.toList()}",
+                ExtensionConfigRegistry.enabledExtensions(codes).map { it.code }.toTypedArray(),
+                ExtensionConfigRegistry.selectedCodes(codes)
+            )
+        }
+    }
+
+    /**
+     * "An empty code list reads as the defaults" is a consequence of the grammar, not
+     * a special case of it: with an empty list both OR branches collapse to
+     * `defaultEnabled`. Pinned so the branch that used to spell this out separately
+     * cannot quietly come back.
+     */
+    @Test
+    fun testBuildConfig_emptyListReadsAsDefaults() {
+        assertEquals(
+            ExtensionConfigRegistry.buildConfig(ExtensionConfigRegistry.defaultCodes()),
+            ExtensionConfigRegistry.buildConfig(emptyArray())
+        )
+    }
+
+    /**
+     * The grammar owner's two halves have to stay inverse: a selection that turned a
+     * default-enabled extension off must survive being persisted and read back.
+     */
+    @Test
+    fun testEncodeAndDecodeAreInverse() {
+        val defaultCode = ExtensionConfigRegistry.defaultCodes().first()
+        val checked = ExtensionConfigRegistry.defaultCodes().filter { it != defaultCode }
+
+        val encoded = ExtensionConfigRegistry.encodeSelection(checked)
+
+        assertTrue("'$defaultCode' must be written as an exclusion, got: $encoded", encoded.contains("-$defaultCode"))
+        assertEquals(
+            checked.toSet(),
+            ExtensionConfigRegistry
+                .selectedCodes(ExtensionConfigRegistry.stringToCodes(encoded))
+                .toSet()
+        )
+    }
+
     @Test
     fun testStringToCodes() {
         val str = "spring,mvc,jaxrs"

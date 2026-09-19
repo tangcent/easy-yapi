@@ -19,17 +19,18 @@ import com.itangcent.easyapi.core.logging.IdeaLog
  * One and the same list is what the Extensions tab edits and what the rule engine
  * consumes, persisted verbatim in `RuleFileSettings.extensionConfigs`. A code that
  * appears both positively and as an exclusion (`spring,-spring`) counts as enabled,
- * because [buildConfig] and [selectedCodes] OR the two branches.
+ * because [enabledExtensions] ORs the two branches.
  *
- * Encoding a *user selection* into such a list is deliberately not done here: the
- * `extensionConfigs` field belongs to the settings module, so the encoder lives
- * there as `RuleFileSettings.updateExtensionCodes`. This object only parses the
- * grammar ([selectedCodes], [buildConfig]) and mutates code lists
- * ([addSelectedConfig], [removeSelectedConfig]).
- *
- * Note: `ExtensionConfigSource.collect()` re-implements the same three-way filter
- * inline instead of calling [selectedCodes], so a grammar change has to be applied
- * there too.
+ * This object is the **only** owner of that grammar, and of the
+ * [ExtensionConfig.defaultEnabled] flag the grammar reads. Deciding whether a code
+ * is on ([enabledExtensions]), projecting that decision onto codes
+ * ([selectedCodes]), onto rule text ([buildConfig]) or onto the default set
+ * ([defaultCodes]), and turning a user selection back into a list
+ * ([encodeSelection]) all happen here. Everything outside holds a code list and
+ * delegates: the settings module owns the field but not its grammar, and
+ * `ExtensionConfigSource` owns only the `on-class` availability filter it layers
+ * on top. Keeping the decision in one expression is what makes it impossible for
+ * the tab and the rule engine to disagree — the shape issue #1461 came from.
  */
 object ExtensionConfigRegistry : IdeaLog {
 
@@ -200,50 +201,92 @@ object ExtensionConfigRegistry : IdeaLog {
     /** Every known code, in catalogue order, regardless of `defaultEnabled`. */
     fun codes(): Array<String> = extensions.map { it.code }.toTypedArray()
 
-    /** The codes of the extensions that are enabled by default — what an empty code list reads as. */
-    fun defaultCodes(): Array<String> {
-        return extensions
-            .filter { it.defaultEnabled }
-            .map { it.code }
-            .toTypedArray()
-    }
+    /**
+     * Whether [codes] switches [extension] on — the whole grammar, in one
+     * expression.
+     *
+     * This is the only place in `src/main` that reads
+     * [ExtensionConfig.defaultEnabled]; every query below is a projection of it and
+     * nothing outside this object may consult the flag itself (pinned by
+     * `ExtensionDefaultEnabledOwnershipGuardTest`). A positive entry wins over an
+     * exclusion for the same code, because the two branches are ORed.
+     */
+    private fun isEnabled(extension: ExtensionConfig, codes: Set<String>): Boolean =
+        codes.contains(extension.code) ||
+                (extension.defaultEnabled && !codes.contains("-${extension.code}"))
 
     /**
-     * The rule text of every enabled extension, joined by [separator].
+     * The extensions enabled by [codes], in catalogue order, with the `-<code>`
+     * exclusions already resolved — the primitive every other query is built on.
      *
-     * @param selectedCodes A code list, filtered by the grammar described on this
-     *   object. An empty array means "nothing recorded yet" and enables exactly
-     *   [defaultCodes]; a non-empty array overrides that default entry by entry.
-     * @return The concatenated [ExtensionConfig.content], or `""` when nothing is enabled.
+     * An extension whose `on-class` is missing from the project classpath is still
+     * returned: availability is a project-scoped question, so
+     * `ExtensionConfigSource` — the only holder of a `Project` — filters this
+     * result instead.
      */
-    fun buildConfig(selectedCodes: Array<String>, separator: CharSequence = "\n"): String {
-        if (selectedCodes.isEmpty()) {
-            return extensions
-                .filter { it.defaultEnabled }
-                .joinToString(separator) { it.content }
-        }
-
-        val set = selectedCodes.toSet()
-        return extensions
-            .filter { set.contains(it.code) || (it.defaultEnabled && !set.contains("-${it.code}")) }
-            .joinToString(separator) { it.content }
+    fun enabledExtensions(codes: Array<String>): List<ExtensionConfig> {
+        val set = codes.toSet()
+        return extensions.filter { isEnabled(it, set) }
     }
 
     /**
      * The enabled codes for [codes], in catalogue order, with the `-<code>`
-     * exclusions already resolved.
+     * exclusions already resolved — [enabledExtensions] projected onto codes.
      *
      * The result is always positive and registry-ordered, so two selections can be
      * compared as lists. It is a projection for reading only: persisting it back via
      * [codesToString] would drop every exclusion and let the `defaultEnabled`
      * fallback switch the excluded extension on again.
      */
-    fun selectedCodes(codes: Array<String>): Array<String> {
-        val set = codes.toSet()
+    fun selectedCodes(codes: Array<String>): Array<String> =
+        enabledExtensions(codes).map { it.code }.toTypedArray()
+
+    /**
+     * The codes of the extensions that are enabled by default — what an empty code
+     * list reads as.
+     *
+     * Derived from [enabledExtensions] rather than read off the flag, because with
+     * an empty list both OR branches collapse to `defaultEnabled`. "An empty list
+     * means the defaults" is therefore not a special case of the grammar; it is a
+     * consequence of it.
+     */
+    fun defaultCodes(): Array<String> =
+        enabledExtensions(emptyArray()).map { it.code }.toTypedArray()
+
+    /**
+     * The rule text of every enabled extension, joined by [separator] —
+     * [enabledExtensions] projected onto [ExtensionConfig.content].
+     *
+     * @param selectedCodes A code list, filtered by the grammar described on this
+     *   object. An empty array means "nothing recorded yet" and enables exactly
+     *   [defaultCodes]; a non-empty array overrides that default entry by entry.
+     * @return The concatenated rule text, or `""` when nothing is enabled.
+     */
+    fun buildConfig(selectedCodes: Array<String>, separator: CharSequence = "\n"): String =
+        enabledExtensions(selectedCodes).joinToString(separator) { it.content }
+
+    /**
+     * Encodes a set of user-checked codes into the persisted code list — the
+     * inverse of [selectedCodes], and the encode side of the grammar.
+     *
+     * Checked extensions are written as plain codes. An extension that the user
+     * unchecked but that is enabled by default must be written as an explicit
+     * `-<code>` exclusion: writing only the checked codes would drop the
+     * deselection, and the next read would fall back to `defaultEnabled` and
+     * silently re-check it (issue #1461). Unchecked extensions that are disabled by
+     * default need no entry.
+     *
+     * Compares against [defaultCodes] instead of the flag, so that the flag is read
+     * in exactly one expression. [codesToString] is deliberately kept as the plain
+     * (unencoded) joiner it has always been — it serves the field's default value,
+     * where every entry is a positive code.
+     */
+    fun encodeSelection(checkedCodes: Collection<String>): String {
+        val checked = checkedCodes.toSet()
+        val defaults = defaultCodes().toSet()
         return extensions
-            .filter { set.contains(it.code) || (it.defaultEnabled && !set.contains("-${it.code}")) }
-            .map { it.code }
-            .toTypedArray()
+            .filter { it.code.isNotBlank() && (checked.contains(it.code) || defaults.contains(it.code)) }
+            .joinToString(",") { if (checked.contains(it.code)) it.code else "-${it.code}" }
     }
 
     /**
@@ -279,8 +322,7 @@ object ExtensionConfigRegistry : IdeaLog {
      *
      * Only lossless for lists that are entirely positive, which is why it serves the
      * default value (`codesToString(defaultCodes())`) and not a user selection: a
-     * deselection has to be encoded, and `RuleFileSettings.updateExtensionCodes` is
-     * what does that.
+     * deselection has to be encoded, and [encodeSelection] is what does that.
      */
     fun codesToString(codes: Array<String>): String {
         return codes.filter { it.isNotBlank() }.joinToString(",")

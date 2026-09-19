@@ -73,8 +73,10 @@ class DefaultConfigReader(
                 ),
                 ExtensionConfigSource(
                     project,
-                    // Raw codes, `-<code>` exclusions included — ExtensionConfigSource
-                    // applies `defaultEnabled` itself. Never pass enabledExtensionCodes().
+                    // Raw codes, `-<code>` exclusions included. This is the only form
+                    // ExtensionConfigSource may receive — it resolves `defaultEnabled`
+                    // through ExtensionConfigRegistry.enabledExtensions. Never pass
+                    // enabledExtensionCodes().
                     ruleFileSettings.extensionCodes(),
                     configTextParser
                 ),
