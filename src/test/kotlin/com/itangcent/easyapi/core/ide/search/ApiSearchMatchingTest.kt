@@ -232,6 +232,35 @@ class ApiSearchMatchingTest {
         )
     }
 
+    /**
+     * The same `aus用户` query as it actually reaches the matcher — through
+     * [ApiSearchQuery.parse], which is how both search surfaces build it.
+     *
+     * The case above passes `isPathQuery = false` by hand, so it would stay green
+     * even if the parser started classifying `aus用户` as a path; a path query
+     * deliberately skips the fuzzy rule, so the #1460 shape would break silently.
+     * Going through the parser keeps that dependency covered.
+     */
+    @Test
+    fun testIssue1460QueryStillMatchesAfterParsing() {
+        val endpoint = ApiEndpoint(
+            name = "获取用户信息",
+            metadata = httpMetadata(path = "/api/user/get", method = HttpMethod.GET)
+        )
+
+        val query = ApiSearchQuery.parse("aus用户")
+
+        assertFalse(
+            "Not a URL and not a /path, so it must not be treated as a path query",
+            query.isPathQuery
+        )
+        assertEquals("aus用户", query.searchText)
+        assertTrue(
+            "The parsed query must still match the endpoint from #1460",
+            matchesQuery(endpoint, query)
+        )
+    }
+
     @Test
     fun testSubsequenceWithGapsMatches() {
         val endpoint = ApiEndpoint(

@@ -152,6 +152,16 @@ class ApiDashboardPanelTest : EasyApiLightCodeInsightFixtureTestCase() {
                 panel.endpointsMatching("user 用户")
             )
             assertEquals(
+                "One token may span the path and the name as a subsequence (#1460)",
+                listOf(getUser),
+                panel.endpointsMatching("aus用户")
+            )
+            assertEquals(
+                "The same query written with a space matches too",
+                listOf(getUser),
+                panel.endpointsMatching("aus 用户")
+            )
+            assertEquals(
                 "A pasted URL should match its endpoint",
                 listOf(getUser),
                 panel.endpointsMatching("http://localhost:8080/api/user/get")

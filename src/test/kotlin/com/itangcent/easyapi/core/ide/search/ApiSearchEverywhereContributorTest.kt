@@ -479,6 +479,25 @@ class ApiSearchEverywhereContributorTest {
         assertEquals("deleteUser", matched[0].name)
     }
 
+    /**
+     * The query from #1460, end to end: parsed from the raw text the way the
+     * platform hands it over, then matched against a two-endpoint list. The
+     * second endpoint shares the `/api/user/` prefix but carries no Chinese name,
+     * so it must not come back.
+     */
+    @Test
+    fun `realistic - fuzzy address plus name query finds the endpoint`() {
+        val endpoints = listOf(
+            createEndpoint("/api/user/get", name = "获取用户信息"),
+            createEndpoint("/api/user/add", HttpMethod.POST, name = "createUser")
+        )
+
+        val matched = endpoints.filter { matchesQuery(it, ApiSearchQuery.parse("aus用户")) }
+
+        assertEquals(1, matched.size)
+        assertEquals("获取用户信息", matched[0].name)
+    }
+
     // --- matching rules ---
 
     /**
