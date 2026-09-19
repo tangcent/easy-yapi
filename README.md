@@ -51,6 +51,14 @@ Call any API endpoint directly from the editor:
 - Edit parameters, headers, and body before sending
 - View response with syntax highlighting
 
+### Copy API Address
+
+Copy the address of the selected endpoints to the clipboard without leaving the editor:
+
+- Right-click a controller method, class, or file → **Copy API URL**
+- Endpoints are copied as `METHOD /path` (e.g. `GET /api/user/get`), one per line
+- The HTTP method is included so `GET /user/{id}` and `PUT /user/{id}` stay distinguishable
+
 ### API Search Everywhere
 
 Find API endpoints from anywhere in the IDE using IntelliJ's Search Everywhere (**Double Shift**).
@@ -159,6 +167,15 @@ for the full rule surface and a Spring-equivalent reference ruleset.
 2. Select **EasyApi → Call** (or press `Ctrl+C` on macOS / `Alt+Shift+C`)
 3. The API Dashboard opens with the endpoint loaded
 4. Edit parameters and send the request
+
+### Copy an API Address
+
+1. Right-click on a controller method, class, or file
+2. Select **EasyApi → Copy API URL**
+3. Every endpoint the selection declares is copied, one per line, as `METHOD /path` (e.g. `GET /api/user/get`)
+
+The host is intentionally not part of the copied address — it is a deployment concern owned by the
+Dashboard's environment panel, which also offers **Copy as cURL** when you need a ready-to-run request.
 
 ### Open API Dashboard
 

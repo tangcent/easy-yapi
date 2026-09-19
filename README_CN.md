@@ -46,6 +46,15 @@
 2. API 仪表盘会打开并加载该接口
 3. 编辑参数 / 请求头 / 请求体后发送，响应带语法高亮
 
+### 复制接口地址
+
+1. 右键点击控制器方法、类或文件
+2. 选择 **EasyApi → Copy API URL**
+3. 选中范围里的接口会按 `METHOD /path` 逐行复制（如 `GET /api/user/get`）
+
+地址里**不含 host**：host 是部署期的事，由仪表盘的环境面板负责；需要可直接运行的请求时用那里的
+**Copy as cURL**。
+
 ### 打开 API 仪表盘
 
 **Tools → Open API Dashboard**，或点击 IDE 底部的 **API Dashboard** 标签页。

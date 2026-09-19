@@ -168,6 +168,13 @@
             </action>
         </group>
 
+        <group id="EasyApiCopyGroup" text="Copy" description="Copy api addresses">
+            <action id="com.itangcent.idea.easy_api.actions.CopyApiUrlAction"
+                    class="com.itangcent.easyapi.core.ide.action.CopyApiUrlAction" text="Copy API URL"
+                    description="Copy the HTTP method and path of the selected API endpoints">
+            </action>
+        </group>
+
         <group id="com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"
                 class="com.itangcent.easyapi.core.ide.action.ChannelQuickActionGroup"
                 text="Export to..."
@@ -192,6 +199,7 @@
             <add-to-group group-id="GenerateGroup" anchor="last"/>
             <reference ref="EasyApiExportFromFileGroup"/>
             <reference ref="com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"/>
+            <reference ref="EasyApiCopyGroup"/>
             <reference ref="com.itangcent.idea.easy_api.actions.FieldFormatGroup"/>
         </group>
 
@@ -199,6 +207,7 @@
             <add-to-group group-id="EditorLangPopupMenu" anchor="last"/>
             <reference ref="EasyApiExportFromFileGroup"/>
             <reference ref="com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"/>
+            <reference ref="EasyApiCopyGroup"/>
             <reference ref="com.itangcent.idea.easy_api.actions.FieldFormatGroup"/>
         </group>
 
@@ -206,6 +215,7 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
             <reference ref="EasyApiExportFromFileGroup"/>
             <reference ref="com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"/>
+            <reference ref="EasyApiCopyGroup"/>
         </group>
 
         <action
