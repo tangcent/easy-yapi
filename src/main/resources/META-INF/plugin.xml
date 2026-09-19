@@ -135,8 +135,19 @@
                              displayName="Backup"
                              id="easyapi.settings.EasyApiConfigurable.Backup"
                              instance="com.itangcent.easyapi.core.settings.ui.EasyApiBackupConfigurable"/>
+        <!-- This tool window's id is also its visible label: the platform resolves
+             a label as `("toolwindow.stripe." + id).replace(" ", "_")` against the
+             plugin's resource bundle and falls back to the raw id, and this plugin
+             declares no bundle. Production code looks the window up by that same
+             string, so `id` and every `getToolWindow(...)` argument must move
+             together — a one-sided rename makes the lookup return null with no
+             compiler or runtime complaint. ToolWindowLookupGuardTest enforces it.
+
+             `anchor` is written out even though it matches what a bottom-docked
+             window should be: the platform defaults to LEFT when the EP omits it,
+             so dropping the attribute would silently move the window to the left. -->
         <toolWindow
-                id="API Dashboard"
+                id="API Explorer"
                 icon="AllIcons.Toolwindows.WebToolWindow"
                 anchor="bottom"
                 factoryClass="com.itangcent.easyapi.core.dashboard.ApiDashboardToolWindowFactory"/>
@@ -221,8 +232,8 @@
         <action
                 id="com.itangcent.idea.easy_api.actions.OpenDashboardAction"
                 class="com.itangcent.easyapi.core.ide.action.OpenApiDashboardAction"
-                text="Open API Dashboard"
-                description="Open API Dashboard tool window">
+                text="Open API Explorer"
+                description="Open the API Explorer tool window">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
 

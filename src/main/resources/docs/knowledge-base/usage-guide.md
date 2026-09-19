@@ -1,6 +1,6 @@
 # EasyYapi Usage Guide
 
-This guide walks through the most common EasyYapi workflows — installation, first export, the API Dashboard, search, field conversion, pre/post scripts, and AI-assisted rule creation.
+This guide walks through the most common EasyYapi workflows — installation, first export, the API Explorer, search, field conversion, pre/post scripts, and AI-assisted rule creation.
 
 > For the full rule key catalog and filter syntax, see the [Rule Authoring Guide](rule-guide.md). For settings reference, see the [Settings Guide](settings-guide.md). For Postman-compatible Groovy scripting, see the [Postman Script Reference](postman-script-reference.md).
 
@@ -10,7 +10,7 @@ This guide walks through the most common EasyYapi workflows — installation, fi
 
 1. [Install](#install)
 2. [First Export](#first-export)
-3. [API Dashboard](#api-dashboard)
+3. [API Explorer](#api-explorer)
 4. [Search](#search)
 5. [Field Conversion](#field-conversion)
 6. [Pre/Post Scripts](#prepost-scripts)
@@ -67,13 +67,13 @@ EasyYapi can export API endpoints to YApi, Postman, Markdown, cURL, or IntelliJ 
 
 ---
 
-## API Dashboard
+## API Explorer
 
-The **API Dashboard** is a tool window (right side of the IDE) that shows a tree view of all API endpoints in your project.
+The **API Explorer** is a tool window (bottom of the IDE) that shows a tree view of all API endpoints in your project.
 
-### Opening the dashboard
+### Opening the explorer
 
-- **View → Tool Windows → API Dashboard**, or click the dashboard icon in the right tool bar.
+- **View → Tool Windows → API Explorer**, or click the explorer icon in the bottom tool bar.
 
 ### Browsing
 
@@ -91,7 +91,7 @@ The **API Dashboard** is a tool window (right side of the IDE) that shows a tree
 
 ## Search
 
-The API Dashboard includes a search bar that filters endpoints by:
+The API Explorer includes a search bar that filters endpoints by:
 
 - **Path** — match against the URL path
 - **Name** — match against the API name
@@ -127,7 +127,7 @@ See the [Rule Authoring Guide](rule-guide.md#rule-key-catalog) for the full list
 
 ## Pre/Post Scripts
 
-EasyYapi supports Postman-compatible **pre-request** and **post-response** scripts written in Groovy. These run before/after API calls initiated from the dashboard.
+EasyYapi supports Postman-compatible **pre-request** and **post-response** scripts written in Groovy. These run before/after API calls initiated from the API Explorer.
 
 ### Quick example
 

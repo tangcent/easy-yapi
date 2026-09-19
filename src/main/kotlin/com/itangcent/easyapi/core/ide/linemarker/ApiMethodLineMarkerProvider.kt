@@ -32,7 +32,7 @@ import java.awt.event.MouseEvent
  *
  * Adds a gutter icon to methods annotated with API annotations
  * (Spring MVC, JAX-RS, etc.) that allows quick navigation
- * to the API Dashboard.
+ * to the API Explorer tool window.
  *
  * When the endpoint is not found in the retained index, clicking the gutter
  * icon requests a lifecycle-controlled incremental scan before retrying
@@ -75,10 +75,10 @@ class ApiMethodLineMarkerProvider internal constructor(
             element,
             element.textRange,
             AllIcons.Actions.Execute,
-            { "Open in API Dashboard" },
+            { "Open in API Explorer" },
             navigationHandler,
             GutterIconRenderer.Alignment.LEFT,
-            { "Open in API Dashboard" }
+            { "Open in API Explorer" }
         )
     }
 
@@ -141,7 +141,7 @@ class ApiMethodLineMarkerProvider internal constructor(
 
         swing {
             ToolWindowManager.getInstance(project)
-                .getToolWindow("API Dashboard")
+                .getToolWindow("API Explorer")
                 ?.activate(null)
         }
 

@@ -18,7 +18,7 @@ class ApiDashboardToolWindowFactoryTest : EasyApiLightCodeInsightFixtureTestCase
         try {
             swingBlocking {
                 ToolWindowManager.getInstance(project)
-                    .getToolWindow("API Dashboard")
+                    .getToolWindow("API Explorer")
                     ?.contentManager
                     ?.let { contentManager ->
                         contentManager.contents.forEach { content ->
@@ -118,6 +118,6 @@ class ApiDashboardToolWindowFactoryTest : EasyApiLightCodeInsightFixtureTestCase
 
     private fun registerDashboardToolWindow(): ToolWindow = swingBlocking {
         ToolWindowManager.getInstance(project)
-            .registerToolWindow(RegisterToolWindowTask("API Dashboard"))
+            .registerToolWindow(RegisterToolWindowTask("API Explorer"))
     }
 }

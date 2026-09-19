@@ -15,7 +15,7 @@ data class GeneralSettings(
     /**
      * Master toggle for API scanning. When `false`, all scanning features
      * (auto-scan, concurrent scan) and index-dependent features (gutter icon,
-     * which navigates via the API index) are disabled. The API Dashboard and
+     * which navigates via the API index) are disabled. The API Explorer and
      * gutter icon both depend on the API index that scanning produces.
      */
     @StorageScope(Scope.APPLICATION) var apiScanEnabled: Boolean = true,

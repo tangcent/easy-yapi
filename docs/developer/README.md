@@ -181,9 +181,9 @@ note with only ideas is not accepted). They live in
 
 | Spec | Topic |
 |------|-------|
-| [`dashboard-request-state.md`](../../.spec/dashboard-request-state.md) | API Dashboard — the PSI-derived vs UI-saved request states and how they reconcile. |
+| [`dashboard-request-state.md`](../../.spec/dashboard-request-state.md) | API Explorer — the PSI-derived vs UI-saved request states and how they reconcile. |
 | [`api-scan-performance.md`](../../.spec/api-scan-performance.md) | API scan cost / UI-freeze root cause, anti-freeze work, scan-health monitoring. |
-| [`dashboard-file-response.md`](../../.spec/dashboard-file-response.md) | API Dashboard file responses — binary support (Save as) and response-size limits. |
+| [`dashboard-file-response.md`](../../.spec/dashboard-file-response.md) | API Explorer file responses — binary support (Save as) and response-size limits. |
 
 ## Shared concerns
 

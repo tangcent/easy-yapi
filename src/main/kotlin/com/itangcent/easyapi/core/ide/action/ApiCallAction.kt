@@ -14,11 +14,11 @@ import kotlinx.coroutines.runBlocking
 /**
  * Action to call (execute) an API from the editor.
  *
- * Opens the API Dashboard tool window and navigates to the selected
+ * Opens the API Explorer tool window and navigates to the selected
  * method or class, allowing the user to make HTTP requests directly
  * from the IDE.
  *
- * @see ApiDashboardService for the dashboard functionality
+ * @see ApiDashboardService for navigation into that tool window
  */
 class ApiCallAction : EasyApiAction(), IdeaLog {
 
@@ -29,7 +29,7 @@ class ApiCallAction : EasyApiAction(), IdeaLog {
         console.info("ApiCallAction.actionPerformed: project=${project.name}")
 
         backgroundAsync {
-            val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("API Dashboard")
+            val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("API Explorer")
 
             swing {
                 toolWindow?.activate {

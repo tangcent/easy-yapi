@@ -10,9 +10,9 @@ import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.logging.console
 
 /**
- * Opens the API Dashboard retained-cache viewer and manual refresh entry point.
+ * Opens the API Explorer retained-cache viewer and manual refresh entry point.
  *
- * The dashboard remains reachable while scanning is paused.
+ * The explorer remains reachable while scanning is paused.
  */
 class OpenApiDashboardAction internal constructor(
     private val openDashboard: (Project) -> Unit
@@ -20,7 +20,7 @@ class OpenApiDashboardAction internal constructor(
 
     constructor() : this({ project ->
         ToolWindowManager.getInstance(project)
-            .getToolWindow("API Dashboard")
+            .getToolWindow("API Explorer")
             ?.activate(null)
     })
 
