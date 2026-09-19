@@ -31,8 +31,8 @@ import javax.swing.JSeparator
  *  - Variable resolution: when to resolve `{{var}}`/`${var}` placeholders against
  *    the active environment before formatting. See [CurlRenderMode.desc] for the
  *    per-option description shown in the combo.
- *  - Copy from edited endpoint: when on, the Dashboard "Copy as cURL" action
- *    uses the endpoint with dashboard UI edits applied (path, headers, params,
+ *  - Copy from edited endpoint: when on, the API Explorer "Copy as cURL" action
+ *    uses the endpoint with UI edits applied (path, headers, params,
  *    body). When off, the original source-code endpoint is used.
  *  - 5 formatting flags: defaults for the [CurlFormatOptions] used at export
  *    time. The export dialog's options panel can override per-export.
@@ -59,9 +59,9 @@ class CurlSettingsPanel(private val project: Project) : SettingsPanel<Settings> 
         }
     }
 
-    private val copyFromEditedCb = JBCheckBox("Copy as cURL uses dashboard-edited endpoint").apply {
-        toolTipText = "When on, the Dashboard right-click \"Copy as cURL\" action uses the endpoint with " +
-            "dashboard edits applied (path, headers, params, body from the UI fields). " +
+    private val copyFromEditedCb = JBCheckBox("Copy as cURL uses endpoint edited in API Explorer").apply {
+        toolTipText = "When on, the API Explorer right-click \"Copy as cURL\" action uses the endpoint with " +
+            "edits applied (path, headers, params, body from the UI fields). " +
             "When off (default), the original source-code endpoint is used."
     }
 

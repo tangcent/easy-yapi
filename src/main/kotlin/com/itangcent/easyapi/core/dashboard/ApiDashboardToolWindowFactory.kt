@@ -7,7 +7,12 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 
 /**
- * Creates an always-available API Dashboard cache viewer.
+ * Creates an always-available API Explorer cache viewer.
+ *
+ * The tool window's id (`plugin.xml`) is also its visible label — the platform
+ * shows the raw id unless a `toolwindow.stripe.<id>` bundle key overrides it, and
+ * this plugin declares no bundle. Production code looks the window up by that
+ * same string; `ToolWindowLookupGuardTest` keeps the two in step.
  *
  * Scanning state is represented inside [ApiDashboardPanel]. Paused scanning
  * never removes access to retained endpoints or the manual refresh action. The

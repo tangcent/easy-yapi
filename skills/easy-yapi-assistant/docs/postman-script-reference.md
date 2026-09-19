@@ -1,6 +1,6 @@
 # EasyAPI Script Reference — Postman-Compatible Groovy API
 
-This document describes the EasyAPI Groovy scripting API for **Pre-request** and **Post-response** scripts in the API Dashboard. The API is designed to be structurally compatible with Postman's `pm.*` JavaScript API, so users familiar with Postman can quickly adapt. All scripts are written in **Groovy**.
+This document describes the EasyAPI Groovy scripting API for **Pre-request** and **Post-response** scripts in the API Explorer. The API is designed to be structurally compatible with Postman's `pm.*` JavaScript API, so users familiar with Postman can quickly adapt. All scripts are written in **Groovy**.
 
 > **Goal:** A user who knows Postman scripting should be able to write the equivalent Groovy script with minimal mental translation. An AI assistant can use this document to automatically convert Postman JavaScript scripts to EasyAPI Groovy scripts.
 
@@ -895,4 +895,4 @@ prefix. For example, to ignore all fields declared by a shared base class:
 field.ignore=groovy:it.defineClass()?.qualifiedName() == "com.example.dto.TraceBean"
 ```
 
-> **Recommendation:** For Pre-request and Post-response scripts in the API Dashboard, prefer the `pm.*` API for Postman compatibility. Use the legacy bindings only for IDE-specific operations (PSI inspection, file I/O, etc.).
+> **Recommendation:** For Pre-request and Post-response scripts in the API Explorer, prefer the `pm.*` API for Postman compatibility. Use the legacy bindings only for IDE-specific operations (PSI inspection, file I/O, etc.).

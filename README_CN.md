@@ -43,7 +43,7 @@
 ### 调用 API
 
 1. 右键点击控制器方法 → **EasyApi → Call**（或按 `Alt+Shift+C`；macOS 为 `Ctrl+C`）
-2. API 仪表盘会打开并加载该接口
+2. API Explorer 会打开并加载该接口
 3. 编辑参数 / 请求头 / 请求体后发送，响应带语法高亮
 
 ### 复制接口地址
@@ -52,14 +52,14 @@
 2. 选择 **EasyApi → Copy API URL**
 3. 选中范围里的接口会按 `METHOD /path` 逐行复制（如 `GET /api/user/get`）
 
-地址里**不含 host**：host 是部署期的事，由仪表盘的环境面板负责；需要可直接运行的请求时用那里的
+地址里**不含 host**：host 是部署期的事，由 API Explorer 的环境面板负责；需要可直接运行的请求时用那里的
 **Copy as cURL**。
 
 不需要这个菜单项时，可在 **Settings → EasyApi → Features** 里取消 **Copy API URL**。
 
-### 打开 API 仪表盘
+### 打开 API Explorer
 
-**Tools → Open API Dashboard**，或点击 IDE 底部的 **API Dashboard** 标签页。
+**Tools → Open API Explorer**，或点击 IDE 底部的 **API Explorer** 标签页。
 
 ### 搜索 API
 
@@ -73,10 +73,10 @@
   （`/api/users/42` → `/api/users/{id}`）
 - 结果按匹配质量排序：字面命中在前，模糊命中在后
 
-API 仪表盘的搜索框使用同一套规则。
+API Explorer 的搜索框使用同一套规则。
 
 不需要这个集成时，可在 **Settings → EasyApi → Features** 里取消 **Search Everywhere** —— 标签页和
-搜索结果一并消失，仪表盘搜索框不受影响。
+搜索结果一并消失，API Explorer 搜索框不受影响。
 
 ### 转换字段
 

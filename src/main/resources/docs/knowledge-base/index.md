@@ -25,7 +25,7 @@ search this list.
 
 ## D
 
-- **Dashboard** → [usage-guide §API Dashboard](usage-guide.md#api-dashboard)
+- **Explorer** → [usage-guide §API Explorer](usage-guide.md#api-explorer)
 - **`doc.*` rule keys** → [rule-guide §Rule Key Catalog](rule-guide.md#rule-key-catalog)
 - **Disabled rule files** → [README §Where rules live](README.md#where-rules-live-30-model)
 

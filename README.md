@@ -30,7 +30,7 @@ Export API endpoints from your source code to multiple formats:
 | **OpenAPI** *(Beta)* | ✓ | ✓ | `.json` or `.yaml` OpenAPI 3.0.3 document |
 | **ApiPost** *(Beta)* | ✓ | — | `.json` file or direct upload to an ApiPost project via its open API |
 
-### API Dashboard
+### API Explorer
 
 A built-in tool window that provides a tree view of all API endpoints in your project:
 
@@ -38,7 +38,7 @@ A built-in tool window that provides a tree view of all API endpoints in your pr
 - Search and filter endpoints — same rules as Search Everywhere: method prefix, several keywords that
   may hit different fields, fuzzy subsequences, pasted URLs
 - View endpoint details (parameters, headers, body, response)
-- Send HTTP requests directly from the dashboard
+- Send HTTP requests directly from the explorer
 - Navigate to source code with a single click
 - Edit request parameters with auto-persistence
 
@@ -47,7 +47,7 @@ A built-in tool window that provides a tree view of all API endpoints in your pr
 Call any API endpoint directly from the editor:
 
 - Right-click a controller method → **Call** (or press `Ctrl+C` on macOS / `Alt+Shift+C`)
-- The API Dashboard opens and navigates to the selected endpoint
+- The API Explorer opens and navigates to the selected endpoint
 - Edit parameters, headers, and body before sending
 - View response with syntax highlighting
 
@@ -75,14 +75,14 @@ Endpoints appear under the **APIs** tab of their own, and in **All** as well:
 - Results are ordered by match quality — literal hits first, fuzzy ones last
 - Click a result to navigate directly to the source method
 
-The Dashboard's search box uses the same rules.
+The Explorer's search box uses the same rules.
 
 Turn the whole integration off in **Settings → EasyApi → Features → Search Everywhere** — the tab and
-its results disappear, and the Dashboard search box keeps working.
+its results disappear, and the Explorer search box keeps working.
 
 ### Gutter Icons
 
-API methods are marked with a gutter icon in the editor. Click it to open the endpoint in the API Dashboard.
+API methods are marked with a gutter icon in the editor. Click it to open the endpoint in the API Explorer.
 
 ### Field Conversion
 
@@ -169,7 +169,7 @@ for the full rule surface and a Spring-equivalent reference ruleset.
 
 1. Right-click on a controller method
 2. Select **EasyApi → Call** (or press `Ctrl+C` on macOS / `Alt+Shift+C`)
-3. The API Dashboard opens with the endpoint loaded
+3. The API Explorer opens with the endpoint loaded
 4. Edit parameters and send the request
 
 ### Copy an API Address
@@ -179,12 +179,12 @@ for the full rule surface and a Spring-equivalent reference ruleset.
 3. Every endpoint the selection declares is copied, one per line, as `METHOD /path` (e.g. `GET /api/user/get`)
 
 The host is intentionally not part of the copied address — it is a deployment concern owned by the
-Dashboard's environment panel, which also offers **Copy as cURL** when you need a ready-to-run request.
+Explorer's environment panel, which also offers **Copy as cURL** when you need a ready-to-run request.
 
-### Open API Dashboard
+### Open API Explorer
 
-- Go to **Tools → Open API Dashboard**
-- Or click the **API Dashboard** tab at the bottom of the IDE
+- Go to **Tools → Open API Explorer**
+- Or click the **API Explorer** tab at the bottom of the IDE
 
 ### Search APIs
 
@@ -306,7 +306,7 @@ graph TB
 - **ExportOrchestrator** — Coordinates the full export pipeline: scans endpoints via `ApiScanner`, then hands them to the selected `Channel` for output
 - **ClassExporter** *(extension point)* — Extracts `ApiEndpoint` models from PSI classes; built-in implementations: Spring MVC, Spring Cloud OpenFeign, JAX-RS, Spring Actuator, gRPC, Custom (rules-driven)
 - **Channel** *(extension point)* — Converts `ApiEndpoint` models to an output format and handles file write / remote upload; built-in channels: YApi, Postman, ApiPost *(Beta)*, Markdown, cURL, HTTP Client, Hoppscotch *(Beta)*, OpenAPI *(Beta)*. Adding a new output target only requires implementing `Channel` — no core edits
-- **ApiIndex** — Caches discovered endpoints for fast search and dashboard access
+- **ApiIndex** — Caches discovered endpoints for fast search and API Explorer access
 - **RuleEngine** — Evaluates rule expressions (Groovy, regex, annotation, tag) to customize parsing behavior
 - **AI Assistant** — Optional built-in agent that inspects the project via PSI tools and authors rule files; see the [Skills](#skills) section for the external-skill equivalent
 
@@ -350,7 +350,7 @@ com.itangcent.easyapi/
     ├── http/        # HttpClientProvider + Apache/IntelliJ/UrlConnection implementations
     ├── logging/     # IdeaConsole, IdeaLog, IdeaConsoleProvider
     ├── ide/         # (+ action/ dialog/ linemarker/ script/ search/ support/) — NO fieldformat/ (moved to format/)
-    ├── dashboard/   # API Dashboard tool window
+    ├── dashboard/   # API Explorer tool window
     ├── script/      # (+ env/ pm/) — script execution support
     ├── util/        # (+ file/ ide/ json/ storage/ text/) — FormatterHelper stays here (Decision F1)
     ├── cache/       # (+ api/ http/ json/)
@@ -406,4 +406,4 @@ A framework scans PSI for endpoints declared with a specific framework's annotat
 - [Export to YApi](https://easyyapi.github.io/guide/export2yapi) — YApi export and settings
 - [Export to Postman](https://easyyapi.github.io/guide/export2postman) — Postman export
 - [Export to Markdown](https://easyyapi.github.io/guide/export2markdown) — Markdown export and templates
-- [Call API](https://easyyapi.github.io/guide/call) — Send requests, API Dashboard, gRPC call
+- [Call API](https://easyyapi.github.io/guide/call) — Send requests, API Explorer, gRPC call

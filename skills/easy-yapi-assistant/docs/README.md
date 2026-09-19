@@ -35,7 +35,7 @@ each.
 | [Index](index.md) | A flat map of every topic → page. Start here when you don't know which page to read. |
 | [Rule Authoring Guide](rule-guide.md) | Rule file format, the full rule-key catalog, filter syntax, expression prefixes, recipes, the Custom-Pattern Catalog, and AI-assisted authoring. |
 | [Settings Guide](settings-guide.md) | Every field in Settings → EasyYapi, grouped by tab, with the underlying `Settings` property name. |
-| [Usage Guide](usage-guide.md) | End-user workflows: install, first export, API Dashboard, search, field conversion, pre/post scripts, AI-assisted rule creation. |
+| [Usage Guide](usage-guide.md) | End-user workflows: install, first export, API Explorer, search, field conversion, pre/post scripts, AI-assisted rule creation. |
 | [Postman Script Reference](postman-script-reference.md) | The Postman-compatible `pm.*` Groovy API for pre-request / post-response scripts. |
 
 ## Where rules live (3.0 model)

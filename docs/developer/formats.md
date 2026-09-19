@@ -546,7 +546,7 @@ JSON5 is illustrative: it's not a separate package-walk implementation, just
 another `ObjectModelJsonHandler` plugged into the same builder.
 
 > **`core.util.FormatterHelper` is NOT for format authors.** It's a UI
-> pretty-printer (used by the export dialog and dashboard to format
+> pretty-printer (used by the export dialog and the API Explorer to format
 > already-rendered JSON/XML/HTML for display). Format authors should never
 > import it — your pure renderer is the source of truth for the output.
 
