@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.core.ai.credentials
 
+import com.itangcent.easyapi.core.util.UrlUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -36,12 +37,13 @@ fun interface LocalhostHttpProbe {
 object DefaultLocalhostHttpProbe : LocalhostHttpProbe {
 
     override suspend fun head(url: String, timeoutMs: Long): Boolean {
+        val target = UrlUtils.parseOrNull(url) ?: return false
         // Guard: never probe remote hosts from the scanner.
-        if (!isLocalhost(url)) return false
+        if (!isLocalhost(target)) return false
         return withContext(Dispatchers.IO) {
             withTimeout(timeoutMs.milliseconds) {
                 runCatching {
-                    val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+                    val conn = (target.openConnection() as HttpURLConnection).apply {
                         requestMethod = "HEAD"
                         connectTimeout = timeoutMs.toInt().coerceAtLeast(1)
                         readTimeout = timeoutMs.toInt().coerceAtLeast(1)
@@ -58,8 +60,6 @@ object DefaultLocalhostHttpProbe : LocalhostHttpProbe {
         }
     }
 
-    private fun isLocalhost(url: String): Boolean {
-        val host = runCatching { URL(url).host }.getOrNull() ?: return false
-        return host == "localhost" || host == "127.0.0.1" || host == "::1"
-    }
+    private fun isLocalhost(url: URL): Boolean =
+        url.host == "localhost" || url.host == "127.0.0.1" || url.host == "::1"
 }

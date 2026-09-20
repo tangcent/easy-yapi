@@ -4,6 +4,7 @@ import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.ui.messages.MessagesService
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.itangcent.easyapi.channel.spi.Channel
@@ -169,21 +170,26 @@ class OpenApiChannel : Channel, IdeaLog {
     // ─── ALWAYS_ASK prompt ────────────────────────────────────────────
 
     /**
-     * Shows a `Messages.showChooseDialog` on EDT prompting the user to pick
-     * JSON / YAML. Throws [CancellationException] on cancel.
+     * Shows a choose dialog on EDT prompting the user to pick JSON / YAML.
+     * Throws [CancellationException] on cancel.
      * Mirrors `CurlExportResolver.resolveRenderMode` `ALWAYS_ASK` pattern.
+     *
+     * Goes through [MessagesService]: both `Messages.showChooseDialog`
+     * overloads are deprecated, and the service form additionally takes an
+     * explicit parent component and centre-alignment flag.
      *
      * @requires EDT (called via [swing]); the caller is responsible for
      *  wrapping with `swing { ... }`.
      */
     private suspend fun promptFormat(project: Project): OpenApiOutputFormat = swing {
-        val choice = Messages.showChooseDialog(
+        val choice = MessagesService.getInstance().showChooseDialog(
             project,
+            null,
             "Select output format for OpenAPI export:",
             "OpenAPI Export - Format",
-            Messages.getQuestionIcon(),
             arrayOf("JSON", "YAML"),
             "JSON",
+            Messages.getQuestionIcon(),
         )
         when (choice) {
             -1 -> throw CancellationException("User cancelled format selection")

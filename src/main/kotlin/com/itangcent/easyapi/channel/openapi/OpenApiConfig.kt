@@ -9,7 +9,7 @@ import com.itangcent.easyapi.core.logging.IdeaLog
  * - `JSON` — serialize via Gson (default-of-defaults when stored values are
  *   unrecognized, see [parseOutputFormat]).
  * - `YAML` — serialize via Jackson `YAMLMapper`.
- * - `ALWAYS_ASK` — prompt the user on EDT with a `Messages.showChooseDialog`
+ * - `ALWAYS_ASK` — prompt the user on EDT with a `MessagesService.showChooseDialog`
  *   for JSON / YAML at export time. Default for both `OpenApiConfig` and
  *   `OpenApiSettings`.
  *

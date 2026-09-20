@@ -15,6 +15,7 @@ import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.settings.SettingBinder
 import com.itangcent.easyapi.core.settings.settings
 import com.itangcent.easyapi.core.settings.update
+import com.itangcent.easyapi.core.util.UrlUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -387,11 +388,9 @@ class HoppscotchAuthService(private val project: Project) : IdeaLog {
      * Checks if the given server URL points to the Hoppscotch cloud instance.
      */
     internal fun isCloudInstance(serverUrl: String): Boolean {
-        val host = try {
-            java.net.URL(serverUrl).host
-        } catch (e: Exception) {
-            serverUrl
-        }
+        // hostOrNull yields null (rather than throwing) for scheme-less input
+        // such as "hoppscotch.io", so fall back to the raw string.
+        val host = UrlUtils.hostOrNull(serverUrl) ?: serverUrl
         return host.equals("hoppscotch.io", ignoreCase = true) ||
                 host.endsWith(".hoppscotch.io", ignoreCase = true)
     }

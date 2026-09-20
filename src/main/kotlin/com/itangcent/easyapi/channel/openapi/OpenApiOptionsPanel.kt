@@ -23,7 +23,7 @@ import javax.swing.JRadioButton
  *
  * The "Always Ask" option is NOT exposed here — the panel itself is the
  * per-export prompt, so offering "Always Ask" would be redundant (it would
- * just trigger a second `Messages.showChooseDialog` inside `export()`).
+ * just trigger a second `MessagesService.showChooseDialog` inside `export()`).
  * "Always Ask" remains available in [OpenApiSettings] as the persistent
  * default: when the quick-export path is used (no options panel shown) and
  * the setting is `ALWAYS_ASK`, `OpenApiChannel.export` prompts the user at

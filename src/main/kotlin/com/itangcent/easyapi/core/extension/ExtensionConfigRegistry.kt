@@ -153,7 +153,9 @@ object ExtensionConfigRegistry : IdeaLog {
                 val path = extensionsUrl.path // file:/path/to/x.jar!/extensions
                 val bangIndex = path.indexOf('!')
                 val filePart = if (bangIndex >= 0) path.substring(0, bangIndex) else path
-                val filePath = java.net.URL(filePart).file
+                // URI.getPath() (unlike the deprecated URL.getFile()) also decodes
+                // percent-escapes, so jar paths containing spaces still resolve.
+                val filePath = java.net.URI(filePart).path
                 java.util.jar.JarFile(filePath)
             } else {
                 null

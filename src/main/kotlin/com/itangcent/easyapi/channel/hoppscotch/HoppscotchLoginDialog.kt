@@ -5,6 +5,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.itangcent.easyapi.channel.hoppscotch.HoppscotchSettings
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.settings.SettingBinder
+import com.itangcent.easyapi.core.util.UrlUtils
 import java.awt.BorderLayout
 import java.awt.Dimension
 import javax.swing.JComponent
@@ -135,14 +136,10 @@ class HoppscotchLoginDialog(
                     val settings = modularBinder.read(HoppscotchSettings::class)
                     val serverUrl = settings.hoppscotchServerUrl?.takeIf { it.isNotBlank() } ?: "https://hoppscotch.io"
                     val backendUrl = settings.hoppscotchBackendUrl?.takeIf { it.isNotBlank() }
-                    val serverHost = java.net.URL(serverUrl).host
-                    val backendHost = backendUrl?.let { java.net.URL(it).host }
+                    val serverHost = UrlUtils.hostOrNull(serverUrl) ?: serverUrl
+                    val backendHost = backendUrl?.let { UrlUtils.hostOrNull(it) ?: it }
                     val apiBaseUrl = HoppscotchApiClient.resolveApiBaseUrl(serverUrl, backendUrl)
-                    val apiHost = try {
-                        java.net.URL(apiBaseUrl).host
-                    } catch (_: Exception) {
-                        null
-                    }
+                    val apiHost = UrlUtils.hostOrNull(apiBaseUrl)
 
                     val isMatchingDomain = domain != null && (
                             domain.contains(serverHost) ||
