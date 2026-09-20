@@ -122,8 +122,9 @@ to its default.
 
 Rule file management. EasyYapi 3.0 discovers rule files by **folder**, not by
 an explicit list. The tab has three sub-tabs — **Project**,
-**Global**, **Remote** — and a bottom action bar with **Chat**, **Magic**, and
-**Help** buttons that host the inline AI assistant.
+**Global**, **Remote**. The tab itself carries no action bar; the AI assistant
+lives in the Rule File Editor dialog opened from a rule file row (see
+[Rule File Editor dialog](#rule-file-editor-dialog)).
 
 ### Project sub-tab
 
@@ -157,14 +158,15 @@ Remote configuration sources (URLs that return rule/config content).
 |-------|---------|--------|----------|
 | Remote Config | *(empty)* | Array of remote config URLs | `remoteConfig` |
 
-### Bottom action bar
+### Rule File Editor dialog
+
+Add / edit on a rule file row opens the Rule File Editor dialog, whose bottom
+bar hosts the AI assistant:
 
 - **Chat** — reveals the inline AI chat panel. Type a request in natural
   language; the assistant reads your rules, reasons, and proposes content.
 - **Magic** — runs a built-in "review and improve" instruction that also asks
   the assistant to detect custom framework patterns that lack a rule.
-- **Help** — opens the knowledge-base overview (`docs/knowledge-base/README.md`)
-  in the editor. The file is copied to the project cache directory first.
 
 ---
 

@@ -1,8 +1,8 @@
 # EasyYapi Knowledge Base
 
 Welcome to the EasyYapi knowledge base. This is the canonical documentation the
-in-IDE AI assistant reads via its `get_plugin_doc` tool, and the page the Rules
-tab's **Help** button opens.
+in-IDE AI assistant reads via its `get_plugin_doc` tool, and the same set of
+pages the external `easy-yapi-assistant` skill bundles.
 
 ## When do you need a custom rule?
 
@@ -58,13 +58,13 @@ the **Enabled** box next to the file. Disabled paths are persisted in
 
 ## AI-assisted rule authoring
 
-The Rules tab has three buttons in its bottom action bar:
+Opening a rule file from the Rules tab (add or edit) opens the Rule File Editor
+dialog, whose bottom bar hosts the AI assistant:
 
 - **Chat** — reveals the inline AI chat panel. Type a request in natural
   language; the assistant reads your rules, reasons, and proposes content.
 - **Magic** — runs a built-in "review and improve" instruction that also
   asks the assistant to detect custom framework patterns that lack a rule.
-- **Help** — opens this page.
 
 The assistant **never writes files without your explicit approval**. Every
 state-changing action tool requires an Approve click. See the

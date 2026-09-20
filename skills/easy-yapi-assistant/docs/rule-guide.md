@@ -2,7 +2,7 @@
 
 This guide describes the **rule file format** used by EasyYapi to customize API documentation extraction — naming, descriptions, type conversion, filtering, and lifecycle hooks. Rules are plain text files (`.rules` or `.properties`-style) loaded by the Config Reader at startup and reloaded when settings change.
 
-> **AI-assisted authoring:** Open the **Rules** tab and click **Chat** or **Magic** (bottom action bar) to reveal the inline AI assistant. Describe what you want in natural language; the assistant reads your existing rules, proposes new content, and saves it. See [AI-assisted rule creation](#ai-assisted-rule-creation).
+> **AI-assisted authoring:** Open a rule file from the **Rules** tab and click **Chat** or **Magic** in the Rule File Editor dialog to reveal the inline AI assistant. Describe what you want in natural language; the assistant reads your existing rules, proposes new content, and saves it. See [AI-assisted rule creation](#ai-assisted-rule-creation).
 
 ---
 
@@ -615,7 +615,7 @@ EasyYapi 3.0 includes an AI assistant that can author rules for you. The assista
 
 1. Configure an AI provider in **Settings → EasyYapi → AI** (the dedicated AI tab).
 2. Click **Test Connection** to verify the provider works.
-3. Open the **Rules** tab and click **Chat** (bottom action bar) to reveal the inline AI panel, or **Magic** to run a built-in review-and-detect instruction.
+3. Open a rule file from the **Rules** tab and click **Chat** in the Rule File Editor dialog to reveal the inline AI panel, or **Magic** to run a built-in review-and-detect instruction.
 4. Describe what you want (e.g., "Rename all endpoints in `UserController` to start with `fetch_`").
 5. Review the proposal card, edit if needed, and click **Save…** — choose Global (`~/.EasyYapi/`) or Project (`<project>/.EasyYapi/`) scope + filename.
 

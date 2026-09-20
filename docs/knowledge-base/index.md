@@ -51,7 +51,6 @@ search this list.
 ## H
 
 - **HTTP settings** → [settings-guide §HTTP](settings-guide.md#http)
-- **Help button (Rules tab)** → [README](README.md)
 
 ## I
 

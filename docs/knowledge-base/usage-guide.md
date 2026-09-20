@@ -165,7 +165,7 @@ EasyYapi 3.0 includes an AI assistant that can author rules for you in natural l
 ### Workflow
 
 1. Open **Settings → EasyYapi → Rules**.
-2. Click **Chat** (bottom action bar) to reveal the inline AI panel, or **Magic** to run a built-in review-and-detect instruction.
+2. Add or edit a rule file to open the Rule File Editor dialog, then click **Chat** in its bottom bar to reveal the inline AI panel, or **Magic** to run a built-in review-and-detect instruction.
 3. Type a request, e.g.:
    - "Rename all endpoints in `UserController` to start with `fetch_`"
    - "Add the tag `internal` to all classes in the `internal` package"
