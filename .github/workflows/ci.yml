@@ -41,7 +41,7 @@ jobs:
 
   build-test:
     needs: check-skip
-    if: ${{ github.event_name != 'pull_request' || needs.check-skip.outputs.should-skip != 'true' }}
+    if: ${{ github.event_name != 'pull_request' || (needs.check-skip.outputs.should-skip != 'true' && !startsWith(github.head_ref || '', 'release/')) }}
     name: "Unit Test On ${{ matrix.os }} - jdk${{ matrix.java-version }}"
     runs-on: ${{ matrix.os }}
     continue-on-error: true

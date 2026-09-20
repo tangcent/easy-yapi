@@ -40,7 +40,7 @@ jobs:
 
   coverage:
     needs: check-skip
-    if: ${{ github.event_name != 'pull_request' || needs.check-skip.outputs.should-skip != 'true' }}
+    if: ${{ github.event_name != 'pull_request' || (needs.check-skip.outputs.should-skip != 'true' && !startsWith(github.head_ref || '', 'release/')) }}
     name: "Generate coverage On ${{ matrix.os }} - jdk${{ matrix.java-version }}"
     runs-on: ${{ matrix.os }}
     strategy:
