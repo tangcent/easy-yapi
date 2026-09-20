@@ -4,7 +4,6 @@ import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.ui.messages.MessagesService
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.itangcent.easyapi.channel.spi.Channel
@@ -174,21 +173,26 @@ class OpenApiChannel : Channel, IdeaLog {
      * Throws [CancellationException] on cancel.
      * Mirrors `CurlExportResolver.resolveRenderMode` `ALWAYS_ASK` pattern.
      *
-     * Goes through [MessagesService]: both `Messages.showChooseDialog`
-     * overloads are deprecated, and the service form additionally takes an
-     * explicit parent component and centre-alignment flag.
+     * Uses [Messages.showDialog]: it returns the pressed button index
+     * (`0..options.size - 1`) or `-1` on cancel — the same contract the
+     * deprecated `Messages.showChooseDialog` had.
+     *
+     * Do not route this through `MessagesService.getInstance()` even though it
+     * is the documented replacement for `showChooseDialog`: the whole service is
+     * annotated `@ApiStatus.Internal`. Using it trades one deprecated-API
+     * warning for five internal-API ones, and the Plugin Verifier fails the
+     * build on internal API usages by default.
      *
      * @requires EDT (called via [swing]); the caller is responsible for
      *  wrapping with `swing { ... }`.
      */
     private suspend fun promptFormat(project: Project): OpenApiOutputFormat = swing {
-        val choice = MessagesService.getInstance().showChooseDialog(
+        val choice = Messages.showDialog(
             project,
-            null,
             "Select output format for OpenAPI export:",
             "OpenAPI Export - Format",
             arrayOf("JSON", "YAML"),
-            "JSON",
+            0,
             Messages.getQuestionIcon(),
         )
         when (choice) {

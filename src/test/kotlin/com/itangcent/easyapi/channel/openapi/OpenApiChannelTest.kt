@@ -55,7 +55,7 @@ class OpenApiChannelTest : EasyApiLightCodeInsightFixtureTestCase() {
             null
         }
         // OpenApiSettings defaults to "ALWAYS_ASK", which would cause
-        // `MessagesService.showChooseDialog` to block tests that don't pass an
+        // `Messages.showDialog` to block tests that don't pass an
         // explicit `channelConfig`. Pin the persistent `outputFormat` to
         // "JSON" for the duration of each test so the settings-fallback path
         // resolves to JSON. Tests that need YAML / BINARY / ALWAYS_ASK

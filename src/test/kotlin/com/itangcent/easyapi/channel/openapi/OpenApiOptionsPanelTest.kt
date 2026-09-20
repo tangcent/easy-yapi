@@ -12,7 +12,7 @@ import org.junit.Assert.assertTrue
  * The panel exposes a two-way format selector (`JSON` default / `YAML`).
  * The "Always Ask" option is NOT exposed in the per-export panel — the panel
  * itself IS the per-export prompt, so "Always Ask" would be redundant (it
- * would just trigger a second `MessagesService.showChooseDialog` inside `export()`).
+ * would just trigger a second `Messages.showDialog` inside `export()`).
  * "Always Ask" remains available in [OpenApiSettings] as the persistent
  * default. The v1 envelope setters (`setTitle` / `setVersion` /
  * `setDescription` / `setServerUrl`) and the corresponding `OpenApiConfig`
