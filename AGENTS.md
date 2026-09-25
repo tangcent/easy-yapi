@@ -352,6 +352,7 @@ The following skills are available in the `.skills/` folder. Invoke the appropri
 | **[bug-fixer](.skills/bug-fixer/SKILL.md)** | User reports an error, test failure, or unexpected behavior that needs debugging and fixing. Provides systematic bug-fixing workflow with test-first approach. |
 | **[write-test-case](.skills/write-test-case/SKILL.md)** | User asks to write tests, add test coverage, or create test cases for any class. Guides test pattern selection (simple unit, IDE fixture, ResultLoader, action mock, etc.). |
 | **[review-commit](.skills/review-commit/SKILL.md)** | User asks to review a commit, analyze changes, or create a test coverage plan for recent changes. Generates a test plan document from a git commit. |
+| **[compat-fixer](.skills/compat-fixer/SKILL.md)** | Plugin Verifier CI gate fails on the since-build IDE, a new IDEA version breaks the plugin (P0/P1), or `pluginSinceBuild` is being raised. Encodes the compat policy (since-build zero deprecations is the only gate). |
 
 ### Skill Selection Guide
 
@@ -359,3 +360,4 @@ The following skills are available in the `.skills/` folder. Invoke the appropri
 - **Debugging an error or failure?** → `bug-fixer`
 - **Writing new tests?** → `write-test-case`
 - **Reviewing what tests a commit needs?** → `review-commit`
+- **Verifier CI failed / IDEA version broke the plugin / bumping since-build?** → `compat-fixer`
