@@ -5,6 +5,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.javadoc.PsiDocComment
+import com.intellij.psi.util.JavaPsiRecordUtil
 import com.itangcent.easyapi.core.internal.threading.read
 import com.itangcent.easyapi.core.psi.adapter.PsiLanguageAdapter
 import com.itangcent.easyapi.core.psi.adapter.PsiLanguageAdapterLoader
@@ -96,6 +97,9 @@ class UnifiedDocHelper(private val project: Project) : DocHelper {
     override suspend fun getAttrOfDocComment(psiElement: PsiElement?): String? {
         if (psiElement == null) return null
         return read {
+            // Record components are documented by `@param` tags on the containing
+            // record class, not by a doc comment of their own.
+            (psiElement as? PsiRecordComponent)?.let { return@read getRecordComponentDoc(it) }
             val owner = psiElement as? PsiDocCommentOwner
             if (owner?.docComment != null) {
                 return@read getDocCommentContent(owner.docComment!!)
@@ -165,6 +169,7 @@ class UnifiedDocHelper(private val project: Project) : DocHelper {
 
     override suspend fun getAttrOfField(field: PsiField): String? {
         val attrInDoc = getAttrOfDocComment(field)
+            ?: JavaPsiRecordUtil.getComponentForField(field)?.let { getRecordComponentDoc(it) }
         val eolComment = read {
             val commentElement = if ((field as? PsiDocCommentOwner)?.docComment == null) {
                 sourceHelper.getSourceElementSync(field)
@@ -177,6 +182,21 @@ class UnifiedDocHelper(private val project: Project) : DocHelper {
             .distinct()
             .joinToString("\n")
             .ifEmpty { null }
+    }
+
+    /**
+     * Resolves the documentation of a record component from the containing record's Javadoc.
+     *
+     * Java records document their components via `@param` tags on the record class
+     * rather than per-field doc comments, so the synthetic backing field
+     * ([com.intellij.psi.impl.light.LightRecordField]) has no doc comment of its own:
+     * `@param token the auth token` in the record Javadoc documents the `token` component.
+     */
+    private suspend fun getRecordComponentDoc(recordComponent: PsiRecordComponent): String? {
+        val recordClass = recordComponent.containingClass ?: return null
+        if (!recordClass.isRecord) return null
+        val componentName = recordComponent.name ?: return null
+        return findDocsByTagAndName(recordClass, "param", componentName)
     }
 
     private fun resolveDocComment(psiElement: PsiElement): DocComment? {
