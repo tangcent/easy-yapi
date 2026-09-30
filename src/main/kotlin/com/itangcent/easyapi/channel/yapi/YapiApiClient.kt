@@ -9,6 +9,11 @@ import com.itangcent.easyapi.channel.yapi.model.YapiResponse
 /**
  * Interface for interacting with a YAPI server scoped to a single project token.
  * All methods return [YapiResponse] — callers never need to handle exceptions directly.
+ *
+ * Error messages on a failed [YapiResponse] carry the underlying reason (typically the
+ * server's own `errmsg`, e.g. an expired or invalid token) so it can reach the user.
+ * Callers that wrap another call's result must propagate its error message rather than
+ * substituting a generic one.
  */
 interface YapiApiClient {
 

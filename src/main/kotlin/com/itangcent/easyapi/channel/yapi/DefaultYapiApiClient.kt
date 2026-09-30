@@ -59,6 +59,9 @@ class DefaultYapiApiClient(
     /**
      * Resolves the YAPI project ID for this client's token.
      * Result is cached on the instance — subsequent calls return immediately.
+     *
+     * On failure the returned message is the server's own rejection text when one was
+     * given, so an actionable reason (expired token, insufficient permission) reaches the caller.
      */
     override suspend fun getProjectId(): YapiResponse<String> {
         cachedProjectId?.let { return YapiResponse.success(it) }
@@ -68,42 +71,54 @@ class DefaultYapiApiClient(
 
         return withContext(Dispatchers.IO) {
             val fromProject = resolveProjectIdFromGetProject()
-            if (fromProject != null) {
-                cachedProjectId = fromProject
-                return@withContext YapiResponse.success(fromProject)
+            fromProject.getOrNull()?.let {
+                cachedProjectId = it
+                return@withContext YapiResponse.success(it)
             }
 
             val fromMenu = resolveProjectIdFromListMenu()
-            if (fromMenu != null) {
-                cachedProjectId = fromMenu
-                return@withContext YapiResponse.success(fromMenu)
+            fromMenu.getOrNull()?.let {
+                cachedProjectId = it
+                return@withContext YapiResponse.success(it)
             }
 
-            console.warn("YApi: could not resolve project ID from token=***")
-            YapiResponse.failure("Could not resolve project ID from token")
+            // "Answered success but carried no project data" (EMPTY_DATA) is a normal state for
+            // some servers, not a rejection, and REQUEST_FAILED never reached the answer layer
+            // at all — a real rejection from the other probe outranks both.
+            val reasons = listOf(fromProject, fromMenu).mapNotNull { it.errorMessage() }
+            val reason = reasons.firstOrNull { it != EMPTY_DATA && it != REQUEST_FAILED }
+                ?: reasons.firstOrNull { it != EMPTY_DATA }
+                ?: "Could not resolve project ID from token"
+            console.warn("YApi: could not resolve project ID from token=***: $reason")
+            YapiResponse.failure(reason)
         }
     }
 
     /** Tries to extract the project ID from the standard [GET_PROJECT] endpoint. */
-    private suspend fun resolveProjectIdFromGetProject(): String? = runCatching {
-        val resp = httpClient.get {
-            url = "$serverUrl$GET_PROJECT?token=${enc(token)}"
+    private suspend fun resolveProjectIdFromGetProject(): YapiResponse<String> =
+        requestProjectId(GET_PROJECT) { json ->
+            json.getAsJsonObject("data")?.get("_id")?.asString
         }
-        parseResponse(resp) { it.getAsJsonObject("data")?.get("_id")?.asString }.getOrNull()
-    }.onFailure { console.warn("YApi: resolveProjectIdFromGetProject failed", it) }.getOrNull()
 
     /**
      * Fallback: extracts `project_id` from the first item returned by [LIST_MENU].
      * Used when [GET_PROJECT] returns a success response but no project data.
      */
-    private suspend fun resolveProjectIdFromListMenu(): String? = runCatching {
-        val resp = httpClient.get {
-            url = "$serverUrl$LIST_MENU?token=${enc(token)}"
-        }
-        parseResponse(resp) { json ->
+    private suspend fun resolveProjectIdFromListMenu(): YapiResponse<String> =
+        requestProjectId(LIST_MENU) { json ->
             json.getAsJsonArray("data")?.firstOrNull()?.asJsonObject?.get("project_id")?.asString
-        }.getOrNull()
-    }.onFailure { console.warn("YApi: resolveProjectIdFromListMenu failed", it) }.getOrNull()
+        }
+
+    private suspend fun requestProjectId(
+        endpoint: String,
+        extract: (JsonObject) -> String?
+    ): YapiResponse<String> = runCatching {
+        val resp = httpClient.get {
+            url = "$serverUrl$endpoint?token=${enc(token)}"
+        }
+        parseResponse(resp, extract)
+    }.onFailure { console.warn("YApi: resolving project id from $endpoint failed", it) }
+        .getOrElse { YapiResponse.failure(REQUEST_FAILED) }
 
     // endregion
 
@@ -111,8 +126,9 @@ class DefaultYapiApiClient(
 
     /** Lists all categories (carts) in the project via [GET_CAT_MENU]. */
     override suspend fun listCarts(): YapiResponse<List<YapiCart>> {
-        val projectId = getProjectId().getOrNull()
-            ?: return YapiResponse.failure("Could not resolve project ID")
+        val projectIdResult = getProjectId()
+        val projectId = projectIdResult.getOrNull()
+            ?: return YapiResponse.failure(projectIdResult.errorMessage() ?: "Could not resolve project ID")
         return withContext(Dispatchers.IO) {
             runCatching {
                 val url = "$serverUrl$GET_CAT_MENU?project_id=${enc(projectId)}&token=${enc(token)}"
@@ -132,8 +148,9 @@ class DefaultYapiApiClient(
 
     /** Creates a new category (cart) in the project via [ADD_CAT]. */
     override suspend fun createCart(name: String, desc: String): YapiResponse<YapiCart> {
-        val projectId = getProjectId().getOrNull()
-            ?: return YapiResponse.failure("Could not resolve project ID")
+        val projectIdResult = getProjectId()
+        val projectId = projectIdResult.getOrNull()
+            ?: return YapiResponse.failure(projectIdResult.errorMessage() ?: "Could not resolve project ID")
         return withContext(Dispatchers.IO) {
             runCatching {
                 val body = GsonUtils.toJson(
@@ -154,7 +171,9 @@ class DefaultYapiApiClient(
     }
 
     override suspend fun findOrCreateCart(name: String, desc: String): YapiResponse<String> {
-        val carts = listCarts().getOrNull() ?: return YapiResponse.failure("Failed to list carts")
+        val cartsResult = listCarts()
+        val carts = cartsResult.getOrNull()
+            ?: return YapiResponse.failure(cartsResult.errorMessage() ?: "Failed to list carts")
         val existing = carts.firstOrNull { it.name == name }
         if (existing != null) return YapiResponse.success(existing.id.toString())
         return createCart(name, desc).let { result ->
@@ -313,8 +332,9 @@ class DefaultYapiApiClient(
      * Failure cases:
      * - HTTP status != 200
      * - Body is not valid JSON
-     * - Response code field is non-zero (YAPI application-level error)
-     * - [handle] returns null (missing expected data)
+     * - Response code field is non-zero (YAPI application-level error) — the server's own
+     *   `errmsg` is used as the failure message
+     * - [handle] returns null — [EMPTY_DATA], meaning the server succeeded but sent no payload
      *
      * @param res The raw HTTP response
      * @param handle Extracts the typed result from the parsed JSON body
@@ -330,7 +350,7 @@ class DefaultYapiApiClient(
             return YapiResponse.failure(errmsg ?: "Unknown error (errcode: $errcode)")
         }
         return handle(json)?.let { YapiResponse.success(it) }
-            ?: YapiResponse.failure("Empty data in response")
+            ?: YapiResponse.failure(EMPTY_DATA)
     }
 
     companion object {
@@ -346,6 +366,19 @@ class DefaultYapiApiClient(
 
         /** Known success codes: 0 (standard YAPI) and 200 (some forks). */
         private val SUCCESS_CODES = setOf(0, 200)
+
+        /**
+         * Failure message used when the server reported success but the expected payload was
+         * absent. Callers probing for data treat this as "keep looking" rather than a rejection.
+         */
+        private const val EMPTY_DATA = "Empty data in response"
+
+        /**
+         * Failure message for a probe that never reached the server's answer layer (connection
+         * refused, timeout, …). The endpoint and cause live in the console log; a distinct
+         * constant lets [getProjectId] rank it below a real rejection from the other probe.
+         */
+        private const val REQUEST_FAILED = "Request to YApi server failed"
 
         /**
          * Page size for [LIST_CAT] requests. Auto-tuned upward (×1.4) when a response hits the

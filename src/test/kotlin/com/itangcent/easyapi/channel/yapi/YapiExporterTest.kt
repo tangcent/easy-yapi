@@ -5,6 +5,9 @@ import com.itangcent.easyapi.channel.yapi.YapiConfig
 import com.itangcent.easyapi.core.export.HttpMethod
 import com.itangcent.easyapi.core.export.ExportResult
 import com.itangcent.easyapi.core.export.httpMetadata
+import com.itangcent.easyapi.core.http.HttpClient
+import com.itangcent.easyapi.core.http.HttpClientProvider
+import com.itangcent.easyapi.core.http.HttpResponse
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.wrap
 import org.junit.Assert.*
@@ -16,6 +19,10 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var exporterProject: com.intellij.openapi.project.Project
     private lateinit var exporter: YapiExporter
+
+    private companion object {
+        const val SERVER_REJECTION = "token is invalid, please copy a new token from project settings"
+    }
 
     override fun setUp() {
         super.setUp()
@@ -128,6 +135,38 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    @org.junit.Test
+    fun `test export surfaces the server rejection reason for a rejected token`() {
+        // Reproduces issue #1470: a YApi server (e.g. Yapix after migrating from YApi)
+        // rejects the legacy project token with an actionable message. The error keeps the
+        // folder for context, but must carry the server's own words — not the bare
+        // 'Failed to resolve cart' line that points at the folder structure.
+        val httpClient = mock<HttpClient> {
+            onBlocking { execute(any()) } doReturn HttpResponse(
+                code = 200,
+                body = """{"errcode":42014,"errmsg":"$SERVER_REJECTION","data":null}"""
+            )
+        }
+        exporterProject = createExporterProject(httpClient = httpClient)
+        exporter = YapiExporter(exporterProject)
+
+        val endpoint = createTestEndpoint(name = "Get User", path = "/api/users/{id}")
+        val context = createTestContext(listOf(endpoint), selectedToken = "legacy-token")
+
+        val result = kotlinx.coroutines.runBlocking { exporter.export(context, selectedToken = "legacy-token") }
+
+        assertTrue("Expected Error, got $result", result is ExportResult.Error)
+        val error = result as ExportResult.Error
+        assertTrue(
+            "Export error should keep the cart context, got: ${error.message}",
+            error.message.contains("Failed to resolve cart 'anonymous'")
+        )
+        assertTrue(
+            "Export error should carry the server's reason, got: ${error.message}",
+            error.message.contains(SERVER_REJECTION)
+        )
+    }
+
     private fun createTestEndpoint(
         name: String = "Test API",
         path: String = "/api/test",
@@ -163,15 +202,22 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private fun createExporterProject(
         serverUrl: String? = "http://localhost:3000",
-        tokenForModule: String? = null
+        tokenForModule: String? = null,
+        httpClient: HttpClient? = null
     ): com.intellij.openapi.project.Project {
-        val settingsHelper = mock<YapiSettingsHelper> {
+        val helper = mock<YapiSettingsHelper> {
             onBlocking { resolveServerUrl(any()) } doReturn serverUrl
             onBlocking { resolveToken(any(), any()) } doReturn tokenForModule
         }
 
         return wrap(project) {
-            replaceService(YapiSettingsHelper::class, settingsHelper)
+            replaceService(YapiSettingsHelper::class, helper)
+            if (httpClient != null) {
+                val provider = mock<HttpClientProvider> {
+                    on { getClient() } doReturn httpClient
+                }
+                replaceService(HttpClientProvider::class, provider)
+            }
         }
     }
 }
