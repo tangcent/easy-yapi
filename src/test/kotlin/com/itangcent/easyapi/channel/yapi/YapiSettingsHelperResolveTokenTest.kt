@@ -1,5 +1,7 @@
 package com.itangcent.easyapi.channel.yapi
 
+import com.intellij.openapi.ui.TestDialogManager
+import com.itangcent.easyapi.channel.yapi.model.YapiResponse
 import com.itangcent.easyapi.core.settings.state.UnifiedAppSettingsState
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
@@ -20,13 +22,43 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
         UnifiedAppSettingsState.getInstance().setValue("com.itangcent.easyapi.channel.yapi.YapiSettings", property, value)
     }
 
+    /** Validator standing in for the server probe: accepts [accepted], rejects anything else. */
+    private fun validator(vararg accepted: String): suspend (String) -> YapiResponse<*> = { token ->
+        if (token in accepted) YapiResponse.success(Unit)
+        else YapiResponse.failure<Unit>("token not accepted")
+    }
+
+    @org.junit.Test
+    fun `test replacement prompt shows the reason the server gave`() {
+        // This prompt is the only thing a user on the settings-token path sees before the export
+        // fails, so the server's own reason has to be in it.
+        setYapiField("yapiTokens", "module-a=token-a")
+        val prompts = mutableListOf<String>()
+        val previous = TestDialogManager.setTestInputDialog { prompt ->
+            prompts.add(prompt)
+            null
+        }
+        try {
+            val token = runBlocking { helper.resolveToken("module-a", validator("other-token")) }
+            assertNull("A rejected token must not be returned", token)
+        } finally {
+            TestDialogManager.setTestInputDialog(previous)
+        }
+
+        assertEquals(1, prompts.size)
+        val prompt = prompts.single()
+        assertTrue("Prompt should name the module: $prompt", prompt.contains("module-a"))
+        assertTrue("Prompt should carry the server's reason: $prompt", prompt.contains("token not accepted"))
+        assertTrue(prompt.contains("Please input a new Private Token"))
+    }
+
     @org.junit.Test
     fun `test resolveToken returns module token from settings when validator accepts it`() {
         setYapiField("yapiTokens", """
             module-b=token-b
             module-a=token-a
         """.trimIndent())
-        val token = runBlocking { helper.resolveToken("module-b") { it == "token-b" } }
+        val token = runBlocking { helper.resolveToken("module-b", validator("token-b")) }
         assertEquals("token-b", token)
     }
 
@@ -38,7 +70,7 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
             invalid-line
             module-b=
         """.trimIndent())
-        val token = runBlocking { helper.resolveToken("module-a") { it == "token-a" } }
+        val token = runBlocking { helper.resolveToken("module-a", validator("token-a")) }
         assertEquals("token-a", token)
     }
 
@@ -48,7 +80,7 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
             raw-global-token
             module-x=specific-token-for-x
         """.trimIndent())
-        val token = runBlocking { helper.resolveToken("module-x") { it == "specific-token-for-x" } }
+        val token = runBlocking { helper.resolveToken("module-x", validator("specific-token-for-x")) }
         assertEquals("Should prefer module-specific token", "specific-token-for-x", token)
     }
 
@@ -59,15 +91,15 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
             service-order=order-token-xyz
             service-pay=pay-token-123
         """.trimIndent())
-        assertEquals("user-token-abc", runBlocking { helper.resolveToken("service-user") { it == "user-token-abc" } })
-        assertEquals("order-token-xyz", runBlocking { helper.resolveToken("service-order") { it == "order-token-xyz" } })
-        assertEquals("pay-token-123", runBlocking { helper.resolveToken("service-pay") { it == "pay-token-123" } })
+        assertEquals("user-token-abc", runBlocking { helper.resolveToken("service-user", validator("user-token-abc")) })
+        assertEquals("order-token-xyz", runBlocking { helper.resolveToken("service-order", validator("order-token-xyz")) })
+        assertEquals("pay-token-123", runBlocking { helper.resolveToken("service-pay", validator("pay-token-123")) })
     }
 
     @org.junit.Test
     fun `test resolveToken trims whitespace from tokens`() {
         setYapiField("yapiTokens", "  my-module  =  trimmed-token  ")
-        val token = runBlocking { helper.resolveToken("my-module") { it == "trimmed-token" } }
+        val token = runBlocking { helper.resolveToken("my-module", validator("trimmed-token")) }
         assertEquals("trimmed-token", token)
     }
 
@@ -78,14 +110,14 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
             some-random-text
             module-b=token-b
         """.trimIndent())
-        assertEquals("token-a", runBlocking { helper.resolveToken("module-a") { it == "token-a" } })
-        assertEquals("token-b", runBlocking { helper.resolveToken("module-b") { it == "token-b" } })
+        assertEquals("token-a", runBlocking { helper.resolveToken("module-a", validator("token-a")) })
+        assertEquals("token-b", runBlocking { helper.resolveToken("module-b", validator("token-b")) })
     }
 
     @org.junit.Test
     fun `test resolveToken is case-sensitive for module names`() {
         setYapiField("yapiTokens", "MyModule=my-token")
-        val token = runBlocking { helper.resolveToken("MyModule") { it == "my-token" } }
+        val token = runBlocking { helper.resolveToken("MyModule", validator("my-token")) }
         assertEquals("my-token", token)
     }
 

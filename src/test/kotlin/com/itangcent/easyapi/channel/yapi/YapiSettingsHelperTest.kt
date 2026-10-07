@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.channel.yapi
 
+import com.itangcent.easyapi.channel.yapi.model.YapiResponse
 import com.itangcent.easyapi.core.settings.state.UnifiedAppSettingsState
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
@@ -18,6 +19,12 @@ class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private fun setYapiField(property: String, value: String?) {
         UnifiedAppSettingsState.getInstance().setValue("com.itangcent.easyapi.channel.yapi.YapiSettings", property, value)
+    }
+
+    /** Validator standing in for the server probe: accepts [accepted], rejects anything else. */
+    private fun validator(vararg accepted: String): suspend (String) -> YapiResponse<*> = { token ->
+        if (token in accepted) YapiResponse.success(Unit)
+        else YapiResponse.failure<Unit>("token not accepted")
     }
 
     @org.junit.Test
@@ -40,7 +47,7 @@ class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
             module-b=token-b
         """.trimIndent())
         val token = runBlocking {
-            helper.resolveToken("module-b") { it == "token-b" }
+            helper.resolveToken("module-b", validator("token-b"))
         }
         assertEquals("token-b", token)
     }
@@ -54,7 +61,7 @@ class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
             module-b=
         """.trimIndent())
         val token = runBlocking {
-            helper.resolveToken("module-a") { it == "token-a" }
+            helper.resolveToken("module-a", validator("token-a"))
         }
         assertEquals("token-a", token)
     }

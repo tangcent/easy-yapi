@@ -32,6 +32,11 @@ class DefaultYapiApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
     private val serverUrl = "http://yapi.example.com"
     private val token = "test-token-abc"
 
+    private companion object {
+        /** Stands in for whatever actionable text a YApi server sends with a rejection. */
+        const val SERVER_REJECTION = "token is invalid, please copy a new token from project settings"
+    }
+
     override fun setUp() {
         super.setUp()
         httpClient = mock()
@@ -176,6 +181,105 @@ class DefaultYapiApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
         val result = client.getProjectId()
         assertTrue(result.isSuccess)
         assertEquals("55", result.getOrNull())
+    }
+
+    // -------------------------------------------------------------------------
+    // Server rejection message propagation
+    //
+    // A conforming YApi server (and forks such as Yapix) answers HTTP 200 with a
+    // non-zero `errcode` plus an `errmsg` that already tells the user what to do —
+    // e.g. Yapix rejecting a token encrypted with YApi's legacy default passsalt key.
+    // The message must reach the caller instead of being replaced by a generic one.
+    // -------------------------------------------------------------------------
+
+    /** A well-formed YApi envelope that reports rejection: errcode non-zero, data null. */
+    private fun rejectedJson(errcode: Int, errmsg: String): String =
+        """{"errcode":$errcode,"errmsg":"$errmsg","data":null}"""
+
+    fun testGetProjectIdPropagatesServerRejectionMessage() = runBlocking {
+        whenever(httpClient.execute(any()))
+            .thenReturn(mockResponse(rejectedJson(42014, SERVER_REJECTION)))
+
+        val result = client.getProjectId()
+        assertFalse(result.isSuccess)
+        assertTrue(
+            "getProjectId should carry the server's message, got: ${result.errorMessage()}",
+            result.errorMessage()?.contains(SERVER_REJECTION) == true
+        )
+    }
+
+    fun testListCartsPropagatesServerRejectionMessage() = runBlocking {
+        whenever(httpClient.execute(any()))
+            .thenReturn(mockResponse(rejectedJson(42014, SERVER_REJECTION)))
+
+        val result = client.listCarts()
+        assertFalse(result.isSuccess)
+        assertTrue(
+            "listCarts should not mask the project-id failure reason, got: ${result.errorMessage()}",
+            result.errorMessage()?.contains(SERVER_REJECTION) == true
+        )
+    }
+
+    fun testFindOrCreateCartPropagatesServerRejectionMessage() = runBlocking {
+        whenever(httpClient.execute(any()))
+            .thenReturn(mockResponse(rejectedJson(42014, SERVER_REJECTION)))
+
+        // This is the call YapiExporter makes first; its message is what the user reads.
+        val result = client.findOrCreateCart("anonymous")
+        assertFalse(result.isSuccess)
+        assertTrue(
+            "findOrCreateCart should not report 'Failed to list carts' over a real reason, got: ${result.errorMessage()}",
+            result.errorMessage()?.contains(SERVER_REJECTION) == true
+        )
+    }
+
+    fun testGetProjectIdSurfacesListMenuRejectionWhenGetProjectHasNoData() = runBlocking {
+        // GET_PROJECT answered success but carried no project data — a normal state, not a
+        // rejection. The real reason from the second probe must win over "Empty data".
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse("""{"errcode":0,"errmsg":"成功！","data":{}}"""))
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_menu") }))
+            .thenReturn(mockResponse(rejectedJson(42014, SERVER_REJECTION)))
+
+        val result = client.getProjectId()
+        assertFalse(result.isSuccess)
+        assertTrue(
+            "getProjectId should carry the server's message, got: ${result.errorMessage()}",
+            result.errorMessage()?.contains(SERVER_REJECTION) == true
+        )
+        assertFalse(
+            "The probe's empty-data state must not reach the caller, got: ${result.errorMessage()}",
+            result.errorMessage()?.contains("Empty data in response") == true
+        )
+    }
+
+    fun testGetProjectIdFallsBackToGenericReasonWhenBothProbesHaveNoData() = runBlocking {
+        // Both probes answer success without a usable payload — no server words exist, so
+        // the caller gets the plain generic reason, not the internal "Empty data" marker.
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse("""{"errcode":0,"errmsg":"成功！","data":{}}"""))
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_menu") }))
+            .thenReturn(mockResponse("""{"errcode":0,"errmsg":"成功！","data":[]}"""))
+
+        val result = client.getProjectId()
+        assertFalse(result.isSuccess)
+        assertEquals("Could not resolve project ID from token", result.errorMessage())
+    }
+
+    fun testGetProjectIdPrefersServerRejectionOverTransportFailure() = runBlocking {
+        // GET_PROJECT never completes; LIST_MENU reaches the server and is refused. The
+        // refusal names what to fix, the transport failure does not — the refusal wins.
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenThrow(RuntimeException("Connection refused"))
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_menu") }))
+            .thenReturn(mockResponse(rejectedJson(42014, SERVER_REJECTION)))
+
+        val result = client.getProjectId()
+        assertFalse(result.isSuccess)
+        assertTrue(
+            "A server rejection should outrank the other probe's transport failure, got: ${result.errorMessage()}",
+            result.errorMessage()?.contains(SERVER_REJECTION) == true
+        )
     }
 
     // -------------------------------------------------------------------------

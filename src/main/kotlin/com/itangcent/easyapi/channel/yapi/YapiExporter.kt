@@ -97,10 +97,14 @@ class YapiExporter(private val project: Project) : IdeaLog {
                 }
 
                 val folderName = endpoint.folder ?: "anonymous"
-                val catId = client.findOrCreateCart(folderName).getOrNull()
+                val cartResult = client.findOrCreateCart(folderName)
+                val catId = cartResult.getOrNull()
                 if (catId == null) {
                     failCount++
-                    val msg = "${endpoint.name}: Failed to resolve cart '$folderName'"
+                    // Keep the folder as context, but the server's own reason — not the bare
+                    // cart line — is what tells the user what to fix.
+                    val msg = "${endpoint.name}: Failed to resolve cart '$folderName'" +
+                            (cartResult.errorMessage()?.let { ": $it" } ?: "")
                     errors.add(msg)
                     console.warn(msg)
                     processedCount++
