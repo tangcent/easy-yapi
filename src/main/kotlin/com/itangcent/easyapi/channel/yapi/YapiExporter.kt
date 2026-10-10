@@ -52,6 +52,7 @@ class YapiExporter(private val project: Project) : IdeaLog {
         var failCount = 0
         val errors = mutableListOf<String>()
         val exportedCarts = mutableMapOf<String, String>()
+        val exportedApis = mutableMapOf<String, String>()
 
         val indicator = context.indicator
         val totalEndpoints = context.endpointsToExport.size
@@ -136,9 +137,16 @@ class YapiExporter(private val project: Project) : IdeaLog {
 
                 if (result.isSuccess) {
                     successCount++
-                    if (catId !in exportedCarts) {
-                        client.getProjectId().getOrNull()?.let { projectId ->
+                    // getProjectId() is cached on the client, so this is only ever one round trip
+                    // per project. Both links need it, and the api link must be recorded even when
+                    // the cart was already seen for an earlier endpoint.
+                    client.getProjectId().getOrNull()?.let { projectId ->
+                        if (catId !in exportedCarts) {
                             exportedCarts[folderName] = YapiUrls.cartUrl(serverUrl, projectId, catId)
+                        }
+                        result.getOrNull()?.apiId?.let { apiId ->
+                            exportedApis[endpoint.name ?: endpoint.path] =
+                                YapiUrls.apiUrl(serverUrl, projectId, apiId)
                         }
                     }
                 } else {
@@ -156,7 +164,9 @@ class YapiExporter(private val project: Project) : IdeaLog {
             processedCount++
         }
 
-        val metadata = if (exportedCarts.isNotEmpty()) YapiExportMetadata(exportedCarts) else null
+        val metadata = if (exportedCarts.isNotEmpty() || exportedApis.isNotEmpty()) {
+            YapiExportMetadata(exportedCarts, exportedApis)
+        } else null
 
         val exportResult = when {
             failCount == 0 && successCount > 0 -> ExportResult.Success(
@@ -183,9 +193,20 @@ class YapiExporter(private val project: Project) : IdeaLog {
 }
 
 class YapiExportMetadata(
-    val cartLinks: Map<String, String>
+    val cartLinks: Map<String, String>,
+    val apiLinks: Map<String, String> = emptyMap()
 ) : ExportMetadata {
     override fun formatDisplay(): String {
-        return cartLinks.entries.joinToString("\n") { (name, url) -> "$name: $url" }
+        return (cartLinks + apiLinks).entries.joinToString("\n") { (name, url) -> "$name: $url" }
     }
+
+    /**
+     * The links a completion notification should offer, in display order.
+     *
+     * A single-endpoint export is the "export this one method" flow, so it leads with the API that
+     * was just written instead of the category listing it landed in. Wider exports only list the
+     * categories: a batch would otherwise turn the balloon into a wall of per-API links.
+     */
+    fun notificationLinks(): List<Pair<String, String>> =
+        if (apiLinks.size == 1) apiLinks.toList() + cartLinks.toList() else cartLinks.toList()
 }

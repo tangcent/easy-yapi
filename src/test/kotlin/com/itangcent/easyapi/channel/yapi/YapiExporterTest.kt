@@ -12,8 +12,10 @@ import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCas
 import com.itangcent.easyapi.testFramework.wrap
 import org.junit.Assert.*
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -165,6 +167,49 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             "Export error should carry the server's reason, got: ${error.message}",
             error.message.contains(SERVER_REJECTION)
         )
+    }
+
+    /**
+     * The path a success notification's links come from: a mocked server that accepts the upload
+     * and echoes `data._id`, so the balloon can deep-link to the API that was just written.
+     */
+    @org.junit.Test
+    fun `test single endpoint export links straight to the exported api`() =
+        kotlinx.coroutines.runBlocking {
+            val httpClient = mock<HttpClient>()
+            stubOk(httpClient, "/api/project/get", """{"errcode":0,"errmsg":"成功！","data":{"_id":"42"}}""")
+            stubOk(httpClient, "/api/interface/getCatMenu", """{"errcode":0,"data":[]}""")
+            stubOk(httpClient, "/api/interface/add_cat", """{"errcode":0,"data":{"_id":34,"name":"anonymous"}}""")
+            stubOk(httpClient, "/api/interface/list_cat", """{"errcode":0,"data":{"list":[]}}""")
+            stubOk(httpClient, "/api/interface/save", """{"errcode":0,"errmsg":"成功！","data":{"_id":"333"}}""")
+
+            exporterProject = createExporterProject(tokenForModule = "test-token", httpClient = httpClient)
+            exporter = YapiExporter(exporterProject)
+            val context = createTestContext(
+                listOf(
+                    createTestEndpoint(
+                        name = "轻量刷新 token",
+                        path = "/refresh-token-lite",
+                        method = HttpMethod.POST
+                    )
+                ),
+                selectedToken = "test-token"
+            )
+
+            val result = exporter.export(context, selectedToken = "test-token")
+
+            assertTrue("Expected Success but got $result", result is ExportResult.Success)
+            val metadata = (result as ExportResult.Success).metadata as YapiExportMetadata
+            assertEquals(
+                "单端点导出应把刚导出的 API 作为首个链接",
+                "轻量刷新 token" to "http://localhost:3000/project/42/interface/api/333",
+                metadata.notificationLinks().first()
+            )
+        }
+
+    private suspend fun stubOk(client: HttpClient, urlPart: String, body: String) {
+        whenever(client.execute(argThat { url.contains(urlPart) }))
+            .thenReturn(HttpResponse(code = 200, body = body))
     }
 
     private fun createTestEndpoint(

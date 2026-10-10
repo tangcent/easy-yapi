@@ -59,13 +59,13 @@ class YapiChannel : Channel, IdeaLog {
                 title = "Export to YAPI",
                 content = "Exported ${result.count} endpoints to YAPI"
             ) {
-                for ((cartName, cartUrl) in metadata.cartLinks) {
-                    addAction(object : NotificationAction(cartName) {
+                for ((label, url) in metadata.notificationLinks()) {
+                    addAction(object : NotificationAction(label) {
                         override fun actionPerformed(
                             e: AnActionEvent,
                             notification: Notification
                         ) {
-                            BrowserUtil.browse(cartUrl)
+                            BrowserUtil.browse(url)
                         }
                     })
                 }

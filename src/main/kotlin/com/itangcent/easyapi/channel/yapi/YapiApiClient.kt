@@ -71,8 +71,11 @@ interface YapiApiClient {
     /**
      * Uploads an API document to YAPI.
      * Checks for an existing API with the same path+method and updates it in-place if found.
+     *
+     * @return success carrying the saved API's id (see [ApiUploadResult]), or failure with an
+     *         error message
      */
-    suspend fun uploadApi(doc: YapiApiDoc, catId: String): YapiResponse<Unit>
+    suspend fun uploadApi(doc: YapiApiDoc, catId: String): YapiResponse<ApiUploadResult>
 
     /**
      * Uploads an API document to YAPI with update confirmation support.
@@ -83,13 +86,14 @@ interface YapiApiClient {
      * @param doc The API document to upload
      * @param catId The category ID to upload to
      * @param updateConfirmation Determines whether to proceed with upload when API exists
-     * @return Success with Unit, or failure with error message
+     * @return success carrying the saved API's id (see [ApiUploadResult]) — with a null id when the
+     *         upload was skipped or the server revealed none — or failure with an error message
      */
     suspend fun uploadApi(
         doc: YapiApiDoc,
         catId: String,
         updateConfirmation: UpdateConfirmation
-    ): YapiResponse<Unit>
+    ): YapiResponse<ApiUploadResult>
 
     // endregion
 }
@@ -107,3 +111,15 @@ data class ExistingApiInfo(
     val id: String,
     val title: String?
 )
+
+/**
+ * Outcome of an API upload.
+ *
+ * The id exists so a success notification can deep-link to the API that was just written. It is
+ * **not** a success signal: the save response only echoes `data._id` on some YAPI forks, and an
+ * in-place update may omit the body entirely, so a null [apiId] means "saved, id unknown" — never
+ * "failed". Callers that only care whether the upload succeeded read the enclosing [YapiResponse].
+ *
+ * @property apiId The saved API's `_id`, or null when the server did not reveal one
+ */
+data class ApiUploadResult(val apiId: String? = null)
