@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.channel.yapi
 
 import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.itangcent.easyapi.channel.yapi.DefaultYapiApiClient.Companion.ADD_CAT
 import com.itangcent.easyapi.channel.yapi.DefaultYapiApiClient.Companion.GET_CAT_MENU
@@ -97,7 +98,7 @@ class DefaultYapiApiClient(
     /** Tries to extract the project ID from the standard [GET_PROJECT] endpoint. */
     private suspend fun resolveProjectIdFromGetProject(): YapiResponse<String> =
         requestProjectId(GET_PROJECT) { json ->
-            json.getAsJsonObject("data")?.get("_id")?.asString
+            json.objectMember("data")?.get("_id")?.takeIf { it.isJsonPrimitive }?.asString
         }
 
     /**
@@ -106,7 +107,8 @@ class DefaultYapiApiClient(
      */
     private suspend fun resolveProjectIdFromListMenu(): YapiResponse<String> =
         requestProjectId(LIST_MENU) { json ->
-            json.getAsJsonArray("data")?.firstOrNull()?.asJsonObject?.get("project_id")?.asString
+            (json.arrayMember("data")?.firstOrNull() as? JsonObject)
+                ?.get("project_id")?.takeIf { it.isJsonPrimitive }?.asString
         }
 
     private suspend fun requestProjectId(
@@ -136,8 +138,8 @@ class DefaultYapiApiClient(
                     this.url = url
                 }
                 parseResponse(resp) { json ->
-                    json.getAsJsonArray("data")?.map { element ->
-                        val obj = element.asJsonObject
+                    json.arrayMember("data")?.mapNotNull { element ->
+                        val obj = element as? JsonObject ?: return@mapNotNull null
                         YapiCart(id = obj.get("_id").asLong, name = obj.get("name").asString)
                     } ?: emptyList()
                 }
@@ -162,7 +164,7 @@ class DefaultYapiApiClient(
                     this.body = body
                 }
                 parseResponse(resp) { json ->
-                    val data = json.getAsJsonObject("data")
+                    val data = json.objectMember("data") ?: return@parseResponse null
                     YapiCart(id = data.get("_id").asLong, name = data.get("name").asString)
                 }
             }.onFailure { console.warn("YApi: createCart failed for name='$name'", it) }
@@ -201,7 +203,7 @@ class DefaultYapiApiClient(
                     this.url = url
                 }
                 val result = parseResponse(resp) { json ->
-                    json.getAsJsonObject("data")?.getAsJsonArray("list") ?: JsonArray()
+                    json.objectMember("data")?.arrayMember("list") ?: JsonArray()
                 }
                 val list = result.getOrNull() ?: return@runCatching result
                 if (list.size() == limit && limit < 5000) {
@@ -229,16 +231,11 @@ class DefaultYapiApiClient(
      */
     override suspend fun findExistingApiInfo(catId: String, path: String, method: String): ExistingApiInfo? {
         val apis = listApis(catId).getOrNull() ?: return null
-        return apis.firstOrNull { element ->
-            val obj = element.asJsonObject
-            obj.get("path")?.asString == path &&
-                    obj.get("method")?.asString?.equals(method, ignoreCase = true) == true
-        }?.asJsonObject?.let { obj ->
-            ExistingApiInfo(
-                id = obj.get("_id")?.asString ?: return null,
-                title = obj.get("title")?.asString
-            )
-        }
+        val matched = apis.firstOrNull { matchesApi(it, path, method) } as? JsonObject ?: return null
+        return ExistingApiInfo(
+            id = matched.get("_id")?.asString ?: return null,
+            title = matched.get("title")?.asString
+        )
     }
 
     /**
@@ -247,11 +244,14 @@ class DefaultYapiApiClient(
      */
     override suspend fun findExistingApiData(catId: String, path: String, method: String): JsonObject? {
         val apis = listApis(catId).getOrNull() ?: return null
-        return apis.firstOrNull { element ->
-            val obj = element.asJsonObject
-            obj.get("path")?.asString == path &&
-                    obj.get("method")?.asString?.equals(method, ignoreCase = true) == true
-        }?.asJsonObject
+        return apis.firstOrNull { matchesApi(it, path, method) } as? JsonObject
+    }
+
+    /** True when [element] is an API object whose path and method match; non-objects never match. */
+    private fun matchesApi(element: JsonElement, path: String, method: String): Boolean {
+        val obj = element as? JsonObject ?: return false
+        return obj.get("path")?.asString == path &&
+                obj.get("method")?.asString?.equals(method, ignoreCase = true) == true
     }
 
     // endregion
@@ -262,23 +262,13 @@ class DefaultYapiApiClient(
      * Uploads [doc] to YAPI under [catId].
      * Before saving, calls [findExistingApi] to check for a duplicate by path+method.
      * If found, injects the existing `_id` into the payload so YAPI updates in-place.
-     * Returns success with [Unit] on success, or failure with an error message.
+     *
+     * @return success carrying the saved API's id, or failure with an error message
      */
-    override suspend fun uploadApi(doc: YapiApiDoc, catId: String): YapiResponse<Unit> {
-        if (serverUrl.isBlank() || token.isBlank()) return YapiResponse.success(Unit)
+    override suspend fun uploadApi(doc: YapiApiDoc, catId: String): YapiResponse<ApiUploadResult> {
+        if (serverUrl.isBlank() || token.isBlank()) return YapiResponse.success(ApiUploadResult())
 
-        return withContext(Dispatchers.IO) {
-            runCatching {
-                val existingId = findExistingApi(catId, doc.path, doc.method)
-                val resp = httpClient.post {
-                    url = "$serverUrl$SAVE_API"
-                    contentType = "application/json"
-                    body = yapiFormatter.buildApiDocBody(doc, token, catId, existingId)
-                }
-                parseResponse(resp) { Unit }
-            }.onFailure { console.warn("YApi: uploadApi failed for path='${doc.path}', method='${doc.method}'", it) }
-                .getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
-        }
+        return saveApi(doc, catId)
     }
 
     /**
@@ -290,20 +280,29 @@ class DefaultYapiApiClient(
      * @param doc The API document to upload
      * @param catId The category ID to upload to
      * @param updateConfirmation Determines whether to proceed with upload when API exists
-     * @return Success with Unit, or failure with error message
+     * @return success carrying the saved API's id, or failure with error message
      */
     override suspend fun uploadApi(
         doc: YapiApiDoc,
         catId: String,
         updateConfirmation: UpdateConfirmation
-    ): YapiResponse<Unit> {
-        if (serverUrl.isBlank() || token.isBlank()) return YapiResponse.success(Unit)
+    ): YapiResponse<ApiUploadResult> {
+        if (serverUrl.isBlank() || token.isBlank()) return YapiResponse.success(ApiUploadResult())
 
         if (!updateConfirmation.confirm(doc, catId)) {
-            return YapiResponse.success(Unit)
+            // Skipped by the user: nothing was written, so there is no id to report.
+            return YapiResponse.success(ApiUploadResult())
         }
 
-        return withContext(Dispatchers.IO) {
+        return saveApi(doc, catId)
+    }
+
+    /**
+     * Performs the actual save, shared by both [uploadApi] overloads so the payload, the
+     * deduplication lookup and the id extraction cannot drift apart.
+     */
+    private suspend fun saveApi(doc: YapiApiDoc, catId: String): YapiResponse<ApiUploadResult> =
+        withContext(Dispatchers.IO) {
             runCatching {
                 val existingId = findExistingApi(catId, doc.path, doc.method)
                 val resp = httpClient.post {
@@ -311,11 +310,20 @@ class DefaultYapiApiClient(
                     contentType = "application/json"
                     body = yapiFormatter.buildApiDocBody(doc, token, catId, existingId)
                 }
-                parseResponse(resp) { Unit }
+                // The value handed to parseResponse is deliberately non-null: the id is only a
+                // convenience for deep-linking, so a server that reports success without echoing
+                // `data._id` (some forks, and in-place updates) must not be read as EMPTY_DATA and
+                // fail the export.
+                parseResponse(resp) { json ->
+                    val echoedId = json.objectMember("data")
+                        ?.get("_id")
+                        ?.takeIf { it.isJsonPrimitive }
+                        ?.asString
+                    ApiUploadResult(echoedId ?: existingId)
+                }
             }.onFailure { console.warn("YApi: uploadApi failed for path='${doc.path}', method='${doc.method}'", it) }
                 .getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
         }
-    }
 
     // endregion
 
@@ -391,3 +399,17 @@ class DefaultYapiApiClient(
 
     private fun enc(value: String): String = URLEncoder.encode(value, "UTF-8")
 }
+
+/**
+ * Reads [name] as a JSON object, or null when the member is absent or holds another shape.
+ *
+ * Gson's own `getAsJsonObject`/`getAsJsonArray` **throw** `ClassCastException` on a shape
+ * mismatch, and an exception raised while interpreting a response is caught by the surrounding
+ * `runCatching` and reported as a failed export even though the server already performed the
+ * write. Forks disagree on the response shape (a save that answers `data: []` instead of
+ * `data: {...}`), so every response member is read through these non-throwing accessors.
+ */
+private fun JsonObject.objectMember(name: String): JsonObject? = get(name) as? JsonObject
+
+/** Reads [name] as a JSON array, or null when the member is absent or holds another shape. */
+private fun JsonObject.arrayMember(name: String): JsonArray? = get(name) as? JsonArray
