@@ -13,6 +13,7 @@ import com.itangcent.easyapi.core.export.ApiParameter
 import com.itangcent.easyapi.core.export.Folder
 import com.itangcent.easyapi.core.export.ParameterType
 import com.itangcent.easyapi.core.export.PathSelector
+import com.itangcent.easyapi.core.internal.threading.read
 import com.itangcent.easyapi.core.psi.type.IrType
 import com.itangcent.easyapi.core.rule.RuleKeys
 import com.itangcent.easyapi.core.rule.engine.RuleEngine
@@ -114,7 +115,7 @@ class DocMetadataResolver internal constructor(
         val ruleApiName = engine.evaluate(RuleKeys.API_NAME, method)
         if (!ruleApiName.isNullOrBlank()) return ruleApiName
 
-        val docComment = docHelper.getAttrOfDocComment(method)
+        val docComment = docCommentOf(method)
         val headLine = docComment?.lines()?.firstOrNull { it.isNotBlank() }
         if (!headLine.isNullOrBlank()) return headLine
 
@@ -147,9 +148,48 @@ class DocMetadataResolver internal constructor(
      * Resolution order: doc comment → `method.doc` rule (with dedup)
      */
     suspend fun resolveMethodDoc(method: PsiMethod): String {
-        val docComment = docHelper.getAttrOfDocComment(method)
+        val docComment = docCommentOf(method)
         val ruleDoc = engine.evaluate(RuleKeys.METHOD_DOC, method)
         return docComment.appendWithDedup(ruleDoc)
+    }
+
+    /**
+     * Returns the doc comment of [method], falling back to the nearest super declaration that
+     * carries one.
+     *
+     * A Javadoc comment is not inherited by `PsiMethod.getDocComment`, and the exporters only
+     * ever see the **most-derived** declaration: `ResolvedType.suitableMethods()` keeps the
+     * class/implementation method and drops the interface declaration it overrides. In the common
+     * "mapping annotation and Javadoc on the interface, `@RestController` on the implementation"
+     * layout the documentation therefore has to be looked up on the interface, or the endpoint
+     * loses its name, its description and every `@param` description.
+     *
+     * `findSuperMethods()` is the inverse of the very call that dropped the interface declaration
+     * in `suitableMethods()`, so whenever a doc was actually lost this finds it back.
+     *
+     * Method-scoped on purpose: Javadoc's `{@inheritDoc}` applies to methods only, so class, field
+     * and enum-constant docs are deliberately not inherited.
+     */
+    private suspend fun docCommentOf(method: PsiMethod): String? =
+        firstInheritedDoc(method) { docHelper.getAttrOfDocComment(it) }
+
+    /**
+     * Returns the text of the `@param` tag named [name] on [method], falling back to the nearest
+     * super declaration that carries one — see [docCommentOf] for why the fallback is needed.
+     */
+    private suspend fun paramDocOf(method: PsiMethod, name: String): String? =
+        firstInheritedDoc(method) { docHelper.findDocsByTagAndName(it, "param", name) }
+
+    /** Walks [method] and then its super declarations, returning the first non-blank [extract]. */
+    private suspend fun firstInheritedDoc(
+        method: PsiMethod,
+        extract: suspend (PsiMethod) -> String?
+    ): String? {
+        extract(method)?.takeIf { it.isNotBlank() }?.let { return it }
+        for (superMethod in read { method.findSuperMethods() }) {
+            extract(superMethod)?.takeIf { it.isNotBlank() }?.let { return it }
+        }
+        return null
     }
 
     /**
@@ -220,9 +260,7 @@ class DocMetadataResolver internal constructor(
         val method = parameter.declarationScope as? PsiMethod
         val paramName = parameter.name
 
-        val javaDocComment = if (method != null) {
-            docHelper.findDocsByTagAndName(method, "param", paramName)
-        } else null
+        val javaDocComment = method?.let { paramDocOf(it, paramName) }
 
         val ruleDoc = engine.evaluate(RuleKeys.PARAM_DOC, parameter)
 

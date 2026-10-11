@@ -7,8 +7,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiModifier
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.searches.AnnotatedElementsSearch
+import com.intellij.psi.search.searches.ClassInheritorsSearch
 import com.itangcent.easyapi.core.internal.threading.IdeDispatchers
 import com.itangcent.easyapi.core.internal.threading.read
 import com.itangcent.easyapi.core.dashboard.ApiScanner.Companion.MAX_CONCURRENT_SCANS
@@ -179,10 +181,12 @@ class ApiScanner(private val project: Project) {
             val containingClasses = read {
                 selectedMethods.mapNotNull { it.containingClass }.distinct()
             }
-            val candidates = if (containingClasses.isNotEmpty()) {
-                scanClasses(containingClasses, indicator).toList()
-            } else {
-                ApiIndex.getInstance(project).endpoints()
+            if (containingClasses.isEmpty()) {
+                return ApiIndex.getInstance(project).endpoints()
+            }
+            var candidates = scanClasses(containingClasses, indicator).toList()
+            if (candidates.isEmpty()) {
+                candidates = scanImplementations(containingClasses, indicator)
             }
             return candidates.filter { endpoint ->
                 val source = endpoint.sourceMethod ?: return@filter false
@@ -191,10 +195,65 @@ class ApiScanner(private val project: Project) {
         }
 
         val classes = selection.classes().toList()
-        return if (classes.isNotEmpty()) {
-            scanClasses(classes, indicator).toList()
-        } else {
-            ApiIndex.getInstance(project).endpoints()
+        if (classes.isEmpty()) {
+            return ApiIndex.getInstance(project).endpoints()
+        }
+        val endpoints = scanClasses(classes, indicator).toList()
+        return if (endpoints.isNotEmpty()) endpoints
+        else scanImplementations(classes, indicator)
+    }
+
+    /**
+     * Scans the API classes implementing explicitly selected contracts.
+     *
+     * Used when an explicit selection names a class that is not itself an API class —
+     * see [expandToImplementations].
+     *
+     * @requires Background context. This runs on `EasyAPI-background`, where NO read access is
+     * held, so every PSI touch below must go through [read] — including incidental reads such as
+     * a class name on a log line. A bare PSI access here crashes the export with a
+     * `RuntimeExceptionWithAttachments: Read access is allowed from inside read-action only`.
+     */
+    private suspend fun scanImplementations(
+        classes: List<PsiClass>,
+        indicator: ProgressIndicator?
+    ): List<ApiEndpoint> {
+        val implementations = expandToImplementations(classes)
+        if (implementations.isEmpty()) return emptyList()
+        // PSI access — must not run bare on a background thread.
+        val names = read { implementations.mapNotNull { it.qualifiedName } }
+        LOG.info("Selected classes are not API classes; scanning their implementations: $names")
+        return scanClasses(implementations, indicator).toList()
+    }
+
+    /**
+     * Expands explicitly selected API contracts to the API classes that realize them.
+     *
+     * A common server layout declares the mapping annotations on an interface and the
+     * framework annotation (`@RestController`, `@FeignClient`, …) on the implementation.
+     * Such an interface is not itself an API class, so [findControllerClasses] only ever
+     * finds the implementation — yet the interface is exactly what the user points at when
+     * exporting from the contract. Resolving its implementations lets the selected contract
+     * method be matched against the endpoints it declares.
+     *
+     * Only interfaces and abstract classes are expanded: a concrete class needs no
+     * realization, and this restriction keeps a directory selection from running an
+     * inheritors search for every data class it contains.
+     *
+     * @requires Background context; the PSI read acquires a ReadAction internally.
+     * @return The implementations found, excluding the given classes themselves.
+     */
+    private suspend fun expandToImplementations(classes: List<PsiClass>): List<PsiClass> {
+        return read {
+            classes
+                .filter { it.isInterface || it.hasModifierProperty(PsiModifier.ABSTRACT) }
+                .flatMap { contract ->
+                    ClassInheritorsSearch
+                        .search(contract, GlobalSearchScope.projectScope(project), true)
+                        .findAll()
+                }
+                .filter { it.isValid }
+                .distinctBy { it.qualifiedName ?: it.name }
         }
     }
 

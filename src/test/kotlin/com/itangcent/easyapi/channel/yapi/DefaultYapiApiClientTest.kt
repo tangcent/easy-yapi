@@ -596,6 +596,76 @@ class DefaultYapiApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals("save failed", result.errorMessage())
     }
 
+    fun testUploadApiReportsTheSavedApiId() = runBlocking {
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
+            .thenReturn(mockResponse(apiListJson()))
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/save") }))
+            .thenReturn(mockResponse(successJson(projectDataJson("333"))))
+
+        val result = client.uploadApi(testDoc("/api/users", "GET"), "cat1")
+
+        assertTrue(result.isSuccess)
+        assertEquals("333", result.getOrNull()?.apiId)
+    }
+
+    fun testUploadApiStillSucceedsWhenSaveResponseOmitsTheId() = runBlocking {
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
+            .thenReturn(mockResponse(apiListJson()))
+        // Success without any `data` block: the id is a convenience, not a success signal.
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/save") }))
+            .thenReturn(mockResponse(successJson(null)))
+
+        val result = client.uploadApi(testDoc("/api/users", "GET"), "cat1")
+
+        assertTrue("缺少 data._id 的成功响应不能被当成失败", result.isSuccess)
+        assertNull(result.getOrNull()?.apiId)
+    }
+
+    fun testUploadApiSucceedsWhenSaveResponseDataIsAnArray() = runBlocking {
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
+            .thenReturn(mockResponse(apiListJson()))
+        // A fork whose save answers `data: []` instead of `data: {...}`. Reading that member with
+        // Gson's getAsJsonObject throws ClassCastException, which used to surface as a failed
+        // export although the API had already been written.
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/save") }))
+            .thenReturn(mockResponse(successJson(JsonArray())))
+
+        val result = client.uploadApi(testDoc("/api/users", "GET"), "cat1")
+
+        assertTrue("save 响应 data 为数组时不能报错", result.isSuccess)
+        assertNull(result.getOrNull()?.apiId)
+    }
+
+    fun testUploadApiSucceedsWhenSaveResponseDataHasAnotherShape() = runBlocking {
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
+            .thenReturn(mockResponse(apiListJson()))
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/save") }))
+            .thenReturn(
+                mockResponse("""{"errcode":0,"errmsg":"成功！","data":"unexpected"}""")
+            )
+
+        val result = client.uploadApi(testDoc("/api/users", "GET"), "cat1")
+
+        assertTrue("save 响应 data 形状异常时不能报错", result.isSuccess)
+        assertNull(result.getOrNull()?.apiId)
+    }
+
+    fun testUploadApiFallsBackToTheReplacedApiIdOnUpdate() = runBlocking {
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
+            .thenReturn(mockResponse(apiListJson(apiJson("existing-id", "/api/users", "GET"))))
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/save") }))
+            .thenReturn(mockResponse(successJson(null)))
+
+        val result = client.uploadApi(testDoc("/api/users", "GET"), "cat1")
+
+        assertTrue(result.isSuccess)
+        assertEquals(
+            "就地更新未回显 _id 时, 应回退到被替换条目的 id",
+            "existing-id",
+            result.getOrNull()?.apiId
+        )
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

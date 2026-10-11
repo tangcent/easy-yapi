@@ -17,4 +17,12 @@ class YapiUrlsTest {
             YapiUrls.cartUrl(" http://localhost:3000/ ", "12", "34")
         )
     }
+
+    @Test
+    fun `apiUrl builds the route of a single api`() {
+        assertEquals(
+            "http://localhost:3000/project/12/interface/api/333",
+            YapiUrls.apiUrl(" http://localhost:3000/ ", "12", "333")
+        )
+    }
 }
