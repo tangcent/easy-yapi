@@ -211,6 +211,25 @@ class SelectionScope(private val elements: List<Any>) {
         }
     }.distinct()
 
+    /**
+     * Classes the user pointed at directly — a selected [PsiClass], the containing class of a
+     * selected [PsiMethod], or the classes declared by a selected [PsiFile].
+     *
+     * Unlike [classes], this excludes the classes enumerated from a selected [PsiDirectory]: a
+     * directory selection is a bulk scan that can name hundreds of classes, so [ApiScanner]
+     * restricts contract expansion to this set instead of running an inheritors search for every
+     * interface a directory happens to contain.
+     */
+    fun directlySelectedClasses(): Sequence<PsiClass> = sequence {
+        for (element in elements) {
+            when (element) {
+                is PsiClass -> yield(element)
+                is PsiMethod -> readSync { element.containingClass }?.let { yield(it) }
+                is PsiFile -> if (element is PsiClassOwner) yieldAll(readSync { element.classes }.asSequence())
+            }
+        }
+    }.distinct()
+
     fun psiClass(): PsiClass? = classes().firstOrNull()
 
     fun methods(): Sequence<PsiMethod> = sequence {

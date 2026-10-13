@@ -98,7 +98,7 @@ class DefaultYapiApiClient(
     /** Tries to extract the project ID from the standard [GET_PROJECT] endpoint. */
     private suspend fun resolveProjectIdFromGetProject(): YapiResponse<String> =
         requestProjectId(GET_PROJECT) { json ->
-            json.objectMember("data")?.get("_id")?.takeIf { it.isJsonPrimitive }?.asString
+            json.objectMember("data")?.stringMember("_id")
         }
 
     /**
@@ -107,8 +107,7 @@ class DefaultYapiApiClient(
      */
     private suspend fun resolveProjectIdFromListMenu(): YapiResponse<String> =
         requestProjectId(LIST_MENU) { json ->
-            (json.arrayMember("data")?.firstOrNull() as? JsonObject)
-                ?.get("project_id")?.takeIf { it.isJsonPrimitive }?.asString
+            (json.arrayMember("data")?.firstOrNull() as? JsonObject)?.stringMember("project_id")
         }
 
     private suspend fun requestProjectId(
@@ -140,7 +139,11 @@ class DefaultYapiApiClient(
                 parseResponse(resp) { json ->
                     json.arrayMember("data")?.mapNotNull { element ->
                         val obj = element as? JsonObject ?: return@mapNotNull null
-                        YapiCart(id = obj.get("_id").asLong, name = obj.get("name").asString)
+                        // A cart whose id or name is unusable cannot be matched or created
+                        // against; skip that entry instead of failing the whole listing.
+                        val id = obj.longMember("_id") ?: return@mapNotNull null
+                        val name = obj.stringMember("name") ?: return@mapNotNull null
+                        YapiCart(id = id, name = name)
                     } ?: emptyList()
                 }
             }.onFailure { console.warn("YApi: listCarts failed for projectId=$projectId", it) }
@@ -165,7 +168,10 @@ class DefaultYapiApiClient(
                 }
                 parseResponse(resp) { json ->
                     val data = json.objectMember("data") ?: return@parseResponse null
-                    YapiCart(id = data.get("_id").asLong, name = data.get("name").asString)
+                    // The id is needed to upload into the cart, so a response without one is a
+                    // real failure; the name falls back to the requested one.
+                    val id = data.longMember("_id") ?: return@parseResponse null
+                    YapiCart(id = id, name = data.stringMember("name") ?: name)
                 }
             }.onFailure { console.warn("YApi: createCart failed for name='$name'", it) }
                 .getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
@@ -233,8 +239,8 @@ class DefaultYapiApiClient(
         val apis = listApis(catId).getOrNull() ?: return null
         val matched = apis.firstOrNull { matchesApi(it, path, method) } as? JsonObject ?: return null
         return ExistingApiInfo(
-            id = matched.get("_id")?.asString ?: return null,
-            title = matched.get("title")?.asString
+            id = matched.stringMember("_id") ?: return null,
+            title = matched.stringMember("title")
         )
     }
 
@@ -250,8 +256,8 @@ class DefaultYapiApiClient(
     /** True when [element] is an API object whose path and method match; non-objects never match. */
     private fun matchesApi(element: JsonElement, path: String, method: String): Boolean {
         val obj = element as? JsonObject ?: return false
-        return obj.get("path")?.asString == path &&
-                obj.get("method")?.asString?.equals(method, ignoreCase = true) == true
+        return obj.stringMember("path") == path &&
+                obj.stringMember("method")?.equals(method, ignoreCase = true) == true
     }
 
     // endregion
@@ -315,10 +321,7 @@ class DefaultYapiApiClient(
                 // `data._id` (some forks, and in-place updates) must not be read as EMPTY_DATA and
                 // fail the export.
                 parseResponse(resp) { json ->
-                    val echoedId = json.objectMember("data")
-                        ?.get("_id")
-                        ?.takeIf { it.isJsonPrimitive }
-                        ?.asString
+                    val echoedId = json.objectMember("data")?.stringMember("_id")
                     ApiUploadResult(echoedId ?: existingId)
                 }
             }.onFailure { console.warn("YApi: uploadApi failed for path='${doc.path}', method='${doc.method}'", it) }
@@ -337,6 +340,9 @@ class DefaultYapiApiClient(
      * Success is determined by: `errcode == 0`, or `code == 0`, or `message` being a known
      * success string (e.g. "成功", "成功！") when no code field is present.
      *
+     * Envelope members are read through the non-throwing accessors below, so a JSON-null
+     * `errcode`/`errmsg` — or a code sent as a string — reads as absent instead of raising.
+     *
      * Failure cases:
      * - HTTP status != 200
      * - Body is not valid JSON
@@ -351,8 +357,8 @@ class DefaultYapiApiClient(
         if (res.code != 200) return YapiResponse.failure("HTTP ${res.code}")
         val json = runCatching { GsonUtils.fromJson<JsonObject>(res.body ?: "") }.getOrNull()
             ?: return YapiResponse.failure("Invalid JSON response")
-        val errcode = json.get("errcode")?.asInt ?: json.get("code")?.asInt
-        val errmsg = json.get("errmsg")?.asString ?: json.get("message")?.asString
+        val errcode = json.longMember("errcode")?.toInt() ?: json.longMember("code")?.toInt()
+        val errmsg = json.stringMember("errmsg") ?: json.stringMember("message")
         val isSuccess = errmsg in SUCCESS_MESSAGES || errcode in SUCCESS_CODES
         if (!isSuccess) {
             return YapiResponse.failure(errmsg ?: "Unknown error (errcode: $errcode)")
@@ -413,3 +419,19 @@ private fun JsonObject.objectMember(name: String): JsonObject? = get(name) as? J
 
 /** Reads [name] as a JSON array, or null when the member is absent or holds another shape. */
 private fun JsonObject.arrayMember(name: String): JsonArray? = get(name) as? JsonArray
+
+/**
+ * Reads [name] as a string, or null when the member is absent, JSON-null or holds another shape.
+ *
+ * A JSON-null member is the case the shape accessors above do not cover: `asString` on it throws
+ * `UnsupportedOperationException`, which the surrounding `runCatching` turns into a failed export.
+ */
+private fun JsonObject.stringMember(name: String): String? =
+    get(name)?.takeIf { it.isJsonPrimitive }?.asString
+
+/**
+ * Reads [name] as a long, or null when the member is absent, JSON-null, non-numeric or holds
+ * another shape. The value is read through its string form because forks disagree on whether an
+ * `_id` is a number or a numeric string, and neither may be assumed.
+ */
+private fun JsonObject.longMember(name: String): Long? = stringMember(name)?.toLongOrNull()
