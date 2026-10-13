@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.channel.yapi
 
 import com.google.gson.JsonArray
+import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.itangcent.easyapi.channel.yapi.model.MutableYapiApiDoc
 import com.itangcent.easyapi.channel.yapi.model.MutableYapiHeader
@@ -664,6 +665,123 @@ class DefaultYapiApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
             "existing-id",
             result.getOrNull()?.apiId
         )
+    }
+
+    // -------------------------------------------------------------------------
+    // Response member tolerance
+    //
+    // The shape accessors cover the `data` member; the members inside it are read just as
+    // tolerantly, because Gson throws on a JSON-null member and on a shape mismatch, and an
+    // exception raised while interpreting a response is reported as a failed export even
+    // though the server already performed the write.
+    // -------------------------------------------------------------------------
+
+    fun testGetProjectIdToleratesNullEnvelopeFields() = runBlocking {
+        // `errcode: null` used to throw while reading the envelope; the errmsg still says success.
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse("""{"errcode":null,"errmsg":"成功！","data":{"_id":"9"}}"""))
+
+        val result = client.getProjectId()
+
+        assertTrue("errcode 为 null 的信封不能被当成失败", result.isSuccess)
+        assertEquals("9", result.getOrNull())
+    }
+
+    fun testListCartsSkipsEntriesWithUnusableId() = runBlocking {
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse(successJson(projectDataJson("1"))))
+
+        val cartsArray = JsonArray().apply {
+            add(cartJson(10, "Good"))
+            add(JsonObject().apply {
+                addProperty("name", "Null Id")
+                add("_id", JsonNull.INSTANCE)
+            })
+            add(JsonObject().apply {
+                addProperty("_id", "507f1f77bcf86cd799439011") // Mongo ObjectId as a string
+                addProperty("name", "String Id")
+            })
+        }
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/getCatMenu") }))
+            .thenReturn(mockResponse(successJson(cartsArray)))
+
+        val result = client.listCarts()
+
+        assertTrue("_id 不可用的条目不应让整个列表失败", result.isSuccess)
+        assertEquals(listOf("Good"), result.getOrNull()!!.map { it.name })
+    }
+
+    fun testListCartsAcceptsNumericStringId() = runBlocking {
+        // Some forks quote the id: "30" instead of 30.
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse(successJson(projectDataJson("1"))))
+
+        val cartsArray = JsonArray().apply {
+            add(JsonObject().apply {
+                addProperty("_id", "30")
+                addProperty("name", "Quoted Id")
+            })
+        }
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/getCatMenu") }))
+            .thenReturn(mockResponse(successJson(cartsArray)))
+
+        val result = client.listCarts()
+
+        assertTrue(result.isSuccess)
+        assertEquals(30L, result.getOrNull()!![0].id)
+    }
+
+    fun testCreateCartFallsBackToTheRequestedNameWhenResponseOmitsIt() = runBlocking {
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse(successJson(projectDataJson("1"))))
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/add_cat") }))
+            .thenReturn(mockResponse(successJson(JsonObject().apply { addProperty("_id", 77L) })))
+
+        val result = client.createCart("Requested Name", "desc")
+
+        assertTrue(result.isSuccess)
+        assertEquals("Requested Name", result.getOrNull()!!.name)
+        assertEquals(77L, result.getOrNull()!!.id)
+    }
+
+    fun testCreateCartFailsWhenResponseOmitsTheId() = runBlocking {
+        // Unlike a save, the cart id is needed to upload into the cart — its absence is a real
+        // failure, not a convenience that can be dropped.
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse(successJson(projectDataJson("1"))))
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/add_cat") }))
+            .thenReturn(mockResponse(successJson(JsonObject().apply { addProperty("name", "No Id") })))
+
+        val result = client.createCart("Name", "desc")
+
+        assertFalse("add_cat 未返回 _id 时应报错", result.isSuccess)
+    }
+
+    fun testFindExistingApiIgnoresEntriesWithNullId() = runBlocking {
+        // A null `_id` used to throw while matching; the entry simply does not match.
+        val entry = JsonObject().apply {
+            add("_id", JsonNull.INSTANCE)
+            addProperty("path", "/api/users")
+            addProperty("method", "GET")
+        }
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
+            .thenReturn(mockResponse(apiListJson(entry)))
+
+        val id = client.findExistingApi("cat1", "/api/users", "GET")
+
+        assertNull(id)
+    }
+
+    fun testUploadApiSucceedsWhenSaveResponseIdIsNull() = runBlocking {
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
+            .thenReturn(mockResponse(apiListJson()))
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/save") }))
+            .thenReturn(mockResponse("""{"errcode":0,"errmsg":"成功！","data":{"_id":null}}"""))
+
+        val result = client.uploadApi(testDoc("/api/users", "GET"), "cat1")
+
+        assertTrue("_id 为 null 的成功响应不能报错", result.isSuccess)
+        assertNull(result.getOrNull()?.apiId)
     }
 
     // -------------------------------------------------------------------------

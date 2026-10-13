@@ -161,7 +161,10 @@ class ApiScanner(private val project: Project) {
      *   where selecting a subset of controller methods still exported every
      *   endpoint in the class.
      * - Otherwise, if the selection contains classes, all endpoints from those
-     *   classes are returned (same as [scanClasses]).
+     *   classes are returned (same as [scanClasses]). A directly selected class
+     *   that produced no endpoint — a contract the framework recognizers do not
+     *   match — is expanded to its implementations and those are scanned as well,
+     *   per class: see [scanClassesWithContracts].
      * - Otherwise, the cached project endpoints from [ApiIndex] are returned.
      *
      * @param selection The resolved user selection, or `null` for whole project.
@@ -184,10 +187,7 @@ class ApiScanner(private val project: Project) {
             if (containingClasses.isEmpty()) {
                 return ApiIndex.getInstance(project).endpoints()
             }
-            var candidates = scanClasses(containingClasses, indicator).toList()
-            if (candidates.isEmpty()) {
-                candidates = scanImplementations(containingClasses, indicator)
-            }
+            val candidates = scanClassesWithContracts(containingClasses, containingClasses, indicator)
             return candidates.filter { endpoint ->
                 val source = endpoint.sourceMethod ?: return@filter false
                 selectedMethods.any { selected -> areMethodsRelated(selected, source) }
@@ -198,16 +198,52 @@ class ApiScanner(private val project: Project) {
         if (classes.isEmpty()) {
             return ApiIndex.getInstance(project).endpoints()
         }
-        val endpoints = scanClasses(classes, indicator).toList()
-        return if (endpoints.isNotEmpty()) endpoints
-        else scanImplementations(classes, indicator)
+        // Expansion is restricted to the classes the user pointed at directly, so a directory
+        // selection does not run an inheritors search for every interface it happens to contain —
+        // see [scanClassesWithContracts].
+        return scanClassesWithContracts(classes, selection.directlySelectedClasses().toList(), indicator)
     }
 
     /**
-     * Scans the API classes implementing explicitly selected contracts.
+     * Scans [classes], then scans the implementations of every [expandable] class that produced no
+     * endpoint — per class, not all-or-nothing.
      *
-     * Used when an explicit selection names a class that is not itself an API class —
-     * see [expandToImplementations].
+     * A selection that mixes a contract with ordinary API classes must still reach the contract:
+     * with an all-or-nothing expansion a single productive class would suppress it and the
+     * contract would keep reporting "No API endpoints found". Two mirror cases are excluded as
+     * well — a contract that is itself an API class already has its endpoints, so its
+     * implementations are not scanned on top of them, and a class that was already scanned is
+     * never scanned again through the expansion (selecting both a contract and its
+     * implementation must not export the implementation's endpoints twice).
+     *
+     * [expandable] is the subset of [classes] the user pointed at directly (see
+     * [SelectionScope.directlySelectedClasses]). Restricting the expansion to it matters for a
+     * directory selection: that names every class under the directory, and treating each plain
+     * interface among them as a contract would run an inheritors search per interface and drag in
+     * implementations living outside the selection. All of [classes] are still scanned, and all of
+     * them are excluded from the expansion result.
+     *
+     * @see expandToImplementations
+     */
+    private suspend fun scanClassesWithContracts(
+        classes: List<PsiClass>,
+        expandable: List<PsiClass>,
+        indicator: ProgressIndicator?
+    ): List<ApiEndpoint> {
+        val endpoints = scanClasses(classes, indicator).toList()
+        val productive = endpoints.mapNotNull { it.sourceClass }
+        val missed = expandable.filter { candidate -> productive.none { it === candidate } }
+        if (missed.isEmpty()) return endpoints
+        return endpoints + scanImplementations(missed, classes, indicator)
+    }
+
+    /**
+     * Scans the API classes implementing the selected [contracts] — the classes of an explicit
+     * selection that are not themselves API classes; see [expandToImplementations].
+     *
+     * @param contracts The directly selected classes that produced no endpoint.
+     * @param scannedClasses Every class already scanned for this selection; implementations
+     *        found among them are dropped so nothing is exported twice.
      *
      * @requires Background context. This runs on `EasyAPI-background`, where NO read access is
      * held, so every PSI touch below must go through [read] — including incidental reads such as
@@ -215,14 +251,18 @@ class ApiScanner(private val project: Project) {
      * `RuntimeExceptionWithAttachments: Read access is allowed from inside read-action only`.
      */
     private suspend fun scanImplementations(
-        classes: List<PsiClass>,
+        contracts: List<PsiClass>,
+        scannedClasses: List<PsiClass>,
         indicator: ProgressIndicator?
     ): List<ApiEndpoint> {
-        val implementations = expandToImplementations(classes)
+        // An inheritors search needs indexes. scanClasses has already waited by the time this
+        // runs, and a direct caller must not get a silently incomplete expansion either.
+        DumbModeHelper.waitForSmartMode(project)
+        val implementations = expandToImplementations(contracts, scannedClasses, indicator)
         if (implementations.isEmpty()) return emptyList()
         // PSI access — must not run bare on a background thread.
         val names = read { implementations.mapNotNull { it.qualifiedName } }
-        LOG.info("Selected classes are not API classes; scanning their implementations: $names")
+        LOG.info("Expanding classes that produced no endpoint to their implementations: $names")
         return scanClasses(implementations, indicator).toList()
     }
 
@@ -238,21 +278,35 @@ class ApiScanner(private val project: Project) {
      *
      * Only interfaces and abstract classes are expanded: a concrete class needs no
      * realization, and this restriction keeps a directory selection from running an
-     * inheritors search for every data class it contains.
+     * inheritors search for every data class it contains. Classes in [scannedClasses] are
+     * dropped from the result — they were scanned already.
      *
      * @requires Background context; the PSI read acquires a ReadAction internally.
-     * @return The implementations found, excluding the given classes themselves.
+     * @param contracts The selected classes that produced no endpoint.
+     * @param scannedClasses Classes already scanned for this selection, excluded from the result.
+     * @param indicator Checked for cancellation between contracts, so a selection naming many of
+     *        them stays interruptible — the same discipline [findControllerClasses] applies.
+     * @return The implementations found, excluding the scanned classes themselves.
      */
-    private suspend fun expandToImplementations(classes: List<PsiClass>): List<PsiClass> {
+    private suspend fun expandToImplementations(
+        contracts: List<PsiClass>,
+        scannedClasses: List<PsiClass>,
+        indicator: ProgressIndicator?
+    ): List<PsiClass> {
         return read {
-            classes
+            contracts
                 .filter { it.isInterface || it.hasModifierProperty(PsiModifier.ABSTRACT) }
                 .flatMap { contract ->
+                    // One indexed inheritors search per contract. findAll() is atomic and
+                    // cannot be interrupted mid-way, so the cancellation check sits between
+                    // the contracts.
+                    indicator?.checkCanceled()
                     ClassInheritorsSearch
                         .search(contract, GlobalSearchScope.projectScope(project), true)
                         .findAll()
                 }
                 .filter { it.isValid }
+                .filter { impl -> scannedClasses.none { it === impl } }
                 .distinctBy { it.qualifiedName ?: it.name }
         }
     }
