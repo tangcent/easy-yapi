@@ -10,6 +10,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
+import com.intellij.util.OpenSourceUtil
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.itangcent.easyapi.core.cache.api.ApiIndex
@@ -530,14 +531,19 @@ class ApiDashboardPanel internal constructor(
 
     /**
      * Navigates to the source code location of the given endpoint.
-     * 
+     *
+     * Goes through [OpenSourceUtil] rather than calling
+     * [com.intellij.pom.Navigatable.navigate] directly: the latter is
+     * `@ApiStatus.OverrideOnly` since 2025.3 and calling it is a Plugin
+     * Verifier failure (`OVERRIDE_ONLY_API_USAGES`).
+     *
      * @param endpoint The endpoint to navigate to
      */
     private fun navigateToSource(endpoint: ApiEndpoint) {
         val method = endpoint.sourceMethod ?: return
         if (method.canNavigate()) {
             ApplicationManager.getApplication().invokeLater {
-                method.navigate(true)
+                OpenSourceUtil.navigate(method)
             }
         }
     }
