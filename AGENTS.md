@@ -340,6 +340,7 @@ Tests use JUnit 4 + Mockito/Mockito-Kotlin + the IntelliJ Platform Test Framewor
 
 - **Bug reports arrive as structured GitHub Issue Forms** (`.github/ISSUE_TEMPLATE/bug_report.yml`). The form captures the trigger action (export/call/scan/freeze), framework(s), custom-rule setup, minimal repro code, and logs captured with the log level raised to DEBUG/TRACE. When triaging an issue, read these fields first — they identify the entry point and rule context before you open the code. Question and feature requests have their own forms in the same folder.
 - **PRs follow `.github/pull_request_template.md`.** Its Architecture & Threading and Logging checklists mirror the rules in this document. When a checklist item does not apply to a change, state why in the PR description rather than deleting it.
+- **One commit per PR branch.** Fold every follow-up change (review fixes, missed files, rewording) into the branch's single commit with `git commit --amend` or `--fixup` + `git rebase -i --autosquash`, and update the branch with `git push --force-with-lease` (own PR branch only). Multiple commits only for the exceptions in the [git-commit](.skills/git-commit/SKILL.md) skill.
 - **PR titles use the conventional-commit format** — `<type>(<scope>): <subject>`, with the same type list as the [git-commit](.skills/git-commit/SKILL.md) skill. PRs are squash-merged, so the title becomes the merge-commit subject, and `script/release.sh` groups changelog entries by the `feat`/`fix`/`refactor` prefix — an unprefixed title lands verbatim in the generic changelog section instead of its proper group.
 
 ## Skills
@@ -348,16 +349,18 @@ The following skills are available in the `.skills/` folder. Invoke the appropri
 
 | Skill | When to Use |
 |-------|-------------|
-| **[git-commit](.skills/git-commit/SKILL.md)** | User asks to write a commit message, create a commit, or needs help formatting a git commit. Generates standardized conventional commit messages. |
-| **[bug-fixer](.skills/bug-fixer/SKILL.md)** | User reports an error, test failure, or unexpected behavior that needs debugging and fixing. Provides systematic bug-fixing workflow with test-first approach. |
+| **[implement-change](.skills/implement-change/SKILL.md)** | **Default for any change request** — a bug, feature, improvement or other change (docs, build, CI, tests), asked in plain words or as an issue, with or without mentioning a PR; also review feedback on a PR branch. Classify → design → tests first → implement → test and review → commit, then ask before opening the PR. |
+| **[git-commit](.skills/git-commit/SKILL.md)** | User asks to write a commit message, create a commit, title a PR, or reword/squash commits. Generates conventional commit messages whose subject doubles as the changelog entry. |
+| **[bug-fixer](.skills/bug-fixer/SKILL.md)** | User reports an error, test failure, GitHub issue, IDE freeze, wrong export output, or other unexpected behavior. Test-first workflow: reproduce, root cause, failing test, minimal fix, verify. |
 | **[write-test-case](.skills/write-test-case/SKILL.md)** | User asks to write tests, add test coverage, or create test cases for any class. Guides test pattern selection (simple unit, IDE fixture, ResultLoader, action mock, etc.). |
-| **[review-commit](.skills/review-commit/SKILL.md)** | User asks to review a commit, analyze changes, or create a test coverage plan for recent changes. Generates a test plan document from a git commit. |
-| **[compat-fixer](.skills/compat-fixer/SKILL.md)** | Plugin Verifier CI gate fails on the since-build IDE, a new IDEA version breaks the plugin (P0/P1), or `pluginSinceBuild` is being raised. Encodes the compat policy (since-build zero deprecations is the only gate). |
+| **[review-changes](.skills/review-changes/SKILL.md)** | User asks to review a PR, commit, range, branch, uncommitted diff or piece of code, or what tests a change needs. Reviews from a pinned local checkout (PRs are checked out, never read via `gh pr diff`): change list + scope check, project-rule check, correctness, test gaps. |
+| **[compat-fixer](.skills/compat-fixer/SKILL.md)** | Plugin Verifier fails (since-build deprecation gate or a hard internal/override-only API failure), a new IDEA version breaks the plugin (P0/P1), or `pluginSinceBuild` is being raised. Encodes the compat policy (since-build zero deprecations is the only gate). |
 
 ### Skill Selection Guide
 
+- **Asked to fix, add, improve or otherwise change something?** → `implement-change` (it pulls in the skills below)
 - **Need to commit changes?** → `git-commit`
 - **Debugging an error or failure?** → `bug-fixer`
 - **Writing new tests?** → `write-test-case`
-- **Reviewing what tests a commit needs?** → `review-commit`
+- **Reviewing a PR, commit, branch or diff — or what tests it needs?** → `review-changes`
 - **Verifier CI failed / IDEA version broke the plugin / bumping since-build?** → `compat-fixer`

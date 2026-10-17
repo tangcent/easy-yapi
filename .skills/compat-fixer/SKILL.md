@@ -1,12 +1,19 @@
 ---
 name: "compat-fixer"
-description: "Handles Plugin Verifier results and IDEA compatibility issues per the project compat policy. Invoke when the CI 'Plugin Verifier' job fails on the since-build deprecation gate, when a user reports a crash or breakage on a new IDEA version, or when pluginSinceBuild is being raised."
+description: "Handles Plugin Verifier results and IDEA compatibility issues per the project compat policy. Invoke when the CI 'Plugin Verifier' job fails on the since-build deprecation gate, when the verifyPlugin task itself fails (internal or override-only API usage, compatibility problem), when a user reports a crash or breakage on a new IDEA version, when pluginSinceBuild is being raised, or when choosing which platform API to call."
 ---
 
 # Compat Fixer
 
 Policy owner skill for IntelliJ platform compatibility. Reactive entry point: CI
 verifier failure, a P0 breakage report, or a since-build boundary bump.
+
+| Situation | Workflow |
+| :--- | :--- |
+| "Check since-build deprecations" step red | A |
+| Crash / wrong behavior reported on a newer IDEA | B |
+| Editing `pluginSinceBuild` | C |
+| "verify plugin" step red (internal / override-only API, compatibility problem) | D |
 
 ## The policy (single source of truth)
 
@@ -27,20 +34,38 @@ verifier failure, a P0 breakage report, or a since-build boundary bump.
   usages, override-only-API usages. These red the gradle task directly — never
   add them to `failureLevel` exclusions to "fix" a warning.
 
+## Running the gate locally
+
+CI runs the verifier on JDK 21. The verifier downloads every IDE in the
+matrix, so the first run takes a while — run it in the background.
+
+```bash
+./gradlew verifyPlugin --stacktrace 2>&1 | tee /tmp/verifier-stdout.log
+since=$(sed -n 's/^pluginSinceBuild=//p' gradle.properties | tr -d '[:space:]')
+grep -E "^Plugin .* against [A-Z]+-${since}\.[0-9.]+: " /tmp/verifier-stdout.log
+```
+
+The gate passes when that last command prints at least one line and none of
+them contain `N usage(s) of deprecated API` with N ≥ 1. Per-usage detail
+(class, method, the deprecated member) is under `build/reports/pluginVerifier/`
+locally, or in the `plugin-verification-reports` artifact on CI.
+
 ## Workflow A — CI gate failed (since-build has deprecations)
 
 1. Read the failing job log. The gate prints the matched summary line, e.g.
    `Plugin ... against IC-252.x: Compatible. N usages of deprecated API`.
-   Full detail lives in the `plugin-verification-reports` artifact, or re-run
-   locally: `./gradlew verifyPlugin` (reports under
-   `build/reports/pluginVerifier/`).
+   Find each usage in the reports (see above).
 2. For each reported usage, find a replacement **that exists in the
    since-build SDK** and migrate to it directly — no version branching.
+   Check the replacement's own `@Deprecated` / `@ApiStatus.Internal` status in
+   the since-build SDK before using it.
 3. If no non-deprecated replacement exists in the since-build SDK, do not
    invent a compat layer. Evaluate raising `pluginSinceBuild` (Workflow C) or,
    as a last resort, an issue note explaining the accepted exception.
-4. Verify locally that the gate would pass, then commit with the
-   `fix(compat): <subject>` conventional-commit format.
+4. Run the gate locally, run the tests that cover the touched code, then
+   commit with the `fix(compat): <subject>` conventional-commit format (see
+   the **git-commit** skill), e.g. `fix(compat): drop deprecated URL(String)
+   and Messages.showChooseDialog`.
 
 ## Workflow B — breakage reported on a newer IDEA (P0/P1)
 
@@ -75,6 +100,22 @@ version bump:
    (grep for `compat` commits / build-number guards).
 4. Keep `script/package.sh` legacy best-effort builds for users below the new
    boundary; the mainline no longer verifies those ranges.
+
+## Workflow D — verifyPlugin itself failed (hard failure)
+
+The `verify plugin` step is red (not the deprecation gate): the verifier found
+a compatibility problem, an internal-API usage or an override-only-API usage
+on some matrix IDE. These are defects on every IDE, not just new ones.
+
+1. Find the failing IDE and the exact member in the verifier output / reports.
+2. **Internal API** (`@ApiStatus.Internal`, `*Impl` classes, internal
+   services): replace it with the public API that does the same job, e.g.
+   the internal `MessagesService` → `Messages.showDialog`.
+3. **Override-only API** (`@ApiStatus.OverrideOnly`): stop calling it
+   directly; call the public entry point that dispatches to it.
+4. **Compatibility problem** (missing class/method on a matrix IDE): treat it
+   as a breakage — Workflow B.
+5. Never silence it through `failureLevel` in `build.gradle.kts`.
 
 ## Anti-patterns (forbidden)
 
