@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.channel.yapi
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -47,6 +48,41 @@ class YapiExportMetadataTest {
         val metadata = YapiExportMetadata(cartLinks = mapOf(cartLink))
 
         assertEquals(listOf(cartLink), metadata.notificationLinks())
+    }
+
+    @Test
+    fun `a batch that revealed a single api id links like a single export`() {
+        // The signal is "exactly one API link", which a wider export can also produce when only
+        // one of its APIs revealed an id — a lone link is not a wall of links.
+        val metadata = YapiExportMetadata(
+            cartLinks = mapOf(cartLink),
+            apiLinks = mapOf("API A" to "http://y/project/42/interface/api/1")
+        )
+
+        assertEquals(
+            listOf("API A" to "http://y/project/42/interface/api/1", cartLink),
+            metadata.notificationLinks()
+        )
+    }
+
+    @Test
+    fun `a long api name is capped for the notification action`() {
+        // A balloon clips a long action label mid-word, so it is capped with an ellipsis.
+        val longName = "轻量刷新 token 的接口名称".repeat(5)
+        assertTrue("fixture must exceed the cap", longName.length > 32)
+        val metadata = YapiExportMetadata(
+            cartLinks = mapOf(cartLink),
+            apiLinks = mapOf(longName to "http://y/project/42/interface/api/333")
+        )
+
+        val links = metadata.notificationLinks()
+
+        assertEquals(32, links[0].first.length)
+        assertTrue(links[0].first.endsWith("…"))
+        assertTrue(
+            "formatDisplay 应保留完整名称",
+            metadata.formatDisplay().contains(longName)
+        )
     }
 
     @Test

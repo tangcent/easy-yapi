@@ -204,9 +204,25 @@ class YapiExportMetadata(
      * The links a completion notification should offer, in display order.
      *
      * A single-endpoint export is the "export this one method" flow, so it leads with the API that
-     * was just written instead of the category listing it landed in. Wider exports only list the
-     * categories: a batch would otherwise turn the balloon into a wall of per-API links.
+     * was just written instead of the category listing it landed in. The signal is "exactly one
+     * API link was recorded" — a wider export can produce the same shape when only one of its
+     * APIs revealed an id, and a lone link is not a wall of links, so it gets the same treatment.
+     * Wider exports only list the categories: a batch would otherwise turn the balloon into a
+     * wall of per-API links.
      */
-    fun notificationLinks(): List<Pair<String, String>> =
-        if (apiLinks.size == 1) apiLinks.toList() + cartLinks.toList() else cartLinks.toList()
+    fun notificationLinks(): List<Pair<String, String>> {
+        val links = if (apiLinks.size == 1) apiLinks.toList() + cartLinks.toList()
+        else cartLinks.toList()
+        return links.map { (label, url) -> label.capForNotification() to url }
+    }
 }
+
+/**
+ * Caps a notification-action label, because a balloon clips a long one mid-word. Only the action
+ * label is capped — [YapiExportMetadata.formatDisplay] keeps the full names.
+ */
+private fun String.capForNotification(): String =
+    if (length <= NOTIFICATION_LABEL_LIMIT) this else take(NOTIFICATION_LABEL_LIMIT - 1) + "…"
+
+/** Longest notification-action label before it is capped — see [capForNotification]. */
+private const val NOTIFICATION_LABEL_LIMIT = 32

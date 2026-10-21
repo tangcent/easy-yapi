@@ -16,6 +16,8 @@ import org.junit.Assert.assertTrue
  * drops the interface declaration it overrides, so the endpoint must still fall back to the
  * interface's Javadoc for its name, its description and every `@param` description. This mirrors
  * the `UserPublicApi` / `UserPublicController` layout (`refreshTokenLite`).
+ * The fallback is a fallback: when the implementation carries a comment of its own, that comment
+ * wins — `refreshOwn` pins the priority order down.
  */
 class MethodDocInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -55,6 +57,12 @@ class MethodDocInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
                  */
                 @PostMapping("/refresh-token")
                 Result refreshToken(@RequestParam("name") String name);
+
+                /**
+                 * 接口侧的注释
+                 */
+                @PostMapping("/refresh-token-own")
+                Result refreshOwn(@RequestParam("name") String name);
             }
             """.trimIndent()
         )
@@ -78,6 +86,17 @@ class MethodDocInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
                 @Override
                 public Result refreshToken(@RequestParam("name") String name) {
+                    return null;
+                }
+
+                /**
+                 * 实现侧的注释
+                 * 实现自身有注释时优先
+                 *
+                 * @param name 实现侧的用户名
+                 */
+                @Override
+                public Result refreshOwn(@RequestParam("name") String name) {
                     return null;
                 }
             }
@@ -119,6 +138,30 @@ class MethodDocInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoint = exportEndpoint("/refresh-token")
 
         assertEquals("普通刷新", endpoint.name)
+    }
+
+    /**
+     * Priority protection: the most-derived declaration is consulted first, so an implementation
+     * that documents itself must not be overridden by the interface's comment.
+     */
+    fun testImplementationDocWinsOverInterfaceDoc() = runTest {
+        val endpoint = exportEndpoint("/refresh-token-own")
+
+        assertEquals(
+            "实现自身有注释时应取实现的注释",
+            "实现侧的注释",
+            endpoint.name
+        )
+        assertTrue(
+            "实现自身有注释时描述也应取实现, 实际=[${endpoint.description}]",
+            endpoint.description!!.contains("实现自身有注释时优先")
+        )
+        val param = (endpoint.metadata as HttpMetadata).parameters.first { it.name == "name" }
+        assertEquals(
+            "实现自身有 @param 说明时应取实现的",
+            "实现侧的用户名",
+            param.description
+        )
     }
 
     private suspend fun exportEndpoint(path: String): com.itangcent.easyapi.core.export.ApiEndpoint {
