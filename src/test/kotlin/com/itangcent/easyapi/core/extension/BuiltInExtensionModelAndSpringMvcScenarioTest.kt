@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.core.extension
 
+import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.HttpMethod
 import com.itangcent.easyapi.core.export.httpMetadata
 import com.itangcent.easyapi.core.psi.JsonOption
@@ -422,6 +423,8 @@ class BuiltInExtensionModelAndSpringMvcScenarioTest : EasyApiLightCodeInsightFix
                 "io/swagger/annotations/ApiModel.java",
                 "io/swagger/annotations/ApiModelProperty.java",
                 "io/swagger/annotations/ApiOperation.java",
+                "io/swagger/annotations/ApiImplicitParam.java",
+                "io/swagger/annotations/ApiImplicitParams.java",
                 "api/swagger/ProductDTO.java",
                 "api/swagger/ProductController.java"
             )
@@ -472,7 +475,70 @@ class BuiltInExtensionModelAndSpringMvcScenarioTest : EasyApiLightCodeInsightFix
                 scenarioMessage(scenario, "assert", "Swagger hidden query parameter"),
                 listEndpoint.httpMetadata?.parameters.orEmpty().none { it.name == "filter" }
             )
+
+            assertImplicitParams(scenario, endpoints)
         }
+    }
+
+    /**
+     * `@ApiImplicitParam(s)` declares parameters that have no matching Java
+     * signature (typically headers). The `export.after` rules in `swagger.config`
+     * push them onto the endpoint after the Spring MVC binding pass.
+     */
+    private fun assertImplicitParams(
+        scenario: ResolvedBuiltInExtensionScenario,
+        endpoints: List<ApiEndpoint>
+    ) {
+        val implicitEndpoint = requireNotNull(endpoints.singleOrNull {
+            it.httpMetadata?.path == "/product/implicit"
+        }) {
+            scenarioMessage(scenario, "assert", "Swagger @ApiImplicitParams endpoint")
+        }
+        val headers = implicitEndpoint.httpMetadata?.headers.orEmpty().associateBy { it.name }
+
+        assertTrue(
+            scenarioMessage(scenario, "assert", "Swagger @ApiImplicitParams header names"),
+            headers.containsKey("Authorization") && headers.containsKey("tenantId")
+        )
+        assertEquals(
+            scenarioMessage(scenario, "assert", "Swagger @ApiImplicitParams required header"),
+            true,
+            headers["Authorization"]?.required
+        )
+        assertEquals(
+            scenarioMessage(scenario, "assert", "Swagger @ApiImplicitParams header description"),
+            "token令牌",
+            headers["Authorization"]?.description
+        )
+        val implicitParam = requireNotNull(
+            implicitEndpoint.httpMetadata?.parameters.orEmpty().singleOrNull { it.name == "traceId" }
+        ) {
+            scenarioMessage(scenario, "assert", "Swagger @ApiImplicitParams query parameter")
+        }
+        assertEquals(
+            scenarioMessage(scenario, "assert", "Swagger @ApiImplicitParams query default value"),
+            "0",
+            implicitParam.defaultValue
+        )
+        assertFalse(
+            scenarioMessage(scenario, "assert", "Swagger @ApiImplicitParams optional query parameter"),
+            implicitParam.required
+        )
+
+        val singleEndpoint = requireNotNull(endpoints.singleOrNull {
+            it.httpMetadata?.path == "/product/implicit/single"
+        }) {
+            scenarioMessage(scenario, "assert", "Swagger @ApiImplicitParam endpoint")
+        }
+        val singleHeader = requireNotNull(
+            singleEndpoint.httpMetadata?.headers.orEmpty().singleOrNull { it.name == "X-Trace-Id" }
+        ) {
+            scenarioMessage(scenario, "assert", "Swagger @ApiImplicitParam header")
+        }
+        assertFalse(
+            scenarioMessage(scenario, "assert", "Swagger @ApiImplicitParam optional header"),
+            singleHeader.required
+        )
     }
 
     fun testSwagger3ScenarioExportsStructuredMetadata() = runTest {
