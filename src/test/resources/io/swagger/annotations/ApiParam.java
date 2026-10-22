@@ -11,6 +11,9 @@ public @interface ApiParam {
     String value() default "";
     String name() default "";
     String defaultValue() default "";
+
+    String example() default "";
+
     boolean required() default false;
     boolean hidden() default false;
 }

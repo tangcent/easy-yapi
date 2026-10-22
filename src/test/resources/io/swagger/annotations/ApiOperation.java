@@ -9,7 +9,12 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ApiOperation {
     String value() default "";
+
     String notes() default "";
+
     String[] tags() default {};
+
+    String httpMethod() default "";
+
     boolean hidden() default false;
 }
