@@ -425,6 +425,8 @@ class BuiltInExtensionModelAndSpringMvcScenarioTest : EasyApiLightCodeInsightFix
                 "io/swagger/annotations/ApiOperation.java",
                 "io/swagger/annotations/ApiImplicitParam.java",
                 "io/swagger/annotations/ApiImplicitParams.java",
+                "io/swagger/annotations/ApiResponse.java",
+                "io/swagger/annotations/ApiResponses.java",
                 "api/swagger/ProductDTO.java",
                 "api/swagger/ProductController.java"
             )
@@ -456,6 +458,15 @@ class BuiltInExtensionModelAndSpringMvcScenarioTest : EasyApiLightCodeInsightFix
                 scenarioMessage(scenario, "assert", "Swagger renamed model field"),
                 model.fields.containsKey("skuCode")
             )
+            assertEquals(
+                scenarioMessage(scenario, "assert", "Swagger @ApiModelProperty example"),
+                "SKU-0001",
+                model.fields.getValue("skuCode").demo
+            )
+            assertNull(
+                scenarioMessage(scenario, "assert", "Swagger field without an example"),
+                model.fields.getValue("stock").demo
+            )
 
             val endpoints = services.springMvcExporter.export(controller)
             val getEndpoint = requireNotNull(endpoints.singleOrNull {
@@ -477,6 +488,9 @@ class BuiltInExtensionModelAndSpringMvcScenarioTest : EasyApiLightCodeInsightFix
             )
 
             assertImplicitParams(scenario, endpoints)
+            assertApiOperationAttributes(scenario, endpoints)
+            assertApiResponses(scenario, endpoints)
+            assertParamExample(scenario, endpoints)
         }
     }
 
@@ -538,6 +552,109 @@ class BuiltInExtensionModelAndSpringMvcScenarioTest : EasyApiLightCodeInsightFix
         assertFalse(
             scenarioMessage(scenario, "assert", "Swagger @ApiImplicitParam optional header"),
             singleHeader.required
+        )
+    }
+
+    /**
+     * `@ApiOperation` carries more than its title: `notes` merges into the same
+     * description, `hidden` drops the operation, and `httpMethod` is the fallback
+     * method for a mapping that declares none.
+     */
+    private fun assertApiOperationAttributes(
+        scenario: ResolvedBuiltInExtensionScenario,
+        endpoints: List<ApiEndpoint>
+    ) {
+        val updateEndpoint = requireNotNull(endpoints.singleOrNull {
+            it.httpMetadata?.path == "/product/update"
+        }) {
+            scenarioMessage(scenario, "assert", "Swagger @ApiOperation notes endpoint")
+        }
+        assertEquals(
+            scenarioMessage(scenario, "assert", "Swagger @ApiOperation notes"),
+            "Update a product\nRequires the product to exist",
+            updateEndpoint.description
+        )
+
+        assertNull(
+            scenarioMessage(scenario, "assert", "Swagger @ApiOperation hidden"),
+            endpoints.singleOrNull { it.httpMetadata?.path == "/product/cleanup" }
+        )
+
+        val disableEndpoint = requireNotNull(endpoints.singleOrNull {
+            it.httpMetadata?.path == "/product/disable"
+        }) {
+            scenarioMessage(scenario, "assert", "Swagger @ApiOperation httpMethod endpoint")
+        }
+        assertEquals(
+            scenarioMessage(scenario, "assert", "Swagger @ApiOperation httpMethod"),
+            HttpMethod.DELETE,
+            disableEndpoint.httpMetadata?.method
+        )
+    }
+
+    /**
+     * `@ApiResponse` / `@ApiResponses` append the declared status code and
+     * message to the endpoint description. Response headers are intentionally
+     * not routed anywhere — see the note in `swagger.config`.
+     */
+    private fun assertApiResponses(
+        scenario: ResolvedBuiltInExtensionScenario,
+        endpoints: List<ApiEndpoint>
+    ) {
+        val deleteEndpoint = requireNotNull(endpoints.singleOrNull {
+            it.httpMetadata?.path == "/product/delete"
+        }) {
+            scenarioMessage(scenario, "assert", "Swagger @ApiResponse endpoint")
+        }
+        assertTrue(
+            scenarioMessage(scenario, "assert", "Swagger @ApiResponse description"),
+            deleteEndpoint.description.orEmpty().contains("**response 404**: product not found")
+        )
+
+        val reserveEndpoint = requireNotNull(endpoints.singleOrNull {
+            it.httpMetadata?.path == "/product/reserve"
+        }) {
+            scenarioMessage(scenario, "assert", "Swagger @ApiResponses endpoint")
+        }
+        val reserveDescription = reserveEndpoint.description.orEmpty()
+        assertTrue(
+            scenarioMessage(scenario, "assert", "Swagger @ApiResponses description"),
+            reserveDescription.contains("**response 400**: bad request") &&
+                    reserveDescription.contains("**response 409**: stock conflict")
+        )
+    }
+
+    /**
+     * `@ApiParam#example` feeds `param.demo`. A parameter without an example
+     * must not pick up an empty one, so the absent case is pinned too.
+     */
+    private fun assertParamExample(
+        scenario: ResolvedBuiltInExtensionScenario,
+        endpoints: List<ApiEndpoint>
+    ) {
+        val examplesEndpoint = requireNotNull(endpoints.singleOrNull {
+            it.httpMetadata?.path == "/product/examples"
+        }) {
+            scenarioMessage(scenario, "assert", "Swagger @ApiParam example endpoint")
+        }
+        val page = requireNotNull(
+            examplesEndpoint.httpMetadata?.parameters.orEmpty().singleOrNull { it.name == "page" }
+        ) {
+            scenarioMessage(scenario, "assert", "Swagger @ApiParam example parameter")
+        }
+        assertEquals(
+            scenarioMessage(scenario, "assert", "Swagger @ApiParam example"),
+            "1",
+            page.example
+        )
+        val size = requireNotNull(
+            examplesEndpoint.httpMetadata?.parameters.orEmpty().singleOrNull { it.name == "size" }
+        ) {
+            scenarioMessage(scenario, "assert", "Swagger @ApiParam example-less parameter")
+        }
+        assertNull(
+            scenarioMessage(scenario, "assert", "Swagger parameter without an example"),
+            size.example
         )
     }
 

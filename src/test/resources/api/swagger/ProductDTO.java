@@ -21,8 +21,12 @@ public class ProductDTO {
     @ApiModelProperty(value = "Internal notes", hidden = true)
     private String internalNotes;
 
-    @ApiModelProperty(value = "SKU code", name = "skuCode")
+    @ApiModelProperty(value = "SKU code", name = "skuCode", example = "SKU-0001")
     private String sku;
+
+    // No example: must not gain an empty one from the `field.demo` rule.
+    @ApiModelProperty(value = "Stock count")
+    private Integer stock;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -36,4 +40,6 @@ public class ProductDTO {
     public void setInternalNotes(String internalNotes) { this.internalNotes = internalNotes; }
     public String getSku() { return sku; }
     public void setSku(String sku) { this.sku = sku; }
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
 }
