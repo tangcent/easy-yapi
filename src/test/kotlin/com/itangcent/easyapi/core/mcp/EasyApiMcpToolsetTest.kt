@@ -7,6 +7,10 @@ import com.intellij.mcpserver.annotations.McpDescription
 import com.intellij.mcpserver.annotations.McpTool
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.testFramework.registerOrReplaceServiceInstance
+import com.intellij.testFramework.replaceService
+import com.itangcent.easyapi.core.export.ExternalChangeSync
+import com.itangcent.easyapi.core.export.FakeExternalChangeSync
+import com.itangcent.easyapi.core.export.SyncOutcome
 import com.itangcent.easyapi.core.internal.threading.IdeDispatchers
 import com.itangcent.easyapi.core.logging.IdeaConsole
 import com.itangcent.easyapi.core.logging.IdeaConsoleProvider
@@ -35,10 +39,18 @@ import kotlin.reflect.full.valueParameters
  *
  * Names are asserted as literals on purpose: renaming the tool or a parameter breaks every client
  * that calls it, so it must also break this test.
+ *
+ * The sync of files changed outside the IDE is a [FakeExternalChangeSync]: the platform's waits for
+ * the EDT, which this test holds while it waits for the tool.
  */
 class EasyApiMcpToolsetTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.empty(project)
+
+    override fun setUp() {
+        super.setUp()
+        useSync(FakeExternalChangeSync())
+    }
 
     // ---- the tool as clients see it ----
 
@@ -147,6 +159,19 @@ class EasyApiMcpToolsetTest : EasyApiLightCodeInsightFixtureTestCase() {
             listOf("NoSuchClass"),
             error.getAsJsonArray("failures").map { it.asJsonObject.get("input").asString }
         )
+    }
+
+    fun testUnsavedChangesComeBackAsUnsavedInIde() {
+        addPingController()
+        val files = listOf("src/main/java/com/example/mcp/PingCtrl.java")
+        useSync(FakeExternalChangeSync(SyncOutcome.UnsavedInIde(files)))
+
+        val error = parse(call(classes = listOf(PING_CTRL), projectPath = project.basePath)).getAsJsonObject("error")
+
+        assertNotNull("an error result", error)
+        assertEquals("code", "UNSAVED_IN_IDE", error.get("code").asString)
+        assertEquals("names the project", project.name, error.getAsJsonObject("project").get("name").asString)
+        assertEquals("lists the files", files, error.getAsJsonArray("files").map { it.asString })
     }
 
     fun testUnknownProjectComesBackAsAnErrorResult() {
@@ -270,6 +295,10 @@ class EasyApiMcpToolsetTest : EasyApiLightCodeInsightFixtureTestCase() {
         runBlocking { EasyApiMcpToolset().scanEndpoints(classes = classes, projectPath = projectPath) }
 
     private fun parse(json: String): JsonObject = JsonParser.parseString(json).asJsonObject
+
+    /** Makes [fake] the project's sync until the test ends. */
+    private fun useSync(fake: FakeExternalChangeSync) =
+        project.replaceService(ExternalChangeSync::class.java, fake, testRootDisposable)
 
     private fun addPlainClass() {
         loadFile("mcp/Plain.java", "package com.example.mcp; public class Plain {}")

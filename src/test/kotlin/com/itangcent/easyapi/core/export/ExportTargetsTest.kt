@@ -128,6 +128,11 @@ class ExportTargetsTest {
             "changed-targets message",
             EndpointScanResult.TargetsChanged.message.contains("retry the call")
         )
+        val timeout = EndpointScanResult.SyncTimeout.message
+        val retry = timeout.indexOf("Retry the call")
+        val closeDialog = timeout.indexOf("ask the user to close any modal dialog")
+        assertTrue("sync-timeout message retries: $timeout", retry >= 0)
+        assertTrue("then has the user close a dialog: $timeout", closeDialog > retry)
     }
 
     @Test

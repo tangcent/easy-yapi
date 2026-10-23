@@ -11,10 +11,11 @@ import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCas
 import com.itangcent.easyapi.testFramework.waitUntil
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.nio.file.Path
 
 /**
- * Tests for [ExportTargetResolver]: the three target kinds, every [TargetFailure] type and the
- * all-or-nothing contract.
+ * Tests for [ExportTargetResolver]: the three target kinds, every [TargetFailure] type, the
+ * all-or-nothing contract, and the files to sync before resolution ([ExportTargetResolver.targetFiles]).
  *
  * Classes are added inline with [loadFile]; the light fixture keeps them in an in-memory source
  * root, which is inside the project scope. File targets need real files under `project.basePath`
@@ -291,6 +292,66 @@ class ExportTargetResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals("their kinds", listOf(TargetKind.CLASS, TargetKind.METHOD), failed.failures.map { it.kind })
     }
 
+    // ---- messages that hold once targets are synced before they resolve ----
+
+    /** The sync finds a new class by its file; by name only once the IDE has indexed it. */
+    fun testMissingClassSuggestsPassingItsFile() {
+        val failure = singleFailure<TargetFailure.NotFound>(
+            resolve(ExportTargets(classes = listOf("com.example.mcp.Fresh")))
+        )
+
+        assertTrue("reason: ${failure.reason}", failure.reason.contains("pass its file in `files`"))
+    }
+
+    /** After the sync a missing file is just missing: waiting does not help. */
+    fun testMissingFileReasonOnlySaysItIsMissing() {
+        val failure = singleFailure<TargetFailure.NotFound>(
+            resolve(ExportTargets(files = listOf("$SCRATCH/Gone.java")))
+        )
+
+        assertEquals("reason", "no such file under the project root", failure.reason)
+    }
+
+    // ---- target files: what is synced before resolution ----
+
+    /** A file target is its path under the project root, whether or not the file exists yet. */
+    fun testTargetFilesResolvesFileTargetsAgainstTheProjectRoot() {
+        writeProjectFile("web/Exists.java", "package com.example.mcp.file; public class Exists {}")
+
+        val files = targetFiles(
+            ExportTargets(
+                files = listOf("$SCRATCH/web/Exists.java", " $SCRATCH/web/NotYet.java ", "$SCRATCH/web/Exists.java")
+            )
+        )
+
+        val base = Path.of(project.basePath!!)
+        assertEquals(
+            "absolute paths, trimmed and de-duplicated",
+            listOf("$SCRATCH/web/Exists.java", "$SCRATCH/web/NotYet.java").map { base.resolve(it).normalize() },
+            files
+        )
+    }
+
+    /**
+     * Malformed entries are left to [ExportTargetResolver.resolve]. The fixture's classes live in an
+     * in-memory source root, not on disk (its `temp://` file system still counts as a local one), so no
+     * file is synced for them either; mapping a class or method target to its file on disk is covered
+     * end to end.
+     */
+    fun testTargetFilesSkipsMalformedEntriesAndClassesOffTheLocalFileSystem() {
+        addUserApi()
+
+        val files = targetFiles(
+            ExportTargets(
+                classes = listOf(USER_API, "UserApi", " ", "NoSuchClass"),
+                methods = listOf("$USER_API#get", "UserApi#ping", "UserApi", "#get", "A#b#c"),
+                files = listOf("", "../outside/X.java", "bad\u0000path.java")
+            )
+        )
+
+        assertEquals("nothing to sync", emptyList<Path>(), files)
+    }
+
     // ---- Kotlin ----
 
     /** Resolution only: whether a Kotlin controller scans in the fixture is left to the end-to-end check. */
@@ -310,6 +371,9 @@ class ExportTargetResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private fun resolve(targets: ExportTargets): TargetResolution =
         runBlocking { ExportTargetResolver(project).resolve(targets) }
+
+    private fun targetFiles(targets: ExportTargets): List<Path> =
+        runBlocking { ExportTargetResolver(project).targetFiles(targets) }
 
     private fun resolved(resolution: TargetResolution): List<ResolvedTarget> {
         assertTrue("expected Resolved, got $resolution", resolution is TargetResolution.Resolved)

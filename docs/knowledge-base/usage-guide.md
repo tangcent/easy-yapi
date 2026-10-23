@@ -207,7 +207,11 @@ The agent names the targets in `classes`, `methods` (`ClassName#methodName`) or 
 
 ### Files changed outside the IDE
 
-The tool scans what the IDE has loaded. A file changed outside the IDE, for example by the agent's own file tools, is scanned with its old content until the IDE syncs the change from disk, which it does on its own schedule; a class, method or file added outside the IDE is not found until then. So a call made right after such an edit may report the old endpoints, or fail with `TARGETS_UNRESOLVED` for a new class or method; call again once the IDE has picked up the change.
+Before the targets resolve, the IDE loads from disk the files they live in and the other changes under the project root it has already noticed, so a call made right after the agent wrote a file sees the new content. Pass a class created outside the IDE by its file, in `files`.
+
+- **Unsaved changes in the IDE stop the call** (`UNSAVED_IN_IDE`) when they are in a file to scan, or in another file under the project root that also changed on disk. Save them, or drop them with **File | Reload from Disk**.
+- **In IntelliJ IDEA 2025.2, a modal dialog stops the call.** That version loads the files only while no modal dialog, such as Settings, is open, so the call fails with `SYNC_TIMEOUT` after about 10 seconds, even if no file changed. Later versions load the files while a dialog is open (checked with 2026.2).
+- **Limits:** a request or response class changed together with a target may not be reloaded yet, or at all outside the project root: add its file to `files` (outside the root, its name to `classes`); it then shows in `skipped`, as expected. A file that is not a target, has unsaved editor changes and changed on disk may be scanned as the editor shows it: save before calling.
 
 ### Errors
 
@@ -219,7 +223,9 @@ A call that fails returns `{"error": {"code": …, "message": …}}` instead of 
 | `TARGETS_UNRESOLVED` | A target did not resolve; `failures` lists each one. |
 | `NO_ENDPOINTS` | No target yields an endpoint; `skipped` says why. |
 | `TARGETS_CHANGED` | A target changed during the scan. Retry. |
-| `INDEX_NOT_READY` | The IDE is indexing. Retry when it is done. |
+| `INDEX_NOT_READY` | The IDE is indexing, as it does after many files changed outside it at once. Retry when it is done. |
+| `UNSAVED_IN_IDE` | The listed `files` have unsaved changes in the IDE. Save or reload them, then retry. |
+| `SYNC_TIMEOUT` | The IDE did not load the files changed outside it within 10 seconds. Retry; if it times out again, close any modal dialog open in the IDE, such as Settings, and retry a little later. |
 | `PROJECT_AMBIGUOUS` | Several projects are open and `projectPath` was not passed. |
 | `PROJECT_NOT_FOUND` | No open project contains `projectPath`. |
 | `INTERNAL_ERROR` | Something unexpected failed; see `idea.log`. |

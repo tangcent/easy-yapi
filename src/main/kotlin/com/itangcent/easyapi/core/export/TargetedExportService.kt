@@ -22,64 +22,97 @@ import kotlinx.coroutines.ensureActive
 /**
  * Scans the endpoints of targets an external caller names by text ([ExportTargets]), with no UI.
  *
- * Named targets go through: wait for smart mode → [ExportTargetResolver] → `ApiScanner.scanSelection`
- * on exactly the resolved PSI, one target at a time. A call never reads the project-wide index: one
- * without targets is rejected, and a target is never widened to the whole project.
+ * Named targets go through: wait for smart mode → [ExternalChangeSync] of the files they live in →
+ * [ExportTargetResolver] → `ApiScanner.scanSelection` on exactly the resolved PSI, one target at a
+ * time. A call never reads the project-wide index: one without targets is rejected, and a target is
+ * never widened to the whole project.
  *
- * The callers are headless (the MCP toolset). The waits for smart mode depend on the EDT, but only while
- * the IDE is indexing, when a callback on the EDT ends them: up to [DumbModeHelper.USER_ACTION_WAIT_TIMEOUT]
- * before the targets resolve, and up to [DumbModeHelper.DEFAULT_WAIT_TIMEOUT] inside the scanner. Scans get
- * their own progress indicator instead of a progress dialog, and nothing is notified.
+ * The callers are headless (the MCP toolset). The sync always waits for the EDT, up to
+ * [ExternalChangeSync.SYNC_TIMEOUT]. The waits for smart mode depend on the EDT too, but only while the
+ * IDE is indexing, when a callback on the EDT ends them: up to [DumbModeHelper.USER_ACTION_WAIT_TIMEOUT]
+ * each before and after the sync, and up to [DumbModeHelper.DEFAULT_WAIT_TIMEOUT] inside the scanner.
+ * Scans get their own progress indicator instead of a progress dialog, and nothing is notified.
  */
 @Service(Service.Level.PROJECT)
 class TargetedExportService(private val project: Project) : IdeaLog {
 
     /**
-     * Scans [targets] for the endpoints EasyYapi would export: waits for smart mode, resolves every
-     * target, and scans only those targets.
+     * Scans [targets] for the endpoints EasyYapi would export: syncs the files they live in from disk,
+     * resolves every target, and scans only those targets ([prepare]).
      *
-     * - [targets] empty → [EndpointScanResult.TargetsRequired], nothing scanned;
+     * - [targets] empty → [EndpointScanResult.TargetsRequired], nothing synced or scanned;
      * - a target that resolves but yields no endpoint (a model, a service, an unmapped method) is
      *   reported in [ScanReport.skipped] while the others are listed; when no target yields one,
      *   the result is [EndpointScanResult.NoEndpoints].
      *
-     * A scan is not trusted when something changed under it:
-     * - a target changed after it resolved → [EndpointScanResult.TargetsChanged];
-     * - indexing ran after the wait → [EndpointScanResult.IndexNotReady]: an exporter that hits the
-     *   index during indexing fails quietly (the scanner logs it and goes on), so the scan may be
-     *   missing endpoints.
-     *
      * Expected failures come back as [EndpointScanResult.Failure], not as exceptions.
      *
-     * @requires Background context: not the EDT and no read action held (it waits for smart mode).
+     * @requires Background context: not the EDT and no read action held (it waits for smart mode and the sync).
      */
     suspend fun scanEndpoints(targets: ExportTargets): EndpointScanResult {
         if (targets.isEmpty()) return EndpointScanResult.TargetsRequired
+        return when (val prepared = prepare(targets)) {
+            is Preparation.Stopped -> prepared.failure
+            is Preparation.Ready -> EndpointScanResult.Scanned(
+                ScanReport(
+                    targets = prepared.targets.map { it.summary() },
+                    skipped = prepared.skipped,
+                    count = prepared.endpoints.size,
+                    endpoints = summarize(prepared.endpoints)
+                )
+            )
+        }
+    }
+
+    /**
+     * Everything a call does with its targets before using the endpoints, so every tool that takes
+     * targets sees the same code and fails the same way:
+     * 1. wait for smart mode;
+     * 2. sync the files the targets live in from disk ([ExternalChangeSync]): unsaved editor changes
+     *    → [EndpointScanResult.UnsavedInIde], an EDT that does not get to it →
+     *    [EndpointScanResult.SyncTimeout];
+     * 3. wait for smart mode again: syncing many files at once starts indexing;
+     * 4. resolve every target ([EndpointScanResult.TargetsUnresolved] when one fails) and scan each
+     *    ([collect]); the targets without endpoints are skipped, and when none has one the result is
+     *    [EndpointScanResult.NoEndpoints].
+     *
+     * A scan is not trusted when something changed under it:
+     * - a target changed after it resolved → [EndpointScanResult.TargetsChanged];
+     * - indexing ran after the second wait → [EndpointScanResult.IndexNotReady]: an exporter that hits
+     *   the index during indexing fails quietly (the scanner logs it and goes on), so the scan may be
+     *   missing endpoints.
+     *
+     * @requires Background context: not the EDT and no read action held.
+     */
+    private suspend fun prepare(targets: ExportTargets): Preparation {
+        val resolver = ExportTargetResolver(project)
         return try {
+            DumbModeHelper.waitForSmartMode(project, DumbModeHelper.USER_ACTION_WAIT_TIMEOUT)
+            when (val synced = ExternalChangeSync.getInstance(project).sync(resolver.targetFiles(targets))) {
+                is SyncOutcome.UnsavedInIde -> return Preparation.Stopped(EndpointScanResult.UnsavedInIde(synced.files))
+                SyncOutcome.TimedOut -> return Preparation.Stopped(EndpointScanResult.SyncTimeout)
+                SyncOutcome.Synced -> Unit
+            }
             DumbModeHelper.waitForSmartMode(project, DumbModeHelper.USER_ACTION_WAIT_TIMEOUT)
             // Counts every entry into and exit from indexing, so a short pass during the scan shows too.
             val indexing = DumbService.getInstance(project).modificationTracker
             val indexingStamp = indexing.modificationCount
-            when (val resolution = ExportTargetResolver(project).resolve(targets)) {
-                is TargetResolution.Failed ->
+            when (val resolution = resolver.resolve(targets)) {
+                is TargetResolution.Failed -> Preparation.Stopped(
                     EndpointScanResult.TargetsUnresolved(resolution.failures, resolution.targetCount)
+                )
 
                 is TargetResolution.Resolved -> {
                     val collected = collect(resolution.targets)
                     when {
                         DumbModeHelper.isDumb(project) || indexing.modificationCount != indexingStamp ->
-                            EndpointScanResult.IndexNotReady
+                            Preparation.Stopped(EndpointScanResult.IndexNotReady)
 
-                        collected == null -> EndpointScanResult.TargetsChanged
-                        collected.endpoints.isEmpty() -> EndpointScanResult.NoEndpoints(collected.skipped)
-                        else -> EndpointScanResult.Scanned(
-                            ScanReport(
-                                targets = resolution.targets.map { it.summary() },
-                                skipped = collected.skipped,
-                                count = collected.endpoints.size,
-                                endpoints = summarize(collected.endpoints)
-                            )
-                        )
+                        collected == null -> Preparation.Stopped(EndpointScanResult.TargetsChanged)
+                        collected.endpoints.isEmpty() ->
+                            Preparation.Stopped(EndpointScanResult.NoEndpoints(collected.skipped))
+
+                        else -> Preparation.Ready(resolution.targets, collected.endpoints, collected.skipped)
                     }
                 }
             }
@@ -87,17 +120,17 @@ class TargetedExportService(private val project: Project) : IdeaLog {
             // A wait for smart mode ran out (here, or inside the scanner). A cancelled call stays cancelled.
             currentCoroutineContext().ensureActive()
             LOG.info("Index not ready: a wait for smart mode ran out", e)
-            EndpointScanResult.IndexNotReady
+            Preparation.Stopped(EndpointScanResult.IndexNotReady)
         } catch (e: IndexNotReadyException) {
-            // Dumb mode came back between the wait and an index lookup.
+            // Dumb mode came back between a wait and an index lookup.
             LOG.info("Index not ready: an index lookup ran into dumb mode", e)
-            EndpointScanResult.IndexNotReady
+            Preparation.Stopped(EndpointScanResult.IndexNotReady)
         }
     }
 
     /**
      * Scans exactly the resolved targets, then drops duplicates, and names the targets that yield no
-     * endpoint.
+     * endpoint. A step of [prepare].
      *
      * One scan per class or file target, and one per class for the method targets: `scanSelection`
      * ignores the classes of a selection that also holds methods, and a scan of its own tells which
@@ -228,6 +261,19 @@ class TargetedExportService(private val project: Project) : IdeaLog {
 
     /** What [collect] found: the endpoints, de-duplicated, and the targets that yield none, in input order. */
     private class Collected(val endpoints: List<ApiEndpoint>, val skipped: List<SkippedTarget>)
+
+    /** How [prepare] ended. */
+    private sealed class Preparation {
+        /** Every target resolved and was scanned; at least one yields an endpoint. */
+        class Ready(
+            val targets: List<ResolvedTarget>,
+            val endpoints: List<ApiEndpoint>,
+            val skipped: List<SkippedTarget>
+        ) : Preparation()
+
+        /** The call stops with [failure]. */
+        class Stopped(val failure: EndpointScanResult.Failure) : Preparation()
+    }
 
     companion object {
         fun getInstance(project: Project): TargetedExportService = project.service()

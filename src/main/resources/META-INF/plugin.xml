@@ -106,6 +106,8 @@
 
         <projectService serviceImplementation="com.itangcent.easyapi.core.export.EndpointBuilder"/>
         <projectService serviceImplementation="com.itangcent.easyapi.core.export.ClassExporterRegistry"/>
+        <projectService serviceInterface="com.itangcent.easyapi.core.export.ExternalChangeSync"
+                        serviceImplementation="com.itangcent.easyapi.core.export.DefaultExternalChangeSync"/>
         <projectService serviceImplementation="com.itangcent.easyapi.channel.spi.ChannelRegistry"/>
         <projectService serviceImplementation="com.itangcent.easyapi.framework.spi.FrameworkRegistry"/>
         <!-- register EnvironmentSyncSupport SPI → Postman impl.

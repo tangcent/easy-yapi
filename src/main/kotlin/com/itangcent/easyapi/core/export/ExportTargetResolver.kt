@@ -75,6 +75,30 @@ internal class ExportTargetResolver(private val project: Project) {
         }
     }
 
+    /**
+     * The files [targets] live in, for syncing before they resolve: file targets resolved against the
+     * project root (they may not exist yet), and the file of every class a class or method target names
+     * (all of them when the name is ambiguous). Entries that name no class and no path under the
+     * project root are skipped: [resolve] reports them. A class whose file is not on disk (an in-memory
+     * file, for one) cannot have changed outside the IDE and is skipped too. As for [resolve], the caller
+     * waits for smart mode first.
+     *
+     * @requires Background context: not the EDT and no read action held; acquires read actions itself.
+     */
+    suspend fun targetFiles(targets: ExportTargets): List<Path> {
+        val classNames = targets.classes.normalized().filter { it.isNotEmpty() } +
+            targets.methods.normalized().mapNotNull { splitMethod(it)?.first }
+        val classFiles = read {
+            classNames.flatMap { findClasses(it) }
+                .mapNotNull { psiClass -> psiClass.containingFile?.virtualFile }
+                // Not toNioPath(): it throws for an in-memory file, whose file system still counts as local.
+                .mapNotNull { file -> file.fileSystem.getNioPath(file) }
+        }
+        val files = targets.files.normalized().filter { it.isNotEmpty() }
+            .mapNotNull { (fileTargetPath(it) as? FileTargetPath.Resolved)?.path }
+        return (classFiles + files).distinct()
+    }
+
     private suspend fun resolveClass(input: String): Outcome {
         if (input.isEmpty()) return blank(TargetKind.CLASS)
         return read {
@@ -89,16 +113,13 @@ internal class ExportTargetResolver(private val project: Project) {
 
     private suspend fun resolveMethod(input: String): Outcome {
         if (input.isEmpty()) return blank(TargetKind.METHOD)
-        val parts = input.split('#').map { it.trim() }
-        if (parts.size != 2 || parts.any { it.isEmpty() }) {
-            return Outcome.Rejected(
+        val (className, methodName) = splitMethod(input)
+            ?: return Outcome.Rejected(
                 TargetFailure.Malformed(
                     TargetKind.METHOD, input,
                     "expected ClassName#methodName, e.g. com.example.web.UserController#getUser"
                 )
             )
-        }
-        val (className, methodName) = parts
         if ('(' in methodName) {
             // Typically a signature from a previous result's `resolved`, passed back as a target.
             return Outcome.Rejected(
@@ -130,24 +151,16 @@ internal class ExportTargetResolver(private val project: Project) {
 
     private suspend fun resolveFile(input: String): Outcome {
         if (input.isEmpty()) return blank(TargetKind.FILE)
-        val basePath = project.basePath
-            ?: return malformedFile(input, "the project has no base directory to resolve relative paths against")
-        val path = try {
-            val base = Path.of(basePath).normalize()
-            base.resolve(input).normalize().takeIf { it.startsWith(base) }
-                ?: return malformedFile(input, "the path is outside the project; use a path relative to the project root")
-        } catch (e: InvalidPathException) {
-            return malformedFile(input, "not a valid path (${e.reason})")
+        val path = when (val located = fileTargetPath(input)) {
+            is FileTargetPath.Resolved -> located.path
+            is FileTargetPath.Malformed -> return malformedFile(input, located.reason)
         }
         return read {
-            // No VFS refresh: a synchronous refresh off the EDT may wait for it. A file created outside
-            // the IDE becomes visible once the IDE syncs, like a new class becomes visible once indexed.
+            // Look up only, no VFS refresh: ExternalChangeSync has synced the target files from disk
+            // before resolution.
             val file = LocalFileSystem.getInstance().findFileByNioFile(path)
                 ?: return@read Outcome.Rejected(
-                    TargetFailure.NotFound(
-                        TargetKind.FILE, input,
-                        "no such file under the project root; a file created outside the IDE may need a moment to sync"
-                    )
+                    TargetFailure.NotFound(TargetKind.FILE, input, "no such file under the project root")
                 )
             if (file.isDirectory) {
                 return@read malformedFile(input, "the path is a directory; pass source files")
@@ -158,6 +171,28 @@ internal class ExportTargetResolver(private val project: Project) {
                 return@read Outcome.Rejected(TargetFailure.NoClass(input))
             }
             Outcome.Found(ResolvedTarget(TargetKind.FILE, input, classes.toList(), classes.mapNotNull { it.qualifiedName }))
+        }
+    }
+
+    /** `ClassName#methodName` split at the `#`, both parts trimmed; `null` unless both are there. */
+    private fun splitMethod(input: String): Pair<String, String>? =
+        input.split('#').map { it.trim() }
+            .takeIf { parts -> parts.size == 2 && parts.none { it.isEmpty() } }
+            ?.let { (className, methodName) -> className to methodName }
+
+    /**
+     * File target [input] resolved against the project root: a path that may not exist yet, or why
+     * [input] cannot name a file under the root.
+     */
+    private fun fileTargetPath(input: String): FileTargetPath {
+        val basePath = project.basePath
+            ?: return FileTargetPath.Malformed("the project has no base directory to resolve relative paths against")
+        return try {
+            val base = Path.of(basePath).normalize()
+            base.resolve(input).normalize().takeIf { it.startsWith(base) }?.let { FileTargetPath.Resolved(it) }
+                ?: FileTargetPath.Malformed("the path is outside the project; use a path relative to the project root")
+        } catch (e: InvalidPathException) {
+            FileTargetPath.Malformed("not a valid path (${e.reason})")
         }
     }
 
@@ -189,7 +224,8 @@ internal class ExportTargetResolver(private val project: Project) {
         if (matches.size == 1) return null
         if (matches.isEmpty()) {
             return TargetFailure.NotFound(
-                kind, input, "no class '$name' found in project sources (libraries and the JDK are not searched)"
+                kind, input, "no class '$name' found in project sources (libraries and the JDK are not searched); " +
+                    "for a class just created outside the IDE, pass its file in `files`"
             )
         }
         val fqns = matches.mapNotNull { it.qualifiedName }.distinct().sorted()
@@ -231,6 +267,12 @@ internal class ExportTargetResolver(private val project: Project) {
     private sealed interface Outcome {
         class Found(val target: ResolvedTarget) : Outcome
         class Rejected(val failure: TargetFailure) : Outcome
+    }
+
+    /** Where a file target points: [Resolved], or [Malformed] with the reason. */
+    private sealed interface FileTargetPath {
+        class Resolved(val path: Path) : FileTargetPath
+        class Malformed(val reason: String) : FileTargetPath
     }
 }
 
