@@ -121,17 +121,15 @@ class EasyApiMcpToolset : McpToolset, IdeaLog {
                 "otherwise nothing is scanned. A target that resolves but yields no endpoint (a request or " +
                 "response model, a service, an unmapped method) is reported in skipped while the others are " +
                 "listed; if no target yields an endpoint, the call fails.\n" +
-                "Files created or changed outside the IDE are seen only after the IDE syncs them from disk, so a " +
-                "call right after such an edit may show old content or report a new class or method as not " +
-                "found (TARGETS_UNRESOLVED); call again shortly.\n" +
+                "Files created or changed outside the IDE are synced from disk before the targets resolve.\n" +
                 "Result: {project: {name, basePath}, targets: [{kind, input, resolved}], " +
                 "skipped: [{kind, input, reason}], count, " +
                 "endpoints: [{protocol, httpMethod, path, name, folder, className, methodName, module}]}. " +
                 "Fields without a value are omitted.\n" +
                 "On failure the result is {error: {code, message, ...}} instead, where code is one of " +
                 "TARGETS_REQUIRED, TARGETS_UNRESOLVED (with failures), NO_ENDPOINTS (with skipped), " +
-                "TARGETS_CHANGED, INDEX_NOT_READY, PROJECT_NOT_FOUND or PROJECT_AMBIGUOUS (with openProjects), " +
-                "INTERNAL_ERROR."
+                "TARGETS_CHANGED, INDEX_NOT_READY, UNSAVED_IN_IDE (with files), SYNC_TIMEOUT, " +
+                "PROJECT_NOT_FOUND or PROJECT_AMBIGUOUS (with openProjects), INTERNAL_ERROR."
 
         private const val CLASSES_DESCRIPTION =
             "Classes to scan: fully qualified names (com.example.web.UserController) or simple names " +

@@ -9,6 +9,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.testFramework.DumbModeTestUtils
 import com.intellij.testFramework.IndexingTestUtil
 import com.intellij.testFramework.registerServiceInstance
+import com.intellij.testFramework.replaceService
 import com.intellij.util.ThrowableRunnable
 import com.itangcent.easyapi.core.cache.api.ApiIndex
 import com.itangcent.easyapi.core.dashboard.ApiScanner
@@ -30,21 +31,27 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doSuspendableAnswer
 import org.mockito.kotlin.mock
 import java.io.File
+import java.nio.file.Path
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Tests for [TargetedExportService]: a call without targets, the scan of each target kind, mixing
- * classes with methods, de-duplication, rejection, targets without endpoints (skipped, or the whole
- * call failing when none has one), and that a call never reads the project-wide index — not even when
- * a target changes or indexing starts while the call runs.
+ * Tests for [TargetedExportService]: a call without targets, the sync of files changed outside the IDE
+ * that comes before resolution, the scan of each target kind, mixing classes with methods,
+ * de-duplication, rejection, targets without endpoints (skipped, or the whole call failing when none
+ * has one), and that a call never reads the project-wide index — not even when a target changes or
+ * indexing starts while the call runs.
  *
  * Every test starts from a fresh, never-scanned [ApiIndex]; [tearDown] puts the original back so
  * the light project shared with later test classes keeps its own instance. Tests that replace the
- * scanner do the same through [withScanner].
+ * scanner do the same through [withScanner]. The sync is a [FakeExternalChangeSync] ([useSync]): the
+ * platform's needs the EDT, which this test holds while it waits for the call.
  */
 class TargetedExportServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private var originalIndex: ApiIndex? = null
+
+    /** The sync the service calls; [setUp] installs one that reports success. */
+    private lateinit var sync: FakeExternalChangeSync
 
     override fun createConfigReader() = TestConfigReader.empty(project)
 
@@ -69,6 +76,7 @@ class TargetedExportServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         originalIndex = ApiIndex.getInstance(project)
         project.registerServiceInstance(ApiIndex::class.java, ApiIndex())
+        useSync(FakeExternalChangeSync())
     }
 
     override fun tearDown() {
@@ -91,6 +99,93 @@ class TargetedExportServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
             EndpointScanResult.TargetsRequired,
             scan(ExportTargets(classes = emptyList(), methods = emptyList(), files = emptyList()))
         )
+        assertTrue("rejected before the sync: ${sync.requests}", sync.requests.isEmpty())
+    }
+
+    // ---- files changed outside the IDE are synced before the targets resolve ----
+
+    /** Unsaved editor changes stop the call before anything is scanned; the files come back as reported. */
+    fun testUnsavedChangesInTheIdeStopTheCall() {
+        val files = listOf("src/main/java/com/itangcent/api/UserCtrl.java", "C:/outside/Dto.java")
+        useSync(FakeExternalChangeSync(SyncOutcome.UnsavedInIde(files)))
+        var scans = 0
+
+        val result = withScanner({ _, _ -> scans++; emptyList() }) { scan(ExportTargets(classes = listOf(USER_CTRL))) }
+
+        assertEquals("the files, as the sync reported them", EndpointScanResult.UnsavedInIde(files), result)
+        assertEquals("nothing scanned", 0, scans)
+    }
+
+    /**
+     * A sync that timed out stops the call before the targets resolve: one target here does not
+     * resolve, yet the call reports the timeout.
+     */
+    fun testSyncTimeoutStopsTheCallBeforeResolution() {
+        useSync(FakeExternalChangeSync(SyncOutcome.TimedOut))
+        var scans = 0
+
+        val result = withScanner({ _, _ -> scans++; emptyList() }) {
+            scan(ExportTargets(classes = listOf(USER_CTRL, "NoSuchCtrl")))
+        }
+
+        assertEquals("the timeout, not the unresolved target", EndpointScanResult.SyncTimeout, result)
+        assertEquals("nothing scanned", 0, scans)
+    }
+
+    /**
+     * One sync per call, with the file targets resolved against the project root. The fixture's classes
+     * live in memory, so the class and method targets add no file; that mapping is covered end to end.
+     */
+    fun testSyncRunsOnceWithTheFileTargetPaths() {
+        try {
+            writeScratchFiles("FileCtrl.java" to FILE_CTRL_SOURCE)
+
+            val listing = scanned(
+                scan(
+                    ExportTargets(
+                        classes = listOf(USER_CTRL),
+                        methods = listOf("$ORDER_CTRL#list"),
+                        files = listOf("$FILE_SCRATCH/FileCtrl.java")
+                    )
+                )
+            )
+
+            assertEquals(
+                "one sync, with the file target's absolute path",
+                listOf(listOf(Path.of(project.basePath!!, FILE_SCRATCH, "FileCtrl.java").normalize())),
+                sync.requests
+            )
+            assertEquals(
+                "every target resolved and was scanned as usual",
+                listOf(USER_CTRL, "$ORDER_CTRL#list", "$FILE_SCRATCH/FileCtrl.java"),
+                listing.targets.map { it.input }
+            )
+            assertTrue("nothing skipped: ${listing.skipped}", listing.skipped.isEmpty())
+        } finally {
+            deleteScratchFiles()
+        }
+    }
+
+    /**
+     * The sync comes before resolution: a file that only the sync brings in (here the fake writes it)
+     * resolves and is scanned in the same call. Resolved before the sync, it would not be found.
+     */
+    fun testFileTheSyncBringsInIsResolvedInTheSameCall() {
+        val target = "$FILE_SCRATCH/FileCtrl.java"
+        useSync(FakeExternalChangeSync(onSync = { writeScratchFiles("FileCtrl.java" to FILE_CTRL_SOURCE) }))
+        try {
+            assertNull(
+                "precondition: the IDE does not know the file before the call",
+                LocalFileSystem.getInstance().findFileByIoFile(File(project.basePath!!, target))
+            )
+
+            val listing = scanned(scan(ExportTargets(files = listOf(target))))
+
+            assertEquals("resolved", listOf("com.itangcent.api.file.FileCtrl"), listing.targets.single().resolved)
+            assertEquals("paths", listOf("/file/ping"), listing.endpoints.map { it.path })
+        } finally {
+            deleteScratchFiles()
+        }
     }
 
     // ---- targets: scan now ----
@@ -504,6 +599,12 @@ class TargetedExportServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private fun scan(targets: ExportTargets): EndpointScanResult =
         runBlocking { TargetedExportService.getInstance(project).scanEndpoints(targets) }
+
+    /** Makes [fake] the project's sync until the test ends. */
+    private fun useSync(fake: FakeExternalChangeSync) {
+        sync = fake
+        project.replaceService(ExternalChangeSync::class.java, fake, testRootDisposable)
+    }
 
     private fun scanned(result: EndpointScanResult): ScanReport {
         assertTrue("expected Scanned, got $result", result is EndpointScanResult.Scanned)

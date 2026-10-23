@@ -115,5 +115,29 @@ class McpToolErrorTest {
         assertFalse("no failures: every target resolved", error.has("failures"))
     }
 
+    @Test
+    fun testUnsavedChangesMapToUnsavedInIdeWithTheFiles() {
+        val failure = EndpointScanResult.UnsavedInIde(
+            listOf("src/main/java/com/x/UserCtrl.java", "C:/work/lib/Dto.java")
+        )
+
+        val error = errorOf(McpToolError.of(failure, project).toJson())
+
+        assertEquals("code", "UNSAVED_IN_IDE", error.get("code").asString)
+        assertEquals("message", failure.message, error.get("message").asString)
+        assertEquals("project", "demo", error.getAsJsonObject("project").get("name").asString)
+        assertEquals("files, as given", failure.files, error.getAsJsonArray("files").map { it.asString })
+    }
+
+    @Test
+    fun testSyncTimeoutMapsToSyncTimeout() {
+        val error = errorOf(McpToolError.of(EndpointScanResult.SyncTimeout, project).toJson())
+
+        assertEquals("code", "SYNC_TIMEOUT", error.get("code").asString)
+        assertEquals("message", EndpointScanResult.SyncTimeout.message, error.get("message").asString)
+        assertEquals("project", "demo", error.getAsJsonObject("project").get("name").asString)
+        assertFalse("files only for unsaved changes: $error", error.has("files"))
+    }
+
     private fun errorOf(json: String): JsonObject = JsonParser.parseString(json).asJsonObject.getAsJsonObject("error")
 }

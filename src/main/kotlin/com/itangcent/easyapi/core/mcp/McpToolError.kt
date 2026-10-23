@@ -14,10 +14,12 @@ import com.itangcent.easyapi.core.export.TargetFailure
  * @param code one of the constants below — stable, for the caller to branch on
  * @param message what went wrong and what to do about it, in English
  * @param project the project the call was resolved to, for the failures that come after that:
- *   [TARGETS_REQUIRED], [TARGETS_UNRESOLVED], [NO_ENDPOINTS], [TARGETS_CHANGED] and [INDEX_NOT_READY];
- *   [INTERNAL_ERROR] leaves it out
+ *   [TARGETS_REQUIRED], [TARGETS_UNRESOLVED], [NO_ENDPOINTS], [TARGETS_CHANGED], [INDEX_NOT_READY],
+ *   [UNSAVED_IN_IDE] and [SYNC_TIMEOUT]; [INTERNAL_ERROR] leaves it out
  * @param failures for [TARGETS_UNRESOLVED]: every target that did not resolve
  * @param skipped for [NO_ENDPOINTS]: every target, none of which yields an endpoint
+ * @param files for [UNSAVED_IN_IDE]: the files with unsaved changes, relative to the project root (a file
+ *   outside it keeps its full path)
  * @param openProjects for [PROJECT_NOT_FOUND] and [PROJECT_AMBIGUOUS]: the roots of the open projects
  */
 internal data class McpToolError(
@@ -26,6 +28,7 @@ internal data class McpToolError(
     val project: ProjectSummary? = null,
     val failures: List<FailureSummary>? = null,
     val skipped: List<SkippedTarget>? = null,
+    val files: List<String>? = null,
     val openProjects: List<String>? = null
 ) {
     /** Compact JSON, null fields omitted: `{"error":{…}}`. */
@@ -52,6 +55,8 @@ internal data class McpToolError(
         const val NO_ENDPOINTS = "NO_ENDPOINTS"
         const val TARGETS_CHANGED = "TARGETS_CHANGED"
         const val INDEX_NOT_READY = "INDEX_NOT_READY"
+        const val UNSAVED_IN_IDE = "UNSAVED_IN_IDE"
+        const val SYNC_TIMEOUT = "SYNC_TIMEOUT"
         const val PROJECT_NOT_FOUND = "PROJECT_NOT_FOUND"
         const val PROJECT_AMBIGUOUS = "PROJECT_AMBIGUOUS"
         const val INTERNAL_ERROR = "INTERNAL_ERROR"
@@ -76,6 +81,11 @@ internal data class McpToolError(
 
             EndpointScanResult.TargetsChanged -> McpToolError(TARGETS_CHANGED, failure.message, project)
             EndpointScanResult.IndexNotReady -> McpToolError(INDEX_NOT_READY, failure.message, project)
+            is EndpointScanResult.UnsavedInIde -> McpToolError(
+                UNSAVED_IN_IDE, failure.message, project, files = failure.files
+            )
+
+            EndpointScanResult.SyncTimeout -> McpToolError(SYNC_TIMEOUT, failure.message, project)
         }
     }
 }

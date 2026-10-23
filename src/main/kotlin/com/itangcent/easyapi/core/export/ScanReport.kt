@@ -49,6 +49,29 @@ sealed class EndpointScanResult {
             get() = "A target was edited, moved or deleted while it was being scanned, so the result was " +
                 "discarded; retry the call."
     }
+
+    /**
+     * Files have unsaved changes in the IDE that may not match the disk ([SyncOutcome.UnsavedInIde]), so
+     * nothing was synced or scanned.
+     *
+     * @param files relative to the project root; a file outside it keeps its full path
+     */
+    data class UnsavedInIde(val files: List<String>) : Failure() {
+        override val message: String
+            get() = "These files have unsaved changes in the IDE that may not match the files on disk, so it is " +
+                "unclear which version to use; nothing was scanned. Ask the user to save them in " +
+                "the IDE, or to drop the editor changes with File | Reload from Disk, then retry: " +
+                files.joinToString(", ")
+    }
+
+    /** The IDE did not load the files changed outside it in time ([SyncOutcome.TimedOut]); nothing was scanned. */
+    data object SyncTimeout : Failure() {
+        override val message: String
+            get() = "The IDE did not finish loading the files changed outside it within " +
+                "${ExternalChangeSync.SYNC_TIMEOUT.inWholeSeconds} seconds, so nothing was scanned. " +
+                "Retry the call. If it times out again, ask the user to close any modal dialog open in the IDE, " +
+                "such as Settings, and retry a little later."
+    }
 }
 
 /**
