@@ -15,6 +15,7 @@
     <depends optional="true" config-file="easy-api-groovy.xml">org.intellij.groovy</depends>
     <depends optional="true" config-file="easy-api-maven.xml">org.jetbrains.idea.maven</depends>
     <depends optional="true" config-file="easy-api-gradle.xml">org.jetbrains.plugins.gradle</depends>
+    <depends optional="true" config-file="easy-api-mcp.xml">com.intellij.mcpServer</depends>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <supportsKotlinPluginMode supportsK2="true"/>

@@ -82,6 +82,15 @@ API Explorer 的搜索框使用同一套规则。
 右键点击类 → **EasyApi → To…**（JSON / JSON5 / Properties / YAML 等）。各格式的语义与取舍见
 [README.md §Field Conversion](README.md#field-conversion)。
 
+### 从 MCP 客户端调用
+
+打开 IDE 自带的 MCP Server（IntelliJ IDEA 2025.2+）后，连接到它的外部 AI 助手可以对指定的类、方法或源文件
+调用 EasyYapi：
+
+- `easyapi_scan_endpoints` —— 列出这些目标会导出哪些接口，只读
+
+配置与限制见 [usage-guide §Using EasyYapi from an MCP Client](docs/knowledge-base/usage-guide.md#using-easyyapi-from-an-mcp-client)。
+
 ## 编写规则
 
 EasyApi 开箱即用即可理解标准 HTTP 框架（Spring MVC、WebFlux、JAX-RS、Feign）——

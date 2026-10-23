@@ -1,0 +1,125 @@
+{
+  "targets": [
+    {
+      "kind": "class",
+      "input": "com.itangcent.api.UserCtrl",
+      "resolved": [
+        "com.itangcent.api.UserCtrl"
+      ]
+    }
+  ],
+  "skipped": [],
+  "count": 11,
+  "endpoints": [
+    {
+      "protocol": "HTTP",
+      "httpMethod": "GET",
+      "path": "/user/greeting",
+      "name": "say hello",
+      "folder": "apis about user",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "greeting",
+      "module": "light_idea_test_case"
+    },
+    {
+      "protocol": "HTTP",
+      "httpMethod": "GET",
+      "path": "/user/get/{id}",
+      "name": "get user info",
+      "folder": "apis about user",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "get",
+      "module": "light_idea_test_case"
+    },
+    {
+      "protocol": "HTTP",
+      "httpMethod": "POST",
+      "path": "/user/add",
+      "name": "create an user",
+      "folder": "apis about user",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "create",
+      "module": "light_idea_test_case"
+    },
+    {
+      "protocol": "HTTP",
+      "httpMethod": "POST",
+      "path": "/user/admin/add",
+      "name": "create an user",
+      "folder": "apis about user",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "create",
+      "module": "light_idea_test_case"
+    },
+    {
+      "protocol": "HTTP",
+      "httpMethod": "PUT",
+      "path": "/user/update",
+      "name": "update user info",
+      "folder": "apis about user",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "update",
+      "module": "light_idea_test_case"
+    },
+    {
+      "protocol": "HTTP",
+      "httpMethod": "GET",
+      "path": "/user/by-cookie",
+      "name": "get user by cookie",
+      "folder": "apis about user",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "getByCookie",
+      "module": "light_idea_test_case"
+    },
+    {
+      "protocol": "HTTP",
+      "httpMethod": "GET",
+      "path": "/user/from-session",
+      "name": "get from session",
+      "folder": "apis about user",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "getFromSession",
+      "module": "light_idea_test_case"
+    },
+    {
+      "protocol": "HTTP",
+      "httpMethod": "POST",
+      "path": "/user/update-with-body",
+      "name": "update user with request body",
+      "folder": "apis about user",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "updateWithBody",
+      "module": "light_idea_test_case"
+    },
+    {
+      "protocol": "HTTP",
+      "httpMethod": "GET",
+      "path": "/user/simple",
+      "name": "simple request without body",
+      "folder": "apis about user",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "simpleRequest",
+      "module": "light_idea_test_case"
+    },
+    {
+      "protocol": "HTTP",
+      "httpMethod": "GET",
+      "path": "/user/explicit-get-with-body",
+      "name": "explicit GET with request body",
+      "folder": "apis about user",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "explicitGetWithBody",
+      "module": "light_idea_test_case"
+    },
+    {
+      "protocol": "HTTP",
+      "httpMethod": "POST",
+      "path": "/user/update-with-model",
+      "name": "update with model attribute",
+      "folder": "apis about user",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "updateWithModel",
+      "module": "light_idea_test_case"
+    }
+  ]
+}

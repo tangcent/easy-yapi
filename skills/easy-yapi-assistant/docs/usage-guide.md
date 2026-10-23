@@ -1,6 +1,6 @@
 # EasyYapi Usage Guide
 
-This guide walks through the most common EasyYapi workflows — installation, first export, the API Explorer, search, field conversion, pre/post scripts, and AI-assisted rule creation.
+This guide walks through the most common EasyYapi workflows — installation, first export, the API Explorer, search, field conversion, pre/post scripts, AI-assisted rule creation, and calling EasyYapi from an MCP client.
 
 > For the full rule key catalog and filter syntax, see the [Rule Authoring Guide](rule-guide.md). For settings reference, see the [Settings Guide](settings-guide.md). For Postman-compatible Groovy scripting, see the [Postman Script Reference](postman-script-reference.md).
 
@@ -15,6 +15,7 @@ This guide walks through the most common EasyYapi workflows — installation, fi
 5. [Field Conversion](#field-conversion)
 6. [Pre/Post Scripts](#prepost-scripts)
 7. [AI-assisted Rule Creation](#ai-assisted-rule-creation)
+8. [Using EasyYapi from an MCP Client](#using-easyyapi-from-an-mcp-client)
 
 ---
 
@@ -185,3 +186,44 @@ EasyYapi 3.0 includes an AI assistant that can author rules for you in natural l
 The assistant **never writes files without your explicit approval** — every action tool requires an Approve click.
 
 For the full rule key catalog, see the [Rule Authoring Guide](rule-guide.md).
+
+---
+
+## Using EasyYapi from an MCP Client
+
+IntelliJ IDEA 2025.2 and later ship a built-in MCP (Model Context Protocol) server. When it is turned on, EasyYapi adds a tool to it for an external agent connected to the IDE: `easyapi_scan_endpoints` reports the endpoints EasyYapi would export for the classes, methods or source files the agent names. It is read-only: it never exports or changes anything.
+
+Unlike the built-in AI assistant ([AI-assisted Rule Creation](#ai-assisted-rule-creation)), which works inside the IDE and writes rules for you, the tool lets an external agent drive the running EasyYapi. It describes its parameters, its result and its error codes to the client; this section covers the workflow around it.
+
+### Setup
+
+1. IntelliJ IDEA 2025.2 or later, with the bundled **MCP Server** plugin enabled.
+2. Turn the server on in **Settings → Tools → MCP Server**, then connect your client as described in the [IntelliJ IDEA MCP Server documentation](https://www.jetbrains.com/help/idea/mcp-server.html).
+3. If that page lists the tools it exposes, make sure `easyapi_scan_endpoints` is enabled.
+
+### Scanning endpoints
+
+The agent names the targets in `classes`, `methods` (`ClassName#methodName`) or `files` (paths relative to the project root), and the project in `projectPath` (see [Choosing the project](#choosing-the-project)). Only the targets are scanned, with the same scanner and rules as a normal export, and every target must resolve, or nothing is scanned. A target without endpoints — a request or response model, a service, an unmapped method, or a class whose export failed (see `idea.log`) — is listed in `skipped` with the reason; if you changed a model or a service, pass the controllers or methods that use it.
+
+### Files changed outside the IDE
+
+The tool scans what the IDE has loaded. A file changed outside the IDE, for example by the agent's own file tools, is scanned with its old content until the IDE syncs the change from disk, which it does on its own schedule; a class, method or file added outside the IDE is not found until then. So a call made right after such an edit may report the old endpoints, or fail with `TARGETS_UNRESOLVED` for a new class or method; call again once the IDE has picked up the change.
+
+### Errors
+
+A call that fails returns `{"error": {"code": …, "message": …}}` instead of its result; the message says what to do.
+
+| `code` | Meaning |
+|--------|---------|
+| `TARGETS_REQUIRED` | No target was given. |
+| `TARGETS_UNRESOLVED` | A target did not resolve; `failures` lists each one. |
+| `NO_ENDPOINTS` | No target yields an endpoint; `skipped` says why. |
+| `TARGETS_CHANGED` | A target changed during the scan. Retry. |
+| `INDEX_NOT_READY` | The IDE is indexing. Retry when it is done. |
+| `PROJECT_AMBIGUOUS` | Several projects are open and `projectPath` was not passed. |
+| `PROJECT_NOT_FOUND` | No open project contains `projectPath`. |
+| `INTERNAL_ERROR` | Something unexpected failed; see `idea.log`. |
+
+### Choosing the project
+
+Pass `projectPath` on every call: the absolute path of the project's root or of anything inside it, such as the agent's working directory. The innermost open project that contains it answers, and `project` in every successful result names it. Without `projectPath`, a call fails with `PROJECT_AMBIGUOUS` when several projects are open (a project named only in a request header or in `_meta` does not count); with one open, IntelliJ IDEA 2025.2 accepts it. Newer IDE versions (2026.2, for example) check the project before the tool runs, and reject a call they cannot place with their own error text, not an `{"error": …}` result.
