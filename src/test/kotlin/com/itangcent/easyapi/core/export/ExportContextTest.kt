@@ -107,6 +107,35 @@ class ExportContextTest {
         assertEquals(ChannelConfig.Empty, context.channelConfig)
     }
 
+    @Test
+    fun testInteractiveAndUnobservedByDefault() {
+        val context = ExportContext(
+            project = mockProject(),
+            endpoints = emptyList()
+        )
+        assertFalse("interactive unless the caller says otherwise", context.headless)
+        assertNull("nobody listens unless the caller asks", context.itemListener)
+    }
+
+    @Test
+    fun testCopiesKeepHeadlessAndItemListener() {
+        val listener = ExportItemListener { }
+        val context = ExportContext(
+            project = mockProject(),
+            endpoints = emptyList(),
+            headless = true,
+            itemListener = listener
+        )
+
+        val withChannel = context.withChannel("yapi")
+        val withSelection = context.withSelectedEndpoints(emptyList())
+
+        assertTrue("withChannel keeps headless", withChannel.headless)
+        assertSame("withChannel keeps the listener", listener, withChannel.itemListener)
+        assertTrue("withSelectedEndpoints keeps headless", withSelection.headless)
+        assertSame("withSelectedEndpoints keeps the listener", listener, withSelection.itemListener)
+    }
+
     private fun mockProject(): com.intellij.openapi.project.Project {
         return org.mockito.Mockito.mock(com.intellij.openapi.project.Project::class.java)
     }

@@ -215,6 +215,16 @@ class ChannelTest {
         }
     }
 
+    // --- Headless export: a channel that does not opt in ---
+
+    @Test
+    fun testHeadlessExportIsOptIn() {
+        val channel = TestChannel()
+        assertFalse("a channel cannot export headless unless it says so", channel.supportsHeadless)
+        assertEquals("no options to accept", emptyList<ChannelOption>(), channel.exportOptions())
+        assertSame("options build the empty config", ChannelConfig.Empty, channel.buildConfig(mapOf("x" to "y")))
+    }
+
     @Test
     fun testActionChannelProperties() {
         val channel = ActionChannel()

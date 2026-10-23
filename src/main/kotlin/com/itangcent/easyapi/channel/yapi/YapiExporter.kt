@@ -30,12 +30,16 @@ class YapiExporter(private val project: Project) : IdeaLog {
 
     suspend fun export(context: ExportContext, selectedToken: String? = null): ExportResult {
         LOG.info("YapiExporter.export: start. endpoints=${context.endpointsToExport.size}")
-        val clientProvider = DefaultYapiApiClientProvider(project)
+        val clientProvider = DefaultYapiApiClientProvider(project, headless = context.headless)
         runCatching { clientProvider.init() }
             .onFailure {
                 LOG.warn("YapiExporter.export: clientProvider.init failed", it)
                 return ExportResult.Error(it.message ?: "Export failed: $it")
             }
+        if (context.headless && selectedToken != null) {
+            // Every endpoint goes to the passed token's project: check it once instead of failing each endpoint.
+            clientProvider.checkPassedToken(selectedToken)?.let { return ExportResult.Error(it) }
+        }
 
         val yapiSettings = project.settings<YapiSettings>()
         val serverUrl = clientProvider.serverUrl
@@ -64,6 +68,7 @@ class YapiExporter(private val project: Project) : IdeaLog {
             .getOrDefault(YapiExportMode.ALWAYS_UPDATE)
 
         val updateConfirmationCache = mutableMapOf<YapiApiClient, UpdateConfirmation>()
+        val items = context.itemListener?.let { YapiExportItems(it, console, serverUrl, exportMode) }
 
         for (rawEndpoint in context.endpointsToExport) {
             // Attach YApi-specific endpoint metadata (tags/status/open) to the
@@ -73,6 +78,7 @@ class YapiExporter(private val project: Project) : IdeaLog {
             indicator?.text = endpoint.name ?: endpoint.path
             indicator?.fraction = processedCount.toDouble() / totalEndpoints
 
+            val item = items?.item(rawEndpoint)
             try {
                 val yapiProject = read {
                     val psiMethod = endpoint.sourceMethod
@@ -83,6 +89,7 @@ class YapiExporter(private val project: Project) : IdeaLog {
                         ?: psiClass?.let { ModuleHelper.resolveModule(it)?.name }
                         ?: project.name
                 }
+                item?.destination = yapiProject.takeIf { selectedToken == null }
 
                 val client = clientProvider.getYapiApiClient(
                     module = yapiProject,
@@ -90,9 +97,11 @@ class YapiExporter(private val project: Project) : IdeaLog {
                 )
                 if (client == null) {
                     failCount++
-                    val msg = "${endpoint.name}: No valid token for module '$yapiProject'"
+                    val reason = clientProvider.unavailableReason(yapiProject)
+                    val msg = "${endpoint.name}: $reason"
                     errors.add(msg)
                     console.warn(msg)
+                    item?.failed(reason)
                     processedCount++
                     continue
                 }
@@ -104,10 +113,12 @@ class YapiExporter(private val project: Project) : IdeaLog {
                     failCount++
                     // Keep the folder as context, but the server's own reason — not the bare
                     // cart line — is what tells the user what to fix.
-                    val msg = "${endpoint.name}: Failed to resolve cart '$folderName'" +
+                    val reason = "Failed to resolve cart '$folderName'" +
                             (cartResult.errorMessage()?.let { ": $it" } ?: "")
+                    val msg = "${endpoint.name}: $reason"
                     errors.add(msg)
                     console.warn(msg)
+                    item?.failed(reason)
                     processedCount++
                     continue
                 }
@@ -123,9 +134,10 @@ class YapiExporter(private val project: Project) : IdeaLog {
                 }
 
                 val updateConfirmation = updateConfirmationCache.getOrPut(client) {
-                    DefaultUpdateConfirmation(project, exportMode, client)
+                    DefaultUpdateConfirmation(project, exportMode, client, headless = context.headless)
                 }
-                val result = client.uploadApi(yapiDoc, catId, updateConfirmation)
+                val confirmation = item?.beforeUpload(client, yapiDoc, folderName, catId, updateConfirmation)
+                val result = client.uploadApi(yapiDoc, catId, confirmation ?: updateConfirmation)
 
                 psiElement?.let {
                     engine.evaluate(YapiRuleKeys.YAPI_SAVE_AFTER, it) { ctx ->
@@ -155,11 +167,13 @@ class YapiExporter(private val project: Project) : IdeaLog {
                     errors.add(msg)
                     console.warn(msg)
                 }
+                item?.uploaded(result)
             } catch (e: Exception) {
                 failCount++
                 val msg = "${endpoint.name}: ${e.message}"
                 errors.add(msg)
                 console.warn("YapiExporter.export: endpoint failed", e)
+                item?.failed(e.message ?: e.javaClass.simpleName)
             }
             processedCount++
         }

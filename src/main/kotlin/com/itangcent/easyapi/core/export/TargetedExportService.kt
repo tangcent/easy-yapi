@@ -8,30 +8,36 @@ import com.intellij.openapi.project.IndexNotReadyException
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
+import com.itangcent.easyapi.channel.spi.ChannelRegistry
 import com.itangcent.easyapi.core.dashboard.ApiScanner
 import com.itangcent.easyapi.core.ide.DumbModeHelper
 import com.itangcent.easyapi.core.ide.support.SelectionScope
 import com.itangcent.easyapi.core.internal.threading.read
 import com.itangcent.easyapi.core.logging.IdeaLog
+import com.itangcent.easyapi.core.logging.console
 import com.itangcent.easyapi.core.psi.type.areMethodsRelated
 import com.itangcent.easyapi.core.util.ide.ModuleHelper
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import java.util.Collections
+import java.util.IdentityHashMap
 
 /**
- * Scans the endpoints of targets an external caller names by text ([ExportTargets]), with no UI.
+ * Scans or exports the endpoints of targets an external caller names by text ([ExportTargets]), with no UI.
  *
  * Named targets go through: wait for smart mode → [ExternalChangeSync] of the files they live in →
  * [ExportTargetResolver] → `ApiScanner.scanSelection` on exactly the resolved PSI, one target at a
- * time. A call never reads the project-wide index: one without targets is rejected, and a target is
- * never widened to the whole project.
+ * time; an export then hands the endpoints to a channel that can export headless. A call never reads
+ * the project-wide index: one without targets is rejected, and a target is never widened to the whole
+ * project.
  *
  * The callers are headless (the MCP toolset). The sync always waits for the EDT, up to
  * [ExternalChangeSync.SYNC_TIMEOUT]. The waits for smart mode depend on the EDT too, but only while the
  * IDE is indexing, when a callback on the EDT ends them: up to [DumbModeHelper.USER_ACTION_WAIT_TIMEOUT]
  * each before and after the sync, and up to [DumbModeHelper.DEFAULT_WAIT_TIMEOUT] inside the scanner.
- * Scans get their own progress indicator instead of a progress dialog, and nothing is notified.
+ * Scans and exports get their own progress indicator instead of a progress dialog; the only notification
+ * is the orchestrator's warning when rules fail during an export.
  */
 @Service(Service.Level.PROJECT)
 class TargetedExportService(private val project: Project) : IdeaLog {
@@ -61,6 +67,93 @@ class TargetedExportService(private val project: Project) : IdeaLog {
                     endpoints = summarize(prepared.endpoints)
                 )
             )
+        }
+    }
+
+    /**
+     * Exports the endpoints of [targets] through the channel [channelId] with no UI, and reports what the
+     * channel did with each one:
+     * 1. [targets] empty → [EndpointScanResult.TargetsRequired], as for [scanEndpoints];
+     * 2. the channel must exist, declare [com.itangcent.easyapi.channel.spi.Channel.supportsHeadless] and be
+     *    enabled, checked in that order;
+     * 3. [options] may only name options the channel accepts, each with a value ([ExportOptions]);
+     * 4. the targets are prepared exactly as for [scanEndpoints] ([prepare], sync included);
+     * 5. an endpoint of a protocol the channel does not support is kept back, reported as not written;
+     * 6. the others go to the channel through the orchestrator, headless, which report one result each.
+     *
+     * Steps 1 to 3 come before the sync: a wrong argument touches neither the IDE nor the network.
+     * Expected failures come back as [TargetedExportResult.Failed], not as exceptions; a cancelled call
+     * throws its cancellation, even when the channel swallowed it.
+     *
+     * @param options the channel options of this call, by name ([com.itangcent.easyapi.channel.spi.Channel.exportOptions])
+     * @requires Background context: not the EDT and no read action held (it waits for smart mode and the sync).
+     */
+    suspend fun export(
+        targets: ExportTargets,
+        channelId: String,
+        options: Map<String, String> = emptyMap()
+    ): TargetedExportResult {
+        if (targets.isEmpty()) return failed(EndpointScanResult.TargetsRequired)
+        val registry = ChannelRegistry.getInstance(project)
+        val channel = registry.getChannel(channelId)
+            ?: return failed(ExportRejection.ChannelNotFound(channelId, registry.getHeadlessChannels().map { it.id }))
+        // Support before the enabled state, as ExportOrchestrator.exportViaChannel checks them: a channel that
+        // can never export headless must not send the caller off to enable it.
+        if (!channel.supportsHeadless) {
+            return failed(ExportRejection.ChannelNotSupported(channelId, registry.getHeadlessChannels().map { it.id }))
+        }
+        if (!registry.isEnabled(channel)) return failed(ExportRejection.ChannelDisabled(channelId))
+        val accepted = channel.exportOptions()
+        val problems = ExportOptions.problems(options, accepted)
+        if (problems.isNotEmpty()) return failed(ExportRejection.OptionsInvalid(channelId, problems, accepted))
+        val config = channel.buildConfig(ExportOptions.trimmed(options))
+
+        val prepared = when (val preparation = prepare(targets)) {
+            is Preparation.Stopped -> return failed(preparation.failure)
+            is Preparation.Ready -> preparation
+        }
+        // What happened to each endpoint, matched by identity: a channel reports the very instances it is handed.
+        val results = IdentityHashMap<ApiEndpoint, ExportItemResult>()
+        // Neither the orchestrator nor a channel filters by protocol, so an endpoint the channel cannot take
+        // would be exported as something else: it is kept back.
+        val (exportable, unsupported) = prepared.endpoints.partition { channel.isAvailableFor(listOf(it)) }
+        for (endpoint in unsupported) {
+            project.console.info(
+                "Skipping ${endpoint.metadata.protocol} endpoint (channel '$channelId' does not export it): " +
+                    (endpoint.name ?: endpoint.path)
+            )
+            results[endpoint] = ExportItemResult(
+                endpoint, ExportItemStatus.NOT_WRITTEN,
+                reason = "channel '$channelId' does not export ${endpoint.metadata.protocol} endpoints"
+            )
+        }
+        if (exportable.isEmpty()) {
+            return exportFailed("Channel '$channelId' does not support the protocol of any of these endpoints.", prepared, results)
+        }
+
+        val collector = ExportItemCollector()
+        val result = ExportOrchestrator.getInstance(project).exportViaChannel(
+            channelId, exportable, config, EmptyProgressIndicator(), headless = true, itemListener = collector
+        )
+        // A channel may swallow cancellation (the YApi export goes on after any exception per endpoint): a
+        // cancelled call ends here instead of returning what the channel said.
+        currentCoroutineContext().ensureActive()
+        collector.results().forEach { results.putIfAbsent(it.endpoint, it) }
+        return when (result) {
+            is ExportResult.Success -> TargetedExportResult.Exported(
+                report(channelId, prepared, summarizeItems(prepared.endpoints.map { endpoint ->
+                    results[endpoint] ?: run {
+                        project.console.warn(
+                            "Listing endpoint as failed (channel '$channelId' reported no result for it): " +
+                                (endpoint.name ?: endpoint.path)
+                        )
+                        ExportItemResult(endpoint, ExportItemStatus.FAILED, reason = NO_RESULT)
+                    }
+                }))
+            )
+
+            is ExportResult.Error -> exportFailed(result.message, prepared, results)
+            ExportResult.Cancelled -> exportFailed("The channel cancelled the export.", prepared, results)
         }
     }
 
@@ -256,6 +349,65 @@ class TargetedExportService(private val project: Project) : IdeaLog {
         }
     }
 
+    private fun failed(failure: CallFailure): TargetedExportResult = TargetedExportResult.Failed(failure)
+
+    /**
+     * Nothing was written: the export fails for [reason], with what is known of each endpoint, in scan order.
+     *
+     * @requires Background context; reads PSI in a read action ([summarizeItems]).
+     */
+    private suspend fun exportFailed(
+        reason: String,
+        prepared: Preparation.Ready,
+        results: Map<ApiEndpoint, ExportItemResult>
+    ): TargetedExportResult = failed(
+        ExportRejection.ExportFailed(reason, summarizeItems(prepared.endpoints.mapNotNull { results[it] }))
+    )
+
+    /** The wire format of an export the channel went through: [items] counted by status, next to the targets. */
+    private fun report(channelId: String, prepared: Preparation.Ready, items: List<ExportItemSummary>): ExportReport {
+        fun count(status: ExportItemStatus) = items.count { it.status == status.wireName }
+        return ExportReport(
+            channel = channelId,
+            targets = prepared.targets.map { it.summary() },
+            skipped = prepared.skipped,
+            count = items.size,
+            created = count(ExportItemStatus.CREATED),
+            updated = count(ExportItemStatus.UPDATED),
+            notWritten = count(ExportItemStatus.NOT_WRITTEN),
+            failed = count(ExportItemStatus.FAILED),
+            items = items
+        )
+    }
+
+    /**
+     * Flattens what the channel did with each endpoint for the wire format: the fields as written, those the
+     * channel left out taken from the endpoint, and the endpoint's source class and method. The PSI may have
+     * changed since the scan, so every element is checked with `isValid` before it is read.
+     *
+     * @requires Background context; runs in one read action (reads in-memory PSI only).
+     */
+    private suspend fun summarizeItems(results: List<ExportItemResult>): List<ExportItemSummary> = read {
+        results.map { result ->
+            val endpoint = result.endpoint
+            ExportItemSummary(
+                status = result.status.wireName,
+                name = result.name ?: endpoint.name,
+                httpMethod = result.httpMethod ?: endpoint.httpMetadata?.method?.name,
+                path = result.path ?: endpoint.path,
+                folder = result.folder ?: endpoint.folder,
+                movedFrom = result.movedFrom,
+                destination = result.destination,
+                id = result.id,
+                url = result.url,
+                folderUrl = result.folderUrl,
+                reason = result.reason,
+                className = endpoint.sourceClassName(),
+                methodName = endpoint.sourceMethodName()
+            )
+        }
+    }
+
     /** One `scanSelection` call: the [elements] to select, and the [targets] they come from. */
     private class Scan(val targets: List<ResolvedTarget>, val elements: List<PsiElement>)
 
@@ -271,11 +423,30 @@ class TargetedExportService(private val project: Project) : IdeaLog {
             val skipped: List<SkippedTarget>
         ) : Preparation()
 
-        /** The call stops with [failure]. */
+        /** The call stops with [failure], which the scan and the export report alike. */
         class Stopped(val failure: EndpointScanResult.Failure) : Preparation()
     }
 
     companion object {
+        /** Why an endpoint the channel was handed, but said nothing about, is reported as failed. */
+        private const val NO_RESULT = "the channel reported no result for this endpoint"
+
         fun getInstance(project: Project): TargetedExportService = project.service()
     }
+}
+
+/**
+ * Collects what a channel reports per endpoint ([ExportContext.itemListener]). Thread-safe: the channel
+ * reports one item after another, possibly from different threads.
+ */
+internal class ExportItemCollector : ExportItemListener {
+
+    private val results: MutableList<ExportItemResult> = Collections.synchronizedList(mutableListOf())
+
+    override fun onItem(result: ExportItemResult) {
+        results += result
+    }
+
+    /** The results reported so far, in report order. */
+    fun results(): List<ExportItemResult> = synchronized(results) { results.toList() }
 }

@@ -26,7 +26,8 @@ import com.itangcent.easyapi.core.settings.read
  * enabled state (overlaying the stored user preference on [Channel.enabledByDefault]).
  * The enumeration query methods ([getAvailableChannels], [getActionChannels],
  * [channelsForSettings]) all filter by [isEnabled], so a disabled channel is
- * hidden from every consumer. The registry primitives [allChannels] and
+ * hidden from every consumer; [getHeadlessChannels] alone keeps disabled channels,
+ * for a caller to be told which one to enable. The registry primitives [allChannels] and
  * [getChannel] remain **unfiltered** (pure "what is registered" lookups) —
  * the export boundary ([com.itangcent.easyapi.core.export.ExportOrchestrator])
  * is the single place that refuses a disabled channel resolved by id.
@@ -113,6 +114,14 @@ class ChannelRegistry(private val project: Project) : IdeaLog {
     /** Returns channels that should be exposed as top-level IDE actions AND are enabled. */
     fun getActionChannels(): List<Channel> =
         allChannels().filter { it.exposeAsAction && isEnabled(it) }
+
+    /**
+     * Returns channels that can export with nobody to answer a dialog ([Channel.supportsHeadless]),
+     * enabled or not: unlike the other queries, it keeps the disabled ones, so a headless caller can be
+     * told which channel to ask the user to enable.
+     */
+    fun getHeadlessChannels(): List<Channel> =
+        allChannels().filter { it.supportsHeadless }
 
     /** Aggregated config-file names from all channels. */
     fun configFiles(): List<String> =

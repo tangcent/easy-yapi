@@ -19,6 +19,13 @@ import com.itangcent.easyapi.channel.spi.ChannelConfig
  * @property channelId the target channel ID (e.g. "markdown", "postman")
  * @property channelConfig channel-specific configuration
  * @property indicator optional progress indicator for reporting progress
+ * @property headless true when nobody can answer a dialog: an external caller such as an MCP client
+ *   started the export. The channel then shows no UI and never waits for the EDT; what a dialog would
+ *   ask comes from [channelConfig] or settings, and a missing value fails with a message saying how to
+ *   supply it. Only channels with [com.itangcent.easyapi.channel.spi.Channel.supportsHeadless] receive it
+ * @property itemListener receives one [ExportItemResult] per endpoint while the channel exports, except
+ *   from an export that fails as a whole (no server configured, a passed token that fails its check with
+ *   the server), which may report none and return [ExportResult.Error]; `null` when nobody asked
  */
 data class ExportContext(
     val project: Project,
@@ -27,7 +34,9 @@ data class ExportContext(
     val sourceClasses: List<PsiClass> = emptyList(),
     val channelId: String = "markdown",
     val channelConfig: ChannelConfig = ChannelConfig.Empty,
-    val indicator: ProgressIndicator? = null
+    val indicator: ProgressIndicator? = null,
+    val headless: Boolean = false,
+    val itemListener: ExportItemListener? = null
 ) {
     /** Whether the user has selected specific endpoints to export. */
     val hasSelection: Boolean

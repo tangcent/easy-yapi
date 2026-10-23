@@ -42,17 +42,20 @@ interface UpdateConfirmation {
  * Behavior varies based on [exportMode]:
  * - [YapiExportMode.ALWAYS_UPDATE]: Always returns true without checking for existing APIs
  * - [YapiExportMode.NEVER_UPDATE]: Returns true only if no existing API is found
- * - [YapiExportMode.ALWAYS_ASK]: Shows a dialog asking the user, with "Apply for all" option
+ * - [YapiExportMode.ALWAYS_ASK]: Shows a dialog asking the user, with "Apply for all" option;
+ *   with nobody to ask ([headless]), returns true without checking for existing APIs
  * - [YapiExportMode.UPDATE_IF_CHANGED]: Compares important fields and returns true only if changed
  *
  * @property project The IntelliJ project context, used for showing dialogs
  * @property exportMode The export mode determining the update strategy
  * @property apiClient The YAPI client used to check for existing APIs
+ * @property headless Nobody to ask: [YapiExportMode.ALWAYS_ASK] counts as yes
  */
 class DefaultUpdateConfirmation(
     private val project: Project?,
     private val exportMode: YapiExportMode,
-    private val apiClient: YapiApiClient
+    private val apiClient: YapiApiClient,
+    private val headless: Boolean = false
 ) : UpdateConfirmation {
 
     private var applyAllDecision: Boolean? = null
@@ -65,6 +68,7 @@ class DefaultUpdateConfirmation(
                 existing == null
             }
             YapiExportMode.ALWAYS_ASK -> {
+                if (headless) return true
                 applyAllDecision?.let { return it }
                 val existing = apiClient.findExistingApiInfo(catId, doc.path, doc.method)
                 if (existing == null) {

@@ -1,0 +1,97 @@
+{
+  "channel": "export-probe",
+  "targets": [
+    {
+      "kind": "class",
+      "input": "com.itangcent.api.OrderCtrl",
+      "resolved": [
+        "com.itangcent.api.OrderCtrl"
+      ]
+    },
+    {
+      "kind": "class",
+      "input": "com.itangcent.api.PlainHelper",
+      "resolved": [
+        "com.itangcent.api.PlainHelper"
+      ]
+    },
+    {
+      "kind": "method",
+      "input": "com.itangcent.api.UserCtrl#greeting",
+      "resolved": [
+        "com.itangcent.api.UserCtrl#greeting()"
+      ]
+    },
+    {
+      "kind": "method",
+      "input": "com.itangcent.api.UserCtrl#update",
+      "resolved": [
+        "com.itangcent.api.UserCtrl#update(UserInfo)"
+      ]
+    }
+  ],
+  "skipped": [
+    {
+      "kind": "class",
+      "input": "com.itangcent.api.PlainHelper",
+      "reason": "no endpoint in this class: it is not an API class (for example a request or response model, or a service), or rules ignore its endpoints, or exporting it failed (see idea.log). If you changed a model or a service, pass the controllers or methods that use it instead."
+    }
+  ],
+  "count": 4,
+  "created": 1,
+  "updated": 1,
+  "notWritten": 1,
+  "failed": 1,
+  "items": [
+    {
+      "status": "created",
+      "name": "list orders",
+      "httpMethod": "GET",
+      "path": "/order/list",
+      "folder": "apis about order",
+      "destination": "key-a",
+      "id": "201",
+      "url": "http://probe.test/items/201",
+      "folderUrl": "http://probe.test/folders/7",
+      "className": "com.itangcent.api.OrderCtrl",
+      "methodName": "list"
+    },
+    {
+      "status": "updated",
+      "name": "create an order",
+      "httpMethod": "POST",
+      "path": "/order/create",
+      "folder": "orders",
+      "movedFrom": "old orders",
+      "destination": "key-a",
+      "id": "202",
+      "url": "http://probe.test/items/202",
+      "folderUrl": "http://probe.test/folders/8",
+      "className": "com.itangcent.api.OrderCtrl",
+      "methodName": "create"
+    },
+    {
+      "status": "not_written",
+      "name": "say hello",
+      "httpMethod": "GET",
+      "path": "/user/greeting",
+      "folder": "apis about user",
+      "destination": "key-b",
+      "id": "203",
+      "reason": "an item with this path and method is kept",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "greeting"
+    },
+    {
+      "status": "failed",
+      "name": "update user info",
+      "httpMethod": "PUT",
+      "path": "/user/update",
+      "folder": "apis about user",
+      "destination": "key-b",
+      "reason": "the destination refused it",
+      "className": "com.itangcent.api.UserCtrl",
+      "methodName": "update"
+    }
+  ]
+}

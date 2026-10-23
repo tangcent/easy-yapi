@@ -16,7 +16,10 @@ import com.itangcent.easyapi.channel.yapi.YapiExportMode
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 /**
@@ -77,6 +80,70 @@ class DefaultUpdateConfirmationTest {
         val result = confirmation.confirm(doc, "cat1")
 
         assertFalse(result)
+    }
+
+    @Test
+    fun `ALWAYS_ASK interactive looks up the existing API and writes a new one without asking`() = runBlocking {
+        whenever(apiClient.findExistingApiInfo("cat1", "/api/users", "GET"))
+            .thenReturn(null)
+
+        val confirmation = DefaultUpdateConfirmation(
+            project = null,
+            exportMode = YapiExportMode.ALWAYS_ASK,
+            apiClient = apiClient
+        )
+
+        assertTrue("nothing to ask about", confirmation.confirm(testDoc(), "cat1"))
+        verify(apiClient).findExistingApiInfo("cat1", "/api/users", "GET")
+        Unit
+    }
+
+    @Test
+    fun `ALWAYS_ASK headless counts as yes without looking up the existing API`() = runBlocking {
+        // The interactive branch would find this API and ask; a headless export has nobody to ask.
+        whenever(apiClient.findExistingApiInfo("cat1", "/api/users", "GET"))
+            .thenReturn(ExistingApiInfo("existing-id", "Existing API"))
+
+        val confirmation = DefaultUpdateConfirmation(
+            project = null,
+            exportMode = YapiExportMode.ALWAYS_ASK,
+            apiClient = apiClient,
+            headless = true
+        )
+
+        assertTrue("asking counts as yes", confirmation.confirm(testDoc(), "cat1"))
+        verify(apiClient, never()).findExistingApiInfo(any(), any(), any())
+        Unit
+    }
+
+    @Test
+    fun `NEVER_UPDATE headless keeps an existing API as an interactive export does`() = runBlocking {
+        whenever(apiClient.findExistingApiInfo("cat1", "/api/users", "GET"))
+            .thenReturn(ExistingApiInfo("existing-id", "Existing API"))
+
+        val confirmation = DefaultUpdateConfirmation(
+            project = null,
+            exportMode = YapiExportMode.NEVER_UPDATE,
+            apiClient = apiClient,
+            headless = true
+        )
+
+        assertFalse(confirmation.confirm(testDoc(), "cat1"))
+    }
+
+    @Test
+    fun `NEVER_UPDATE headless writes a new API as an interactive export does`() = runBlocking {
+        whenever(apiClient.findExistingApiInfo("cat1", "/api/users", "GET"))
+            .thenReturn(null)
+
+        val confirmation = DefaultUpdateConfirmation(
+            project = null,
+            exportMode = YapiExportMode.NEVER_UPDATE,
+            apiClient = apiClient,
+            headless = true
+        )
+
+        assertTrue(confirmation.confirm(testDoc(), "cat1"))
     }
 
     @Test

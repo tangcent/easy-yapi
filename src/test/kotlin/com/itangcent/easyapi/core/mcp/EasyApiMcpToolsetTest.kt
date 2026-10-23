@@ -6,23 +6,28 @@ import com.intellij.mcpserver.McpToolset
 import com.intellij.mcpserver.annotations.McpDescription
 import com.intellij.mcpserver.annotations.McpTool
 import com.intellij.openapi.progress.ProcessCanceledException
-import com.intellij.testFramework.registerOrReplaceServiceInstance
 import com.intellij.testFramework.replaceService
+import com.itangcent.easyapi.channel.spi.Channel
+import com.itangcent.easyapi.core.export.ExportItemResult
+import com.itangcent.easyapi.core.export.ExportItemStatus
+import com.itangcent.easyapi.core.export.ExportResult
 import com.itangcent.easyapi.core.export.ExternalChangeSync
 import com.itangcent.easyapi.core.export.FakeExternalChangeSync
+import com.itangcent.easyapi.core.export.ProbeChannel
 import com.itangcent.easyapi.core.export.SyncOutcome
+import com.itangcent.easyapi.core.internal.PluginInfo.PLUGIN_ID
 import com.itangcent.easyapi.core.internal.threading.IdeDispatchers
 import com.itangcent.easyapi.core.logging.IdeaConsole
-import com.itangcent.easyapi.core.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
+import com.itangcent.easyapi.testFramework.recordConsole
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
-import org.mockito.kotlin.mock
+import org.mockito.kotlin.mockingDetails
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import java.io.File
@@ -54,31 +59,35 @@ class EasyApiMcpToolsetTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     // ---- the tool as clients see it ----
 
-    fun testExposesExactlyOneToolUnderItsPublicName() {
+    fun testExposesExactlyTwoToolsUnderTheirPublicNames() {
         val tools = mcpTools()
 
-        assertEquals("exactly one tool: ${tools.map { it.name }}", 1, tools.size)
         assertEquals(
-            "public tool name",
-            "easyapi_scan_endpoints",
-            tools.single().findAnnotation<McpTool>()!!.name
+            "public tool names",
+            listOf("easyapi_export", "easyapi_scan_endpoints"),
+            tools.map { it.findAnnotation<McpTool>()!!.name }.sorted()
         )
-        assertTrue(
-            "the tool is described",
-            tools.single().findAnnotation<McpDescription>()?.description?.isNotBlank() == true
-        )
+        tools.forEach { tool ->
+            assertTrue(
+                "${tool.name} is described",
+                tool.findAnnotation<McpDescription>()?.description?.isNotBlank() == true
+            )
+        }
     }
 
     /** `projectPath` must keep that exact name: newer IDEs add an implicit parameter of the same name and merge the two. */
     fun testToolParametersAreOptionalNullableAndDescribed() {
-        val parameters = mcpTools().single().valueParameters
-
         assertEquals(
-            "parameter names",
+            "scan tool parameter names",
             listOf("classes", "methods", "files", "projectPath"),
-            parameters.map { it.name }
+            mcpTool("easyapi_scan_endpoints").valueParameters.map { it.name }
         )
-        parameters.forEach { parameter ->
+        assertEquals(
+            "export tool parameter names",
+            listOf("classes", "methods", "files", "projectPath", "channel", "options"),
+            mcpTool("easyapi_export").valueParameters.map { it.name }
+        )
+        mcpTools().flatMap { it.valueParameters }.forEach { parameter ->
             assertTrue("${parameter.name} is optional", parameter.isOptional)
             assertTrue("${parameter.name} is nullable", parameter.type.isMarkedNullable)
             assertTrue(
@@ -86,6 +95,18 @@ class EasyApiMcpToolsetTest : EasyApiLightCodeInsightFixtureTestCase() {
                 parameter.findAnnotation<McpDescription>()?.description?.isNotBlank() == true
             )
         }
+    }
+
+    /** The 2025.2.1 MCP server turns a map of strings into an object whose values are strings. */
+    fun testExportOptionsAreNameValuePairs() {
+        val options = mcpTool("easyapi_export").valueParameters.single { it.name == "options" }.type
+
+        assertEquals("a map", Map::class, options.classifier)
+        assertEquals(
+            "string names and string values",
+            listOf(String::class, String::class),
+            options.arguments.map { it.type?.classifier }
+        )
     }
 
     // ---- results ----
@@ -130,10 +151,7 @@ class EasyApiMcpToolsetTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testSkippedTargetsAreLoggedWithTheirReasons() {
         addPingController()
         addPlainClass()
-        val console = mock<IdeaConsole>()
-        val provider = mock<IdeaConsoleProvider>()
-        whenever(provider.getConsole()).thenReturn(console)
-        project.registerOrReplaceServiceInstance(IdeaConsoleProvider::class.java, provider, testRootDisposable)
+        val console = recordConsole(project, testRootDisposable)
 
         val result = parse(call(classes = listOf(PING_CTRL, PLAIN), projectPath = project.basePath))
 
@@ -185,6 +203,109 @@ class EasyApiMcpToolsetTest : EasyApiLightCodeInsightFixtureTestCase() {
             "lists the open projects: $error",
             error.getAsJsonArray("openProjects").any { it.asString == project.basePath }
         )
+    }
+
+    // ---- the export tool ----
+
+    /** Like the scan tool, it needs a target; the channel it would have used is yapi, the default. */
+    fun testExportWithoutTargetsComesBackAsTargetsRequired() {
+        val console = recordConsole(project, testRootDisposable)
+
+        val error = parse(export(projectPath = project.basePath)).getAsJsonObject("error")
+
+        assertNotNull("an error result", error)
+        assertEquals("code", "TARGETS_REQUIRED", error.get("code").asString)
+        assertEquals("names the project", project.name, error.getAsJsonObject("project").get("name").asString)
+        val called = linesOf(console).singleOrNull { it.startsWith("MCP easyapi_export called: ") }
+        assertNotNull("one line for the call: ${linesOf(console)}", called)
+        assertTrue("the default channel: $called", called!!.contains("channel=yapi"))
+    }
+
+    /** A blank channel counts as none, as a blank projectPath does. */
+    fun testBlankChannelIsTheDefault() {
+        val console = recordConsole(project, testRootDisposable)
+
+        val error = parse(export(channel = "  ", projectPath = project.basePath)).getAsJsonObject("error")
+
+        assertEquals("code", "TARGETS_REQUIRED", error.get("code").asString)
+        val called = linesOf(console).singleOrNull { it.startsWith("MCP easyapi_export called: ") }
+        assertNotNull("one line for the call: ${linesOf(console)}", called)
+        assertTrue("the default channel: $called", called!!.contains("channel=yapi"))
+    }
+
+    /**
+     * Nothing written is the export failing, logged as a warning, so a console set to warnings still shows it;
+     * a wrong argument stays at info.
+     */
+    fun testExportThatWritesNothingIsLoggedAsAWarning() {
+        addPingController()
+        project.extensionArea
+            .getExtensionPoint<Channel>("$PLUGIN_ID.channel")
+            .registerExtension(tokenProbe(error = "the destination is down"), testRootDisposable)
+        val console = recordConsole(project, testRootDisposable)
+
+        val failed = parse(export(classes = listOf(PING_CTRL), channel = PROBE_CHANNEL, projectPath = project.basePath))
+        val unknown = parse(export(classes = listOf(PING_CTRL), channel = "nope", projectPath = project.basePath))
+
+        assertEquals("code", "EXPORT_FAILED", failed.getAsJsonObject("error").get("code").asString)
+        assertEquals("code", "CHANNEL_NOT_FOUND", unknown.getAsJsonObject("error").get("code").asString)
+        val warned = argumentCaptor<String>()
+        verify(console, atLeastOnce()).warn(warned.capture(), anyOrNull())
+        assertEquals(
+            "one warning, for the export that wrote nothing",
+            listOf("MCP easyapi_export failed: Nothing was exported: the destination is down"),
+            warned.allValues.filter { it.startsWith("MCP easyapi_export ") }
+        )
+        val logged = argumentCaptor<String>()
+        verify(console, atLeastOnce()).info(logged.capture())
+        assertTrue(
+            "the unknown channel at info: ${logged.allValues}",
+            logged.allValues.any { it.startsWith("MCP easyapi_export failed: Unknown channel 'nope'.") }
+        )
+    }
+
+    fun testUnknownChannelComesBackWithTheChannelsThatCanExport() {
+        addPingController()
+
+        val error = parse(export(classes = listOf(PING_CTRL), channel = "nope", projectPath = project.basePath))
+            .getAsJsonObject("error")
+
+        assertNotNull("an error result", error)
+        assertEquals("code", "CHANNEL_NOT_FOUND", error.get("code").asString)
+        assertEquals("names the project", project.name, error.getAsJsonObject("project").get("name").asString)
+        assertTrue(
+            "lists the channels that can export: $error",
+            error.getAsJsonArray("channels").any { it.asString == "yapi" }
+        )
+    }
+
+    /**
+     * An option value may be a secret, such as a token: the log names the option but never shows its value,
+     * and nor does the result.
+     */
+    fun testExportLogsOptionNamesButNeverTheirValues() {
+        addPingController()
+        project.extensionArea
+            .getExtensionPoint<Channel>("$PLUGIN_ID.channel")
+            .registerExtension(tokenProbe(), testRootDisposable)
+        val console = recordConsole(project, testRootDisposable)
+
+        val text = export(
+            classes = listOf(PING_CTRL), channel = PROBE_CHANNEL, options = mapOf("token" to SECRET),
+            projectPath = project.basePath
+        )
+
+        val result = parse(text)
+        assertFalse("not an error: $result", result.has("error"))
+        assertEquals("project name", project.name, result.getAsJsonObject("project").get("name").asString)
+        assertEquals("channel", PROBE_CHANNEL, result.get("channel").asString)
+        assertEquals("the controller's endpoint, created", 1, result.get("created").asInt)
+        assertFalse("the result never holds the token: $text", text.contains(SECRET))
+        val lines = linesOf(console)
+        val called = lines.singleOrNull { it.startsWith("MCP easyapi_export called: ") }
+        assertNotNull("one line for the call: $lines", called)
+        assertTrue("names the option: $called", called!!.contains("options=[token]"))
+        assertTrue("no line holds the token: $lines", lines.none { it.contains(SECRET) })
     }
 
     // ---- wiring ----
@@ -294,11 +415,34 @@ class EasyApiMcpToolsetTest : EasyApiLightCodeInsightFixtureTestCase() {
     private fun call(classes: List<String>? = null, projectPath: String? = null): String =
         runBlocking { EasyApiMcpToolset().scanEndpoints(classes = classes, projectPath = projectPath) }
 
+    private fun export(
+        classes: List<String>? = null,
+        channel: String? = null,
+        options: Map<String, String>? = null,
+        projectPath: String? = null
+    ): String = runBlocking {
+        EasyApiMcpToolset().exportEndpoints(classes = classes, projectPath = projectPath, channel = channel, options = options)
+    }
+
     private fun parse(json: String): JsonObject = JsonParser.parseString(json).asJsonObject
 
     /** Makes [fake] the project's sync until the test ends. */
     private fun useSync(fake: FakeExternalChangeSync) =
         project.replaceService(ExternalChangeSync::class.java, fake, testRootDisposable)
+
+    /** Every text [console] received, at any level. */
+    private fun linesOf(console: IdeaConsole): List<String> =
+        mockingDetails(console).invocations.flatMap { invocation -> invocation.arguments.filterIsInstance<String>() }
+
+    /** A [ProbeChannel] that reports every endpoint as created; or, given an [error], fails as a whole with it. */
+    private fun tokenProbe(error: String? = null) = ProbeChannel(PROBE_CHANNEL) { context ->
+        if (error != null) {
+            ExportResult.Error(error)
+        } else {
+            context.endpointsToExport.forEach { context.itemListener?.onItem(ExportItemResult(it, ExportItemStatus.CREATED)) }
+            ExportResult.Success(context.endpointsToExport.size, "probe")
+        }
+    }
 
     private fun addPlainClass() {
         loadFile("mcp/Plain.java", "package com.example.mcp; public class Plain {}")
@@ -333,6 +477,8 @@ class EasyApiMcpToolsetTest : EasyApiLightCodeInsightFixtureTestCase() {
     private fun mcpTools(): List<KFunction<*>> =
         EasyApiMcpToolset::class.declaredMemberFunctions.filter { it.findAnnotation<McpTool>() != null }
 
+    private fun mcpTool(name: String): KFunction<*> = mcpTools().single { it.findAnnotation<McpTool>()!!.name == name }
+
     /** Mirrors `ToolWindowLookupGuardTest.loadFromClasspath`. */
     private fun parseFromClasspath(resourcePath: String): Document {
         val stream = javaClass.getResourceAsStream("/$resourcePath")
@@ -346,5 +492,7 @@ class EasyApiMcpToolsetTest : EasyApiLightCodeInsightFixtureTestCase() {
         const val PROBE = "probe_tool"
         const val PLAIN = "com.example.mcp.Plain"
         const val PING_CTRL = "com.example.mcp.PingCtrl"
+        const val PROBE_CHANNEL = "mcp-token-probe"
+        const val SECRET = "secret-123"
     }
 }

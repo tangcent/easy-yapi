@@ -101,15 +101,32 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         return result
     }
 
+    /**
+     * Exports [endpoints], already scanned, through the channel [channelId].
+     *
+     * @param headless nobody can answer a dialog ([ExportContext.headless]): a channel without
+     *   [Channel.supportsHeadless] is refused, and a success is only logged, with no [Channel.handleResult]
+     *   and no dialog
+     * @param itemListener receives what the channel did with each endpoint ([ExportContext.itemListener])
+     */
     suspend fun exportViaChannel(
         channelId: String,
         endpoints: List<ApiEndpoint>,
         channelConfig: ChannelConfig = ChannelConfig.Empty,
-        indicator: ProgressIndicator? = null
+        indicator: ProgressIndicator? = null,
+        headless: Boolean = false,
+        itemListener: ExportItemListener? = null
     ): ExportResult {
         LOG.info("ExportOrchestrator.exportViaChannel: channelId=$channelId, endpoints=${endpoints.size}")
         val channel = channelRegistry.getChannel(channelId)
             ?: return ExportResult.Error("No channel registered for id: $channelId")
+
+        // Before the enabled check, as TargetedExportService.export checks before it syncs: a channel that can
+        // never export headless must not send the caller to enable it.
+        if (headless && !channel.supportsHeadless) {
+            LOG.info("ExportOrchestrator refusing headless export to channel: $channelId")
+            return ExportResult.Error("Channel '$channelId' cannot export without user interaction.")
+        }
 
         if (!channelRegistry.isEnabled(channel)) {
             LOG.info("ExportOrchestrator refusing disabled channel: $channelId")
@@ -119,7 +136,7 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         val failureMonitor = RuleFailureMonitor.getInstance(project)
         failureMonitor.beginRun()
         try {
-            return exportViaChannel(channel, endpoints, channelConfig, indicator)
+            return exportViaChannel(channel, endpoints, channelConfig, indicator, headless, itemListener)
         } finally {
             failureMonitor.endRunAndNotify("Export")
         }
@@ -129,7 +146,9 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         channel: Channel,
         endpoints: List<ApiEndpoint>,
         channelConfig: ChannelConfig,
-        indicator: ProgressIndicator?
+        indicator: ProgressIndicator?,
+        headless: Boolean,
+        itemListener: ExportItemListener?
     ): ExportResult {
         indicator?.text = "Exporting ${endpoints.size} endpoints via ${channel.displayName}..."
         indicator?.isIndeterminate = false
@@ -140,11 +159,16 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
             endpoints = endpoints,
             channelId = channel.id,
             channelConfig = channelConfig,
-            indicator = indicator
+            indicator = indicator,
+            headless = headless,
+            itemListener = itemListener
         )
 
         val result = channel.export(context)
-        if (result is ExportResult.Success) {
+        if (result is ExportResult.Success && headless) {
+            // handleResult cannot see the context and may show UI; a headless caller reports the result itself.
+            LOG.info("ExportOrchestrator.exportViaChannel: channel=${channel.id} exported ${result.count} endpoints headless")
+        } else if (result is ExportResult.Success) {
             val handled = channel.handleResult(project, result, channelConfig)
             if (!handled) {
                 swing {

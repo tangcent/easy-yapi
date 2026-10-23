@@ -1,8 +1,10 @@
 package com.itangcent.easyapi.channel.yapi
 
 import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import com.itangcent.easyapi.channel.yapi.model.MutableYapiApiDoc
 import com.itangcent.easyapi.channel.yapi.model.MutableYapiHeader
 import com.itangcent.easyapi.channel.yapi.model.MutableYapiQuery
@@ -10,6 +12,8 @@ import com.itangcent.easyapi.core.http.HttpClient
 import com.itangcent.easyapi.core.http.HttpRequest
 import com.itangcent.easyapi.core.http.HttpResponse
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
+import com.itangcent.easyapi.testFramework.recordConsole
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.mockito.kotlin.*
@@ -252,6 +256,7 @@ class DefaultYapiApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
             "The probe's empty-data state must not reach the caller, got: ${result.errorMessage()}",
             result.errorMessage()?.contains("Empty data in response") == true
         )
+        assertTrue("the chosen reason is YApi's refusal, so it is marked as one", result.rejected)
     }
 
     fun testGetProjectIdFallsBackToGenericReasonWhenBothProbesHaveNoData() = runBlocking {
@@ -265,6 +270,7 @@ class DefaultYapiApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
         val result = client.getProjectId()
         assertFalse(result.isSuccess)
         assertEquals("Could not resolve project ID from token", result.errorMessage())
+        assertFalse("no probe was refused", result.rejected)
     }
 
     fun testGetProjectIdPrefersServerRejectionOverTransportFailure() = runBlocking {
@@ -281,6 +287,104 @@ class DefaultYapiApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
             "A server rejection should outrank the other probe's transport failure, got: ${result.errorMessage()}",
             result.errorMessage()?.contains(SERVER_REJECTION) == true
         )
+        assertTrue("the chosen reason is YApi's refusal, so it is marked as one", result.rejected)
+    }
+
+    // -------------------------------------------------------------------------
+    // Rejected or not answered
+    //
+    // A failed getProjectId is marked as rejected only when YApi itself answered and refused,
+    // so a headless caller can tell "replace the token" from "check the server".
+    // -------------------------------------------------------------------------
+
+    fun testGetProjectIdMarksAServerRejection() = runBlocking {
+        whenever(httpClient.execute(any()))
+            .thenReturn(mockResponse(rejectedJson(42014, SERVER_REJECTION)))
+
+        val result = client.getProjectId()
+
+        assertFalse(result.isSuccess)
+        assertEquals(SERVER_REJECTION, result.errorMessage())
+        assertTrue("YApi answered and refused", result.rejected)
+    }
+
+    fun testGetProjectIdMarksARejectionThatOnlyCarriesAMessage() = runBlocking {
+        // A fork may answer a failure with a message and no code at all.
+        whenever(httpClient.execute(any()))
+            .thenReturn(mockResponse("""{"message":"请登录...."}"""))
+
+        val result = client.getProjectId()
+
+        assertFalse(result.isSuccess)
+        assertEquals("请登录....", result.errorMessage())
+        assertTrue("a message without a code is still YApi's refusal", result.rejected)
+    }
+
+    fun testGetProjectIdMarksARejectionThatOnlyCarriesACode() = runBlocking {
+        // A fork may answer a failure with a code and no message: the text stays the one every export shows.
+        whenever(httpClient.execute(any()))
+            .thenReturn(mockResponse("""{"errcode":40011}"""))
+
+        val result = client.getProjectId()
+
+        assertFalse(result.isSuccess)
+        assertEquals("Unknown error (errcode: 40011)", result.errorMessage())
+        assertTrue("a code without a message is still YApi's refusal", result.rejected)
+    }
+
+    fun testGetProjectIdTakesTheMarkFromTheProbeItReports() = runBlocking {
+        // GET_PROJECT answers an HTTP error, LIST_MENU a refusal: the HTTP error ranks first, so the failure
+        // says it, and is not marked, though the other probe was refused.
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse("Bad Gateway", code = 502))
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_menu") }))
+            .thenReturn(mockResponse(rejectedJson(42014, SERVER_REJECTION)))
+
+        val result = client.getProjectId()
+
+        assertEquals("HTTP 502", result.errorMessage())
+        assertFalse("the mark goes with the reason reported", result.rejected)
+    }
+
+    fun testGetProjectIdDoesNotMarkAConnectionFailure() = runBlocking {
+        whenever(httpClient.execute(any())).thenThrow(RuntimeException("Connection refused"))
+
+        val result = client.getProjectId()
+
+        assertFalse(result.isSuccess)
+        assertEquals("Request to YApi server failed", result.errorMessage())
+        assertFalse("YApi was not asked", result.rejected)
+    }
+
+    fun testGetProjectIdDoesNotMarkAnHttpStatus() = runBlocking {
+        whenever(httpClient.execute(any())).thenReturn(mockResponse("Bad Gateway", code = 502))
+
+        val result = client.getProjectId()
+
+        assertFalse(result.isSuccess)
+        assertEquals("HTTP 502", result.errorMessage())
+        assertFalse("no answer from YApi", result.rejected)
+    }
+
+    fun testGetProjectIdDoesNotMarkAnInvalidJsonResponse() = runBlocking {
+        whenever(httpClient.execute(any())).thenReturn(mockResponse("<html>login</html>"))
+
+        val result = client.getProjectId()
+
+        assertFalse(result.isSuccess)
+        assertEquals("Invalid JSON response", result.errorMessage())
+        assertFalse("no usable answer", result.rejected)
+    }
+
+    fun testGetProjectIdDoesNotMarkAJsonBodyWithoutTheEnvelope() = runBlocking {
+        // JSON, but none of errcode, code, errmsg, message: the text is the client's own, not YApi's.
+        whenever(httpClient.execute(any())).thenReturn(mockResponse("""{"foo":1}"""))
+
+        val result = client.getProjectId()
+
+        assertFalse(result.isSuccess)
+        assertEquals("Unknown error (errcode: null)", result.errorMessage())
+        assertFalse("not YApi's answer", result.rejected)
     }
 
     // -------------------------------------------------------------------------
@@ -534,6 +638,154 @@ class DefaultYapiApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val id = client.findExistingApi("cat1", "/api/users", "GET")
         assertNull(id)
+    }
+
+    // -------------------------------------------------------------------------
+    // listProjectApis
+    // -------------------------------------------------------------------------
+
+    /** A folder as standard YApi's list_menu lists it: the folder fields plus its APIs under `list`. */
+    private fun menuFolderJson(id: Long, name: String, vararg apis: JsonElement): JsonObject =
+        cartJson(id, name).apply {
+            addProperty("project_id", 11)
+            add("list", JsonArray().apply { apis.forEach { add(it) } })
+        }
+
+    private fun menuApiJson(id: Long, path: String, method: String, catId: Long): JsonObject =
+        JsonObject().apply {
+            addProperty("_id", id)
+            addProperty("title", "API $id")
+            addProperty("path", path)
+            addProperty("method", method)
+            addProperty("catid", catId)
+        }
+
+    private suspend fun stubProjectId(id: String = "11") {
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse(successJson(projectDataJson(id))))
+    }
+
+    private suspend fun stubListMenu(body: String) {
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_menu") }))
+            .thenReturn(mockResponse(body))
+    }
+
+    fun testListProjectApisReadsEveryFolderInOneRequest() = runBlocking {
+        stubProjectId("11")
+        stubListMenu(
+            successJson(JsonArray().apply {
+                add(menuFolderJson(7, "users", menuApiJson(101, "/u/a", "GET", 7), menuApiJson(102, "/u/b", "POST", 7)))
+                add(menuFolderJson(8, "orders", menuApiJson(103, "/o/a", "GET", 8)))
+            })
+        )
+
+        val result = client.listProjectApis()
+
+        assertTrue("${result.errorMessage()}", result.isSuccess)
+        assertEquals(
+            listOf(
+                ProjectApiInfo("101", "/u/a", "GET", "7", "users"),
+                ProjectApiInfo("102", "/u/b", "POST", "7", "users"),
+                ProjectApiInfo("103", "/o/a", "GET", "8", "orders")
+            ),
+            result.getOrNull()
+        )
+        val captor = argumentCaptor<HttpRequest>()
+        verify(httpClient, atLeastOnce()).execute(captor.capture())
+        val menuCall = captor.allValues.single { it.url.contains("/api/interface/list_menu") }
+        assertTrue("names the project: ${menuCall.url}", menuCall.url.contains("project_id=11"))
+        assertTrue("carries the token", menuCall.url.contains("token=$token"))
+    }
+
+    fun testListProjectApisSkipsUnusableEntries() = runBlocking {
+        stubProjectId("11")
+        val noId = menuApiJson(201, "/no-id", "GET", 7).apply { add("_id", JsonNull.INSTANCE) }
+        val noPath = menuApiJson(202, "/no-path", "GET", 7).apply { remove("path") }
+        val noCatId = menuApiJson(203, "/kept", "GET", 7).apply { remove("catid") }
+        val withoutList = cartJson(9, "no list")
+        stubListMenu(
+            successJson(JsonArray().apply {
+                add(menuFolderJson(7, "users", noId, noPath, JsonPrimitive("not an object"), noCatId))
+                add(withoutList)
+            })
+        )
+
+        val result = client.listProjectApis()
+
+        assertTrue("an unusable entry does not fail the listing: ${result.errorMessage()}", result.isSuccess)
+        assertEquals(
+            "only the usable entry, in the folder it is listed under",
+            listOf(ProjectApiInfo("203", "/kept", "GET", "7", "users")),
+            result.getOrNull()
+        )
+    }
+
+    fun testListProjectApisCarriesTheServerRejection() = runBlocking {
+        stubProjectId("11")
+        stubListMenu(rejectedJson(40011, SERVER_REJECTION))
+
+        val result = client.listProjectApis()
+
+        assertFalse(result.isSuccess)
+        assertEquals(SERVER_REJECTION, result.errorMessage())
+    }
+
+    fun testListProjectApisFailsWhenNoFolderIsListed() = runBlocking {
+        stubProjectId("11")
+        // The target folder exists before the lookup, so an answer without any folder is no data, not an
+        // empty project: another shape, an empty list, or folders without an id.
+        val answers = listOf(
+            successJson(JsonObject()),
+            successJson(JsonArray()),
+            successJson(JsonArray().apply { add(JsonObject().apply { addProperty("name", "no id") }) })
+        )
+        for (answer in answers) {
+            stubListMenu(answer)
+
+            val result = client.listProjectApis()
+
+            assertFalse("not a successful empty listing: $answer", result.isSuccess)
+            assertEquals(answer, "Empty data in response", result.errorMessage())
+        }
+    }
+
+    fun testListProjectApisCarriesTheProjectIdFailure() = runBlocking {
+        whenever(httpClient.execute(any())).thenReturn(mockResponse(rejectedJson(42014, SERVER_REJECTION)))
+
+        val result = client.listProjectApis()
+
+        assertFalse(result.isSuccess)
+        assertEquals("why the project could not be resolved", SERVER_REJECTION, result.errorMessage())
+    }
+
+    fun testListProjectApisReportsAFailedRequest() = runBlocking {
+        val console = recordConsole(project, testRootDisposable)
+        stubProjectId("11")
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_menu") }))
+            .thenThrow(RuntimeException("Connection reset"))
+
+        val result = client.listProjectApis()
+
+        assertFalse(result.isSuccess)
+        assertEquals("Connection reset", result.errorMessage())
+        verify(console).warn(argThat { contains("listProjectApis failed") }, any())
+    }
+
+    fun testListProjectApisRethrowsCancellation() {
+        val console = recordConsole(project, testRootDisposable)
+        runBlocking {
+            stubProjectId("11")
+            whenever(httpClient.execute(argThat { url.contains("/api/interface/list_menu") }))
+                .thenThrow(CancellationException("the call was cancelled"))
+        }
+
+        try {
+            runBlocking { client.listProjectApis() }
+            fail("Expected the cancellation to propagate")
+        } catch (e: CancellationException) {
+            assertEquals("the call was cancelled", e.message)
+        }
+        verify(console, never()).warn(any(), anyOrNull())
     }
 
     // -------------------------------------------------------------------------

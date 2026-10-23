@@ -11,9 +11,7 @@ sealed class EndpointScanResult {
     data class Scanned(val report: ScanReport) : EndpointScanResult()
 
     /** Expected failures; [message] goes to the caller verbatim (English). */
-    sealed class Failure : EndpointScanResult() {
-        abstract val message: String
-    }
+    sealed class Failure : EndpointScanResult(), CallFailure
 
     /** No target was named. Nothing is scanned: the whole project is never the fallback. */
     data object TargetsRequired : Failure() {
@@ -32,7 +30,7 @@ sealed class EndpointScanResult {
     /** Every target resolved and was scanned, but none yields an endpoint; [skipped] lists them all. */
     data class NoEndpoints(val skipped: List<SkippedTarget>) : Failure() {
         override val message: String
-            get() = "No target has an endpoint, so nothing was listed:\n" +
+            get() = "No target has an endpoint, so there is nothing to list or export:\n" +
                 skipped.joinToString("\n") { it.describe() }
     }
 
@@ -59,7 +57,7 @@ sealed class EndpointScanResult {
     data class UnsavedInIde(val files: List<String>) : Failure() {
         override val message: String
             get() = "These files have unsaved changes in the IDE that may not match the files on disk, so it is " +
-                "unclear which version to use; nothing was scanned. Ask the user to save them in " +
+                "unclear which version to use; nothing was scanned or exported. Ask the user to save them in " +
                 "the IDE, or to drop the editor changes with File | Reload from Disk, then retry: " +
                 files.joinToString(", ")
     }
@@ -68,7 +66,7 @@ sealed class EndpointScanResult {
     data object SyncTimeout : Failure() {
         override val message: String
             get() = "The IDE did not finish loading the files changed outside it within " +
-                "${ExternalChangeSync.SYNC_TIMEOUT.inWholeSeconds} seconds, so nothing was scanned. " +
+                "${ExternalChangeSync.SYNC_TIMEOUT.inWholeSeconds} seconds, so nothing was scanned or exported. " +
                 "Retry the call. If it times out again, ask the user to close any modal dialog open in the IDE, " +
                 "such as Settings, and retry a little later."
     }

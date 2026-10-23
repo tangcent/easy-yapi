@@ -68,7 +68,7 @@ search this list.
 - **Markdown export** → [usage-guide §First Export](usage-guide.md#first-export)
 - **Markdown language template** → [rule-guide §Rule Key Catalog](rule-guide.md#rule-key-catalog)
 - **`markdown.*` rule keys** → [rule-guide §Rule Key Catalog](rule-guide.md#rule-key-catalog)
-- **MCP client (`easyapi_scan_endpoints`)** → [usage-guide §Using EasyYapi from an MCP Client](usage-guide.md#using-easyyapi-from-an-mcp-client)
+- **MCP client (`easyapi_scan_endpoints`, `easyapi_export`)** → [usage-guide §Using EasyYapi from an MCP Client](usage-guide.md#using-easyyapi-from-an-mcp-client)
 - **Merge modes** → [rule-guide §Aggregation Modes](rule-guide.md#aggregation-modes)
 
 ## O

@@ -40,6 +40,7 @@ constructor** and receive `Project` via the `ExportContext` parameter (see
 | `displayName` | `String` | — | Human-readable name shown in UI. |
 | `supportsHttp` | `Boolean` | `true` | Whether HTTP/REST endpoints are supported. |
 | `supportsGrpc` | `Boolean` | `false` | Whether gRPC endpoints are supported. |
+| `supportsHeadless` | `Boolean` | `false` | Whether it can export with nobody to answer a dialog (Step 7). |
 | `exposeAsAction` | `Boolean` | `false` | Add a top-level IDE action menu entry. |
 | `actionText` | `String?` | `null` | Action menu text (only when `exposeAsAction = true`). |
 | `enabledByDefault` | `Boolean` | `true` | Compile-time enablement default. Set `false` for experimental. |
@@ -48,6 +49,8 @@ constructor** and receive `Project` via the `ExportContext` parameter (see
 | `export(context)` | `suspend fun` | — | Performs the export. Required. |
 | `handleResult(project, result, config)` | `suspend fun → Boolean` | `false` | Post-export hook (file write, browser open, …). Return `true` to suppress default handling. |
 | `createOptionsPanel(project)` | `fun → ChannelOptionsPanel?` | `null` | Per-export options panel (shown in export dialog). |
+| `exportOptions()` | `fun → List<ChannelOption>` | `emptyList()` | The options a headless export accepts (Step 7). |
+| `buildConfig(options)` | `fun → ChannelConfig` | `ChannelConfig.Empty` | Builds the config of a headless export from those options (Step 7). |
 | `createSettingsPanel(project)` | `fun → SettingsPanel<*>?` | `null` | Persistent settings tab (Settings → EasyApi → <Channel>). |
 | `configFiles()` | `fun → List<String>` | `emptyList()` | Config-file names contributed to the extension-config fallback list. |
 | `ruleKeys()` | `fun → List<RuleKey<*>>` | `emptyList()` | Channel-specific `RuleKey`s (consumed by the AI agent). |
@@ -269,6 +272,51 @@ override suspend fun handleResult(
 
 Throw `CancellationException` if the user cancels a file-chooser — the
 orchestrator translates it into `ExportResult.Cancelled`.
+
+### Step 7 — Headless export (optional)
+
+An external caller, such as an agent connected to the IDE's MCP server, can
+export through a channel with nobody to answer a dialog. Only a channel that
+declares it is used that way; any other is refused with "cannot export without
+user interaction". Three members opt in:
+
+| Member | Default | Contract |
+|---|---|---|
+| `supportsHeadless` | `false` | `true` promises that, for an `ExportContext` with `headless = true`, `export()` shows no dialog, never waits for the EDT, and does all the work: the orchestrator does not call `handleResult` for a headless export. |
+| `exportOptions()` | `emptyList()` | The options a caller may pass, as `ChannelOption(name, description)`: the headless counterpart of the options panel. Callers never log an option value nor echo it back, whatever the option; what the channel itself logs (an HTTP log of a URL that carries a token, for one) is up to the channel. |
+| `buildConfig(options)` | `ChannelConfig.Empty` | Builds this export's `ChannelConfig`: the headless counterpart of `ChannelOptionsPanel.buildConfig()`. The caller has already rejected unknown names and blank values, and trimmed the rest. |
+
+`ExportContext` carries two matching fields:
+
+- `headless` — `true` when nobody can answer a dialog. What a dialog would
+  ask comes from `channelConfig` or the settings; a missing value fails with a
+  message that says how to supply it.
+- `itemListener` — when set, call its `onItem` once per endpoint of
+  `endpointsToExport` with an `ExportItemResult`: the very endpoint instance
+  (callers match by identity), its status (`CREATED`, `UPDATED`, `NOT_WRITTEN`
+  or `FAILED`), the fields as written (leave a field `null` when it is the
+  endpoint's own value: the caller fills it in from the endpoint), a `reason`
+  for the last two, and, for `UPDATED`, `movedFrom` when the destination moved
+  the item out of another folder. Report the failed endpoints too, also when
+  `export()` then returns `ExportResult.Error`; an export that fails as a whole
+  before any endpoint (no server configured, a passed token that fails its
+  check with the server) may return `ExportResult.Error` without reporting any.
+  When `export()` succeeds, an endpoint without a report reaches the caller as
+  failed; otherwise the caller lists only the endpoints that were reported.
+
+Return `ExportResult.Error` only when nothing was written: the caller reports
+it as "Nothing was exported". Once any endpoint is written, return
+`ExportResult.Success` and report the endpoints that failed as `FAILED`.
+
+A headless channel is handed only the endpoints its `isAvailableFor` accepts;
+the caller reports the others as not written.
+
+Reference: [`YapiChannel`](../../src/main/kotlin/com/itangcent/easyapi/channel/yapi/YapiChannel.kt)
+(declaration, `token` option),
+[`YapiExporter`](../../src/main/kotlin/com/itangcent/easyapi/channel/yapi/YapiExporter.kt)
+(no dialog when `headless`) and
+[`YapiExportItems`](../../src/main/kotlin/com/itangcent/easyapi/channel/yapi/YapiExportItems.kt)
+(one `ExportItemResult` per endpoint).
 
 ## What you get for free
 

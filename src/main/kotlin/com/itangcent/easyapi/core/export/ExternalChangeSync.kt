@@ -24,8 +24,8 @@ import kotlin.time.TimeSource
 
 /**
  * Brings files changed outside the IDE into the VFS, open documents and PSI, so the targets an
- * external caller names are resolved and scanned with what is on disk. A project service, so tests
- * can replace it and skip the EDT round trips.
+ * external caller names are resolved and scanned with what is on disk. Shared by the scan and the
+ * export tool. A project service, so tests can replace it and skip the EDT round trips.
  */
 interface ExternalChangeSync {
 
@@ -42,7 +42,8 @@ interface ExternalChangeSync {
     companion object {
         /**
          * The wait for the refresh and the document commit: far above the milliseconds they take on a free
-         * IDE, so a busy moment is not reported. What holds them back past it: [SyncOutcome.TimedOut].
+         * IDE, so a busy moment is not reported, and short next to the network time of an export. What holds
+         * them back past it: [SyncOutcome.TimedOut].
          */
         val SYNC_TIMEOUT: Duration = 10.seconds
 
