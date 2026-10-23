@@ -38,4 +38,24 @@ class YapiResponseTest {
         assertEquals(YapiResponse.failure<Int>("err"), YapiResponse.failure<Int>("err"))
         assertNotEquals(YapiResponse.success(1), YapiResponse.success(2))
     }
+
+    @Test
+    fun `rejection is a failure that YApi answered`() {
+        val r = YapiResponse.rejection<String>("token 无效")
+        assertFalse(r.isSuccess)
+        assertNull(r.getOrNull())
+        assertEquals("token 无效", r.errorMessage())
+        assertTrue(r.rejected)
+    }
+
+    @Test
+    fun `success and failure are not rejections`() {
+        assertFalse(YapiResponse.success("hello").rejected)
+        assertFalse(YapiResponse.failure<String>("Request to YApi server failed").rejected)
+    }
+
+    @Test
+    fun `a rejection is not equal to a failure with the same message`() {
+        assertNotEquals(YapiResponse.failure<Int>("err"), YapiResponse.rejection<Int>("err"))
+    }
 }

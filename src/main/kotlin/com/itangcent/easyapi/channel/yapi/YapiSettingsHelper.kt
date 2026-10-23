@@ -32,6 +32,13 @@ interface YapiSettingsHelper {
 
     fun resetPromptedModules()
 
+    /**
+     * The token for [module] from the settings token table only, for an export with nobody to answer a
+     * dialog: the lookup of [resolveToken] without its prompts, so it never writes settings either. Null
+     * when none is configured; the caller checks the token.
+     */
+    suspend fun lookupToken(module: String): String?
+
     companion object {
         fun getInstance(project: Project): YapiSettingsHelper = project.service()
     }
@@ -113,6 +120,10 @@ class DefaultYapiSettingsHelper(private val project: Project) : YapiSettingsHelp
     override fun resetPromptedModules() {
         promptedModules.clear()
     }
+
+    // prompt = false: the table and the single-bare-token fallback of resolveToken, but no dialog, no
+    // settings write, and promptedModules untouched, so an interactive export still asks for the module.
+    override suspend fun lookupToken(module: String): String? = getTokenForModule(module, prompt = false)
 
     private suspend fun getTokenForModule(module: String, prompt: Boolean = true): String? {
         val tokens = parseTokens(project.settings<YapiSettings>().yapiTokens)

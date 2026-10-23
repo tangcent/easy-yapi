@@ -191,15 +191,19 @@ For the full rule key catalog, see the [Rule Authoring Guide](rule-guide.md).
 
 ## Using EasyYapi from an MCP Client
 
-IntelliJ IDEA 2025.2 and later ship a built-in MCP (Model Context Protocol) server. When it is turned on, EasyYapi adds a tool to it for an external agent connected to the IDE: `easyapi_scan_endpoints` reports the endpoints EasyYapi would export for the classes, methods or source files the agent names. It is read-only: it never exports or changes anything.
+IntelliJ IDEA 2025.2 and later ship a built-in MCP (Model Context Protocol) server. When it is turned on, EasyYapi adds two tools to it for an external agent connected to the IDE:
 
-Unlike the built-in AI assistant ([AI-assisted Rule Creation](#ai-assisted-rule-creation)), which works inside the IDE and writes rules for you, the tool lets an external agent drive the running EasyYapi. It describes its parameters, its result and its error codes to the client; this section covers the workflow around it.
+- `easyapi_scan_endpoints` is read-only: it reports the endpoints EasyYapi would export for the classes, methods or source files the agent names.
+- `easyapi_export` exports those endpoints to YApi, as **Export to YAPI** does, without any dialog.
+
+Unlike the built-in AI assistant ([AI-assisted Rule Creation](#ai-assisted-rule-creation)), which works inside the IDE and writes rules for you, the tools let an external agent drive the running EasyYapi. Each tool describes its parameters, its result and its error codes to the client; this section covers the workflow around them.
 
 ### Setup
 
 1. IntelliJ IDEA 2025.2 or later, with the bundled **MCP Server** plugin enabled.
 2. Turn the server on in **Settings → Tools → MCP Server**, then connect your client as described in the [IntelliJ IDEA MCP Server documentation](https://www.jetbrains.com/help/idea/mcp-server.html).
-3. If that page lists the tools it exposes, make sure `easyapi_scan_endpoints` is enabled.
+3. If that page lists the tools it exposes, make sure `easyapi_scan_endpoints` and `easyapi_export` are enabled.
+4. For `easyapi_export`, set up YApi first: see [Before the first export](#before-the-first-export).
 
 ### Scanning endpoints
 
@@ -212,6 +216,32 @@ Before the targets resolve, the IDE loads from disk the files they live in and t
 - **Unsaved changes in the IDE stop the call** (`UNSAVED_IN_IDE`) when they are in a file to scan, or in another file under the project root that also changed on disk. Save them, or drop them with **File | Reload from Disk**.
 - **In IntelliJ IDEA 2025.2, a modal dialog stops the call.** That version loads the files only while no modal dialog, such as Settings, is open, so the call fails with `SYNC_TIMEOUT` after about 10 seconds, even if no file changed. Later versions load the files while a dialog is open (checked with 2026.2).
 - **Limits:** a request or response class changed together with a target may not be reloaded yet, or at all outside the project root: add its file to `files` (outside the root, its name to `classes`); it then shows in `skipped`, as expected. A file that is not a target, has unsaved editor changes and changed on disk may be scanned as the editor shows it: save before calling.
+
+### Exporting to YApi
+
+`easyapi_export` takes the targets as the scan tool does, sync included, then runs the export of **Export to YAPI**, with the same rules, server and export mode, without any dialog. `channel` is `yapi`, the default and for now the only one. An export of stale code still succeeds, so mind the limits above.
+
+#### Before the first export
+
+1. Fill in **Yapi Server** under **Settings → EasyYapi → Yapi**.
+2. Pass a token in `options.token` (checked with YApi first, never saved; every endpoint of the call then goes to that token's project), or add `<destination>=<token>` under **Tokens** on the same page. An endpoint's destination is its `yapi.project` rule (the built-in rules map the `@project` and `@module` doc tags to it), else the module of its class, else the project name.
+
+A call never asks anything: a missing server or token comes back in the result.
+
+#### What gets overwritten
+
+The result has one item per endpoint:
+
+- `updated`: an API with the same path and method was overwritten. YApi matches path and method across the whole YApi project, so one in another folder is moved into the target folder (`movedFrom`), whatever the export mode; that folder may be left empty.
+- `created`: no such API was found in the YApi project before the save.
+- `not_written`: kept by the **Export Mode** (`NEVER_UPDATE`, or `UPDATE_IF_CHANGED` when nothing changed; `ALWAYS_ASK` counts as yes), or not taken by YApi, such as a gRPC endpoint; `reason` says which.
+- `failed`: `reason` says why; a destination without a token fails only its own endpoints. The call succeeds as long as one endpoint did not fail, so `failed` above 0 means a partial export.
+
+No dialog or success notification appears; a warning about failing rules does, as for any export.
+
+#### The token and `idea.log`
+
+The token never appears in the result, in an error, or in what the tool writes to the EasyYapi console. But EasyYapi's HTTP log writes every request address to `idea.log`, and YApi's GET requests carry the token in the address, so a token used by an export, passed or from the token table, lands in `idea.log` in plain text, as for **Export to YAPI** in the IDE.
 
 ### Errors
 
@@ -226,6 +256,11 @@ A call that fails returns `{"error": {"code": …, "message": …}}` instead of 
 | `INDEX_NOT_READY` | The IDE is indexing, as it does after many files changed outside it at once. Retry when it is done. |
 | `UNSAVED_IN_IDE` | The listed `files` have unsaved changes in the IDE. Save or reload them, then retry. |
 | `SYNC_TIMEOUT` | The IDE did not load the files changed outside it within 10 seconds. Retry; if it times out again, close any modal dialog open in the IDE, such as Settings, and retry a little later. |
+| `CHANNEL_NOT_FOUND` | Export: unknown channel; `channels` lists those that can export. |
+| `CHANNEL_NOT_SUPPORTED` | Export: the channel needs a dialog; `channels` lists those that can export. |
+| `CHANNEL_DISABLED` | Export: turn the channel on under **Settings → EasyYapi → Features → Export Channels**. |
+| `OPTIONS_INVALID` | Export: an unknown option or an empty value; `acceptedOptions` lists the accepted ones (`name`, `description`). |
+| `EXPORT_FAILED` | Export: nothing was written; `items` lists each endpoint, when known. |
 | `PROJECT_AMBIGUOUS` | Several projects are open and `projectPath` was not passed. |
 | `PROJECT_NOT_FOUND` | No open project contains `projectPath`. |
 | `INTERNAL_ERROR` | Something unexpected failed; see `idea.log`. |

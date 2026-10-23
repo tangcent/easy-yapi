@@ -20,6 +20,7 @@ import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.logging.console
 import com.itangcent.easyapi.core.util.json.GsonUtils
 import com.itangcent.easyapi.channel.yapi.markdown.BundledMarkdownRender
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
@@ -86,12 +87,12 @@ class DefaultYapiApiClient(
             // "Answered success but carried no project data" (EMPTY_DATA) is a normal state for
             // some servers, not a rejection, and REQUEST_FAILED never reached the answer layer
             // at all — a real rejection from the other probe outranks both.
-            val reasons = listOf(fromProject, fromMenu).mapNotNull { it.errorMessage() }
-            val reason = reasons.firstOrNull { it != EMPTY_DATA && it != REQUEST_FAILED }
-                ?: reasons.firstOrNull { it != EMPTY_DATA }
-                ?: "Could not resolve project ID from token"
+            val failures = listOf(fromProject, fromMenu).filter { it.errorMessage() != null }
+            val chosen = failures.firstOrNull { it.errorMessage() != EMPTY_DATA && it.errorMessage() != REQUEST_FAILED }
+                ?: failures.firstOrNull { it.errorMessage() != EMPTY_DATA }
+            val reason = chosen?.errorMessage() ?: "Could not resolve project ID from token"
             console.warn("YApi: could not resolve project ID from token=***: $reason")
-            YapiResponse.failure(reason)
+            if (chosen?.rejected == true) YapiResponse.rejection(reason) else YapiResponse.failure(reason)
         }
     }
 
@@ -253,11 +254,50 @@ class DefaultYapiApiClient(
         return apis.firstOrNull { matchesApi(it, path, method) } as? JsonObject
     }
 
+    /** Lists every API of the project with its folder, in one [LIST_MENU] request. */
+    override suspend fun listProjectApis(): YapiResponse<List<ProjectApiInfo>> {
+        val projectIdResult = getProjectId()
+        val projectId = projectIdResult.getOrNull()
+            ?: return YapiResponse.failure(projectIdResult.errorMessage() ?: "Could not resolve project ID")
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val resp = httpClient.get {
+                    url = "$serverUrl$LIST_MENU?project_id=${enc(projectId)}&token=${enc(token)}"
+                }
+                parseResponse(resp) { json ->
+                    // Only a folder with an id counts. None (another shape, or an empty list) is no data, not a
+                    // project without APIs: returning null makes parseResponse fail with EMPTY_DATA.
+                    val carts = json.arrayMember("data")?.mapNotNull { element ->
+                        val cart = element as? JsonObject ?: return@mapNotNull null
+                        val catId = cart.stringMember("_id") ?: return@mapNotNull null
+                        catId to cart
+                    }
+                    if (carts.isNullOrEmpty()) return@parseResponse null
+                    carts.flatMap { (catId, cart) ->
+                        val catName = cart.stringMember("name")
+                        cart.arrayMember("list")?.mapNotNull { item ->
+                            val api = item as? JsonObject ?: return@mapNotNull null
+                            ProjectApiInfo(
+                                id = api.stringMember("_id") ?: return@mapNotNull null,
+                                path = api.stringMember("path") ?: return@mapNotNull null,
+                                method = api.stringMember("method") ?: return@mapNotNull null,
+                                catId = api.stringMember("catid") ?: catId,
+                                catName = catName
+                            )
+                        }.orEmpty()
+                    }
+                }
+            }.onFailure {
+                if (it is CancellationException) throw it
+                console.warn("YApi: listProjectApis failed for projectId=$projectId", it)
+            }.getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
+        }
+    }
+
     /** True when [element] is an API object whose path and method match; non-objects never match. */
     private fun matchesApi(element: JsonElement, path: String, method: String): Boolean {
         val obj = element as? JsonObject ?: return false
-        return obj.stringMember("path") == path &&
-                obj.stringMember("method")?.equals(method, ignoreCase = true) == true
+        return isSameApi(obj.stringMember("path"), obj.stringMember("method"), path, method)
     }
 
     // endregion
@@ -347,7 +387,8 @@ class DefaultYapiApiClient(
      * - HTTP status != 200
      * - Body is not valid JSON
      * - Response code field is non-zero (YAPI application-level error) — the server's own
-     *   `errmsg` is used as the failure message
+     *   `errmsg` is used as the failure message, marked as [YapiResponse.rejected] when the
+     *   envelope carries a code or a message (a body without either is not YApi's answer)
      * - [handle] returns null — [EMPTY_DATA], meaning the server succeeded but sent no payload
      *
      * @param res The raw HTTP response
@@ -361,7 +402,8 @@ class DefaultYapiApiClient(
         val errmsg = json.stringMember("errmsg") ?: json.stringMember("message")
         val isSuccess = errmsg in SUCCESS_MESSAGES || errcode in SUCCESS_CODES
         if (!isSuccess) {
-            return YapiResponse.failure(errmsg ?: "Unknown error (errcode: $errcode)")
+            val reason = errmsg ?: "Unknown error (errcode: $errcode)"
+            return if (errcode == null && errmsg == null) YapiResponse.failure(reason) else YapiResponse.rejection(reason)
         }
         return handle(json)?.let { YapiResponse.success(it) }
             ?: YapiResponse.failure(EMPTY_DATA)
@@ -405,6 +447,13 @@ class DefaultYapiApiClient(
 
     private fun enc(value: String): String = URLEncoder.encode(value, "UTF-8")
 }
+
+/**
+ * True when an API listed with [apiPath] and [apiMethod] is the one with [path] and [method]: the same path,
+ * and the same method in any case. One rule for the lookups in a folder and across the project.
+ */
+internal fun isSameApi(apiPath: String?, apiMethod: String?, path: String, method: String): Boolean =
+    apiPath == path && apiMethod?.equals(method, ignoreCase = true) == true
 
 /**
  * Reads [name] as a JSON object, or null when the member is absent or holds another shape.

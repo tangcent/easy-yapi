@@ -64,6 +64,14 @@ interface YapiApiClient {
      */
     suspend fun findExistingApiData(catId: String, path: String, method: String): JsonObject?
 
+    /**
+     * Lists every API of the project with the folder it is in, in one request. YApi matches a save by path
+     * and method across the whole project, so this tells where an API missing from the target folder will
+     * be taken from. An answer that lists no folder is a failure, not an empty project: an export asks only
+     * after it has found or created its target folder.
+     */
+    suspend fun listProjectApis(): YapiResponse<List<ProjectApiInfo>>
+
     // endregion
 
     // region API upload
@@ -111,6 +119,9 @@ data class ExistingApiInfo(
     val id: String,
     val title: String?
 )
+
+/** An API as [YapiApiClient.listProjectApis] lists it; [catName] is the name of its folder. */
+data class ProjectApiInfo(val id: String, val path: String, val method: String, val catId: String, val catName: String?)
 
 /**
  * Outcome of an API upload.

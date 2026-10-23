@@ -3,6 +3,7 @@ package com.itangcent.easyapi.channel.spi
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.ExportContext
+import com.itangcent.easyapi.core.export.ExportItemResult
 import com.itangcent.easyapi.core.export.ExportResult
 import com.itangcent.easyapi.core.export.isGrpc
 import com.itangcent.easyapi.core.export.isHttp
@@ -36,6 +37,7 @@ import kotlin.reflect.KClass
  * - Optionally override [createSettingsPanel] to contribute a persistent settings tab.
  * - Optionally override [configFiles] to contribute rule-config file names.
  * - Optionally override [handleResult] to process the export result.
+ * - Optionally set [supportsHeadless] and override [exportOptions] and [buildConfig] to export with no UI.
  * - Optionally set [exposeAsAction] and [actionText] to add a top-level action menu entry.
  * - Optionally set [settingsType] and [settingsTabOrder] for settings-tab wiring/ordering.
  *
@@ -55,6 +57,18 @@ interface Channel : SettingsPanelProvider {
 
     /** Whether this channel supports gRPC endpoints. Defaults to `false`. */
     val supportsGrpc: Boolean get() = false
+
+    /**
+     * Whether this channel can export with nobody to answer a dialog ([ExportContext.headless]).
+     * Defaults to `false`. A channel returning `true` promises, for a headless context:
+     * - [export] shows no dialog and never waits for the EDT;
+     * - its work is done in [export]: [handleResult] is not called for headless exports;
+     * - when [ExportContext.itemListener] is set, [export] reports one [ExportItemResult] per endpoint
+     *   of [ExportContext.endpointsToExport], passing that very instance; an export that fails as a whole
+     *   (no server configured, a passed token that fails its check with the server) may report none and
+     *   return [ExportResult.Error].
+     */
+    val supportsHeadless: Boolean get() = false
 
     /** Whether this channel should be exposed as a top-level action in the IDE. */
     val exposeAsAction: Boolean get() = false
@@ -120,6 +134,16 @@ interface Channel : SettingsPanelProvider {
      * @return the options panel, or `null` if no configuration is needed
      */
     fun createOptionsPanel(project: Project): ChannelOptionsPanel? = null
+
+    /** The options [buildConfig] accepts: the headless counterpart of the [createOptionsPanel] fields. */
+    fun exportOptions(): List<ChannelOption> = emptyList()
+
+    /**
+     * Builds this export's [ChannelConfig] from [options] with no UI: the headless counterpart of
+     * [ChannelOptionsPanel.buildConfig]. [options] holds only names declared by [exportOptions],
+     * each value trimmed and non-blank.
+     */
+    fun buildConfig(options: Map<String, String>): ChannelConfig = ChannelConfig.Empty
 
     /**
      * Creates the persistent settings panel (the dedicated tab in Settings).

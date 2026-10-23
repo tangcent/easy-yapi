@@ -4,16 +4,19 @@ import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
 import com.intellij.psi.PsiMethod
 import com.intellij.testFramework.registerServiceInstance
+import com.itangcent.easyapi.channel.spi.Channel
 import com.itangcent.easyapi.channel.spi.ChannelConfig
 import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.ExportResult
 import com.itangcent.easyapi.core.export.HttpMethod
 import com.itangcent.easyapi.core.export.httpMetadata
 import com.itangcent.easyapi.core.ide.support.SelectionScope
+import com.itangcent.easyapi.core.internal.PluginInfo.PLUGIN_ID
 import com.itangcent.easyapi.core.settings.SettingBinder
 import com.itangcent.easyapi.core.settings.module.GeneralSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
+import com.itangcent.easyapi.testFramework.recordDialogs
 
 class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -273,6 +276,65 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
         }
     }
 
+    // --- headless export: nobody can answer a dialog ---
+
+    fun testHeadlessExportRefusesAChannelWithoutHeadlessSupport() = runTest {
+        val (_, shown) = recordDialogs {
+            val result = orchestrator.exportViaChannel(
+                "markdown", listOf(createTestEndpoint()), testFileConfig, headless = true
+            )
+            assertTrue("Should be Error for a channel without headless support. Got: $result", result is ExportResult.Error)
+            assertEquals(
+                "Channel 'markdown' cannot export without user interaction.",
+                (result as ExportResult.Error).message
+            )
+        }
+        assertEquals("a headless export must not show any dialog", emptyList<String>(), shown)
+    }
+
+    fun testHeadlessExportChecksSupportBeforeTheEnabledState() = runTest {
+        // http-client is default-off and cannot export headless either: the caller must hear the final
+        // reason, not be sent to enable a channel that would still refuse.
+        val result = orchestrator.exportViaChannel(
+            "http-client", listOf(createTestEndpoint()), ChannelConfig.Empty, headless = true
+        )
+        assertTrue("Should be Error. Got: $result", result is ExportResult.Error)
+        val msg = (result as ExportResult.Error).message
+        assertTrue("Error should name the missing support. Got: $msg", msg.contains("cannot export without user interaction"))
+        assertFalse("Error should not send the caller to enable it. Got: $msg", msg.contains("disabled", ignoreCase = true))
+    }
+
+    fun testHeadlessExportSkipsHandleResultAndTheFallbackDialog() = runTest {
+        val probe = registerProbeChannel()
+        val listener = ExportItemListener { }
+        val (_, shown) = recordDialogs {
+            val result = orchestrator.exportViaChannel(
+                PROBE, listOf(createTestEndpoint()), ChannelConfig.Empty, headless = true, itemListener = listener
+            )
+            assertTrue("Should succeed. Got: $result", result is ExportResult.Success)
+        }
+        assertEquals("handleResult is never called for a headless export", 0, probe.handled)
+        assertEquals("a headless export must not show any dialog", emptyList<String>(), shown)
+        assertTrue("the channel sees a headless context", probe.exports.last().headless)
+        assertSame("the channel gets the caller's listener", listener, probe.exports.last().itemListener)
+    }
+
+    fun testInteractiveExportStillHandlesTheResult() = runTest {
+        val probe = registerProbeChannel()
+        val (_, shown) = recordDialogs {
+            orchestrator.exportViaChannel(PROBE, listOf(createTestEndpoint()), ChannelConfig.Empty)
+        }
+        assertEquals("handleResult is called once", 1, probe.handled)
+        assertEquals("the fallback dialog shows once: $shown", 1, shown.size)
+        assertFalse("the channel sees an interactive context", probe.exports.last().headless)
+    }
+
+    private fun registerProbeChannel(): ProbeChannel = ProbeChannel(PROBE).also {
+        project.extensionArea
+            .getExtensionPoint<Channel>("$PLUGIN_ID.channel")
+            .registerExtension(it, testRootDisposable)
+    }
+
     // --- exportViaChannel LOG.warn path when channel.export returns Error ---
     // Moved to channel/postman/PostmanChannelWarnPathTest.kt — co-located with the
     // Postman channel it tests (the test mocks PostmanSettings + HttpClientProvider
@@ -292,5 +354,9 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
                 method = method
             )
         )
+    }
+
+    private companion object {
+        const val PROBE = "orchestrator-probe"
     }
 }

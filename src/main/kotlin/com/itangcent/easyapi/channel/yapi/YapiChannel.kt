@@ -8,6 +8,7 @@ import com.intellij.ide.BrowserUtil
 import com.itangcent.easyapi.core.internal.threading.swing
 import com.itangcent.easyapi.channel.spi.Channel
 import com.itangcent.easyapi.channel.spi.ChannelConfig
+import com.itangcent.easyapi.channel.spi.ChannelOption
 import com.itangcent.easyapi.channel.spi.ChannelOptionsPanel
 import com.itangcent.easyapi.core.export.ExportContext
 import com.itangcent.easyapi.core.export.ExportResult
@@ -23,6 +24,7 @@ class YapiChannel : Channel, IdeaLog {
     override val id: String = "yapi"
     override val displayName: String = "Yapi"
     override val supportsGrpc: Boolean = false
+    override val supportsHeadless: Boolean = true
     override val exposeAsAction: Boolean = true
     override val actionText: String = "Export to YAPI"
     override val settingsType: KClass<out com.itangcent.easyapi.core.settings.Settings> = YapiSettings::class
@@ -30,6 +32,18 @@ class YapiChannel : Channel, IdeaLog {
     override fun createOptionsPanel(project: Project): ChannelOptionsPanel {
         return YapiOptionsPanel(project)
     }
+
+    override fun exportOptions(): List<ChannelOption> = listOf(
+        ChannelOption(
+            name = TOKEN_OPTION,
+            description = "A YApi project token: every endpoint of this export goes to that project. It is " +
+                "checked with the server first and never saved to the settings."
+        )
+    )
+
+    /** The token option takes the place of the export dialog's "new token"; without it the token table decides. */
+    override fun buildConfig(options: Map<String, String>): ChannelConfig =
+        YapiConfig(selectedToken = options[TOKEN_OPTION])
 
     override fun createSettingsPanel(project: Project): com.itangcent.easyapi.core.settings.ui.SettingsPanel<*>? =
         YapiSettingsPanel(project)
@@ -72,5 +86,9 @@ class YapiChannel : Channel, IdeaLog {
             }
         }
         return true
+    }
+
+    private companion object {
+        const val TOKEN_OPTION = "token"
     }
 }

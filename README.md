@@ -98,6 +98,7 @@ With the IDE's built-in MCP server turned on (IntelliJ IDEA 2025.2+), an AI agen
 drive EasyYapi on the classes, methods or source files it names:
 
 - `easyapi_scan_endpoints` — list the endpoints EasyYapi would export for them; read-only
+- `easyapi_export` — export them to YApi as **Export to YAPI** does, without any dialog
 
 See [Using EasyYapi from an MCP Client](docs/knowledge-base/usage-guide.md#using-easyyapi-from-an-mcp-client)
 for setup and limits.

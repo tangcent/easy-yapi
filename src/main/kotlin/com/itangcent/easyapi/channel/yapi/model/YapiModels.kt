@@ -476,8 +476,14 @@ data class YapiCart(val id: Long, val name: String)
  * @param T The type of the data payload on success
  * @property data The response data, present on success
  * @property error Error message, present on failure
+ * @property rejected YApi answered and refused: its envelope reported a failure with an error code or
+ *   message (errcode or code, errmsg or message). Set where [com.itangcent.easyapi.channel.yapi.DefaultYapiApiClient]
+ *   parses a response, and kept by its getProjectId; a method that wraps another call's result (such as
+ *   listCarts or findOrCreateCart) reports a new failure without it. False on success and on any other
+ *   failure: no answer (connection failure, HTTP status, invalid JSON), a JSON body without those members,
+ *   or no data.
  */
-data class YapiResponse<T>(val data: T? = null, val error: String? = null) {
+data class YapiResponse<T>(val data: T? = null, val error: String? = null, val rejected: Boolean = false) {
     val isSuccess: Boolean get() = error == null
     fun getOrNull(): T? = data
     fun errorMessage(): String? = error
@@ -485,5 +491,8 @@ data class YapiResponse<T>(val data: T? = null, val error: String? = null) {
     companion object {
         fun <T> success(data: T) = YapiResponse(data = data)
         fun <T> failure(error: String) = YapiResponse<T>(error = error)
+
+        /** A failure YApi itself answered: see [rejected]. */
+        fun <T> rejection(error: String) = YapiResponse<T>(error = error, rejected = true)
     }
 }

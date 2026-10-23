@@ -216,7 +216,7 @@ class ExportTargetsTest {
 
         assertEquals(
             "a header line, then one line per target, in order",
-            "No target has an endpoint, so nothing was listed:\n${dto.describe()}\n${service.describe()}",
+            "No target has an endpoint, so there is nothing to list or export:\n${dto.describe()}\n${service.describe()}",
             message
         )
     }

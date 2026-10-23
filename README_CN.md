@@ -88,6 +88,7 @@ API Explorer 的搜索框使用同一套规则。
 调用 EasyYapi：
 
 - `easyapi_scan_endpoints` —— 列出这些目标会导出哪些接口，只读
+- `easyapi_export` —— 像 **Export to YAPI** 一样把它们导出到 YApi，不弹任何对话框
 
 配置与限制见 [usage-guide §Using EasyYapi from an MCP Client](docs/knowledge-base/usage-guide.md#using-easyyapi-from-an-mcp-client)。
 

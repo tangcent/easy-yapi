@@ -4,6 +4,7 @@ import com.intellij.openapi.ui.TestDialogManager
 import com.itangcent.easyapi.channel.yapi.model.YapiResponse
 import com.itangcent.easyapi.core.settings.state.UnifiedAppSettingsState
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
+import com.itangcent.easyapi.testFramework.recordDialogs
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 
@@ -126,4 +127,49 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
         helper.resetPromptedModules()
         assertTrue("resetPromptedModules should complete without error", true)
     }
+
+    // ---- lookupToken: the token table only, for an export with nobody to answer a dialog ----
+
+    fun `test lookupToken finds the module token`() {
+        setYapiField("yapiTokens", "module-a=token-a")
+
+        val (token, prompts) = recordDialogs { runBlocking { helper.lookupToken("module-a") } }
+
+        assertEquals("token-a", token)
+        assertEquals("a headless lookup must not prompt", emptyList<String>(), prompts)
+        assertEquals("settings are left alone", "module-a=token-a", yapiTokens())
+    }
+
+    fun `test lookupToken keeps the fallback to a single bare token`() {
+        setYapiField("yapiTokens", "bare-token")
+
+        val (token, prompts) = recordDialogs { runBlocking { helper.lookupToken("module-a") } }
+
+        assertEquals("bare-token", token)
+        assertEquals("a headless lookup must not prompt", emptyList<String>(), prompts)
+        assertEquals("settings are left alone", "bare-token", yapiTokens())
+    }
+
+    fun `test lookupToken finds nothing for a module without a token`() {
+        setYapiField("yapiTokens", "module-b=token-b")
+
+        val (token, prompts) = recordDialogs { runBlocking { helper.lookupToken("module-a") } }
+
+        assertNull(token)
+        assertEquals("a headless lookup must not prompt", emptyList<String>(), prompts)
+        assertEquals("settings are left alone", "module-b=token-b", yapiTokens())
+    }
+
+    fun `test lookupToken does not use up the interactive prompt for the module`() {
+        setYapiField("yapiTokens", "module-b=token-b")
+        recordDialogs { runBlocking { helper.lookupToken("module-a") } }
+
+        val (_, prompts) = recordDialogs { runBlocking { helper.resolveToken("module-a", validator("token-b")) } }
+
+        assertEquals("an interactive export still asks once: $prompts", 1, prompts.size)
+        assertTrue(prompts.single().contains("module-a"))
+    }
+
+    private fun yapiTokens(): String? =
+        UnifiedAppSettingsState.getInstance().getValue("com.itangcent.easyapi.channel.yapi.YapiSettings", "yapiTokens")
 }
