@@ -45,7 +45,8 @@ dependencies {
             "org.jetbrains.plugins.gradle",
             "org.jetbrains.kotlin",
             "org.intellij.groovy",
-            "org.intellij.intelliLang"
+            "org.intellij.intelliLang",
+            "com.intellij.mcpServer"
         )
         plugin("org.intellij.scala:2025.2.51")
         pluginVerifier()

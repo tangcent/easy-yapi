@@ -55,7 +55,7 @@ All four are declared `dynamic="true"` so they can be loaded/unloaded without a
 restart. `plugin.xml` declares one further EP, `featureContributor`, which
 supplies per-project feature metadata (settings groups and descriptors) — it is
 not a surface for adding a channel/format/framework. The whole block lives at
-[`plugin.xml#L23-L33`](../../src/main/resources/META-INF/plugin.xml#L23-L33):
+[`plugin.xml#L24-L34`](../../src/main/resources/META-INF/plugin.xml#L24-L34):
 
 ```xml
 <extensionPoints>

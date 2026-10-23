@@ -112,6 +112,7 @@ Known thread entry points:
 - **EDT** — `core/ide/action/` AnActions, dialogs, linemarkers, settings UI, dashboard panel
 - **`EasyAPI-background` pool** — startup activities (`ApiIndexStartupActivity`, `SettingsMigrationActivity`, …), `backgroundAsync` call sites, export orchestration
 - **Rule engine (uncontrolled)** — `Jsr223ScriptParser` evaluates Groovy rules inside `withContext(IdeDispatchers.Background)` with **no read action**. Scripts can invoke ANY public member of the bound context objects — including implicit `toString()` via string interpolation, `hashCode`, `equals`, and property access. This is where issue #1432 crashed.
+- **MCP server (platform coroutines)** — the IDE's built-in MCP server calls the `core/mcp/` tools on its own coroutines; `EasyApiMcpToolset.runTool` moves each tool body to the `EasyAPI-background` pool first and turns an unexpected exception into an error result.
 
 Golden rules:
 
@@ -301,6 +302,7 @@ com.itangcent.easyapi/
     ├── cache/      (+ api/ http/ json/)
     ├── settings/   (+ migration/ module/ state/ ui/)
     ├── ai/         (+ agent/ credentials/ tools/ ui/)
+    ├── mcp/        # tools for the IDE's built-in MCP server (optional dependency, easy-api-mcp.xml)
     ├── grpc/       # runtime plumbing (descriptor reflection, proto) — peer of framework/grpc's consumer
     ├── repository/
     └── extension/
@@ -320,6 +322,8 @@ When adding new code, apply this decision rule (first match wins) to pick the bu
 The four top-level buckets are named explicitly: `channel`, `format`, `framework`, `core`. Code shared across exactly two buckets but with no natural home elsewhere lives in `core/` (e.g. the pipeline in `core/export/` is used by both `framework/` and `channel/`).
 
 **EP-contract sub-packages.** Each input/output bucket owns a `spi/` sub-package for its EP contract surfaces, which `core.*` may legitimately import (the only sibling imports `core.*` allows): `channel.spi.*` (Channel + ChannelRegistry), `format.spi.*` (FieldFormatChannel + FieldFormatChannelRegistry), `framework.spi.*` (FrameworkRegistry — added by the package-restructure-patch under the broadened CO3 rule). Concrete per-id implementations (`channel.<id>.*`, `format.<id>.*`, `framework.<id>.*`) imported from `core.*` remain forbidden.
+
+**MCP Server API.** Only `core/mcp/` may reference `com.intellij.mcpserver.*`, and only `McpToolset`, `@McpTool` and `@McpDescription`: the MCP Server plugin is an optional dependency, and the rest of its API changed shape between IDE versions. `McpApiCompatGuardTest` checks the compiled classes of the whole plugin for both.
 
 Step-by-step guides for adding a new channel/format/framework live in `docs/developer/`.
 

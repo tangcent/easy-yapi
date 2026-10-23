@@ -92,6 +92,16 @@ Convert class fields to various formats:
 - **To Properties** — Java `.properties` format
 - **To YAML** — YAML format with Spring Boot `application.yml` semantics (honors `@ConfigurationProperties` prefix)
 
+### MCP Tools
+
+With the IDE's built-in MCP server turned on (IntelliJ IDEA 2025.2+), an AI agent connected to it can
+drive EasyYapi on the classes, methods or source files it names:
+
+- `easyapi_scan_endpoints` — list the endpoints EasyYapi would export for them; read-only
+
+See [Using EasyYapi from an MCP Client](docs/knowledge-base/usage-guide.md#using-easyyapi-from-an-mcp-client)
+for setup and limits.
+
 ### Supported Frameworks
 
 | Category | Supported |
@@ -355,6 +365,7 @@ com.itangcent.easyapi/
     ├── cache/       # (+ api/ http/ json/)
     ├── settings/    # (+ migration/ module/ state/ ui/)
     ├── ai/          # (+ agent/ credentials/ tools/ ui/)
+    ├── mcp/         # tools for the IDE's built-in MCP server (optional dependency)
     ├── grpc/        # runtime plumbing (descriptor reflection, proto) — peer of framework/grpc's consumer
     ├── repository/
     └── extension/
