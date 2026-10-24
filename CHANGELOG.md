@@ -5,6 +5,33 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.6] - 2026-10-25
+
+### Added
+- let MCP clients scan API endpoints and export them to YApi (#1482, #1484)
+
+### Fixed
+- add missing Swagger 2 annotation attributes
+- support @ApiImplicitParam in swagger rules
+- export selected APIs and tolerate YApi nulls (#1476)
+- pass the 2025.3 compatibility check (#1478)
+- support exporting a contract method and its docs (#1475)
+- skip unit test and coverage for release PRs by branch name
+- use Messages.showDialog instead of the internal MessagesService
+- drop deprecated URL(String) and Messages.showChooseDialog
+- surface the server's rejection reason (#1471)
+- show record field comments in exported docs (#1473)
+
+### Improved
+- enhance(ai): sync outside edits before MCP scans
+- chore(skills): align agent skills with repo practice (#1477)
+- docs: drop the stale DeepWiki badge from READMEs (#1474)
+- chore(ci): bump the remaining github-script steps to v7
+- ci(verifier): write the verifier log outside build/
+- docs(knowledge-base): fix where Chat / Magic live; drop removed Help button (#1469)
+
+---
+
 ## [3.2.5] - 2026-09-19
 
 ### Added
