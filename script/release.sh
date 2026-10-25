@@ -45,10 +45,10 @@ fi
 
 echo "Collecting commits since ${last_tag:-beginning}..."
 
-feat_commits=$(git log --pretty=format:"%s" ${commits_since} 2>/dev/null | grep -E "^feat[:(\s]" | sed 's/^feat:[\s]*//' || true)
-fix_commits=$(git log --pretty=format:"%s" ${commits_since} 2>/dev/null | grep -E "^fix[:(\s]" | sed 's/^fix:[\s]*//' || true)
-refactor_commits=$(git log --pretty=format:"%s" ${commits_since} 2>/dev/null | grep -E "^refactor[:(\s]" | sed 's/^refactor:[\s]*//' || true)
-other_commits=$(git log --pretty=format:"%s" ${commits_since} 2>/dev/null | grep -ivE "^(feat|fix|refactor)[:(\s]" | grep -vE "^(feat|fix|refactor)[:]" || true)
+feat_commits=$(git log --pretty=format:"%s" ${commits_since} 2>/dev/null | grep -E "^feat([(][^)]*[)])?:" | sed -E 's/^feat([(][^)]*[)])?:[[:space:]]*//' | awk '!seen[$0]++' || true)
+fix_commits=$(git log --pretty=format:"%s" ${commits_since} 2>/dev/null | grep -E "^fix([(][^)]*[)])?:" | sed -E 's/^fix([(][^)]*[)])?:[[:space:]]*//' | awk '!seen[$0]++' || true)
+refactor_commits=$(git log --pretty=format:"%s" ${commits_since} 2>/dev/null | grep -E "^refactor([(][^)]*[)])?:" | sed -E 's/^refactor([(][^)]*[)])?:[[:space:]]*//' | awk '!seen[$0]++' || true)
+other_commits=$(git log --pretty=format:"%s" ${commits_since} 2>/dev/null | grep -vE "^(feat|fix|refactor)([(][^)]*[)])?:" | awk '!seen[$0]++' || true)
 
 CHANGELOG="CHANGELOG.md"
 
