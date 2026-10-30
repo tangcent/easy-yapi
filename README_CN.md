@@ -108,6 +108,16 @@ npx skills add tangcent/easy-yapi -g -y
 
 两者的分工与细节见 [README.md §Skills](README.md#skills)。
 
+**临时使用（无需安装）** —— 如果你的 AI 助手不支持安装 skill，或不想全局安装，可以复制下面的引导语，在末尾 `我的问题是：` 后面追加自己的问题后发送。助手会直接从仓库 clone 这个 skill，无需 `npx skills add`，只拉一个 commit 和 `skills/easy-yapi-assistant/` 目录。把 `master` 换成与已安装插件对应的 release tag（如 `v3.2.5`）可避免文档与插件版本漂移。
+
+```text
+把 https://github.com/tangcent/easy-yapi.git clone 到 ~/.easy-yapi-assistant（目录已存在就先删除），执行：
+  git clone --depth 1 --branch master --single-branch --filter=blob:none --sparse https://github.com/tangcent/easy-yapi.git ~/.easy-yapi-assistant
+  git -C ~/.easy-yapi-assistant sparse-checkout set skills/easy-yapi-assistant
+然后读取 ~/.easy-yapi-assistant/skills/easy-yapi-assistant/SKILL.md，按其中的工作流回答我的问题；
+完成后删除 ~/.easy-yapi-assistant。我的问题是：
+```
+
 ## 参与开发
 
 ```bash

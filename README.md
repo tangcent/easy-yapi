@@ -245,6 +245,23 @@ npx skills add tangcent/easy-yapi -g -y
 
 This installs the [`easy-yapi-assistant`](skills/easy-yapi-assistant/SKILL.md) skill globally. Once installed, your AI assistant will automatically invoke it when you ask to add or modify EasyApi rules.
 
+### Use the skill without installing
+
+If your assistant cannot install skills, or you do not want a global install, paste the prompt
+below into the chat and append your question after the final `My question:`. The assistant clones
+the skill from the repository itself — no `npx skills add` needed — fetching one commit and only
+the `skills/easy-yapi-assistant/` folder. Replace `master` with the matching release tag
+(e.g. `v3.2.5`) to keep the skill aligned with your installed plugin version.
+
+```text
+Clone https://github.com/tangcent/easy-yapi.git into ~/.easy-yapi-assistant (remove that
+directory first if it already exists) with:
+  git clone --depth 1 --branch master --single-branch --filter=blob:none --sparse https://github.com/tangcent/easy-yapi.git ~/.easy-yapi-assistant
+  git -C ~/.easy-yapi-assistant sparse-checkout set skills/easy-yapi-assistant
+Then read ~/.easy-yapi-assistant/skills/easy-yapi-assistant/SKILL.md and follow it to answer
+my question. Delete ~/.easy-yapi-assistant when done. My question:
+```
+
 ### Two approaches to AI-assisted rule authoring
 
 | Approach | Where it runs | Best for |
