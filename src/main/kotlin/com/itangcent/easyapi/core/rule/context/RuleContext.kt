@@ -76,24 +76,35 @@ class RuleContext private constructor(
         get() = resolvedCanonicalText()
             ?: readSync { psiType?.canonicalText ?: psiCanonicalText() }
 
-    private fun resolvedCanonicalText(): String? = when (core) {
-        is ResolvedMethod -> {
-            val cls = readSync { core.psiMethod.containingClass?.qualifiedName } ?: ""
-            "$cls#${core.psiMethod.name}"
+    /**
+     * Canonical text of the resolved [core], built without requiring the caller to hold a read lock.
+     *
+     * Every branch below reads PSI (`psiMethod.name`, `psiClass.qualifiedName`, the lazy
+     * resolution of `returnType`), and lifecycle event rules (`export.after`, `api.*.parse.*`)
+     * are evaluated on the background pool **outside** any read action: the exporters that fire
+     * them do not open one. Wrapping the whole branch in [readSync] is a no-op for callers that
+     * already hold a read action, so this costs nothing on the hot path.
+     */
+    private fun resolvedCanonicalText(): String? = readSync {
+        when (core) {
+            is ResolvedMethod -> {
+                val cls = core.psiMethod.containingClass?.qualifiedName ?: ""
+                "$cls#${core.psiMethod.name}"
+            }
+            is ResolvedField -> {
+                val cls = core.psiField.containingClass?.qualifiedName ?: ""
+                "$cls#${core.psiField.name}"
+            }
+            is ResolvedParam -> {
+                val method = core.psiParameter.declarationScope
+                if (method is com.intellij.psi.PsiMethod) {
+                    val cls = method.containingClass?.qualifiedName ?: ""
+                    "$cls#${method.name}.${core.name}"
+                } else core.name
+            }
+            is ResolvedType -> core.qualifiedName()
+            else -> null
         }
-        is ResolvedField -> {
-            val cls = readSync { core.psiField.containingClass?.qualifiedName } ?: ""
-            "$cls#${core.psiField.name}"
-        }
-        is ResolvedParam -> {
-            val method = readSync { core.psiParameter.declarationScope }
-            if (method is com.intellij.psi.PsiMethod) {
-                val cls = readSync { method.containingClass?.qualifiedName } ?: ""
-                "$cls#${method.name}.${core.name}"
-            } else core.name
-        }
-        is ResolvedType -> core.qualifiedName()
-        else -> null
     }
 
     private fun psiCanonicalText(): String? = when (val el = element) {
@@ -126,12 +137,21 @@ class RuleContext private constructor(
         get() = resolvedTypeText()
             ?: readSync { psiType?.canonicalText ?: element?.text }
 
-    private fun resolvedTypeText(): String? = when (core) {
-        is ResolvedMethod -> core.returnType.qualifiedName()
-        is ResolvedField -> core.type.qualifiedName()
-        is ResolvedParam -> core.type.qualifiedName()
-        is ResolvedType -> core.qualifiedName()
-        else -> null
+    /**
+     * Type text of the resolved [core], for regex filter matching.
+     *
+     * Same read-lock contract as [resolvedCanonicalText]: `qualifiedName()` walks into
+     * `psiClass.qualifiedName` and lazily resolves type arguments, both PSI reads, and
+     * `#regex:` filters run on event rules outside any read action.
+     */
+    private fun resolvedTypeText(): String? = readSync {
+        when (core) {
+            is ResolvedMethod -> core.returnType.qualifiedName()
+            is ResolvedField -> core.type.qualifiedName()
+            is ResolvedParam -> core.type.qualifiedName()
+            is ResolvedType -> core.qualifiedName()
+            else -> null
+        }
     }
 
     override fun toString(): String = canonicalText ?: "anonymous"

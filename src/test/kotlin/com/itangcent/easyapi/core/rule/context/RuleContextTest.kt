@@ -3,6 +3,8 @@ package com.itangcent.easyapi.core.rule.context
 import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.HttpMetadata
 import com.itangcent.easyapi.core.export.HttpMethod
+import com.itangcent.easyapi.core.internal.threading.readSync
+import com.itangcent.easyapi.core.psi.type.ResolvedType
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class RuleContextTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -112,6 +114,39 @@ class RuleContextTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNull("Regex groups should be null initially", context.regexGroups)
         context.regexGroups = listOf("match1", "match2")
         assertEquals("Should have 2 groups", 2, context.regexGroups!!.size)
+    }
+
+    /**
+     * `canonicalText` / `matchText` for a [com.itangcent.easyapi.core.psi.type.ResolvedMethod]
+     * context: `class#method` and the resolved return type.
+     *
+     * Both getters wrap their resolved branch in `readSync` so that lifecycle event rules —
+     * which run on the background pool without a read action — cannot hit the PSI read-lock
+     * assertion. That contract is **not** assertable here: locating the class with
+     * `findClass` already warms `psiClass.qualifiedName`, so a bare-thread probe stays green
+     * with or without the `readSync` (a vacuous test). The lock contract is enforced by
+     * AGENTS.md "boundary classes self-protect unconditionally" instead; this test pins the
+     * values so the wrappers cannot silently change them.
+     */
+    fun testResolvedContextText() {
+        loadFile("rule/ResolvedHolder.java", """
+            package com.test.rule;
+            public class ResolvedHolder {
+                public ResolvedHolder self() {
+                    return this;
+                }
+            }
+        """.trimIndent())
+        val psiClass = findClass("com.test.rule.ResolvedHolder")!!
+        val resolvedMethod = readSync {
+            ResolvedType.ClassType(psiClass, emptyList())
+                .suitableMethods()
+                .single { it.name == "self" }
+        }
+        val context = RuleContext.from(project, resolvedMethod)
+
+        assertEquals("com.test.rule.ResolvedHolder#self", context.canonicalText)
+        assertEquals("com.test.rule.ResolvedHolder", context.matchText)
     }
 
     fun testWithElement() {
