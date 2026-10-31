@@ -526,6 +526,24 @@ class ResolvedMethod(
 
     override fun toString(): String =
         "ResolvedMethod(name=$name, containClass=${containClass?.qualifiedName})"
+
+    companion object {
+        /**
+         * Wraps a single [PsiMethod] into a resolved method whose generic context is
+         * [ownerClassType]'s — the same convention [ResolvedType.ClassType.suitableMethods]
+         * uses (`containClass` / `ownerClassType` = the class being exported).
+         *
+         * `psiMethod.name` is a PSI read, so [readSync] self-protects: callers do not need
+         * to hold a read action, and the wrapper is a no-op when they do.
+         */
+        fun of(psiMethod: PsiMethod, ownerClassType: ResolvedType.ClassType): ResolvedMethod =
+            ResolvedMethod(
+                name = readSync { psiMethod.name },
+                psiMethod = psiMethod,
+                containClass = ownerClassType.psiClass,
+                ownerClassType = ownerClassType
+            )
+    }
 }
 
 /**

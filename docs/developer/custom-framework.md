@@ -71,8 +71,13 @@ framework-specific source.
 
 ### Framework-scoped lifecycle keys (5)
 
-These `EventKey`s are fired by the Custom exporter **alongside** the
-corresponding shared hooks. The shared hook fires first, then the
+These `EventKey`s are fired by
+[`CustomRuleEventAspect`](../../src/main/kotlin/com/itangcent/easyapi/framework/custom/CustomRuleEventAspect.kt)
+— an `apiParseAspect` implementation with `order = 1` whose `appliesTo` matches
+`CustomApiRecognizer.FRAMEWORK_NAME`. The exporter dispatches through
+`ApiParseAspects`, and the aspect fires these hooks **alongside** the
+corresponding shared hooks (`StandardRuleEventAspect` runs first because its
+`order` is `0`). The shared hook fires first, then the
 custom-specific hook, for each phase. They exist because the rule
 evaluation context does not expose the framework name to user-written
 rules — so a side-effect rule that must only run during Custom-framework
@@ -179,12 +184,13 @@ All Custom-framework code lives under
   tab via the general `SettingsPanelProvider` contract, but returns `null`
   when the framework is disabled (no panel for a disabled feature).
 - [`CustomClassExporter`](../../src/main/kotlin/com/itangcent/easyapi/framework/custom/CustomClassExporter.kt)
-  — rule-driven endpoint extraction with the full rule lifecycle
-  (shared + framework-scoped `custom.*` class/method parse hooks,
-  `EXPORT_AFTER` + `CUSTOM_EXPORT_AFTER`), threading model (all PSI
-  access under read actions, hooks under `IdeDispatchers.Background`),
-  and shared-infrastructure reuse (`DocMetadataResolver`,
-  `EndpointBuilder`, `RuleEngine`, `FrameworkRegistry`, `ResolvedType`).
+  — rule-driven endpoint extraction. Lifecycle hooks (shared and
+  framework-scoped `custom.*` class/method parse hooks, `EXPORT_AFTER` +
+  `CUSTOM_EXPORT_AFTER`) are dispatched through `ApiParseAspects` to
+  `StandardRuleEventAspect` / `CustomRuleEventAspect`, not evaluated inline.
+  Value-read rules (`custom.class.is.api`, `custom.method.is.api`,
+  `custom.http.method`, `custom.path`, the `custom.param.*` classifiers)
+  still call `RuleEngine` directly. All PSI access stays under read actions.
 - [`CustomSettings`](../../src/main/kotlin/com/itangcent/easyapi/framework/custom/CustomSettings.kt)
   — `data class` persisting the `enableLineMarker` toggle via the unified
   `UnifiedAppSettingsState` (APPLICATION scope; no per-module state class

@@ -8,6 +8,9 @@ import com.itangcent.easyapi.core.internal.threading.read
 import com.itangcent.easyapi.core.export.ClassExporter
 import com.itangcent.easyapi.core.export.EndpointBuilder
 import com.itangcent.easyapi.core.export.*
+import com.itangcent.easyapi.core.export.aspect.ApiParseAspects
+import com.itangcent.easyapi.core.export.aspect.EndpointParseContext
+import com.itangcent.easyapi.core.export.aspect.MethodParseContext
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.core.psi.helper.UnifiedAnnotationHelper
@@ -63,6 +66,7 @@ class JaxRsClassExporter(
     private val contentTypeResolver = JaxRsContentTypeResolver(annotationHelper)
     private val metadataResolver = DocMetadataResolver.getInstance(project)
     private val endpointBuilder = EndpointBuilder.getInstance(project)
+    private val parseAspects get() = ApiParseAspects.getInstance(project)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isResource(psiClass)) return emptyList()
@@ -72,14 +76,10 @@ class JaxRsClassExporter(
         }
         LOG.info("before parse class:$className")
 
-        withContext(IdeDispatchers.Background) {
-            engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
-        }
-
-        val resolvedType = ResolvedType.ClassType(psiClass, emptyList())
-        val resolvedMethods = read { resolvedType.suitableMethods() }
-        val endpoints = ArrayList<ApiEndpoint>()
-        try {
+        return parseAspects.aroundClass(frameworkName, psiClass) {
+            val resolvedType = ResolvedType.ClassType(psiClass, emptyList())
+            val resolvedMethods = read { resolvedType.suitableMethods() }
+            val endpoints = ArrayList<ApiEndpoint>()
             for (resolvedMethod in resolvedMethods) {
                 val annotatedMethod = read {
                     val httpMethodAnn = resolvedMethod.searchAnnotation(JAXRS_HTTP_METHOD_ANNOTATIONS)
@@ -88,13 +88,9 @@ class JaxRsClassExporter(
                 } ?: continue
                 endpoints.addAll(exportMethod(psiClass, annotatedMethod, resolvedMethod))
             }
-        } finally {
-            withContext(IdeDispatchers.Background) {
-                engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
-            }
+            LOG.info("after parse class:$className")
+            endpoints
         }
-        LOG.info("after parse class:$className")
-        return endpoints
     }
 
     private suspend fun exportMethod(
@@ -108,13 +104,9 @@ class JaxRsClassExporter(
         }
         LOG.info("before parse method:$methodKey")
 
-        withContext(IdeDispatchers.Background) {
-            engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, resolvedMethod)
-        }
+        return parseAspects.aroundMethod(MethodParseContext(resolvedMethod, frameworkName)) {
+            val classQualifiedName = read { psiClass.qualifiedName ?: psiClass.name }
 
-        val classQualifiedName = read { psiClass.qualifiedName ?: psiClass.name }
-
-        try {
             var httpMethod = methodResolver.resolve(annotatedMethod)
             if (httpMethod == null) {
                 // Try default HTTP method from rule
@@ -125,7 +117,7 @@ class JaxRsClassExporter(
             }
             if (httpMethod == null) {
                 LOG.info("after parse method:$methodKey")
-                return emptyList()
+                return@aroundMethod emptyList()
             }
             val endpoints: List<ApiEndpoint>
 
@@ -180,19 +172,11 @@ class JaxRsClassExporter(
                 )
             }
 
-            withContext(IdeDispatchers.Background) {
-                for (endpoint in endpoints) {
-                    engine.evaluate(RuleKeys.EXPORT_AFTER, resolvedMethod) { ctx ->
-                        ctx.setExt("api", endpoint)
-                    }
-                }
+            for (endpoint in endpoints) {
+                parseAspects.afterEndpoint(EndpointParseContext(endpoint, frameworkName, resolvedMethod))
             }
 
-            return endpoints
-        } finally {
-            withContext(IdeDispatchers.Background) {
-                engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, resolvedMethod)
-            }
+            endpoints
         }
     }
 

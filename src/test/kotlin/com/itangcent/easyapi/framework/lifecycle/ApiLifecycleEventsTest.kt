@@ -9,8 +9,13 @@ import com.itangcent.easyapi.framework.springmvc.ActuatorEndpointExporter
 import com.itangcent.easyapi.framework.springmvc.SpringMvcClassExporter
 import com.itangcent.easyapi.core.psi.helper.DocHelper
 import com.itangcent.easyapi.core.psi.helper.UnifiedDocHelper
+import com.intellij.testFramework.registerOrReplaceServiceInstance
+import com.itangcent.easyapi.core.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.core.logging.LoggerCollector
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
 
 class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -20,14 +25,141 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
     private lateinit var grpcExporter: GrpcClassExporter
     private lateinit var actuatorExporter: ActuatorEndpointExporter
 
+    /** Captures the rule scripts' `logger.info("evt:...")` markers. */
+    private val console = LoggerCollector()
+
     override fun setUp() {
         super.setUp()
         loadCommonTestFiles()
+        project.registerOrReplaceServiceInstance(
+            IdeaConsoleProvider::class.java,
+            mock<IdeaConsoleProvider> { on { getConsole() } doReturn console },
+            testRootDisposable
+        )
         springExporter = SpringMvcClassExporter(project)
         jaxRsExporter = JaxRsClassExporter(project)
         feignExporter = FeignClassExporter(project)
         grpcExporter = GrpcClassExporter(project)
         actuatorExporter = ActuatorEndpointExporter(project)
+    }
+
+    /** Event markers emitted by the rule scripts during this test. */
+    private fun eventSequence(): List<String> =
+        console.getMessages().map { it.message }.filter { it.startsWith("evt:") }
+
+    private fun assertClassEnvelope(events: List<String>, className: String) {
+        assertEquals(
+            "First event must be class.before: $events",
+            "evt:class.before:$className",
+            events.firstOrNull()
+        )
+        assertEquals(
+            "Last event must be class.after: $events",
+            "evt:class.after:$className",
+            events.lastOrNull()
+        )
+        assertEquals(
+            "class.before must fire exactly once: $events",
+            1,
+            events.count { it == "evt:class.before:$className" }
+        )
+        assertEquals(
+            "class.after must fire exactly once: $events",
+            1,
+            events.count { it == "evt:class.after:$className" }
+        )
+    }
+
+    private fun assertNoMethodEvents(events: List<String>) {
+        assertTrue(
+            "Actuator/gRPC must not fire method-level events: $events",
+            events.none { it.startsWith("evt:method.") || it.startsWith("evt:param.") }
+        )
+    }
+
+    /**
+     * Characterizes the full lifecycle sequence produced by one exporter run:
+     * class.before → (method.before → param.before → param.after → export.after* → method.after)* → class.after.
+     *
+     * Counts and method order are the baseline captured from the pre-refactor exporters
+     * (see T0.2 in `.spec/api-parse-aspect-refactor/tasks.md`); they must stay identical
+     * through every migration step.
+     */
+    private fun assertLifecycle(
+        events: List<String>,
+        className: String,
+        expectedMethods: List<String>,
+        expectedParamPairs: Int,
+        expectedExportAfter: Int,
+        expectMethodEvents: Boolean = true
+    ) {
+        assertClassEnvelope(events, className)
+
+        assertEquals(
+            "method.before sequence: $events",
+            expectedMethods.map { "evt:method.before:$it" },
+            events.filter { it.startsWith("evt:method.before:") }
+        )
+        assertEquals(
+            "method.after sequence: $events",
+            expectedMethods.map { "evt:method.after:$it" },
+            events.filter { it.startsWith("evt:method.after:") }
+        )
+
+        assertEquals(
+            "param.before count: $events",
+            expectedParamPairs,
+            events.count { it.startsWith("evt:param.before:") }
+        )
+        assertEquals(
+            "param.after count: $events",
+            expectedParamPairs,
+            events.count { it.startsWith("evt:param.after:") }
+        )
+        events.withIndex()
+            .filter { it.value.startsWith("evt:param.before:") }
+            .forEach { (index, event) ->
+                assertEquals(
+                    "param.before must be immediately followed by its after: $events",
+                    "evt:param.after:" + event.removePrefix("evt:param.before:"),
+                    events.getOrNull(index + 1)
+                )
+            }
+
+        assertEquals(
+            "export.after count: $events",
+            expectedExportAfter,
+            events.count { it == "evt:export.after" }
+        )
+
+        if (!expectMethodEvents) {
+            assertNoMethodEvents(events)
+            return
+        }
+
+        // Each method block must be well formed and must not enclose another method block.
+        val starts = events.withIndex().filter { it.value.startsWith("evt:method.before:") }
+        starts.forEachIndexed { i, (startIndex, startEvent) ->
+            val name = startEvent.removePrefix("evt:method.before:")
+            val endIndex = events.indexOf("evt:method.after:$name")
+            assertTrue("method $name: after must come after before: $events", endIndex > startIndex)
+            assertTrue(
+                "method $name: block must close before the next method starts: $events",
+                endIndex < (starts.getOrNull(i + 1)?.index ?: Int.MAX_VALUE)
+            )
+        }
+
+        // export.after always fires inside a method block, after before and before after.
+        val firstBefore = events.indexOfFirst { it.startsWith("evt:method.before:") }
+        val lastAfter = events.indexOfLast { it.startsWith("evt:method.after:") }
+        events.withIndex()
+            .filter { it.value == "evt:export.after" }
+            .forEach { (index, _) ->
+                assertTrue(
+                    "export.after must fire inside a method block: $events",
+                    index > firstBefore && index < lastAfter
+                )
+            }
     }
 
     private fun loadCommonTestFiles() {
@@ -101,14 +233,15 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun createConfigReader() = TestConfigReader.fromConfigText(
         project,
         """
-        api.class.parse.before=groovy:logger.info("lifecycle:api.class.parse.before:" + it.name())
-        api.class.parse.after=groovy:logger.info("lifecycle:api.class.parse.after:" + it.name())
-        api.method.parse.before=groovy:logger.info("lifecycle:api.method.parse.before:" + it.name())
-        api.method.parse.after=groovy:logger.info("lifecycle:api.method.parse.after:" + it.name())
-        export.after=groovy:api.appendDesc("\n```\n" + api.toCurl() + "\n```\n")
+        api.class.parse.before=groovy:logger.info("evt:class.before:" + it.name())
+        api.class.parse.after=groovy:logger.info("evt:class.after:" + it.name())
+        api.method.parse.before=groovy:logger.info("evt:method.before:" + it.name())
+        api.method.parse.after=groovy:logger.info("evt:method.after:" + it.name())
+        api.param.parse.before=groovy:logger.info("evt:param.before:" + it.name())
+        api.param.parse.after=groovy:logger.info("evt:param.after:" + it.name())
+        export.after=groovy:logger.info("evt:export.after"); api.appendDesc("\n```\n" + api.toCurl() + "\n```\n")
         """.trimIndent()
     )
-
 
     // ── Spring MVC lifecycle events ──────────────────────────────
 
@@ -118,6 +251,18 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val endpoints = springExporter.export(psiClass!!)
         assertTrue("Should export endpoints", endpoints.isNotEmpty())
+
+        assertLifecycle(
+            events = eventSequence(),
+            className = "UserCtrl",
+            expectedMethods = listOf(
+                "greeting", "get", "create", "update", "getByCookie", "getFromSession",
+                "updateWithBody", "simpleRequest", "explicitGetWithBody", "updateWithModel", "ctrlName"
+            ),
+            expectedParamPairs = 7,
+            expectedExportAfter = 12
+        )
+        assertEquals("One export.after event per endpoint", 12, endpoints.size)
     }
 
     fun testSpringMvcExportAfterEvent() = runTest {
@@ -139,6 +284,18 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val endpoints = jaxRsExporter.export(psiClass!!)
         assertTrue("Should export endpoints", endpoints.isNotEmpty())
+
+        assertLifecycle(
+            events = eventSequence(),
+            className = "UserResource",
+            expectedMethods = listOf(
+                "greeting", "set", "get", "getById", "add",
+                "list", "listTypeInPath", "delete", "types", "setName"
+            ),
+            expectedParamPairs = 0,
+            expectedExportAfter = 10
+        )
+        assertEquals("One export.after event per endpoint", 10, endpoints.size)
     }
 
     fun testJaxRsExportAfterEvent() = runTest {
@@ -160,6 +317,15 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val endpoints = feignExporter.export(psiClass!!)
         assertTrue("Should export endpoints", endpoints.isNotEmpty())
+
+        assertLifecycle(
+            events = eventSequence(),
+            className = "UserClient",
+            expectedMethods = listOf("greeting", "get", "add", "update"),
+            expectedParamPairs = 0,
+            expectedExportAfter = 4
+        )
+        assertEquals("One export.after event per endpoint", 4, endpoints.size)
     }
 
     fun testFeignExportAfterEvent() = runTest {
@@ -181,6 +347,16 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val endpoints = grpcExporter.export(psiClass!!)
         assertTrue("Should export endpoints", endpoints.isNotEmpty())
+
+        assertLifecycle(
+            events = eventSequence(),
+            className = "EchoServiceImpl",
+            expectedMethods = emptyList(),
+            expectedParamPairs = 0,
+            expectedExportAfter = 2,
+            expectMethodEvents = false
+        )
+        assertEquals("One export.after event per endpoint", 2, endpoints.size)
     }
 
     fun testGrpcExportAfterEvent() = runTest {
@@ -202,6 +378,16 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val endpoints = actuatorExporter.export(psiClass!!)
         assertTrue("Should export endpoints", endpoints.isNotEmpty())
+
+        assertLifecycle(
+            events = eventSequence(),
+            className = "StandardEndpoint",
+            expectedMethods = emptyList(),
+            expectedParamPairs = 0,
+            expectedExportAfter = 3,
+            expectMethodEvents = false
+        )
+        assertEquals("One export.after event per endpoint", 3, endpoints.size)
     }
 
     fun testActuatorExportAfterEvent() = runTest {
@@ -223,6 +409,7 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val endpoints = springExporter.export(psiClass!!)
         assertTrue("Should not export endpoints for non-controller", endpoints.isEmpty())
+        assertTrue("Non-controller must not fire lifecycle events", eventSequence().isEmpty())
     }
 
     // ── export.after rule: api.toCurl() ──────────────────

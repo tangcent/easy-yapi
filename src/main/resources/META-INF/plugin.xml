@@ -31,6 +31,7 @@
              no longer hard-imports framework.<id>.* recognizer classes (DAG rule). -->
         <extensionPoint name="apiClassRecognizer" interface="com.itangcent.easyapi.core.export.recognizer.ApiClassRecognizer" area="IDEA_PROJECT" dynamic="true"/>
         <extensionPoint name="featureContributor" interface="com.itangcent.easyapi.core.feature.FeatureContributor" area="IDEA_PROJECT" dynamic="true"/>
+        <extensionPoint name="apiParseAspect" interface="com.itangcent.easyapi.core.export.aspect.ApiParseAspect" area="IDEA_PROJECT" dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.itangcent.idea.plugin.easy-yapi">
@@ -42,6 +43,10 @@
         <classExporter implementation="com.itangcent.easyapi.framework.springmvc.ActuatorEndpointExporter"/>
         <classExporter implementation="com.itangcent.easyapi.framework.grpc.GrpcClassExporter"/>
         <classExporter implementation="com.itangcent.easyapi.framework.custom.CustomClassExporter"/>
+        <!-- Lifecycle participants. The standard aspect fires the shared api.* events;
+             the custom aspect fires custom.* for the Custom framework only (order 1). -->
+        <apiParseAspect implementation="com.itangcent.easyapi.core.export.aspect.StandardRuleEventAspect"/>
+        <apiParseAspect implementation="com.itangcent.easyapi.framework.custom.CustomRuleEventAspect"/>
         <!-- register framework recognizers via EP.
              CompositeApiClassRecognizer discovers these via ExtensionPointName
              and filters by isEnabled(project) (settings-driven). -->

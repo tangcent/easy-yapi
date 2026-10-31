@@ -8,12 +8,15 @@ import com.itangcent.easyapi.core.export.ClassExporter
 import com.itangcent.easyapi.core.export.EndpointBuilder
 import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.GrpcMetadata
+import com.itangcent.easyapi.core.export.aspect.ApiParseAspects
+import com.itangcent.easyapi.core.export.aspect.EndpointParseContext
 import com.itangcent.easyapi.core.grpc.GrpcMethodResolver
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.core.psi.model.ObjectModel
+import com.itangcent.easyapi.core.psi.type.ResolvedMethod
+import com.itangcent.easyapi.core.psi.type.ResolvedType
 import com.itangcent.easyapi.core.psi.type.TypeResolver
-import com.itangcent.easyapi.core.rule.RuleKeys
 import com.itangcent.easyapi.core.rule.engine.RuleEngine
 import com.itangcent.easyapi.framework.spi.FrameworkRegistry
 
@@ -49,6 +52,7 @@ class GrpcClassExporter(
     private val recognizer = GrpcServiceRecognizer(engine)
     private val methodResolver = GrpcMethodResolver.getInstance(project)
     private val typeParser = GrpcTypeParser(metadataResolver)
+    private val parseAspects get() = ApiParseAspects.getInstance(project)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isGrpcService(psiClass)) return emptyList()
@@ -58,14 +62,11 @@ class GrpcClassExporter(
         }
         LOG.info("before parse gRPC class:$className")
 
-        engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
+        return parseAspects.aroundClass(frameworkName, psiClass) {
+            val classFolder = metadataResolver.resolveFolder(psiClass)
 
-        val classFolder = metadataResolver.resolveFolder(psiClass)
-
-        val rpcMethods = methodResolver.resolveRpcMethods(psiClass)
-        val endpoints: List<ApiEndpoint>
-        try {
-            endpoints = rpcMethods.mapNotNull { methodInfo ->
+            val rpcMethods = methodResolver.resolveRpcMethods(psiClass)
+            val endpoints: List<ApiEndpoint> = rpcMethods.mapNotNull { methodInfo ->
                 try {
                     val requestBody = buildRequestBody(methodInfo.requestType)
                     val responseBody = buildResponseBody(methodInfo.responseType, methodInfo.psiMethod)
@@ -102,18 +103,18 @@ class GrpcClassExporter(
                 }
             }
 
+            // The exporting class is the owner, so inherited RPC methods still resolve
+            // their generic types against this class's context.
+            val ownerClassType = ResolvedType.ClassType(psiClass, emptyList())
             for (endpoint in endpoints) {
                 val method = endpoint.sourceMethod ?: continue
-                engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
-                    ctx.setExt("api", endpoint)
-                }
+                val resolvedMethod = ResolvedMethod.of(method, ownerClassType)
+                parseAspects.afterEndpoint(EndpointParseContext(endpoint, frameworkName, resolvedMethod))
             }
-        } finally {
-            engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
-        }
 
-        LOG.info("after parse gRPC class:$className, found ${endpoints.size} endpoints")
-        return endpoints
+            LOG.info("after parse gRPC class:$className, found ${endpoints.size} endpoints")
+            endpoints
+        }
     }
 
     private suspend fun buildRequestBody(requestType: PsiClass?): ObjectModel? {
