@@ -11,6 +11,7 @@ Auto-generated from `src/main/resources/META-INF/plugin.xml` (`SkillFactsExporte
 | `fieldFormatChannel` | `com.itangcent.easyapi.format.spi.FieldFormatChannel` | _(application)_ | yes | 4 |
 | `apiClassRecognizer` | `com.itangcent.easyapi.core.export.recognizer.ApiClassRecognizer` | `IDEA_PROJECT` | yes | 6 |
 | `featureContributor` | `com.itangcent.easyapi.core.feature.FeatureContributor` | `IDEA_PROJECT` | yes | 2 |
+| `apiParseAspect` | `com.itangcent.easyapi.core.export.aspect.ApiParseAspect` | `IDEA_PROJECT` | yes | 2 |
 
 ## Registered implementations
 
@@ -54,5 +55,10 @@ Auto-generated from `src/main/resources/META-INF/plugin.xml` (`SkillFactsExporte
 
 - `com.itangcent.easyapi.core.feature.CoreFeatureContributor`
 - `com.itangcent.easyapi.core.feature.LegacyFeatureContributor`
+
+### `apiParseAspect` (2)
+
+- `com.itangcent.easyapi.core.export.aspect.StandardRuleEventAspect`
+- `com.itangcent.easyapi.framework.custom.CustomRuleEventAspect`
 
 > Each implementation's `id` and `enabledByDefault` are **instance** properties, and the registries that resolve them (`ChannelRegistry` / `FieldFormatChannelRegistry` / `FrameworkRegistry`) are project-scoped `@Service`s reading a project-area EP — so neither value is derivable at build time. Read them off the class above; the user's stored preference (Settings) overrides `enabledByDefault` at runtime.

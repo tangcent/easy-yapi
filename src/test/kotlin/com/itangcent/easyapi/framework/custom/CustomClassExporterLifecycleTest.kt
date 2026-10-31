@@ -3,8 +3,13 @@ package com.itangcent.easyapi.framework.custom
 import com.itangcent.easyapi.core.export.HttpMethod
 import com.itangcent.easyapi.core.export.httpMetadata
 import com.itangcent.easyapi.core.export.isHttp
+import com.itangcent.easyapi.core.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.core.logging.LoggerCollector
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
+import com.intellij.testFramework.registerOrReplaceServiceInstance
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
 
 /**
  * Verifies the rule lifecycle hooks fire in the correct order and at the
@@ -25,9 +30,17 @@ class CustomClassExporterLifecycleTest : EasyApiLightCodeInsightFixtureTestCase(
 
     private lateinit var exporter: CustomClassExporter
 
+    /** Captures the rule scripts' `logger.info("evt:...")` markers. */
+    private val console = LoggerCollector()
+
     override fun setUp() {
         super.setUp()
         loadTestFiles()
+        project.registerOrReplaceServiceInstance(
+            IdeaConsoleProvider::class.java,
+            mock<IdeaConsoleProvider> { on { getConsole() } doReturn console },
+            testRootDisposable
+        )
         exporter = CustomClassExporter(project)
     }
 
@@ -46,18 +59,71 @@ class CustomClassExporterLifecycleTest : EasyApiLightCodeInsightFixtureTestCase(
         custom.method.is.api=groovy:it.hasAnn("com.itangcent.custom.annotation.MyEndpoint")
         custom.http.method=groovy:"POST"
         custom.path=groovy:it.contextType() == "class" ? "/ctrl" : ""
-        api.class.parse.before=groovy:logger.info("lifecycle:api.class.parse.before:" + it.name())
-        api.class.parse.after=groovy:logger.info("lifecycle:api.class.parse.after:" + it.name())
-        api.method.parse.before=groovy:logger.info("lifecycle:api.method.parse.before:" + it.name())
-        api.method.parse.after=groovy:logger.info("lifecycle:api.method.parse.after:" + it.name())
-        export.after=groovy:logger.info("lifecycle:export.after:" + it.name())
-        custom.class.parse.before=groovy:logger.info("lifecycle:custom.class.parse.before:" + it.name())
-        custom.class.parse.after=groovy:logger.info("lifecycle:custom.class.parse.after:" + it.name())
-        custom.method.parse.before=groovy:logger.info("lifecycle:custom.method.parse.before:" + it.name())
-        custom.method.parse.after=groovy:logger.info("lifecycle:custom.method.parse.after:" + it.name())
-        custom.export.after=groovy:logger.info("lifecycle:custom.export.after:" + it.name()); api.setDescription("hooked")
+        api.class.parse.before=groovy:logger.info("evt:standard.class.before:" + it.name())
+        api.class.parse.after=groovy:logger.info("evt:standard.class.after:" + it.name())
+        api.method.parse.before=groovy:logger.info("evt:standard.method.before:" + it.name())
+        api.method.parse.after=groovy:logger.info("evt:standard.method.after:" + it.name())
+        export.after=groovy:logger.info("evt:standard.export.after:" + it.name())
+        custom.class.parse.before=groovy:logger.info("evt:custom.class.before:" + it.name())
+        custom.class.parse.after=groovy:logger.info("evt:custom.class.after:" + it.name())
+        custom.method.parse.before=groovy:logger.info("evt:custom.method.before:" + it.name())
+        custom.method.parse.after=groovy:logger.info("evt:custom.method.after:" + it.name())
+        custom.export.after=groovy:logger.info("evt:custom.export.after:" + it.name()); api.setDescription("hooked")
         """.trimIndent()
     )
+
+    /** Event markers emitted by the rule scripts during this test. */
+    private fun eventSequence(): List<String> =
+        console.getMessages().map { it.message }.filter { it.startsWith("evt:") }
+
+    /** Asserts that every `custom.*` event fires immediately after its standard counterpart. */
+    private fun assertStandardBeforeCustom(events: List<String>) {
+        val standardClassBefore = events.indexOfFirst { it == "evt:standard.class.before:Ctrl" }
+        val customClassBefore = events.indexOfFirst { it == "evt:custom.class.before:Ctrl" }
+        assertTrue("class.before must fire: $events", standardClassBefore >= 0)
+        assertEquals("standard class.before must open the sequence: $events", 0, standardClassBefore)
+        assertEquals("standard class.before must directly precede custom: $events", 1, customClassBefore)
+
+        assertEquals(
+            "standard/custom class.after must close the sequence: $events",
+            listOf("evt:standard.class.after:Ctrl", "evt:custom.class.after:Ctrl"),
+            events.takeLast(2)
+        )
+
+        val methodBefores = events.withIndex().filter { it.value.startsWith("evt:standard.method.before:") }
+        methodBefores.forEach { (index, event) ->
+            val name = event.removePrefix("evt:standard.method.before:")
+            assertEquals(
+                "custom method.before must directly follow standard for $name: $events",
+                "evt:custom.method.before:$name",
+                events.getOrNull(index + 1)
+            )
+        }
+
+        val methodAfters = events.withIndex().filter { it.value.startsWith("evt:standard.method.after:") }
+        methodAfters.forEach { (index, event) ->
+            val name = event.removePrefix("evt:standard.method.after:")
+            assertEquals(
+                "custom method.after must directly follow standard for $name: $events",
+                "evt:custom.method.after:$name",
+                events.getOrNull(index + 1)
+            )
+        }
+
+        val exportAfters = events.withIndex().filter { it.value == "evt:standard.export.after" }
+        exportAfters.forEach { (index, _) ->
+            assertEquals(
+                "custom export.after must directly follow standard: $events",
+                "evt:custom.export.after",
+                events.getOrNull(index + 1)
+            )
+        }
+        assertEquals(
+            "One custom export.after per standard export.after: $events",
+            exportAfters.size,
+            events.count { it == "evt:custom.export.after" }
+        )
+    }
 
     fun testClassParseBeforeAndAfterFire() = runTest {
         val psiClass = findClass("com.itangcent.custom.Ctrl")
@@ -158,5 +224,20 @@ class CustomClassExporterLifecycleTest : EasyApiLightCodeInsightFixtureTestCase(
                 endpoint.description
             )
         }
+    }
+
+    /**
+     * Characterizes the shared-before-framework ordering (Req 6.4 / Decision 8):
+     * every standard `api.*` / `export.after` event fires immediately before its
+     * `custom.*` counterpart, both at class and method level.
+     */
+    fun testStandardEventsFireBeforeCustomEvents() = runTest {
+        val psiClass = findClass("com.itangcent.custom.Ctrl")
+        assertNotNull(psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+        assertTrue("Should export endpoints", endpoints.isNotEmpty())
+
+        assertStandardBeforeCustom(eventSequence())
     }
 }

@@ -714,6 +714,32 @@ class BuiltInExtensionModelAndSpringMvcScenarioTest : EasyApiLightCodeInsightFix
                 scenarioMessage(scenario, "assert", "OpenAPI hidden endpoint"),
                 endpoints.singleOrNull { it.httpMetadata?.path == "/order/internal" }
             )
+
+            // Method-level `@Parameter` (no matching argument) is only reachable through
+            // `export.after[@io.swagger.v3.oas.annotations.Parameter]`, which runs
+            // `resolve_parameter` -> `api.setParam(name, null, required, desc, example)`.
+            // Without this assertion the swagger3 `export.after` rules have no direct coverage:
+            // name/required/hidden above all come from other keys.
+            val searchEndpoint = requireNotNull(
+                endpoints.singleOrNull { it.httpMetadata?.path == "/order/search" }
+            ) { scenarioMessage(scenario, "assert", "OpenAPI search endpoint") }
+            val keyword = requireNotNull(
+                searchEndpoint.httpMetadata?.parameters.orEmpty().singleOrNull { it.name == "keyword" }
+            ) { scenarioMessage(scenario, "assert", "export.after[Parameter] added the query param") }
+            assertEquals(
+                scenarioMessage(scenario, "assert", "export.after[Parameter] description"),
+                "search keyword",
+                keyword.description
+            )
+            assertTrue(
+                scenarioMessage(scenario, "assert", "export.after[Parameter] required"),
+                keyword.required
+            )
+            assertEquals(
+                scenarioMessage(scenario, "assert", "export.after[Parameter] example"),
+                "phone",
+                keyword.example
+            )
         }
     }
 

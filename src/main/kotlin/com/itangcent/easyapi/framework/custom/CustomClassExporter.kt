@@ -7,6 +7,9 @@ import com.intellij.psi.PsiParameter
 import com.itangcent.easyapi.core.internal.threading.IdeDispatchers
 import com.itangcent.easyapi.core.internal.threading.read
 import com.itangcent.easyapi.core.export.*
+import com.itangcent.easyapi.core.export.aspect.ApiParseAspects
+import com.itangcent.easyapi.core.export.aspect.EndpointParseContext
+import com.itangcent.easyapi.core.export.aspect.MethodParseContext
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.core.psi.model.ObjectModel
@@ -35,19 +38,17 @@ import kotlinx.coroutines.withContext
  *
  * ## Lifecycle
  *
- * Mirrors the JAX-RS exporter's lifecycle: class-level
+ * Lifecycle rule events are dispatched through [ApiParseAspects]: class-level
  * [RuleKeys.API_CLASS_PARSE_BEFORE] / [RuleKeys.API_CLASS_PARSE_AFTER]
  * wrapping the method loop, method-level
  * [RuleKeys.API_METHOD_PARSE_BEFORE] / [RuleKeys.API_METHOD_PARSE_AFTER]
- * wrapping each method (in `finally`), [RuleKeys.EXPORT_AFTER] firing per
- * endpoint with `ctx.setExt("api", endpoint)`. All hooks are wrapped in
- * [IdeDispatchers.Background] (event rules may run Groovy scripts).
+ * wrapping each method, parameter-level
+ * [RuleKeys.API_PARAM_PARSE_BEFORE] / [RuleKeys.API_PARAM_PARSE_AFTER], and
+ * [RuleKeys.EXPORT_AFTER] firing per endpoint with `ctx.setExt("api", endpoint)`.
  *
- * Additionally, framework-scoped `custom.*` lifecycle hooks
- * ([CustomRuleKeys.CUSTOM_CLASS_PARSE_BEFORE] / [CustomRuleKeys.CUSTOM_CLASS_PARSE_AFTER],
- * [CustomRuleKeys.CUSTOM_METHOD_PARSE_BEFORE] / [CustomRuleKeys.CUSTOM_METHOD_PARSE_AFTER],
- * [CustomRuleKeys.CUSTOM_EXPORT_AFTER]) fire **immediately after** their shared
- * counterparts — the shared hook fires first, then the custom-specific hook.
+ * The framework-scoped `custom.*` lifecycle hooks live in
+ * [CustomRuleEventAspect], registered through the same extension point with
+ * `order = 1` so they still fire immediately after their shared counterparts.
  * Because the rule evaluation context does not expose the framework name to
  * user-written rules, these custom hooks give users a framework-scoped surface
  * for side-effect rules that must only run during Custom-framework extraction.
@@ -58,6 +59,7 @@ import kotlinx.coroutines.withContext
  * rules) — either via [read] or [IdeDispatchers.ReadAction].
  *
  * @see CustomApiRecognizer
+ * @see CustomRuleEventAspect
  * @see com.itangcent.easyapi.framework.spi.FrameworkRegistry
  */
 class CustomClassExporter(
@@ -73,6 +75,7 @@ class CustomClassExporter(
     private val recognizer = CustomApiRecognizer(engine)
     private val metadataResolver = DocMetadataResolver.getInstance(project)
     private val endpointBuilder = EndpointBuilder.getInstance(project)
+    private val parseAspects get() = ApiParseAspects.getInstance(project)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isApiClass(psiClass)) return emptyList()
@@ -83,27 +86,17 @@ class CustomClassExporter(
         }
         LOG.info("before parse class:$className")
 
-        withContext(IdeDispatchers.Background) {
-            engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
-            engine.evaluate(CustomRuleKeys.CUSTOM_CLASS_PARSE_BEFORE, psiClass)
-        }
-
-        val resolvedType = ResolvedType.ClassType(psiClass, emptyList())
-        val resolvedMethods = read { resolvedType.suitableMethods() }
-        val endpoints = ArrayList<ApiEndpoint>()
-        try {
+        return parseAspects.aroundClass(frameworkName, psiClass) {
+            val resolvedType = ResolvedType.ClassType(psiClass, emptyList())
+            val resolvedMethods = read { resolvedType.suitableMethods() }
+            val endpoints = ArrayList<ApiEndpoint>()
             for (resolvedMethod in resolvedMethods) {
                 if (read { metadataResolver.isIgnored(resolvedMethod.psiMethod) }) continue
                 endpoints.addAll(exportMethod(psiClass, resolvedMethod))
             }
-        } finally {
-            withContext(IdeDispatchers.Background) {
-                engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
-                engine.evaluate(CustomRuleKeys.CUSTOM_CLASS_PARSE_AFTER, psiClass)
-            }
+            LOG.info("after parse class:$className")
+            endpoints
         }
-        LOG.info("after parse class:$className")
-        return endpoints
     }
 
     private suspend fun exportMethod(
@@ -116,14 +109,9 @@ class CustomClassExporter(
         }
         LOG.info("before parse method:$methodKey")
 
-        withContext(IdeDispatchers.Background) {
-            engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, resolvedMethod)
-            engine.evaluate(CustomRuleKeys.CUSTOM_METHOD_PARSE_BEFORE, resolvedMethod)
-        }
+        return parseAspects.aroundMethod(MethodParseContext(resolvedMethod, frameworkName)) {
+            val classQualifiedName = read { psiClass.qualifiedName ?: psiClass.name }
 
-        val classQualifiedName = read { psiClass.qualifiedName ?: psiClass.name }
-
-        try {
             // Opt-in via custom.method.is.api; skip non-endpoint methods.
             val isApi = runCatching {
                 engine.evaluate(CustomRuleKeys.CUSTOM_METHOD_IS_API, method)
@@ -132,7 +120,7 @@ class CustomClassExporter(
             }.getOrDefault(false)
             if (!isApi) {
                 LOG.info("after parse method:$methodKey")
-                return emptyList()
+                return@aroundMethod emptyList()
             }
 
             val endpoints: List<ApiEndpoint>
@@ -210,23 +198,11 @@ class CustomClassExporter(
                 )
             }
 
-            withContext(IdeDispatchers.Background) {
-                for (endpoint in endpoints) {
-                    engine.evaluate(RuleKeys.EXPORT_AFTER, resolvedMethod) { ctx ->
-                        ctx.setExt("api", endpoint)
-                    }
-                    engine.evaluate(CustomRuleKeys.CUSTOM_EXPORT_AFTER, resolvedMethod) { ctx ->
-                        ctx.setExt("api", endpoint)
-                    }
-                }
+            for (endpoint in endpoints) {
+                parseAspects.afterEndpoint(EndpointParseContext(endpoint, frameworkName, resolvedMethod))
             }
 
-            return endpoints
-        } finally {
-            withContext(IdeDispatchers.Background) {
-                engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, resolvedMethod)
-                engine.evaluate(CustomRuleKeys.CUSTOM_METHOD_PARSE_AFTER, resolvedMethod)
-            }
+            endpoints
         }
     }
 
@@ -351,10 +327,7 @@ class CustomClassExporter(
             val paramName = param.name
             LOG.info("before parse param:$paramName")
 
-            withContext(IdeDispatchers.Background) {
-                engine.evaluate(RuleKeys.API_PARAM_PARSE_BEFORE, p)
-            }
-            try {
+            parseAspects.aroundParam(frameworkName, p) {
                 val name = resolveParamName(p, paramName, binding)
                 // The custom framework has no required notion of its own, so
                 // `param.required` is the only source of truth here.
@@ -376,10 +349,6 @@ class CustomClassExporter(
                         example = demo ?: mock
                     )
                 )
-            } finally {
-                withContext(IdeDispatchers.Background) {
-                    engine.evaluate(RuleKeys.API_PARAM_PARSE_AFTER, p)
-                }
             }
             LOG.info("after parse param:$paramName")
         }

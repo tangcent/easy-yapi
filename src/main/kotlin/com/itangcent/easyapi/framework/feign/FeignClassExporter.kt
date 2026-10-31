@@ -9,6 +9,9 @@ import com.itangcent.easyapi.core.internal.threading.read
 import com.itangcent.easyapi.core.export.ClassExporter
 import com.itangcent.easyapi.core.export.EndpointBuilder
 import com.itangcent.easyapi.core.export.*
+import com.itangcent.easyapi.core.export.aspect.ApiParseAspects
+import com.itangcent.easyapi.core.export.aspect.EndpointParseContext
+import com.itangcent.easyapi.core.export.aspect.MethodParseContext
 import com.itangcent.easyapi.framework.springmvc.RequestMappingResolver
 import com.itangcent.easyapi.framework.springmvc.SpringParamRequired
 import com.itangcent.easyapi.framework.springmvc.SpringParameterBindingResolver
@@ -68,6 +71,7 @@ class FeignClassExporter(
     private val springMappingResolver = RequestMappingResolver(annotationHelper, engine)
     private val springParamResolver = SpringParameterBindingResolver(annotationHelper, engine)
     private val endpointBuilder = EndpointBuilder.getInstance(project)
+    private val parseAspects get() = ApiParseAspects.getInstance(project)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isFeignClient(psiClass)) return emptyList()
@@ -77,26 +81,20 @@ class FeignClassExporter(
         }
         LOG.info("before parse class:$className")
 
-        withContext(IdeDispatchers.Background) {
-            engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
-        }
+        return parseAspects.aroundClass(frameworkName, psiClass) {
+            val info = pathResolver.resolve(psiClass)
+            val basePath = normalizePath(info.path ?: "")
 
-        val info = pathResolver.resolve(psiClass)
-        val basePath = normalizePath(info.path ?: "")
-
-        val classType = ResolvedType.ClassType(psiClass, emptyList())
-        val resolvedMethods = read { classType.suitableMethods() }
-        val endpoints = ArrayList<ApiEndpoint>()
-        try {
+            val classType = ResolvedType.ClassType(psiClass, emptyList())
+            val resolvedMethods = read { classType.suitableMethods() }
+            val endpoints = ArrayList<ApiEndpoint>()
             for (resolvedMethod in resolvedMethods) {
                 if (resolvedMethod.psiMethod.isConstructor) continue
                 endpoints.addAll(exportMethod(basePath, psiClass, resolvedMethod))
             }
-        } finally {
-            engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
+            LOG.info("after parse class:$className")
+            endpoints
         }
-        LOG.info("after parse class:$className")
-        return endpoints
     }
 
     private suspend fun exportMethod(
@@ -110,24 +108,19 @@ class FeignClassExporter(
         }
         LOG.info("before parse method:$methodKey")
 
-        engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, method)
-
-        try {
+        return parseAspects.aroundMethod(MethodParseContext(resolvedMethod, frameworkName)) {
             val requestLine = nativeParser.parseRequestLine(method)
             if (requestLine != null) {
                 val endpoint = buildFromNativeFeign(basePath, psiClass, resolvedMethod, requestLine)
                 LOG.info("after parse method:$methodKey")
-                return listOf(endpoint).also {
-                    engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
-                        ctx.setExt("api", endpoint)
-                    }
-                }
+                parseAspects.afterEndpoint(EndpointParseContext(endpoint, frameworkName, resolvedMethod))
+                return@aroundMethod listOf(endpoint)
             }
 
             val mappings = springMappingResolver.resolve(resolvedMethod)
             if (mappings.isEmpty()) {
                 LOG.info("after parse method:$methodKey")
-                return emptyList()
+                return@aroundMethod emptyList()
             }
 
             val endpoints: List<ApiEndpoint>
@@ -205,19 +198,11 @@ class FeignClassExporter(
                 }
             }
 
-            withContext(IdeDispatchers.Background) {
-                for (endpoint in endpoints) {
-                    engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
-                        ctx.setExt("api", endpoint)
-                    }
-                }
+            for (endpoint in endpoints) {
+                parseAspects.afterEndpoint(EndpointParseContext(endpoint, frameworkName, resolvedMethod))
             }
 
-            return endpoints
-        } finally {
-            withContext(IdeDispatchers.Background) {
-                engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, method)
-            }
+            endpoints
         }
     }
 

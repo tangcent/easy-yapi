@@ -11,6 +11,9 @@ import com.itangcent.easyapi.core.internal.threading.read
 import com.itangcent.easyapi.core.export.ClassExporter
 import com.itangcent.easyapi.core.export.EndpointBuilder
 import com.itangcent.easyapi.core.export.*
+import com.itangcent.easyapi.core.export.aspect.ApiParseAspects
+import com.itangcent.easyapi.core.export.aspect.EndpointParseContext
+import com.itangcent.easyapi.core.export.aspect.MethodParseContext
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.psi.PsiClassHelper
 import com.itangcent.easyapi.core.psi.helper.DocMetadataResolver
@@ -68,6 +71,7 @@ class SpringMvcClassExporter(
     private val bindingResolver = SpringParameterBindingResolver(annotationHelper, engine)
     private val metadataResolver get() = DocMetadataResolver.getInstance(project)
     private val endpointBuilder = EndpointBuilder.getInstance(project)
+    private val parseAspects get() = ApiParseAspects.getInstance(project)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!controllerRecognizer.isController(psiClass)) return emptyList()
@@ -78,21 +82,17 @@ class SpringMvcClassExporter(
         }
         LOG.info("before parse class:$className")
 
-        engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
-
-        val resolvedType = ResolvedType.ClassType(psiClass, emptyList())
-        val resolvedMethods = read { resolvedType.suitableMethods() }
-        val endpoints = ArrayList<ApiEndpoint>()
-        try {
+        return parseAspects.aroundClass(frameworkName, psiClass) {
+            val resolvedType = ResolvedType.ClassType(psiClass, emptyList())
+            val resolvedMethods = read { resolvedType.suitableMethods() }
+            val endpoints = ArrayList<ApiEndpoint>()
             for (resolvedMethod in resolvedMethods) {
                 if (metadataResolver.isIgnored(resolvedMethod.psiMethod)) continue
                 endpoints.addAll(exportMethod(psiClass, resolvedMethod))
             }
-        } finally {
-            engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
+            LOG.info("after parse class:$className")
+            endpoints
         }
-        LOG.info("after parse class:$className")
-        return endpoints
     }
 
     private suspend fun exportMethod(
@@ -105,15 +105,11 @@ class SpringMvcClassExporter(
         }
         LOG.info("before parse method:$methodKey")
 
-        withContext(IdeDispatchers.Background) {
-            engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, resolvedMethod)
-        }
-
-        try {
+        return parseAspects.aroundMethod(MethodParseContext(resolvedMethod, frameworkName)) {
             val mappings = read { mappingResolver.resolve(resolvedMethod) }
             if (mappings.isEmpty()) {
                 LOG.info("after parse method:$methodKey")
-                return emptyList()
+                return@aroundMethod emptyList()
             }
 
             val endpoints: List<ApiEndpoint>
@@ -189,19 +185,11 @@ class SpringMvcClassExporter(
                 }
             }
 
-            withContext(IdeDispatchers.Background) {
-                for (endpoint in endpoints) {
-                    engine.evaluate(RuleKeys.EXPORT_AFTER, resolvedMethod) { ctx ->
-                        ctx.setExt("api", endpoint)
-                    }
-                }
+            for (endpoint in endpoints) {
+                parseAspects.afterEndpoint(EndpointParseContext(endpoint, frameworkName, resolvedMethod))
             }
 
-            return endpoints
-        } finally {
-            withContext(IdeDispatchers.Background) {
-                engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, resolvedMethod)
-            }
+            endpoints
         }
     }
 
@@ -288,9 +276,7 @@ class SpringMvcClassExporter(
                 continue
             }
 
-            engine.evaluate(RuleKeys.API_PARAM_PARSE_BEFORE, p)
-
-            try {
+            parseAspects.aroundParam(frameworkName, p) {
                 val resolvedParamType = param.type
 
                 if (binding == ParameterBinding.Form) {
@@ -310,8 +296,6 @@ class SpringMvcClassExporter(
                 } else {
                     result.add(buildSingleParameter(p, paramName, binding, resolvedMethod, index))
                 }
-            } finally {
-                engine.evaluate(RuleKeys.API_PARAM_PARSE_AFTER, p)
             }
             LOG.info("after parse param:$paramName")
         }
@@ -487,11 +471,8 @@ class SpringMvcClassExporter(
             if (binding != ParameterBinding.Body) continue
 
             val psiParameter = param.psiParameter
-            engine.evaluate(RuleKeys.API_PARAM_PARSE_BEFORE, psiParameter)
-            try {
-                return endpointBuilder.expandBodyParam(param.type)
-            } finally {
-                engine.evaluate(RuleKeys.API_PARAM_PARSE_AFTER, psiParameter)
+            return parseAspects.aroundParam(frameworkName, psiParameter) {
+                endpointBuilder.expandBodyParam(param.type)
             }
         }
         return null
