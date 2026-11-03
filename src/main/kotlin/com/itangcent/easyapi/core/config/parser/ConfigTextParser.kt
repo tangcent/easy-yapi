@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.config.RuleFileTextIo
 import com.itangcent.easyapi.core.config.model.ConfigEntry
 import com.itangcent.easyapi.core.config.resource.ConfigResourceLoader
+import com.itangcent.easyapi.core.internal.threading.readSync
 import com.itangcent.easyapi.core.logging.IdeaLog
 import com.itangcent.easyapi.core.settings.module.GeneralSettings
 import com.itangcent.easyapi.core.settings.module.HttpSettings
@@ -247,17 +248,21 @@ class ConfigTextParser(
     }
 
     private fun activeModuleContentRoot(): String? {
-        val activeFile = project.getService(com.intellij.openapi.fileEditor.FileEditorManager::class.java)
-            ?.selectedFiles
-            ?.firstOrNull()
-            ?: return null
-        val projectFileIndex = project.getService(com.intellij.openapi.roots.ProjectFileIndex::class.java)
-            ?: return null
-        if (projectFileIndex.getModuleForFile(activeFile) == null) return null
-        return projectFileIndex.getContentRootForFile(activeFile)
-            ?.path
-            ?.takeIf { it.isNotBlank() }
-            ?.let(::normalizePath)
+        // FileEditorManager.selectedFiles and ProjectFileIndex both require read access,
+        // but config reloads run on the plugin's own background thread.
+        return readSync {
+            val activeFile = project.getService(com.intellij.openapi.fileEditor.FileEditorManager::class.java)
+                ?.selectedFiles
+                ?.firstOrNull()
+                ?: return@readSync null
+            val projectFileIndex = project.getService(com.intellij.openapi.roots.ProjectFileIndex::class.java)
+                ?: return@readSync null
+            if (projectFileIndex.getModuleForFile(activeFile) == null) return@readSync null
+            projectFileIndex.getContentRootForFile(activeFile)
+                ?.path
+                ?.takeIf { it.isNotBlank() }
+                ?.let(::normalizePath)
+        }
     }
 
     private fun normalizePath(path: String): String {

@@ -1104,15 +1104,16 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
         if (hasOrderWith) {
             val indexed = fields.entries.toList().withIndex().toList()
-            val sorted = indexed.sortedWith { (index1, entry1), (index2, entry2) ->
+            // 使用挂起比较器排序，避免在比较器内 runBlocking。
+            // runBlocking 会在持有读锁的线程上阻塞等待规则脚本，而脚本又需要申请读锁，
+            // 当有写操作排队时会形成死锁并导致 IDE 卡死。
+            val sorted = suspendMergeSort(indexed) { (index1, entry1), (index2, entry2) ->
                 val af1 = fieldByName[entry1.key]
                 val af2 = fieldByName[entry2.key]
                 if (af1 != null && af2 != null) {
-                    val result = kotlinx.coroutines.runBlocking {
-                        engine.evaluate(RuleKeys.FIELD_ORDER_WITH, af1.psi, containingClass) { ctx ->
-                            ctx.setExt("a", af1.psi)
-                            ctx.setExt("b", af2.psi)
-                        }
+                    val result = engine.evaluate(RuleKeys.FIELD_ORDER_WITH, af1.psi, containingClass) { ctx ->
+                        ctx.setExt("a", af1.psi)
+                        ctx.setExt("b", af2.psi)
                     }
                     result?.toIntOrNull() ?: index1.compareTo(index2)
                 } else {
@@ -1147,4 +1148,28 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         }
         return result
     }
+
+}
+
+/**
+ * 支持挂起比较器的稳定归并排序。
+ * 比较器可以在内部挂起（例如执行规则脚本），不会阻塞调用线程，也不会长期占用读锁。
+ */
+internal suspend fun <T> suspendMergeSort(
+    items: List<T>,
+    comparator: suspend (T, T) -> Int
+): List<T> {
+    if (items.size <= 1) return items
+    val mid = items.size / 2
+    val left = suspendMergeSort(items.subList(0, mid), comparator)
+    val right = suspendMergeSort(items.subList(mid, items.size), comparator)
+    val merged = ArrayList<T>(items.size)
+    var i = 0
+    var j = 0
+    while (i < left.size && j < right.size) {
+        if (comparator(left[i], right[j]) <= 0) merged.add(left[i++]) else merged.add(right[j++])
+    }
+    while (i < left.size) merged.add(left[i++])
+    while (j < right.size) merged.add(right[j++])
+    return merged
 }

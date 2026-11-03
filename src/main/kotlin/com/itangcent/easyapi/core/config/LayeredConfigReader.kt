@@ -52,9 +52,14 @@ class LayeredConfigReader(
         for (source in sources.sortedByDescending { it.priority }) {
             sourcePriorityById[source.sourceId] = source.priority
             var count = 0
-            for (entry in source.collect()) {
-                allEntries.computeIfAbsent(entry.key) { ArrayList() }.add(entry)
-                count++
+            // One failing source must not discard the entries of every other source.
+            runCatching {
+                for (entry in source.collect()) {
+                    allEntries.computeIfAbsent(entry.key) { ArrayList() }.add(entry)
+                    count++
+                }
+            }.onFailure {
+                LOG.warn("Config source [${source.sourceId}] failed, its entries were skipped", it)
             }
             LOG.info("Loaded $count config entries from [${source.sourceId}] (priority=${source.priority})")
         }
