@@ -223,4 +223,50 @@ class ResolvedMethodTest : EasyApiLightCodeInsightFixtureTestCase() {
         val baseMethod = baseClass.methods.first { it.name == "getItem" }
         assertFalse("Unrelated methods should not be related", areMethodsRelated(simpleMethod, baseMethod))
     }
+
+    // ========== ResolvedMethod.of tests ==========
+
+    /**
+     * [ResolvedMethod.of] must produce the same binding as the
+     * [ResolvedType.ClassType.suitableMethods] convention: the method, the
+     * concrete containing class and the owner class type used for generic
+     * substitution.
+     */
+    fun testOfMirrorsSuitableMethods() = runTest {
+        loadFile("api/inherit/SimpleCtrl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.SimpleCtrl")!!
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val suitable = classType.suitableMethods().first { it.name == "list" }
+
+        val viaFactory = ResolvedMethod.of(suitable.psiMethod, classType)
+
+        assertEquals("list", viaFactory.name)
+        assertEquals(suitable.psiMethod, viaFactory.psiMethod)
+        assertEquals(suitable.containClass, viaFactory.containClass)
+        assertEquals(suitable.ownerClassType, viaFactory.ownerClassType)
+    }
+
+    /**
+     * [ResolvedMethod.of] self-protects its PSI reads (`name`), so it is safe to
+     * call from a thread without a read action.
+     */
+    fun testOfIsCallableWithoutReadAction() = runTest {
+        loadFile("api/inherit/SimpleCtrl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.SimpleCtrl")!!
+        val method = psiClass.methods.first { it.name == "list" }
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+
+        var failure: Throwable? = null
+        val thread = Thread {
+            try {
+                ResolvedMethod.of(method, classType)
+            } catch (t: Throwable) {
+                failure = t
+            }
+        }
+        thread.start()
+        thread.join()
+
+        assertNull("ResolvedMethod.of must not require an outer read action: $failure", failure)
+    }
 }

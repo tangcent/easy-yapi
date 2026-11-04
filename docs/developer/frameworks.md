@@ -292,51 +292,50 @@ recognizer (the `framework.spi.*` carve-out in the DAG rule).
 
 ## Rule lifecycle hooks
 
-A framework exporter MUST fire the rule lifecycle hooks around its
-parse loop so user rules (`api_class.parse.before`, `method.doc`,
-`api.after`, …) can run. The exact `engine.evaluate(...)` calls (from
+A framework exporter MUST dispatch the rule lifecycle through
+[`ApiParseAspects`](../../src/main/kotlin/com/itangcent/easyapi/core/export/aspect/ApiParseAspects.kt)
+so user rules (`api.class.parse.before`, `api.method.parse.before`,
+`export.after`, …) can run. Pass your exporter's `frameworkName`. The shape
+(from
 [`JaxRsClassExporter`](../../src/main/kotlin/com/itangcent/easyapi/framework/jaxrs/JaxRsClassExporter.kt)):
 
 ```kotlin
-// before iterating methods:
-withContext(IdeDispatchers.Background) {
-    engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
-}
+private val parseAspects get() = ApiParseAspects.getInstance(project)
 
-try {
-    for (resolvedMethod in resolvedType.suitableMethods()) {
-        // before each method:
-        withContext(IdeDispatchers.Background) {
-            engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, resolvedMethod)
-        }
-        try {
-            // ... build the ApiEndpoint ...
-            withContext(IdeDispatchers.Background) {
-                for (endpoint in endpoints) {
-                    engine.evaluate(RuleKeys.EXPORT_AFTER, resolvedMethod) { ctx ->
-                        ctx.setExt("api", endpoint)
-                    }
+override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> =
+    parseAspects.aroundClass(frameworkName, psiClass) {
+        val endpoints = ArrayList<ApiEndpoint>()
+        for (resolvedMethod in read { resolvedType.suitableMethods() }) {
+            endpoints += parseAspects.aroundMethod(MethodParseContext(resolvedMethod, frameworkName)) {
+                // ... build the ApiEndpoints; wrap each parameter in
+                // parseAspects.aroundParam(frameworkName, psiParameter) { ... } ...
+                for (endpoint in built) {
+                    parseAspects.afterEndpoint(EndpointParseContext(endpoint, frameworkName, resolvedMethod))
                 }
-            }
-        } finally {
-            // after each method (success or failure):
-            withContext(IdeDispatchers.Background) {
-                engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, resolvedMethod)
+                built
             }
         }
+        endpoints
     }
-} finally {
-    // after the whole class:
-    withContext(IdeDispatchers.Background) {
-        engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
-    }
-}
 ```
 
-`API_METHOD_PARSE_AFTER` and `API_CLASS_PARSE_AFTER` go in `finally` blocks
-so they fire even when a method throws. `EXPORT_AFTER` runs after the
-endpoint is built and sets the `api` extension on the rule context so user
-rules can mutate the endpoint before it leaves the exporter.
+The after hooks run in a `finally`, so they fire even when anything inside the
+block throws. A throwing before hook skips the block and the after hooks.
+`afterEndpoint` runs after the endpoint is built; `export.after` rules get it as
+`api` and can mutate it before it leaves the exporter.
+
+Don't call `engine.evaluate` with a lifecycle key from an exporter
+(`ApiParseAspectWiringGuardTest` fails on it), and don't wrap these calls in
+`withContext(IdeDispatchers.Background)`: scripts already run on the background
+pool inside `Jsr223ScriptParser`.
+
+Pass a `ResolvedMethod` whose owner is the exported class. If you only have a
+`PsiMethod`, build one with `ResolvedMethod.of(psiMethod, ownerClassType)`.
+
+For events only your framework should fire, register your own `apiParseAspect`
+with `order >= 1` and restrict it with `appliesTo(frameworkName)`.
+[`CustomRuleEventAspect`](../../src/main/kotlin/com/itangcent/easyapi/framework/custom/CustomRuleEventAspect.kt)
+is the example.
 
 ## The `ApiEndpoint` shape
 
