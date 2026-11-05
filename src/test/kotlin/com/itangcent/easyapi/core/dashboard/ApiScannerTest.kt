@@ -6,6 +6,7 @@ import com.itangcent.easyapi.core.ide.support.SelectionScope
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import com.itangcent.easyapi.core.settings.module.GeneralSettings
+import com.itangcent.easyapi.core.settings.module.ParsingOutputSettings
 import com.itangcent.easyapi.core.settings.update
 
 class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -32,6 +33,7 @@ class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("model/Result.java")
         loadFile("model/UserInfo.java")
         loadFile("api/UserCtrl.java")
+        loadFile("api/TitleTestCtrl.java")
     }
 
     override fun createConfigReader() = TestConfigReader.empty(project)
@@ -98,6 +100,36 @@ class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
             val conMeta = con.metadata as HttpMetadata
             assertEquals("Paths should match", seqMeta.path, conMeta.path)
             assertEquals("HTTP methods should match", seqMeta.method, conMeta.method)
+        }
+    }
+
+    fun testScanDeduplicatesTitleFromDescription() = runTest {
+        val endpoint = apiScanner.scanAll()
+            .firstOrNull { it.sourceMethod?.name == "multiLineMethod" }
+        assertNotNull("MultiLineDocCtrl#multiLineMethod should be scanned", endpoint)
+        assertEquals(
+            "The method comment's first line is the name, so the description must drop it",
+            "that describes the method",
+            endpoint!!.description?.trim()
+        )
+    }
+
+    fun testScanKeepsDescriptionWhenSettingIsOff() = runTest {
+        try {
+            settingBinder.update(ParsingOutputSettings::class) {
+                removeDuplicateTitleFromDescription = false
+            }
+            val endpoint = apiScanner.scanAll()
+                .firstOrNull { it.sourceMethod?.name == "multiLineMethod" }
+            assertNotNull("MultiLineDocCtrl#multiLineMethod should be scanned", endpoint)
+            assertEquals(
+                "Multi-line method doc\nthat describes the method",
+                endpoint!!.description?.trim()
+            )
+        } finally {
+            settingBinder.update(ParsingOutputSettings::class) {
+                removeDuplicateTitleFromDescription = true
+            }
         }
     }
 

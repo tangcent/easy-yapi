@@ -18,5 +18,6 @@ data class ParsingOutputSettings(
     @StorageScope(Scope.APPLICATION) var queryExpanded: Boolean = true,
     @StorageScope(Scope.APPLICATION) var formExpanded: Boolean = true,
     @StorageScope(Scope.APPLICATION) var pathMulti: String = "ALL",
-    @StorageScope(Scope.APPLICATION) var enumFieldAutoInferEnabled: Boolean = false
+    @StorageScope(Scope.APPLICATION) var enumFieldAutoInferEnabled: Boolean = false,
+    @StorageScope(Scope.APPLICATION) var removeDuplicateTitleFromDescription: Boolean = true
 ) : Settings

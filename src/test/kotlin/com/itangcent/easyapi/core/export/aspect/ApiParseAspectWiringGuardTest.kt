@@ -148,6 +148,17 @@ class ApiParseAspectWiringGuardTest {
         )
     }
 
+    @Test
+    fun pluginXmlRegistersDescriptionTitleDedupAspect() {
+        assertTrue("plugin.xml should exist at ${pluginXml.absolutePath}", pluginXml.exists())
+        assertTrue(
+            "plugin.xml must register DescriptionTitleDedupAspect by FQN",
+            pluginXml.readText().contains(
+                """<apiParseAspect implementation="com.itangcent.easyapi.core.export.aspect.DescriptionTitleDedupAspect"/>"""
+            )
+        )
+    }
+
     /**
      * The custom exporter's `frameworkName` and the custom aspect's `appliesTo`
      * must compare the same symbol, otherwise the aspect silently stops matching.

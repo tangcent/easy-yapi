@@ -63,6 +63,26 @@ class SettingsPanelsParityTest {
         assertTrue(panel.isModified(settings))
     }
 
+    @Test
+    fun testParsingOutputPanelRemoveDuplicateTitleRoundTrip() {
+        val settings = ParsingOutputSettings().apply {
+            removeDuplicateTitleFromDescription = false
+        }
+        val panel = ParsingOutputSettingsPanel()
+        panel.resetFrom(settings)
+        assertFalse(panel.isModified(settings))
+        panel.applyTo(settings)
+        assertFalse(settings.removeDuplicateTitleFromDescription)
+    }
+
+    @Test
+    fun testParsingOutputPanelDefaultNotModified() {
+        val settings = ParsingOutputSettings()
+        val panel = ParsingOutputSettingsPanel()
+        panel.resetFrom(settings)
+        assertFalse("Default true must not be detected as modified", panel.isModified(settings))
+    }
+
     /**
      * Verify that the new Rules-tab fields round-trip through
      * the module data classes. The Rules tab UI itself uses `ToolbarDecorator`

@@ -132,6 +132,15 @@ class SettingsDefaultsTest {
     }
 
     @Test
+    fun `test ParsingOutputSettings default removeDuplicateTitleFromDescription is true`() {
+        val settings = ParsingOutputSettings()
+        assertTrue(
+            "Default removeDuplicateTitleFromDescription should be true",
+            settings.removeDuplicateTitleFromDescription
+        )
+    }
+
+    @Test
     fun `test EnvironmentSettings default globalEnvironments is empty`() {
         val settings = EnvironmentSettings()
         assertEquals(

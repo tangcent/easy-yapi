@@ -47,6 +47,9 @@
              the custom aspect fires custom.* for the Custom framework only (order 1). -->
         <apiParseAspect implementation="com.itangcent.easyapi.core.export.aspect.StandardRuleEventAspect"/>
         <apiParseAspect implementation="com.itangcent.easyapi.framework.custom.CustomRuleEventAspect"/>
+        <!-- Post-processing (order 100): drops an API name duplicated as the
+             description's first line (issue #1487). -->
+        <apiParseAspect implementation="com.itangcent.easyapi.core.export.aspect.DescriptionTitleDedupAspect"/>
         <!-- register framework recognizers via EP.
              CompositeApiClassRecognizer discovers these via ExtensionPointName
              and filters by isEnabled(project) (settings-driven). -->

@@ -494,6 +494,10 @@ class ParsingOutputSettingsPanel : SettingsPanel<ParsingOutputSettings> {
         toolTipText = "Use RFC 6570 URI template syntax for path variables in exported URLs (e.g., /users/{id})"
     }
     private val pathMultiCombo = ComboBox(PathSelector.values().map { it.name }.toTypedArray())
+    private val removeDuplicateTitleFromDescription =
+        JBCheckBox("Remove API name duplicated in description", true).apply {
+            toolTipText = "When the exported description starts with the API name, drop that line."
+        }
     private val enumFieldAutoInferEnabled =
         JBCheckBox("Auto-infer enum value field for ambiguous references", false).apply {
             toolTipText = buildString {
@@ -514,7 +518,7 @@ class ParsingOutputSettingsPanel : SettingsPanel<ParsingOutputSettings> {
         .addComponent(
             SettingsUiKit.titledPanel(
                 "Output Format", listOf(
-                    queryExpanded, formExpanded, enableUrlTemplating
+                    queryExpanded, formExpanded, enableUrlTemplating, removeDuplicateTitleFromDescription
                 )
             )
         )
@@ -529,6 +533,8 @@ class ParsingOutputSettingsPanel : SettingsPanel<ParsingOutputSettings> {
         enableUrlTemplating.isSelected = settings?.enableUrlTemplating ?: true
         pathMultiCombo.selectedItem = settings?.pathMulti ?: "ALL"
         enumFieldAutoInferEnabled.isSelected = settings?.enumFieldAutoInferEnabled ?: false
+        removeDuplicateTitleFromDescription.isSelected =
+            settings?.removeDuplicateTitleFromDescription ?: true
     }
 
     override fun applyTo(settings: ParsingOutputSettings) {
@@ -538,6 +544,7 @@ class ParsingOutputSettingsPanel : SettingsPanel<ParsingOutputSettings> {
         settings.enableUrlTemplating = enableUrlTemplating.isSelected
         settings.pathMulti = pathMultiCombo.selectedItem?.toString() ?: "ALL"
         settings.enumFieldAutoInferEnabled = enumFieldAutoInferEnabled.isSelected
+        settings.removeDuplicateTitleFromDescription = removeDuplicateTitleFromDescription.isSelected
     }
 
     override fun isModified(settings: ParsingOutputSettings?): Boolean {
@@ -547,7 +554,8 @@ class ParsingOutputSettingsPanel : SettingsPanel<ParsingOutputSettings> {
                 inferReturnMain.isSelected != s.inferReturnMain ||
                 enableUrlTemplating.isSelected != s.enableUrlTemplating ||
                 pathMultiCombo.selectedItem?.toString() != s.pathMulti ||
-                enumFieldAutoInferEnabled.isSelected != s.enumFieldAutoInferEnabled
+                enumFieldAutoInferEnabled.isSelected != s.enumFieldAutoInferEnabled ||
+                removeDuplicateTitleFromDescription.isSelected != s.removeDuplicateTitleFromDescription
     }
 }
 
