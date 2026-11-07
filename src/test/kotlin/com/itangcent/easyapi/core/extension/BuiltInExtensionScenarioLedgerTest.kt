@@ -185,7 +185,7 @@ internal data class BuiltInExtensionProbeRecord(
 
 internal object BuiltInExtensionScenarioLedger {
 
-    const val controlledExtensionCount = 30
+    const val controlledExtensionCount = 35
 
     val scenarios: List<BuiltInExtensionScenario> = listOf(
         BuiltInExtensionScenario("converts", observableTerminalState = "converted model scalar type"),
@@ -202,6 +202,11 @@ internal object BuiltInExtensionScenarioLedger {
             observableTerminalState = "parent fields before child fields"
         ),
         BuiltInExtensionScenario("field-utils", observableTerminalState = "filtered utility fields"),
+        BuiltInExtensionScenario("field.name.camel-case", observableTerminalState = "lower camelCase field names"),
+        BuiltInExtensionScenario("field.name.capitalize", observableTerminalState = "capitalized field names"),
+        BuiltInExtensionScenario("field.name.kebab-case", observableTerminalState = "kebab-case field names"),
+        BuiltInExtensionScenario("field.name.snake-case", observableTerminalState = "snake_case field names"),
+        BuiltInExtensionScenario("field.name.uncapitalize", observableTerminalState = "uncapitalized field names"),
         BuiltInExtensionScenario("gson", observableTerminalState = "Gson field rename or exclusion"),
         BuiltInExtensionScenario("ignore", observableTerminalState = "excluded API endpoint"),
         BuiltInExtensionScenario("jackson", observableTerminalState = "Jackson field metadata"),

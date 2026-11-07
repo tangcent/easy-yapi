@@ -164,14 +164,17 @@ interface MethodContext : ItContext {
     fun isSynchronized(): Boolean
     fun isNative(): Boolean
     /**
-     * Returns the underlying field name derived from this method's name.
+     * Returns the property name derived from this method's name.
      *
      * - `getCode` → `code`
      * - `isActive` → `active`
-     * - `name` (or any non-getter/non-is method) → returned as-is
+     * - `setCode` → `code`
+     * - `name` (or any non-accessor method) → returned as-is
      *
-     * Useful for mapping getter methods to their backing instance fields
-     * (e.g. Jackson `@JsonValue` on a getter).
+     * Useful for mapping accessors to their backing instance fields
+     * (e.g. Jackson `@JsonValue` on a getter) and, together with
+     * [FieldContext.fieldName], for rules that must treat a field and its
+     * accessors as one property.
      */
     fun fieldName(): String
 }
@@ -184,8 +187,18 @@ interface MethodContext : ItContext {
  * - Type access
  * - Containing class access
  * - Field modifier checks
+ * - Property-name access shared with [MethodContext]
  */
 interface FieldContext : ItContext {
+    /**
+     * Returns the model property name for this context.
+     *
+     * For a field this is its declared name. Together with
+     * [MethodContext.fieldName], which strips the accessor prefix, this lets a
+     * rule read the property name without branching on [ItContext.contextType].
+     */
+    fun fieldName(): String = name()
+
     fun type(): ScriptTypeContext
     fun jsonType(): ScriptTypeContext
     fun containingClass(): ScriptPsiClassContext?
@@ -490,6 +503,7 @@ open class ScriptPsiMethodContext(context: RuleContext) : ScriptItContext(contex
         return when {
             n.startsWith("get") && n.length > 3 -> n.substring(3, 4).lowercase() + n.substring(4)
             n.startsWith("is") && n.length > 2 -> n.substring(2, 3).lowercase() + n.substring(3)
+            n.startsWith("set") && n.length > 3 -> n.substring(3, 4).lowercase() + n.substring(4)
             else -> n
         }
     }

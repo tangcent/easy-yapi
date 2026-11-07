@@ -378,6 +378,7 @@ Type: `com.itangcent.easyapi.core.rule.context.FieldContext` — PSI field conte
 - `doc(tag: String): String?`
 - `doc(tag: String, subTag: String): String?`
 - `docs(tag: String): List<String>?`
+- `fieldName(): String`
 - `getExt(name: String): Any?`
 - `getName(): String?`
 - `hasAnn(name: String): Boolean`

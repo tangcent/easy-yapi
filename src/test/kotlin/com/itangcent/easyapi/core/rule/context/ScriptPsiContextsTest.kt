@@ -1251,5 +1251,30 @@ class ScriptPsiContextsTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    fun testFieldNameIsUniformAcrossFieldAndAccessors() {
+        val classSource = """
+            package com.test;
+            public class FieldNameModel {
+                public String Barcode;
+                public String getBarcode() { return Barcode; }
+                public void setBarcode(String value) { Barcode = value; }
+                public boolean isActive() { return true; }
+                public String getOnlyGetter() { return "x"; }
+                public void setOnlySetter(String value) { }
+                public String plainName() { return "x"; }
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+
+        assertEquals("Barcode", createFieldContext("com.test.FieldNameModel", "Barcode").fieldName())
+        assertEquals("barcode", createMethodContext("com.test.FieldNameModel", "getBarcode").fieldName())
+        assertEquals("barcode", createMethodContext("com.test.FieldNameModel", "setBarcode").fieldName())
+        assertEquals("active", createMethodContext("com.test.FieldNameModel", "isActive").fieldName())
+        assertEquals("onlyGetter", createMethodContext("com.test.FieldNameModel", "getOnlyGetter").fieldName())
+        assertEquals("onlySetter", createMethodContext("com.test.FieldNameModel", "setOnlySetter").fieldName())
+        assertEquals("plainName", createMethodContext("com.test.FieldNameModel", "plainName").fieldName())
+    }
+
     //endregion
 }
