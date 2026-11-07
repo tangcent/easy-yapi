@@ -473,8 +473,8 @@ class BuiltInExtensionModelAndSpringMvcScenarioTest : EasyApiLightCodeInsightFix
                 it.httpMetadata?.path == "/product/get/{id}" && it.httpMetadata?.method == HttpMethod.GET
             })
             assertEquals(
-                scenarioMessage(scenario, "assert", "Swagger endpoint description"),
-                "Get product by ID",
+                scenarioMessage(scenario, "assert", "Swagger endpoint description deduplicated from its title"),
+                "",
                 getEndpoint.description
             )
             assertTrue(
@@ -570,8 +570,8 @@ class BuiltInExtensionModelAndSpringMvcScenarioTest : EasyApiLightCodeInsightFix
             scenarioMessage(scenario, "assert", "Swagger @ApiOperation notes endpoint")
         }
         assertEquals(
-            scenarioMessage(scenario, "assert", "Swagger @ApiOperation notes"),
-            "Update a product\nRequires the product to exist",
+            scenarioMessage(scenario, "assert", "Swagger @ApiOperation notes without the duplicated title"),
+            "Requires the product to exist",
             updateEndpoint.description
         )
 

@@ -35,6 +35,7 @@ Framework recognition and output formatting.
 | Infer Return Main | `true` | Extract the inner type of wrapper types (e.g., `Mono<T>` → `T`) | `inferReturnMain` |
 | Query Expanded | `true` | Expand query parameters in the exported tree | `queryExpanded` |
 | Form Expanded | `true` | Expand form parameters in the exported tree | `formExpanded` |
+| Remove API Name in Description | `true` | When the exported description's first non-blank line equals the API name, drop that line (the name and description come from the same comment) | `removeDuplicateTitleFromDescription` |
 | Output Charset | `UTF-8` | Character encoding for exported files | `outputCharset` |
 | Log Level | `100` (SILENT) | Console verbosity. Lower = more verbose. `100`=SILENT, `50`=WARN, `20`=INFO, `10`=DEBUG, `0`=TRACE | `logLevel` |
 | API Scanning | `true` | Master toggle for API scanning. When `false`, auto-scan, concurrent scan, and the gutter icon (which navigates via the API index) are all forced off. | `apiScanEnabled` |
