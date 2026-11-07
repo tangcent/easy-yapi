@@ -232,6 +232,15 @@ object RuleToolUtils {
 
     private val TO_LINE_PATTERN = Pattern.compile("[A-Z]+")
 
+    /**
+     * Legacy helper matching Jackson's `SnakeCaseStrategy` (`wasPrevTranslated`),
+     * copied by the v2 `#[Jackson_SnakeCaseStrategy]` block: consecutive
+     * upper-case letters stay glued together, so `URLValue` -> `urlvalue`.
+     * Kept for rules that still call it by name. Naming-strategy extensions use
+     * [toSnakeCase] instead, which follows the mainstream acronym handling
+     * shared by .NET, Newtonsoft.Json, Rails, Pydantic, lodash and Jackson's
+     * `KebabCaseStrategy` (`url_value`).
+     */
     fun camel2Underline(str: String?): String? {
         if (str.isNullOrBlank()) return str
         val matcher = TO_LINE_PATTERN.matcher(str)
@@ -245,6 +254,114 @@ object RuleToolUtils {
         }
         matcher.appendTail(buffer)
         return buffer.toString()
+    }
+
+    // ── name transforms ───────────────────────────────────────────────
+
+    private val NAME_SEPARATORS = setOf('_', '-', ' ', '.')
+
+    /**
+     * Splits a property name into lower-case words at separators (`_`, `-`,
+     * `.`, space), camel humps and acronym boundaries (`URLValue` -> `url`,
+     * `value`). This is the word boundary shared by Jackson's
+     * `KebabCaseStrategy` / `LowerDotCaseStrategy`, System.Text.Json,
+     * Newtonsoft.Json, Rails, Pydantic, lodash and change-case: uppercase runs
+     * form one word, except that their last letter starts the next word when a
+     * lower-case letter follows.
+     *
+     * Jackson's `SnakeCaseStrategy` is the outlier; it does not split acronyms,
+     * and that legacy behaviour lives in [camel2Underline].
+     */
+    private fun nameWords(str: String): List<String> {
+        val words = mutableListOf<String>()
+        val word = StringBuilder()
+        var upperCount = 0
+
+        fun flush() {
+            if (word.isNotEmpty()) {
+                words.add(word.toString())
+                word.setLength(0)
+            }
+        }
+
+        for (ch in str) {
+            if (ch in NAME_SEPARATORS) {
+                flush()
+                upperCount = 0
+                continue
+            }
+            val lower = ch.lowercaseChar()
+            if (lower != ch) {
+                if (upperCount == 0) flush()
+                upperCount++
+            } else {
+                if (upperCount > 1 && word.isNotEmpty()) {
+                    // The last upper-case letter of an acronym starts a new word.
+                    val last = word[word.length - 1]
+                    word.setLength(word.length - 1)
+                    flush()
+                    word.append(last)
+                }
+                upperCount = 0
+            }
+            word.append(lower)
+        }
+        flush()
+        return words
+    }
+
+    /**
+     * Normalizes a property name to lower camelCase while keeping existing camel
+     * humps: `user_name` -> `userName`, `displayName` -> `displayName`,
+     * `URLValue` -> `urlValue`.
+     */
+    fun toCamelCase(str: String?): String? {
+        if (str.isNullOrBlank()) return str
+        val words = nameWords(str)
+        if (words.isEmpty()) return str
+        return words.mapIndexed { index, word ->
+            if (index == 0) word else word.replaceFirstChar { it.uppercaseChar() }
+        }.joinToString("")
+    }
+
+    /**
+     * Normalizes a property name to kebab-case: `userName` -> `user-name`,
+     * `URLValue` -> `url-value`. Existing separators are folded into `-`
+     * (`user_name` -> `user-name`).
+     */
+    fun toKebabCase(str: String?): String? {
+        if (str.isNullOrBlank()) return str
+        return nameWords(str).joinToString("-").ifEmpty { str }
+    }
+
+    /**
+     * Normalizes a property name to snake_case: `userName` -> `user_name`,
+     * `URLValue` -> `url_value`. Acronyms stay one word and are split from the
+     * following word, unlike the legacy [camel2Underline] (`urlvalue`).
+     */
+    fun toSnakeCase(str: String?): String? {
+        if (str.isNullOrBlank()) return str
+        return nameWords(str).joinToString("_").ifEmpty { str }
+    }
+
+    /**
+     * Normalizes a property name to UpperCamelCase: `user_name` -> `UserName`,
+     * `URLValue` -> `UrlValue`.
+     */
+    fun toPascalCase(str: String?): String? {
+        if (str.isNullOrBlank()) return str
+        return nameWords(str).joinToString("") { word ->
+            word.replaceFirstChar { it.uppercaseChar() }
+        }.ifEmpty { str }
+    }
+
+    /**
+     * Normalizes a property name to lower dot case: `userName` -> `user.name`,
+     * `URLValue` -> `url.value`.
+     */
+    fun toLowerDotCase(str: String?): String? {
+        if (str.isNullOrBlank()) return str
+        return nameWords(str).joinToString(".").ifEmpty { str }
     }
 
     fun removePrefix(str: String?, prefix: String?): String? = prefix?.let { str?.removePrefix(it) }

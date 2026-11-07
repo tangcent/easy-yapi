@@ -539,6 +539,34 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         assertEquals(false, map["enabled"])
     }
 
+    /**
+     * A `URLValue` field and its `getURLValue()` accessor must resolve to the
+     * same property. Naive first-letter lowering yields `uRLValue` for the
+     * accessor and exports both, the same bug class as issue #1492.
+     */
+    fun testBuildObjectModelKeepsOnePropertyForAcronymFieldAndGetter() = runBlocking {
+        myFixture.addFileToProject(
+            "model/AcronymModel.java",
+            """
+            package model;
+            public class AcronymModel {
+                public String URLValue;
+                public String getURLValue() { return URLValue; }
+                public void setURLValue(String value) { URLValue = value; }
+            }
+            """.trimIndent()
+        )
+        val psiClass = findClass("model.AcronymModel")!!
+
+        val result = helper.buildObjectModel(psiClass, JsonOption.ALL)
+
+        assertNotNull(result)
+        val map = result.toSimpleValue() as Map<*, *>
+        assertEquals("", map["URLValue"])
+        assertEquals(1, map.size)
+        assertFalse(map.containsKey("uRLValue"))
+    }
+
     fun testBuildObjectModelWithComplexNestedStructure() = runBlocking {
         myFixture.addFileToProject(
             "model/Order.java",
