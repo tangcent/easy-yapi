@@ -332,6 +332,89 @@ class RuleToolUtilsTest {
     }
 
     @Test
+    fun testToCamelCaseWithDefaultDelimiters() {
+        assertEquals("userName", RuleToolUtils.toCamelCase("user_name"))
+        assertEquals("userName", RuleToolUtils.toCamelCase("user-name"))
+        assertEquals("userName", RuleToolUtils.toCamelCase("user name"))
+        assertEquals("userName", RuleToolUtils.toCamelCase("User.Name"))
+        assertEquals("displayName", RuleToolUtils.toCamelCase("displayName"))
+        assertEquals("barcode", RuleToolUtils.toCamelCase("Barcode"))
+        assertEquals("urlValue", RuleToolUtils.toCamelCase("URLValue"))
+        assertNull(RuleToolUtils.toCamelCase(null))
+        assertEquals("", RuleToolUtils.toCamelCase(""))
+    }
+
+    @Test
+    fun testToKebabCase() {
+        assertEquals("user-name", RuleToolUtils.toKebabCase("userName"))
+        assertEquals("user-name", RuleToolUtils.toKebabCase("user_name"))
+        assertEquals("barcode", RuleToolUtils.toKebabCase("Barcode"))
+        assertEquals("url-value", RuleToolUtils.toKebabCase("URLValue"))
+        assertEquals("abc", RuleToolUtils.toKebabCase("ABC"))
+        assertNull(RuleToolUtils.toKebabCase(null))
+        assertEquals("", RuleToolUtils.toKebabCase(""))
+    }
+
+    /**
+     * `camel2Underline` is the legacy Jackson `SnakeCaseStrategy` helper
+     * (`wasPrevTranslated`): acronyms stay glued together. Expected values are
+     * measured outputs of Jackson 2.17/2.19. It is kept for rules that call it
+     * by name; naming-strategy extensions use the mainstream helpers below.
+     */
+    @Test
+    fun testLegacyCamel2UnderlineKeepsJacksonSnakeCaseBehaviour() {
+        assertEquals("urlvalue", RuleToolUtils.camel2Underline("URLValue"))
+        assertEquals("xmlhttp_request", RuleToolUtils.camel2Underline("XMLHttpRequest"))
+        assertEquals("user_id", RuleToolUtils.camel2Underline("userID"))
+        assertEquals("abc", RuleToolUtils.camel2Underline("ABc"))
+    }
+
+    @Test
+    fun testToSnakeCase() {
+        assertEquals("user_name", RuleToolUtils.toSnakeCase("userName"))
+        assertEquals("user_name", RuleToolUtils.toSnakeCase("user_name"))
+        assertEquals("barcode", RuleToolUtils.toSnakeCase("Barcode"))
+        assertEquals("url_value", RuleToolUtils.toSnakeCase("URLValue"))
+        assertEquals("xml_http_request", RuleToolUtils.toSnakeCase("XMLHttpRequest"))
+        assertEquals("abc", RuleToolUtils.toSnakeCase("ABC"))
+        assertNull(RuleToolUtils.toSnakeCase(null))
+        assertEquals("", RuleToolUtils.toSnakeCase(""))
+    }
+
+    @Test
+    fun testToPascalCase() {
+        assertEquals("UserName", RuleToolUtils.toPascalCase("user_name"))
+        assertEquals("DisplayName", RuleToolUtils.toPascalCase("displayName"))
+        assertEquals("UrlValue", RuleToolUtils.toPascalCase("URLValue"))
+        assertEquals("XmlHttpRequest", RuleToolUtils.toPascalCase("XMLHttpRequest"))
+        assertNull(RuleToolUtils.toPascalCase(null))
+        assertEquals("", RuleToolUtils.toPascalCase(""))
+    }
+
+    @Test
+    fun testToLowerDotCase() {
+        assertEquals("user.name", RuleToolUtils.toLowerDotCase("userName"))
+        assertEquals("url.value", RuleToolUtils.toLowerDotCase("URLValue"))
+        assertEquals("xml.http.request", RuleToolUtils.toLowerDotCase("XMLHttpRequest"))
+        assertNull(RuleToolUtils.toLowerDotCase(null))
+        assertEquals("", RuleToolUtils.toLowerDotCase(""))
+    }
+
+    /**
+     * Every naming-strategy helper shares one word splitter, so acronyms stay
+     * one word across all strategies. This is the boundary rule used by .NET,
+     * Newtonsoft.Json, Rails, Pydantic, lodash and Jackson's KebabCaseStrategy.
+     */
+    @Test
+    fun testMainstreamStrategiesKeepAcronymsWhole() {
+        assertEquals("urlValue", RuleToolUtils.toCamelCase("URLValue"))
+        assertEquals("url_value", RuleToolUtils.toSnakeCase("URLValue"))
+        assertEquals("url-value", RuleToolUtils.toKebabCase("URLValue"))
+        assertEquals("UrlValue", RuleToolUtils.toPascalCase("URLValue"))
+        assertEquals("url.value", RuleToolUtils.toLowerDotCase("URLValue"))
+    }
+
+    @Test
     fun testRemovePrefix() {
         assertEquals("World", RuleToolUtils.removePrefix("HelloWorld", "Hello"))
         assertEquals("HelloWorld", RuleToolUtils.removePrefix("HelloWorld", "Bye"))

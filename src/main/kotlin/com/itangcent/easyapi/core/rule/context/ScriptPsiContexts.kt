@@ -18,6 +18,7 @@ import com.itangcent.easyapi.core.psi.type.ResolvedParam
 import com.itangcent.easyapi.core.psi.type.ResolvedType
 import com.itangcent.easyapi.core.psi.type.SpecialTypeHandler
 import com.itangcent.easyapi.core.psi.type.TypeResolver
+import com.itangcent.easyapi.core.util.BeanPropertyNames
 import kotlinx.coroutines.runBlocking
 
 //region Context Type Interfaces
@@ -164,14 +165,17 @@ interface MethodContext : ItContext {
     fun isSynchronized(): Boolean
     fun isNative(): Boolean
     /**
-     * Returns the underlying field name derived from this method's name.
+     * Returns the property name derived from this method's name, following
+     * `java.beans.Introspector.decapitalize`:
      *
-     * - `getCode` → `code`
+     * - `getCode` / `setCode` → `code`
      * - `isActive` → `active`
-     * - `name` (or any non-getter/non-is method) → returned as-is
+     * - `getURLValue` → `URLValue` (two leading capitals are preserved)
+     * - `name` (or any non-accessor method) → returned as-is
      *
-     * Useful for mapping getter methods to their backing instance fields
-     * (e.g. Jackson `@JsonValue` on a getter).
+     * Keeping the acronym intact lets a `URLValue` field and its accessors
+     * resolve to the same property. Together with [FieldContext.fieldName],
+     * this lets rules treat a field and its accessors as one property.
      */
     fun fieldName(): String
 }
@@ -184,8 +188,18 @@ interface MethodContext : ItContext {
  * - Type access
  * - Containing class access
  * - Field modifier checks
+ * - Property-name access shared with [MethodContext]
  */
 interface FieldContext : ItContext {
+    /**
+     * Returns the model property name for this context.
+     *
+     * For a field this is its declared name. Together with
+     * [MethodContext.fieldName], which strips the accessor prefix, this lets a
+     * rule read the property name without branching on [ItContext.contextType].
+     */
+    fun fieldName(): String = name()
+
     fun type(): ScriptTypeContext
     fun jsonType(): ScriptTypeContext
     fun containingClass(): ScriptPsiClassContext?
@@ -485,14 +499,7 @@ open class ScriptPsiMethodContext(context: RuleContext) : ScriptItContext(contex
 
     override fun isNative(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.NATIVE) }
 
-    override fun fieldName(): String {
-        val n = name()
-        return when {
-            n.startsWith("get") && n.length > 3 -> n.substring(3, 4).lowercase() + n.substring(4)
-            n.startsWith("is") && n.length > 2 -> n.substring(2, 3).lowercase() + n.substring(3)
-            else -> n
-        }
-    }
+    override fun fieldName(): String = BeanPropertyNames.fromAccessor(name())
 
     override fun canonicalText(): String {
         val cls = readSync { psiMethod().containingClass?.qualifiedName } ?: ""

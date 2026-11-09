@@ -144,8 +144,13 @@ Type: `com.itangcent.easyapi.core.util.RuleToolUtils` — Rule utility methods.
 - `substringBetween(str: String?, open: String?, close: String?): String?`
 - `substringsBetween(str: String?, open: String?, close: String?): Array<String>?`
 - `swapCase(str: String?): String?`
+- `toCamelCase(str: String?): String?`
 - `toCamelCase(str: String?, capitalizeFirstLetter: Boolean, delimiters: CharArray): String?`
 - `toJson(obj: Any?): String?`
+- `toKebabCase(str: String?): String?`
+- `toLowerDotCase(str: String?): String?`
+- `toPascalCase(str: String?): String?`
+- `toSnakeCase(str: String?): String?`
 - `today(): String`
 - `uncapitalize(str: String?): String?`
 - `upperCase(str: String?): String?`
@@ -378,6 +383,7 @@ Type: `com.itangcent.easyapi.core.rule.context.FieldContext` — PSI field conte
 - `doc(tag: String): String?`
 - `doc(tag: String, subTag: String): String?`
 - `docs(tag: String): List<String>?`
+- `fieldName(): String`
 - `getExt(name: String): Any?`
 - `getName(): String?`
 - `hasAnn(name: String): Boolean`

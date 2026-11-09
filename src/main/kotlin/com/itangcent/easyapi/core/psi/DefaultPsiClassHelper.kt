@@ -20,6 +20,7 @@ import com.itangcent.easyapi.core.psi.model.ObjectModel
 import com.itangcent.easyapi.core.psi.type.*
 import com.itangcent.easyapi.core.rule.RuleKeys
 import com.itangcent.easyapi.core.rule.engine.RuleEngine
+import com.itangcent.easyapi.core.util.BeanPropertyNames
 import com.itangcent.easyapi.core.util.json.GsonUtils
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -631,7 +632,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 for (method in psiClass.allMethods) {
                     if (isFromObject(method)) continue
                     if (isGetter(method)) {
-                        val propertyName = getPropertyNameFromGetter(method.name)
+                        val propertyName = BeanPropertyNames.fromAccessor(method.name)
                         if (fieldNames.add(propertyName)) {
                             val returnType = method.returnType ?: continue
                             val methodContext = resolveContextForMember(method, psiClass, genericContext)
@@ -650,7 +651,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 for (method in psiClass.allMethods) {
                     if (isFromObject(method)) continue
                     if (isSetter(method)) {
-                        val propertyName = getPropertyNameFromSetter(method.name)
+                        val propertyName = BeanPropertyNames.fromAccessor(method.name)
                         if (fieldNames.add(propertyName)) {
                             val paramType = method.parameterList.parameters.firstOrNull()?.type ?: continue
                             val methodContext = resolveContextForMember(method, psiClass, genericContext)
@@ -810,22 +811,6 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         if (!name.startsWith("set") || name.length <= 3) return false
         if (method.parameterList.parameters.size != 1) return false
         return true
-    }
-
-    private fun getPropertyNameFromGetter(name: String): String {
-        return when {
-            name.startsWith("get") && name.length > 3 -> name[3].lowercaseChar() + name.substring(4)
-            name.startsWith("is") && name.length > 2 -> name[2].lowercaseChar() + name.substring(3)
-            else -> name
-        }
-    }
-
-    private fun getPropertyNameFromSetter(name: String): String {
-        return if (name.startsWith("set") && name.length > 3) {
-            name[3].lowercaseChar() + name.substring(4)
-        } else {
-            name
-        }
     }
 
     private suspend fun buildFieldModel(

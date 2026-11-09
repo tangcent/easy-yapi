@@ -1251,5 +1251,38 @@ class ScriptPsiContextsTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    fun testFieldNameIsUniformAcrossFieldAndAccessors() {
+        val classSource = """
+            package com.test;
+            public class FieldNameModel {
+                public String Barcode;
+                public String getBarcode() { return Barcode; }
+                public void setBarcode(String value) { Barcode = value; }
+                public boolean isActive() { return true; }
+                public String URLValue;
+                public String getURLValue() { return URLValue; }
+                public void setURLValue(String value) { URLValue = value; }
+                public String getURL() { return "x"; }
+                public String getOnlyGetter() { return "x"; }
+                public void setOnlySetter(String value) { }
+                public String plainName() { return "x"; }
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+
+        assertEquals("Barcode", createFieldContext("com.test.FieldNameModel", "Barcode").fieldName())
+        assertEquals("barcode", createMethodContext("com.test.FieldNameModel", "getBarcode").fieldName())
+        assertEquals("barcode", createMethodContext("com.test.FieldNameModel", "setBarcode").fieldName())
+        assertEquals("active", createMethodContext("com.test.FieldNameModel", "isActive").fieldName())
+        assertEquals("URLValue", createFieldContext("com.test.FieldNameModel", "URLValue").fieldName())
+        assertEquals("URLValue", createMethodContext("com.test.FieldNameModel", "getURLValue").fieldName())
+        assertEquals("URLValue", createMethodContext("com.test.FieldNameModel", "setURLValue").fieldName())
+        assertEquals("URL", createMethodContext("com.test.FieldNameModel", "getURL").fieldName())
+        assertEquals("onlyGetter", createMethodContext("com.test.FieldNameModel", "getOnlyGetter").fieldName())
+        assertEquals("onlySetter", createMethodContext("com.test.FieldNameModel", "setOnlySetter").fieldName())
+        assertEquals("plainName", createMethodContext("com.test.FieldNameModel", "plainName").fieldName())
+    }
+
     //endregion
 }
