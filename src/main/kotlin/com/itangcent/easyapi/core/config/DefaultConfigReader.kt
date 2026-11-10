@@ -8,6 +8,8 @@ import com.itangcent.easyapi.core.settings.module.EnvironmentSettings
 import com.itangcent.easyapi.core.settings.module.RuleFileSettings
 import com.itangcent.easyapi.core.settings.module.extensionCodes
 import com.itangcent.easyapi.core.settings.settings
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 /**
  * Default implementation of [ConfigReader] that reads configuration from multiple sources
@@ -50,7 +52,12 @@ class DefaultConfigReader(
     override fun getAll(key: String): List<String> = delegate.getAll(key)
 
     override suspend fun reload() {
-        delegate = buildDelegate().also { it.reload() }
+        val reloaded = buildDelegate().also { it.reload() }
+        // A source may swallow cancellation and return a fallback (the remote
+        // loader does). Never publish a partial snapshot or notify listeners
+        // for a reload that a newer change has already cancelled.
+        currentCoroutineContext().ensureActive()
+        delegate = reloaded
         project.messageBus.syncPublisher(ConfigReloadListener.TOPIC).onConfigReloaded()
     }
 

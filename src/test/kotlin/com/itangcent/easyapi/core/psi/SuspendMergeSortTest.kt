@@ -39,7 +39,8 @@ class SuspendMergeSortTest {
 
     @Test
     fun inconsistentComparatorDoesNotThrow() = runBlocking {
-        // List.sortedWith 在比较器不满足全序时可能抛出 "Comparison method violates its general contract"
+        // List.sortedWith can throw "Comparison method violates its general contract"
+        // when the comparator is not a total order.
         val items = (1..200).toList()
         val sorted = suspendMergeSort(items) { _, _ -> -1 }
         assertEquals(items.size, sorted.size)
