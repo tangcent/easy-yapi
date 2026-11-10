@@ -9,6 +9,7 @@ import com.itangcent.easyapi.core.settings.SettingBinder
 import com.itangcent.easyapi.testFramework.ConstantSettingBinder
 import org.junit.Assert.*
 import org.junit.Test
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -209,6 +210,56 @@ class LayeredConfigReaderTest {
         reader.reload()
 
         assertEquals("Updated", reader.getFirst("api.name"))
+    }
+
+    @Test
+    fun testReloadRethrowsCancellationAndKeepsPreviousSnapshot() {
+        var cancelled = false
+        val source = object : ConfigSource {
+            override val priority: Int = 0
+            override val sourceId: String = "test"
+            override suspend fun collect(): Sequence<ConfigEntry> {
+                if (cancelled) throw CancellationException("reload superseded")
+                return listOf(ConfigEntry("api.name", "Original", "test")).asSequence()
+            }
+        }
+
+        val reader = LayeredConfigReader(listOf(source))
+        runBlocking { reader.reload() }
+        assertEquals("Original", reader.getFirst("api.name"))
+
+        cancelled = true
+        var outcome: Any? = null
+        runBlocking {
+            outcome = try {
+                reader.reload()
+                "reloaded"
+            } catch (e: CancellationException) {
+                e
+            }
+        }
+
+        assertTrue("a cancelled reload must propagate cancellation: $outcome", outcome is CancellationException)
+        assertEquals("Original", reader.getFirst("api.name"))
+    }
+
+    @Test
+    fun testReloadKeepsHealthySourcesWhenOneFails() = runBlocking {
+        val failing = object : ConfigSource {
+            override val priority: Int = 10
+            override val sourceId: String = "failing"
+            override suspend fun collect(): Sequence<ConfigEntry> = throw IllegalStateException("boom")
+        }
+        val healthy = TestConfigSource(
+            listOf(ConfigEntry("api.name", "Healthy", "healthy")),
+            priority = 0,
+            sourceId = "healthy"
+        )
+
+        val reader = LayeredConfigReader(listOf(failing, healthy))
+        reader.reload()
+
+        assertEquals("Healthy", reader.getFirst("api.name"))
     }
 
     @Test

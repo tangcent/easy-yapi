@@ -4,6 +4,7 @@ import com.itangcent.easyapi.core.config.model.ConfigEntry
 import com.itangcent.easyapi.core.config.model.ConfigSource
 import com.itangcent.easyapi.core.config.parser.PropertyResolver
 import com.itangcent.easyapi.core.logging.IdeaLog
+import kotlinx.coroutines.CancellationException
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -58,8 +59,11 @@ class LayeredConfigReader(
                     allEntries.computeIfAbsent(entry.key) { ArrayList() }.add(entry)
                     count++
                 }
-            }.onFailure {
-                LOG.warn("Config source [${source.sourceId}] failed, its entries were skipped", it)
+            }.onFailure { cause ->
+                // A newer change cancels this reload; never publish a snapshot
+                // built from the sources that happened to finish before it.
+                if (cause is CancellationException) throw cause
+                LOG.warn("Config source [${source.sourceId}] failed, its entries were skipped", cause)
             }
             LOG.info("Loaded $count config entries from [${source.sourceId}] (priority=${source.priority})")
         }
