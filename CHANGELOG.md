@@ -5,6 +5,24 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.7] - 2026-11-11
+
+### Added
+- add opt-in field.name strategies with mainstream acronym handling (#1494)
+- drop the API name repeated in the description (#1493)
+
+### Fixed
+- keep full config on rapid reloads (#1495)
+- resolve read-lock deadlock and harden config loading (#1491)
+
+### Changed
+- centralize API parse lifecycle hooks (#1489)
+
+### Improved
+- docs: add a no-install prompt for the AI skill (#1488)
+
+---
+
 ## [3.2.6] - 2026-10-25
 
 ### Added
