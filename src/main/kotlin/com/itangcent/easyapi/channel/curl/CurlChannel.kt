@@ -67,13 +67,13 @@ class CurlChannel : Channel, IdeaLog {
         val resolved = resolver.resolveAll(context.endpointsToExport, host)
             ?: throw CancellationException("User cancelled environment selection")
 
-        // Run folder+class pre-scripts on each endpoint before formatting.
-        // Batch path uses folder+class scopes only (no per-endpoint inline scripts) —
+        // Run project+folder+class pre-scripts on each endpoint before formatting.
+        // Batch path omits per-endpoint inline scripts —
         // PreScriptApplier is EDT-free, safe to call from this background coroutine.
         val scriptedEndpoints = if (runPreScripts && resolved.first.isNotEmpty()) {
             val applier = PreScriptApplier.getInstance(project)
             resolved.first.map { ep ->
-                val scopes = CurlScriptScopes.resolveFolderAndClassScopes(ep)
+                val scopes = CurlScriptScopes.resolveFolderAndClassScopes(ep, project.name)
                 applier.applyScripts(ep, resolved.second, scopes)
             }
         } else {

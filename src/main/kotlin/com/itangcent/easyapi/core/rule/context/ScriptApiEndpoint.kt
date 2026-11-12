@@ -218,8 +218,9 @@ class ScriptApiEndpoint(
      * - Format options (long flags, pretty-print, etc.) flow from the persisted
      *   cURL settings, so the user's cURL settings tab controls rule-generated
      *   cURL too.
-     * - When [runPreScripts] is `true` AND [project] is non-null, folder+class
-     *   pre-request scripts are applied to a deep copy before formatting
+     * - When [runPreScripts] is `true` AND [project] is non-null,
+     *   project+folder+class pre-request scripts are applied to a deep copy
+     *   before formatting
      *   (original endpoint untouched). Endpoint-scope scripts are
      *   intentionally NOT included here because `export.after` fires post-build and
      *   the endpoint-key scope semantics differ from the copy/export path.
@@ -242,7 +243,7 @@ class ScriptApiEndpoint(
      * hops) — `runBlocking` on a background thread never deadlocks with EDT.
      *
      * @param host Target host; the no-arg overload passes [CurlRenderer.DEFAULT_HOST].
-     * @param runPreScripts When true and [project] is set, run folder+class
+     * @param runPreScripts When true and [project] is set, run project+folder+class
      *  pre-request scripts before formatting. The no-arg/one-arg overloads pass false.
      * @return The formatted cURL command string.
      */

@@ -35,8 +35,8 @@ import com.itangcent.easyapi.core.script.ScriptScope
  *   optional pre-scripts → format). Used by `ApiDashboardPanel`.
  * - [copyFromEdited] — reads the persisted `copyFromEdited` setting for the
  *   Dashboard's "use edited endpoint" decision.
- * - [resolveFolderAndClassScopes] — folder + class scope resolution for the
- *   Dashboard's script editor.
+ * - [resolveFolderAndClassScopes] — project + folder + class scope resolution
+ *   for the Dashboard's script editor.
  *
  * ## Threading
  *
@@ -76,7 +76,7 @@ interface CurlRenderer {
      *
      * Non-suspend wrapper around `CurlBuilder.buildSync`. Reads the user's
      * persisted `CurlSettings` format flags from [project]; when
-     * [runPreScripts] is true, resolves folder + class scopes and applies
+     * [runPreScripts] is true, resolves project + folder + class scopes and applies
      * pre-request scripts to a deep copy before formatting.
      *
      * Safe to call from background threads (rule-script thread). NOT safe
@@ -86,7 +86,7 @@ interface CurlRenderer {
      *   pure-format path (same as [format]).
      * @param endpoint The endpoint to build a cURL command for.
      * @param host Target host; defaults to [defaultHost] when blank.
-     * @param runPreScripts When true and [project] is set, run folder+class
+     * @param runPreScripts When true and [project] is set, run project+folder+class
      *   pre-request scripts before formatting.
      * @return The formatted cURL command.
      */
@@ -127,18 +127,21 @@ interface CurlRenderer {
     fun copyFromEdited(project: Project): Boolean
 
     /**
-     * Resolves folder + class scopes for [endpoint] (outer → inner order,
-     * matching `RequestExecutor.resolveScripts`).
+     * Resolves project + folder + class scopes for [endpoint] (outer → inner
+     * order, matching `RequestExecutor.resolveScripts`).
      *
      * Used by the Dashboard's `ApiDashboardPanel.resolveScriptScopesForEndpoint`
-     * for the script editor card. Folder + class only — endpoint-scope is
-     * intentionally NOT included here (the script editor operates at folder
-     * or class level, not per-endpoint).
+     * for the script editor card. The project scope comes first so a script set
+     * on the outermost project node applies to every endpoint. Endpoint-scope is
+     * intentionally NOT included here (the script editor operates at project,
+     * folder or class level, not per-endpoint).
      *
-     * @param endpoint The endpoint whose containing folder + class scopes to resolve.
-     * @return the resolved scopes (folder first, class second); empty if neither is available.
+     * @param endpoint The endpoint whose containing scopes to resolve.
+     * @param projectName The current project name, or `null` when no project is
+     *   available (headless rule evaluation); then the project scope is omitted.
+     * @return the resolved scopes (project, folder, class); empty if none is available.
      */
-    fun resolveFolderAndClassScopes(endpoint: ApiEndpoint): List<ScriptScope>
+    fun resolveFolderAndClassScopes(endpoint: ApiEndpoint, projectName: String?): List<ScriptScope>
 
     companion object {
         /**

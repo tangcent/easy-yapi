@@ -61,16 +61,17 @@ class PreScriptApplier(
 ) : IdeaLog {
 
     /**
-     * Resolves + runs the folder/API/endpoint pre-request scripts for [scopes] (in
-     * outer→inner order, matching [com.itangcent.easyapi.core.dashboard.RequestExecutor.resolveScripts]),
-     * then writes the script's resulting url/method/headers/body onto a DEEP COPY of
-     * [endpoint]. The original [endpoint] is never mutated.
+     * Resolves + runs the project/folder/class/endpoint pre-request scripts for [scopes]
+     * (in outer→inner order, matching
+     * [com.itangcent.easyapi.core.dashboard.RequestExecutor.resolveScripts]), then writes
+     * the script's resulting url/method/headers/body onto a DEEP COPY of [endpoint].
+     * The original [endpoint] is never mutated.
      *
      * Best-effort: if a script throws, logs `console.warn` with the scope and returns
      * the un-mutated deep copy for this endpoint.
      *
      * @param host the host to seed the PmRequest URL with (already resolved by caller).
-     * @param scopes script scopes to resolve (folder → class → endpoint, outer→inner).
+     * @param scopes script scopes to resolve (project → folder → class → endpoint, outer→inner).
      * @return a deep copy of [endpoint] with script effects applied; or an un-mutated
      *         deep copy if no script ran, the endpoint is gRPC, or the script failed.
      */
