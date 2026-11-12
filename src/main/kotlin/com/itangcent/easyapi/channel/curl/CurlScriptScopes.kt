@@ -7,9 +7,9 @@ import com.itangcent.easyapi.core.script.ScriptScope
 /**
  * Shared script-scope resolution for the cURL path.
  *
- * Centralizes the folder→class→endpoint scope formation so [CurlChannel.export]
- * (batch, folder+class only), [CurlExportResolver.formatForCopy] (single,
- * folder+class+endpoint), and [com.itangcent.easyapi.core.rule.context.ScriptApiEndpoint.toCurl]
+ * Centralizes the project→folder→class→endpoint scope formation so
+ * [CurlChannel.export] (batch), [CurlExportResolver.formatForCopy] (single),
+ * and [com.itangcent.easyapi.core.rule.context.ScriptApiEndpoint.toCurl]
  * (rule path) all derive scopes from one place. The dashboard's
  * `ApiDashboardPanel.resolveScriptScopesForEndpoint` is the prior art — this helper
  * replaces it (DRY).
@@ -25,23 +25,31 @@ import com.itangcent.easyapi.core.script.ScriptScope
 object CurlScriptScopes {
 
     /**
-     * Resolves folder + class scopes for [endpoint] (outer → inner order, matching
-     * [com.itangcent.easyapi.core.dashboard.RequestExecutor.resolveScripts]).
+     * Resolves project + folder + class scopes for [endpoint] (outer → inner order,
+     * matching [com.itangcent.easyapi.core.dashboard.RequestExecutor.resolveScripts]).
+     *
+     * A project name adds the project scope and lets endpoints without a folder
+     * resolve scripts saved on the No folder node. Named folders retain their own keys.
      *
      * Used by the **batch export** path ([CurlChannel.export]) where per-endpoint
      * inline scripts are not consulted.
      */
-    fun resolveFolderAndClassScopes(endpoint: ApiEndpoint): List<ScriptScope> {
+    fun resolveFolderAndClassScopes(endpoint: ApiEndpoint, projectName: String?): List<ScriptScope> {
         val scopes = mutableListOf<ScriptScope>()
-        endpoint.folder?.takeIf { it.isNotBlank() }?.let { scopes.add(ScriptScope.Module(it)) }
-        val qualifiedName = readSync { endpoint.sourceClass?.qualifiedName }
+        val name = projectName?.takeIf { it.isNotBlank() }
+        name?.let { scopes.add(ScriptScope.Project(it)) }
+        val folder = endpoint.folder?.takeIf { it.isNotBlank() }
+        val folderScope = folder?.let { ScriptScope.Module(it) } ?: name?.let { ScriptScope.NoFolder(it) }
+        folderScope?.let { scopes.add(it) }
+        val qualifiedName = endpoint.sourceClass?.let { readSync { it.qualifiedName } }
             ?: endpoint.className
         qualifiedName?.takeIf { it.isNotBlank() }?.let { scopes.add(ScriptScope.Class(it)) }
         return scopes
     }
 
     /**
-     * Resolves folder + class + endpoint scopes for [endpoint] (outer → inner order).
+     * Resolves project + folder + class + endpoint scopes for [endpoint]
+     * (outer → inner order).
      *
      * Used by the **single-endpoint** path ([CurlExportResolver.formatForCopy],
      * where per-endpoint inline scripts ARE consulted
@@ -51,8 +59,8 @@ object CurlScriptScopes {
      * `EndpointDetailsPanel.computeCacheKey` so scripts saved by the dashboard UI
      * are found.
      */
-    fun resolveAllScopes(endpoint: ApiEndpoint): List<ScriptScope> {
-        val scopes = resolveFolderAndClassScopes(endpoint).toMutableList()
+    fun resolveAllScopes(endpoint: ApiEndpoint, projectName: String?): List<ScriptScope> {
+        val scopes = resolveFolderAndClassScopes(endpoint, projectName).toMutableList()
         endpointKeyFor(endpoint).takeIf { it.isNotBlank() }?.let { scopes.add(ScriptScope.Endpoint(it)) }
         return scopes
     }

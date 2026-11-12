@@ -21,7 +21,7 @@ import com.itangcent.easyapi.core.script.ScriptScope
  * @property runPreScripts When `true` AND [scopes] is non-empty AND a `Project` is
  *   available, the builder runs the resolved pre-request scripts against the
  *   endpoint (deep copy) before formatting. When `false` (default), no scripts run.
- * @property scopes Script scopes to resolve (folder → class → endpoint inline, in
+ * @property scopes Script scopes to resolve (project → folder → class → endpoint inline, in
  *   outer→inner order matching [com.itangcent.easyapi.core.dashboard.RequestExecutor.resolveScripts]).
  *   Ignored when [runPreScripts] is `false`.
  */

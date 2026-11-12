@@ -6,6 +6,7 @@ import com.intellij.ui.EditorTextField
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
+import java.awt.FlowLayout
 import javax.swing.*
 
 class ScriptEditorPanel(private val project: Project) : JPanel(BorderLayout()) {
@@ -35,10 +36,23 @@ class ScriptEditorPanel(private val project: Project) : JPanel(BorderLayout()) {
 
     private var currentScope: ScriptScope? = null
     private var isDirty = false
+    private var legacyScript: ScriptCache? = null
 
     private val saveButton = JButton("Save").apply {
         addActionListener { saveCurrentScript() }
         isEnabled = false
+    }
+
+    private val loadLegacyButton = JButton("Load legacy script").apply {
+        isVisible = false
+        addActionListener {
+            val cache = legacyScript ?: return@addActionListener
+            showScripts(cache)
+            // Loading previews the script. Saving or editing it assigns the new scope.
+            isDirty = false
+            saveButton.isEnabled = true
+            isEnabled = false
+        }
     }
 
     init {
@@ -52,7 +66,10 @@ class ScriptEditorPanel(private val project: Project) : JPanel(BorderLayout()) {
             add(titleLabel.apply {
                 font = font.deriveFont(font.style, 16f)
             }, BorderLayout.WEST)
-            add(saveButton, BorderLayout.EAST)
+            add(JPanel(FlowLayout(FlowLayout.RIGHT, 6, 0)).apply {
+                add(loadLegacyButton)
+                add(saveButton)
+            }, BorderLayout.EAST)
         }
 
         tabbedPane.addTab("Pre-request Script", JBScrollPane(preRequestScriptArea).apply {
@@ -89,14 +106,32 @@ class ScriptEditorPanel(private val project: Project) : JPanel(BorderLayout()) {
     fun loadForScope(scope: ScriptScope, endpointCount: Int = 0) {
         saveIfDirty()
         currentScope = scope
+        val cache = scriptCacheService.load(scope)
+        showScripts(cache)
         isDirty = false
         saveButton.isEnabled = false
 
-        val cache = scriptCacheService.load(scope)
-        preRequestScriptArea.text = cache?.preRequestScript ?: ""
-        postResponseScriptArea.text = cache?.postResponseScript ?: ""
+        // Older entries can belong to more than one node. Offer them in the
+        // editor so the user can choose where they apply before they run.
+        val legacyScope = if (cache == null) legacyModuleScope(scope) else null
+        legacyScript = legacyScope?.let(scriptCacheService::load)?.takeIf {
+            !it.preRequestScript.isNullOrBlank() || !it.postResponseScript.isNullOrBlank()
+        }
+        loadLegacyButton.isVisible = legacyScript != null
+        loadLegacyButton.isEnabled = legacyScript != null
+        loadLegacyButton.toolTipText = legacyScope?.let {
+            "Preview the script previously saved under '${it.name}'. Click Save to apply it here."
+        }
 
         when (scope) {
+            is ScriptScope.Project -> {
+                titleLabel.text = scope.name
+                infoLabel.text = "Scripts defined here apply to all endpoints in this project."
+            }
+            is ScriptScope.NoFolder -> {
+                titleLabel.text = "No folder"
+                infoLabel.text = "Scripts defined here apply to endpoints without a folder."
+            }
             is ScriptScope.Module -> {
                 titleLabel.text = "\uD83D\uDCC1 ${scope.name}"
                 infoLabel.text = if (endpointCount > 0) {
@@ -123,6 +158,21 @@ class ScriptEditorPanel(private val project: Project) : JPanel(BorderLayout()) {
         tabbedPane.selectedIndex = 0
     }
 
+    private fun legacyModuleScope(scope: ScriptScope): ScriptScope.Module? {
+        val oldNodeName = when (scope) {
+            is ScriptScope.Project -> scope.name
+            is ScriptScope.NoFolder -> scope.projectName
+            is ScriptScope.Module -> scope.name
+            else -> return null
+        }
+        return ScriptScope.Module(oldNodeName.substringBefore(" (").trim()).takeUnless { it == scope }
+    }
+
+    private fun showScripts(cache: ScriptCache?) {
+        preRequestScriptArea.text = cache?.preRequestScript.orEmpty()
+        postResponseScriptArea.text = cache?.postResponseScript.orEmpty()
+    }
+
     fun saveIfDirty() {
         if (isDirty && currentScope != null) {
             saveCurrentScript()
@@ -136,11 +186,14 @@ class ScriptEditorPanel(private val project: Project) : JPanel(BorderLayout()) {
             postResponseScript = postResponseScriptArea.text.takeIf { it.isNotBlank() }
         )
         scriptCacheService.save(scope, cache)
+        legacyScript = null
+        loadLegacyButton.isVisible = false
         isDirty = false
         saveButton.isEnabled = false
     }
 
     private fun markDirty() {
+        loadLegacyButton.isEnabled = false
         isDirty = true
         saveButton.isEnabled = true
     }

@@ -28,7 +28,7 @@ import com.itangcent.easyapi.core.settings.StorageScope
  * @property multiLineFormat Default value for the corresponding [CurlFormatOptions] flag.
  * @property longFlags Default value for the corresponding [CurlFormatOptions] flag.
  * @property includeResponseExample Default value for the corresponding [CurlFormatOptions] flag.
- * @property runPreScripts When true, pre-request scripts (folder + API level) are run
+ * @property runPreScripts When true, pre-request scripts (project + folder + API level) are run
  *  during cURL conversion so script-driven header injection / auth tokens / body
  *  rewriting are reflected in the generated command. Default `false`
  *  (no script machinery invoked, byte-identical output).

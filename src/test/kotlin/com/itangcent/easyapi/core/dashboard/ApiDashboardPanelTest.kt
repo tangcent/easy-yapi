@@ -1,5 +1,8 @@
 package com.itangcent.easyapi.core.dashboard
 
+import com.intellij.testFramework.replaceService
+import com.intellij.ui.EditorTextField
+import com.itangcent.easyapi.core.cache.ProjectCacheRepository
 import com.itangcent.easyapi.core.cache.api.ApiScanFeatureStateProvider
 import com.itangcent.easyapi.core.cache.api.ApiScanFeatureTarget
 import com.itangcent.easyapi.core.cache.api.ApiScanLifecycleController
@@ -11,16 +14,32 @@ import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.HttpMethod
 import com.itangcent.easyapi.core.internal.threading.swing
 import com.itangcent.easyapi.core.internal.threading.swingBlocking
+import com.itangcent.easyapi.core.script.ScriptCache
+import com.itangcent.easyapi.core.script.ScriptCacheService
+import com.itangcent.easyapi.core.script.ScriptEditorPanel
+import com.itangcent.easyapi.core.script.ScriptScope
 import com.itangcent.easyapi.testFramework.ApiFixtures
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import java.awt.Component
+import java.awt.Container
+import javax.swing.JButton
+import javax.swing.JTree
+import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.TreePath
 
 class ApiDashboardPanelTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private val panels = mutableListOf<ApiDashboardPanel>()
     private val controllers = mutableListOf<ApiScanLifecycleController>()
+
+    override fun setUp() {
+        super.setUp()
+        project.replaceService(ProjectCacheRepository::class.java, ProjectCacheRepository(project), testRootDisposable)
+        project.replaceService(ScriptCacheService::class.java, ScriptCacheService(project), testRootDisposable)
+    }
 
     override fun tearDown() {
         swingBlocking {
@@ -171,6 +190,115 @@ class ApiDashboardPanelTest : EasyApiLightCodeInsightFixtureTestCase() {
                 emptyList<ApiEndpoint>(),
                 panel.endpointsMatching("orders")
             )
+        }
+    }
+
+    fun testProjectScopeLeadsRequestScriptScopes() {
+        val endpoint = ApiFixtures.createEndpoint(name = "getUser", path = "/api/user/get")
+        val panel = createPanel(FakeDashboardRuntime(listOf(endpoint), scanningEffective = false))
+
+        val scopes = panel.resolveScriptScopesForEndpoint(endpoint)
+
+        assertEquals(
+            "A script saved on the outermost project node must lead the request scope chain",
+            ScriptScope.Project(project.name).key,
+            scopes.firstOrNull()?.key
+        )
+    }
+
+    fun testFolderScriptStaysInFolderNamedAfterProject() {
+        val sameName = ApiFixtures.createEndpoint(name = "internal", path = "/internal").copy(folder = project.name)
+        val sibling = ApiFixtures.createEndpoint(name = "public", path = "/public").copy(folder = "public")
+        val panel = createPanel(FakeDashboardRuntime(listOf(sameName, sibling), scanningEffective = false))
+        val cache = ScriptCacheService.getInstance(project)
+        val folderScope = ScriptScope.Module(project.name)
+        val script = "pm.request.headers.upsert('X-Team', 'internal')"
+        cache.save(folderScope, ScriptCache(preRequestScript = script))
+        try {
+            assertEquals(script, cache.resolveScripts(panel.resolveScriptScopesForEndpoint(sameName)).preRequestScript)
+            assertNull(
+                "The folder script must stay out of sibling requests",
+                cache.resolveScripts(panel.resolveScriptScopesForEndpoint(sibling)).preRequestScript
+            )
+        } finally {
+            cache.delete(folderScope)
+        }
+    }
+
+    fun testLegacyParenthesizedFolderScriptsCanBeRecoveredInEditor() {
+        val folder = "legacy-orders (dev)"
+        val endpoint = ApiFixtures.createEndpoint(name = "orders", path = "/orders").copy(folder = folder)
+        val cache = ScriptCacheService.getInstance(project)
+        val legacyScope = ScriptScope.Module("legacy-orders")
+        val folderScope = ScriptScope.Module(folder)
+        val saved = ScriptCache(
+            preRequestScript = "pm.request.headers.upsert('X-Team', 'orders')",
+            postResponseScript = "pm.test('orders') {}"
+        )
+        cache.save(legacyScope, saved)
+        try {
+            val panel = createPanel(FakeDashboardRuntime(listOf(endpoint), scanningEffective = false))
+            swingBlocking {
+                val tree = descendants(panel).filterIsInstance<JTree>().single()
+                tree.selectionPath = TreePath((tree.model.root as DefaultMutableTreeNode).path)
+                val editor = descendants(panel).filterIsInstance<ScriptEditorPanel>().single()
+                val buttons = descendants(editor).filterIsInstance<JButton>().toList()
+                val recover = buttons.singleOrNull { it.text == "Load legacy script" }
+                assertNotNull("The editor should offer the script saved under the old truncated key", recover)
+                recover!!.doClick(0)
+                val fields = descendants(editor).filterIsInstance<EditorTextField>().map { it.text }.toList()
+                assertEquals(listOf(saved.preRequestScript, saved.postResponseScript), fields)
+                assertNull("Previewing a legacy script must not activate it", cache.load(folderScope))
+                buttons.single { it.text == "Save" }.doClick(0)
+            }
+            val resolved = cache.resolveScripts(panel.resolveScriptScopesForEndpoint(endpoint))
+            assertEquals(saved.preRequestScript, resolved.preRequestScript)
+            assertEquals(saved.postResponseScript, resolved.postResponseScript)
+            assertEquals("Recovery keeps the original legacy entry available", saved, cache.load(legacyScope))
+        } finally {
+            cache.delete(folderScope)
+            cache.delete(legacyScope)
+        }
+    }
+
+    fun testNoFolderScriptStaysInItsGroup() {
+        val uncategorized = ApiFixtures.createEndpoint(name = "loose", path = "/loose").copy(folder = null)
+        val categorized = ApiFixtures.createEndpoint(name = "named", path = "/named").copy(folder = "named")
+        val panel = createPanel(FakeDashboardRuntime(listOf(uncategorized, categorized), scanningEffective = false))
+        val cache = ScriptCacheService.getInstance(project)
+        val legacy = ScriptScope.Module(project.name.substringBefore(" (").trim())
+        val uncategorizedScope = ScriptScope.NoFolder(project.name)
+        val saved = ScriptCache(preRequestScript = "pm.request.headers.upsert('X-Team', 'loose')")
+        cache.save(legacy, saved)
+        try {
+            assertNull(cache.resolveScripts(panel.resolveScriptScopesForEndpoint(uncategorized)).preRequestScript)
+            swingBlocking {
+                val tree = descendants(panel).filterIsInstance<JTree>().single()
+                val root = tree.model.root as DefaultMutableTreeNode
+                val noFolder = root.children().toList().filterIsInstance<DefaultMutableTreeNode>()
+                    .single { it.toString().startsWith("No folder (") }
+                tree.selectionPath = TreePath(noFolder.path)
+                val editor = descendants(panel).filterIsInstance<ScriptEditorPanel>().single()
+                val buttons = descendants(editor).filterIsInstance<JButton>().toList()
+                buttons.single { it.text == "Load legacy script" }.doClick(0)
+                buttons.single { it.text == "Save" }.doClick(0)
+            }
+            assertEquals(saved, cache.load(uncategorizedScope))
+            assertEquals(saved.preRequestScript, cache.resolveScripts(panel.resolveScriptScopesForEndpoint(uncategorized)).preRequestScript)
+            assertNull(
+                "Recovering a legacy script under No folder must leave named folders alone",
+                cache.resolveScripts(panel.resolveScriptScopesForEndpoint(categorized)).preRequestScript
+            )
+        } finally {
+            cache.delete(uncategorizedScope)
+            cache.delete(legacy)
+        }
+    }
+
+    private fun descendants(component: Component): Sequence<Component> = sequence {
+        yield(component)
+        if (component is Container) {
+            component.components.forEach { yieldAll(descendants(it)) }
         }
     }
 
