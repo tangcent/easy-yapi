@@ -772,7 +772,13 @@ class ApiDashboardPanel internal constructor(
             } ?: nodeInfo.text
             ScriptScope.Class(qualifiedName)
         } else {
-            val moduleName = nodeInfo.text.substringBefore(" (").trim()
+            // Folder and root nodes share NodeInfo with no PSI context, so both
+            // derive their scope from the "<name> (<count>)" label. Strip only the
+            // trailing count suffix — a name containing " (" must survive intact so
+            // CurlScriptScopes (which receives the raw project name / folder) forms
+            // the same key. The project scope leads the inheritance chain so a
+            // root-node script reaches every endpoint.
+            val moduleName = nodeInfo.text.substringBeforeLast(" (").trim()
             ScriptScope.Module(moduleName)
         }
     }
@@ -791,11 +797,10 @@ class ApiDashboardPanel internal constructor(
     }
 
     fun resolveScriptScopesForEndpoint(endpoint: ApiEndpoint): List<ScriptScope> {
-        // Delegates to the CurlRenderer SPI — folder + class
-        // scopes only, matching the dashboard's prior behavior. The cURL
-        // single-endpoint path (CurlRenderer.formatForCopy → CurlExportResolver)
-        // additionally appends the Endpoint scope.
-        return CurlRenderer.getInstance().resolveFolderAndClassScopes(endpoint)
+        // Delegates to the CurlRenderer SPI — project + folder + class scopes.
+        // The cURL single-endpoint path (CurlRenderer.formatForCopy →
+        // CurlExportResolver) additionally appends the Endpoint scope.
+        return CurlRenderer.getInstance().resolveFolderAndClassScopes(endpoint, project.name)
     }
 
     /**

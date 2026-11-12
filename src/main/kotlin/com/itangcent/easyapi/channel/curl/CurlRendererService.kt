@@ -51,7 +51,7 @@ class CurlRendererService : CurlRenderer {
             CurlBuildOptions(
                 format = project.settings<CurlSettings>().toFormatOptions(),
                 runPreScripts = runPreScripts,
-                scopes = if (runPreScripts) CurlScriptScopes.resolveFolderAndClassScopes(endpoint) else emptyList(),
+                scopes = if (runPreScripts) CurlScriptScopes.resolveFolderAndClassScopes(endpoint, project.name) else emptyList(),
             )
         } else {
             CurlBuildOptions()
@@ -68,7 +68,7 @@ class CurlRendererService : CurlRenderer {
         return project.settings<CurlSettings>().copyFromEdited
     }
 
-    override fun resolveFolderAndClassScopes(endpoint: ApiEndpoint): List<ScriptScope> {
-        return CurlScriptScopes.resolveFolderAndClassScopes(endpoint)
+    override fun resolveFolderAndClassScopes(endpoint: ApiEndpoint, projectName: String?): List<ScriptScope> {
+        return CurlScriptScopes.resolveFolderAndClassScopes(endpoint, projectName)
     }
 }
