@@ -8,6 +8,11 @@ permissions:
   issues: write
   pull-requests: write
 
+# Serialize runs per PR so two overlapping checks cannot both post a comment.
+concurrency:
+  group: auto-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   label-pr:
     runs-on: ubuntu-latest
@@ -22,6 +27,19 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { issue: { number: issue_number }, repo: { owner, repo } } = context;
+            const marker = `<!-- easy-yapi:auto-label:pr-${issue_number} -->`;
+
+            // One format-status comment per PR: re-runs edit it instead of
+            // appending another copy of the same error.
+            async function findStatusComment() {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner, repo, issue_number, per_page: 100
+              });
+              const isBot = c => c.user?.type === 'Bot';
+              return comments.find(c => isBot(c) && c.body?.includes(marker))
+                || comments.find(c => isBot(c) && c.body?.includes('❌ Some commit messages'));
+            }
+
             
             // Get commits in the PR
             const { data: commits } = await github.rest.pulls.listCommits({
@@ -111,6 +129,14 @@ jobs:
                   labels: [labelToAdd]
                 });
               }
+
+              // The commits are valid now: drop the stale format error.
+              const stale = await findStatusComment();
+              if (stale) {
+                await github.rest.issues.deleteComment({
+                  owner, repo, comment_id: stale.id
+                });
+              }
             } else {
               // Create error comment
               const errorMessage = `
@@ -147,10 +173,15 @@ jobs:
               \`\`\`
               `;
             
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body: errorMessage
-              });
+              const existing = await findStatusComment();
+              const body = `${marker}\n${errorMessage}`;
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner, repo, comment_id: existing.id, body
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number, body
+                });
+              }
             }

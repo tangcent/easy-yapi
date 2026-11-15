@@ -9,6 +9,12 @@ permissions:
   pull-requests: write
   contents: read
 
+# One run per PR at a time: two overlapping runs would both see "no status
+# comment yet" and each post a new one.
+concurrency:
+  group: pr-package-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 env:
   # Compatibility package range: IDEA 2022.1 (build 221) through the last
   # build before the officially supported range (default since-build comes
@@ -178,14 +184,14 @@ jobs:
           path: build/artifact/compat/
           if-no-files-found: error
 
-      - name: Comment on target issue
-        if: steps.check_issue.outputs.has_issue == 'true'
+      - name: Comment package artifacts
         uses: actions/github-script@v7
         continue-on-error: true
         with:
           script: |
             const pr = context.payload.pull_request;
             const issueNumber = '${{ steps.check_issue.outputs.issue_number }}';
+            const hasIssue = '${{ steps.check_issue.outputs.has_issue }}' === 'true';
             const defaultName = '${{ steps.names.outputs.default_name }}.zip';
             const defaultRange = '${{ steps.names.outputs.default_range }}';
             const compatName = '${{ steps.names.outputs.compat_name }}.zip';
@@ -198,34 +204,63 @@ jobs:
               lines.push(`- \`${compatName}\` — ${compatRange} (best-effort, not verified on older IDEs)`);
             }
 
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              body: `A PR (#${pr.number}) has been opened to fix this issue. You can download the packaged plugin from the [GitHub Actions workflow run](${workflowRunUrl}) by clicking on the "Artifacts" dropdown:\n\n${lines.join('\n')}\n\nEach artifact is a ready-to-install plugin zip — pick the one matching your IDEA version and install it via Settings → Plugins → ⚙ → Install Plugin from Disk. No extraction needed.`
-            });
+            const downloadBlock = `Download the latest packaged build from the [GitHub Actions workflow run](${workflowRunUrl}) by clicking on the "Artifacts" dropdown:\n\n${lines.join('\n')}\n\nEach artifact is a ready-to-install plugin zip — pick the one matching your IDEA version and install it via Settings → Plugins → ⚙ → Install Plugin from Disk. No extraction needed.`;
 
-      - name: Comment on PR
-        uses: actions/github-script@v7
-        continue-on-error: true
-        with:
-          script: |
-            const pr = context.payload.pull_request;
-            const defaultName = '${{ steps.names.outputs.default_name }}.zip';
-            const defaultRange = '${{ steps.names.outputs.default_range }}';
-            const compatName = '${{ steps.names.outputs.compat_name }}.zip';
-            const compatRange = '${{ steps.names.outputs.compat_range }}';
-            const compatUploaded = '${{ steps.stage_compat.outcome }}' === 'success';
-            const workflowRunUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            // One status comment per (flow, PR, target). The hidden marker is
+            // the identity: a re-run edits that comment instead of posting a
+            // new one, so the artifact link always points at the latest run.
+            const markerFor = target => `<!-- easy-yapi:pr-package:pr-${pr.number}:target-${target} -->`;
+            const isBot = c => c.user?.type === 'Bot';
 
-            const lines = [`- \`${defaultName}\` — ${defaultRange} (officially supported)`];
-            if (compatUploaded) {
-              lines.push(`- \`${compatName}\` — ${compatRange} (best-effort, not verified on older IDEs)`);
+            async function upsertComment(target, marker, body, legacyText) {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: target,
+                per_page: 100
+              });
+              // Adopt the earliest legacy comment on an older PR so the
+              // thread converges to one message; never delete the other ones.
+              const own = comments.find(c => isBot(c) && c.body?.includes(marker))
+                || comments.find(c => isBot(c) && c.body?.includes(legacyText));
+              const fullBody = `${marker}\n${body}`;
+              if (own) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: own.id,
+                  body: fullBody
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: target,
+                  body: fullBody
+                });
+              }
             }
 
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr.number,
-              body: `📦 Plugin has been packaged for this PR. You can download it from the [GitHub Actions workflow run](${workflowRunUrl}) by clicking on the "Artifacts" dropdown:\n\n${lines.join('\n')}\n\nEach artifact is a ready-to-install plugin zip — pick the one matching your IDEA version and install it via Settings → Plugins → ⚙ → Install Plugin from Disk. No extraction needed.`
-            });
+            if (hasIssue) {
+              try {
+                await upsertComment(
+                  Number(issueNumber),
+                  markerFor(issueNumber),
+                  `A PR (#${pr.number}) addresses this issue. ${downloadBlock}`,
+                  `A PR (#${pr.number}) has been opened to fix this issue.`
+                );
+              } catch (error) {
+                core.warning(`Could not update the issue comment: ${error.message}`);
+              }
+            }
+
+            try {
+              await upsertComment(
+                pr.number,
+                markerFor(pr.number),
+                `📦 Plugin has been packaged for this PR. ${downloadBlock}`,
+                '📦 Plugin has been packaged for this PR.'
+              );
+            } catch (error) {
+              core.warning(`Could not update the PR comment: ${error.message}`);
+            }
