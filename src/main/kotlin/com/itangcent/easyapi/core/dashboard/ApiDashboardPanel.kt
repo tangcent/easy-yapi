@@ -346,7 +346,7 @@ class ApiDashboardPanel internal constructor(
             } else {
                 val nodeInfo = node?.userObject as? NodeInfo
                 if (nodeInfo != null && node != null) {
-                    val scope = resolveScopeForNode(node, nodeInfo)
+                    val scope = resolveScopeForNode(nodeInfo)
                     val endpointCount = countChildEndpoints(node)
                     scriptEditorPanel.loadForScope(scope, endpointCount)
                     rightCardLayout.show(rightCardPanel, CARD_SCRIPT)
@@ -680,26 +680,18 @@ class ApiDashboardPanel internal constructor(
         val noFolderEndpoints = endpoints.filter { it.folder.isNullOrBlank() }
         val hasNoFolder = noFolderEndpoints.isNotEmpty()
 
-        val isSingleModule = groupedByModule.size + (if (hasNoFolder) 1 else 0) == 1
-
-        val root = if (isSingleModule) {
-            if (groupedByModule.isNotEmpty()) {
-                val moduleName = groupedByModule.keys.first()
-                val moduleEndpoints = groupedByModule.values.first()
-                buildModuleNode(moduleName, moduleEndpoints)
-            } else {
-                buildModuleNode(project.name, endpoints)
-            }
+        val root = if (groupedByModule.size == 1 && !hasNoFolder) {
+            val (name, moduleEndpoints) = groupedByModule.entries.single()
+            buildModuleNode(name, ScriptScope.Module(name), moduleEndpoints)
         } else {
-            val root = DefaultMutableTreeNode(NodeInfo("${project.name} (${endpoints.size})", null))
-            groupedByModule.keys.sorted().forEach { moduleName ->
-                val moduleEndpoints = groupedByModule[moduleName]!!
-                val moduleNode = buildModuleNode(moduleName, moduleEndpoints)
-                root.add(moduleNode)
+            val root = DefaultMutableTreeNode(
+                NodeInfo("${project.name} (${endpoints.size})", ScriptScope.Project(project.name))
+            )
+            groupedByModule.toSortedMap().forEach { (name, moduleEndpoints) ->
+                root.add(buildModuleNode(name, ScriptScope.Module(name), moduleEndpoints))
             }
             if (hasNoFolder) {
-                val noFolderNode = buildModuleNode(project.name, noFolderEndpoints)
-                root.add(noFolderNode)
+                root.add(buildModuleNode("No folder", ScriptScope.NoFolder(project.name), noFolderEndpoints))
             }
             root
         }
@@ -722,8 +714,12 @@ class ApiDashboardPanel internal constructor(
      * @param endpoints The endpoints belonging to this module
      * @return The constructed tree node
      */
-    private fun buildModuleNode(moduleName: String, endpoints: List<ApiEndpoint>): DefaultMutableTreeNode {
-        val moduleNode = DefaultMutableTreeNode(NodeInfo("$moduleName (${endpoints.size})", null))
+    private fun buildModuleNode(
+        moduleName: String,
+        scope: ScriptScope,
+        endpoints: List<ApiEndpoint>
+    ): DefaultMutableTreeNode {
+        val moduleNode = DefaultMutableTreeNode(NodeInfo("$moduleName (${endpoints.size})", scope))
 
         val groupedByClass = endpoints.groupBy { it.className ?: it.sourceClass?.qualifiedName ?: "Unknown" }
         val singleClass = groupedByClass.size == 1
@@ -735,15 +731,20 @@ class ApiDashboardPanel internal constructor(
             }
         } else {
             // Multiple classes share this folder — add class-level grouping
-            for ((_, classEndpoints) in groupedByClass.toSortedMap()) {
+            for ((className, classEndpoints) in groupedByClass.toSortedMap()) {
                 val firstEndpoint = classEndpoints.firstOrNull() ?: continue
                 val classTitle = firstEndpoint.folder?.takeIf { it.isNotBlank() }
                     ?: firstEndpoint.className?.substringAfterLast('.')
                     ?: firstEndpoint.sourceClass?.name
                     ?: "Unknown"
 
-                val classNode =
-                    DefaultMutableTreeNode(NodeInfo("$classTitle (${classEndpoints.size})", firstEndpoint.sourceClass))
+                val classNode = DefaultMutableTreeNode(
+                    NodeInfo(
+                        "$classTitle (${classEndpoints.size})",
+                        ScriptScope.Class(className),
+                        firstEndpoint.sourceClass
+                    )
+                )
 
                 for (endpoint in classEndpoints.sortedBy { it.path }) {
                     classNode.add(DefaultMutableTreeNode(endpoint))
@@ -756,25 +757,14 @@ class ApiDashboardPanel internal constructor(
         return moduleNode
     }
 
-    /**
-     * Data class for holding display text and optional PsiClass reference for tree nodes.
-     * Used for folder and class level nodes in the tree.
-     */
-    private data class NodeInfo(val text: String, val psiClass: PsiClass?) {
+    private data class NodeInfo(val text: String, val scope: ScriptScope, val psiClass: PsiClass? = null) {
         override fun toString(): String = text
     }
 
-    private fun resolveScopeForNode(node: DefaultMutableTreeNode, nodeInfo: NodeInfo): ScriptScope {
-        val psiClass = nodeInfo.psiClass
-        return if (psiClass != null) {
-            val qualifiedName = ApplicationManager.getApplication().runReadAction<String?> {
-                psiClass.qualifiedName ?: psiClass.name
-            } ?: nodeInfo.text
-            ScriptScope.Class(qualifiedName)
-        } else {
-            val moduleName = nodeInfo.text.substringBefore(" (").trim()
-            ScriptScope.Module(moduleName)
-        }
+    private fun resolveScopeForNode(nodeInfo: NodeInfo): ScriptScope {
+        val psiClass = nodeInfo.psiClass ?: return nodeInfo.scope
+        return readSync { psiClass.qualifiedName }
+            ?.let { ScriptScope.Class(it) } ?: nodeInfo.scope
     }
 
     private fun countChildEndpoints(node: DefaultMutableTreeNode): Int {
@@ -791,11 +781,12 @@ class ApiDashboardPanel internal constructor(
     }
 
     fun resolveScriptScopesForEndpoint(endpoint: ApiEndpoint): List<ScriptScope> {
-        // Delegates to the CurlRenderer SPI — folder + class
-        // scopes only, matching the dashboard's prior behavior. The cURL
-        // single-endpoint path (CurlRenderer.formatForCopy → CurlExportResolver)
-        // additionally appends the Endpoint scope.
-        return CurlRenderer.getInstance().resolveFolderAndClassScopes(endpoint)
+        // Feeds EndpointDetailsPanel.scriptScopesProvider → HttpRequestInput.scriptScopes
+        // → RequestExecutor.resolveScripts. The project scope must lead the chain
+        // so a script saved on the outermost project node reaches every endpoint.
+        // The cURL single-endpoint path (CurlRenderer.formatForCopy →
+        // CurlExportResolver) additionally appends the Endpoint scope.
+        return CurlRenderer.getInstance().resolveFolderAndClassScopes(endpoint, project.name)
     }
 
     /**

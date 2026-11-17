@@ -13,9 +13,11 @@ import com.itangcent.easyapi.core.script.ScriptScope
 import com.itangcent.easyapi.core.settings.SettingBinder
 import com.itangcent.easyapi.core.settings.module.EnvironmentSettings
 import com.itangcent.easyapi.core.settings.module.ParsingOutputSettings
+import com.itangcent.easyapi.core.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 
 /**
@@ -31,9 +33,10 @@ import org.junit.Assert.assertTrue
  *  - Header-upserting script → returned copy contains the header; **original endpoint unchanged**.
  *  - Throwing script → returns un-mutated copy; no exception escapes.
  *  - Body-setting script → returned copy formats with the scripted body.
+ *  - Project-root script → Cookie header reaches a child endpoint and Copy-as-cURL output.
  *
- * Each test uses a distinct [ScriptScope.Class] key so cached scripts cannot leak across
- * tests; [tearDown] deletes them for good measure.
+ * Each test seeds a [ScriptScope] key; [tearDown] deletes them after every test
+ * so cached scripts cannot leak into the next one.
  *
  * NOTE: [EasyApiLightCodeInsightFixtureTestCase] extends the JUnit 3-style
  * [com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase], so setup/teardown
@@ -215,5 +218,59 @@ class PreScriptApplierTest : EasyApiLightCodeInsightFixtureTestCase() {
         val resultHttp = result.metadata as HttpMetadata
         assertEquals("/api/test", resultHttp.path)
         assertEquals(HttpMethod.GET, resultHttp.method)
+    }
+
+    // ------------------------------------------------------------------
+    // Test 7: a script saved on the project root node reaches a child endpoint
+    // ------------------------------------------------------------------
+
+    fun `test project root script adds cookie header to a child endpoint`() = runTest {
+        val rootScope = ScriptScope.Project(project.name)
+        seedScript(rootScope, "pm.request.headers.upsert('Cookie', 'email=xxx; token=xxx')")
+        val endpoint = httpEndpoint().copy(folder = "user-svc")
+
+        val scopes = CurlScriptScopes.resolveFolderAndClassScopes(endpoint, project.name)
+        val result = applier.applyScripts(endpoint, "http://localhost:8080", scopes)
+
+        val cookie = (result.metadata as HttpMetadata).headers
+            .firstOrNull { it.name.equals("Cookie", ignoreCase = true) }
+        assertEquals(
+            "the project root script must set the Cookie header on the child endpoint",
+            "email=xxx; token=xxx",
+            cookie?.value
+        )
+    }
+
+    // ------------------------------------------------------------------
+    // Test 8: project-root script survives the single-endpoint copy pipeline
+    // ------------------------------------------------------------------
+
+    fun `test project root script reaches formatForCopy output`() = runTest {
+        // formatForCopy resolves its own scopes; it must pass project.name so the
+        // project-root script is included. Keep this in the same fixture class as
+        // the other script tests: ScriptCacheService binds script_cache.db to the
+        // first project path it sees, and a different test class would leave a
+        // stale (deleted) temp directory behind.
+        val rootScope = ScriptScope.Project(project.name)
+        seedScript(rootScope, "pm.request.headers.upsert('Cookie', 'email=xxx; token=xxx')")
+
+        SettingBinder.getInstance(project).update(CurlSettings::class) {
+            renderMode = CurlRenderMode.NEVER_RENDER.name
+            runPreScripts = true
+        }
+        try {
+            val curl = CurlExportResolver.getInstance(project)
+                .formatForCopy(httpEndpoint(), "http://localhost:8080")
+            assertNotNull("NEVER_RENDER never cancels, so result must be non-null", curl)
+            assertTrue(
+                "project-root script must reach Copy-as-cURL output: $curl",
+                curl!!.contains("Cookie") && curl.contains("email=xxx")
+            )
+        } finally {
+            SettingBinder.getInstance(project).update(CurlSettings::class) {
+                renderMode = CurlRenderMode.ALWAYS_ASK.name
+                runPreScripts = false
+            }
+        }
     }
 }

@@ -146,6 +146,12 @@ pm.test("Status is 200") {
 
 ### Where to define scripts
 
+In API Explorer, select the project, a folder, or a class to edit the scripts for that group. The **No folder** node applies to endpoints without a folder. A tree with a single named folder shows that folder at the top.
+
+If the editor offers **Load legacy script**, preview the previously saved scripts and click **Save** on the node where they should run. Legacy entries sometimes used a shared name, so check that the script belongs to the selected node before saving.
+
+For Postman exports, define scripts using the rule keys below.
+
 - **Per-endpoint** — use the `postman.prerequest` / `postman.test` rule keys in a `.rules` file.
 - **Per-class** — use `postman.class.prerequest` / `postman.class.test`.
 - **Collection-level** — use `postman.collection.prerequest` / `postman.collection.test`.

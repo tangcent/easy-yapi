@@ -102,13 +102,13 @@ class CurlExportResolver(
         val settings = project.settings<CurlSettings>()
         val options = settings.toFormatOptions()
 
-        // When pre-scripts are enabled, run folder+class+endpoint scopes
+        // When pre-scripts are enabled, run project+folder+class+endpoint scopes
         // before formatting. The endpoint scope is included here (unlike
         // the batch path) so per-endpoint inline scripts saved via the dashboard UI are
         // consulted for the single-endpoint copy action — mirrors RequestExecutor which
-        // appends `input.preRequestScript` after folder+class scopes.
+        // appends `input.preRequestScript` after project+folder+class scopes.
         val endpointToFormat = if (settings.runPreScripts) {
-            val scopes = CurlScriptScopes.resolveAllScopes(resolved.first)
+            val scopes = CurlScriptScopes.resolveAllScopes(resolved.first, project.name)
             PreScriptApplier.getInstance(project).applyScripts(resolved.first, resolved.second, scopes)
         } else {
             resolved.first

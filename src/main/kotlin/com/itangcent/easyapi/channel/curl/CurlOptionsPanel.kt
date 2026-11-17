@@ -53,8 +53,8 @@ class CurlOptionsPanel(private val project: Project) : ChannelOptionsPanel {
     private val includeResponseExampleCb = JBCheckBox("Append response body example as comment").apply {
         toolTipText = "Append a `# Response:` comment with the response body JSON (default: off). No-op for gRPC."
     }
-    private val runPreScriptsCb = JBCheckBox("Run pre-request scripts (folder + API)").apply {
-        toolTipText = "When on, folder- and class-level pre-request scripts are run before generating each " +
+    private val runPreScriptsCb = JBCheckBox("Run pre-request scripts (project + folder + API)").apply {
+        toolTipText = "When on, project-, folder- and class-level pre-request scripts are run before generating each " +
             "cURL command, so script-driven header injection / auth tokens / body rewriting are reflected " +
             "in the output. Default: off (no script machinery invoked, byte-identical output)."
     }

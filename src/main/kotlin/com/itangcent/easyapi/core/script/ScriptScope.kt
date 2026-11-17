@@ -4,9 +4,19 @@ sealed class ScriptScope {
     abstract val key: String
     abstract fun displayLabel(): String
 
+    data class Project(val name: String) : ScriptScope() {
+        override val key: String = "project:$name"
+        override fun displayLabel(): String = "Project:$name"
+    }
+
     data class Module(val name: String) : ScriptScope() {
         override val key: String = "module:$name"
         override fun displayLabel(): String = "Module:$name"
+    }
+
+    data class NoFolder(val projectName: String) : ScriptScope() {
+        override val key: String = "no-folder:$projectName"
+        override fun displayLabel(): String = "No folder"
     }
 
     data class Class(val qualifiedName: String) : ScriptScope() {
