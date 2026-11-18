@@ -380,6 +380,84 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    fun testQueryObjectSkipsGetterWithoutSetter() = runTest {
+        val params = exportBindingParams("/binding/page")
+        assertEquals(
+            "realPage has no setter, so Spring never binds it",
+            setOf("keyword", "page", "rows"),
+            params.map { it.name }.toSet()
+        )
+    }
+
+    fun testQueryObjectKeepsOnlyWritableProperties() = runTest {
+        val params = exportBindingParams("/binding/query")
+        assertEquals(
+            "inherited setters, a public field and nested setters stay; getters without setters go",
+            setOf("page", "rows", "name", "keyword", "filter.status"),
+            params.map { it.name }.toSet()
+        )
+        assertTrue(params.all { it.binding == com.itangcent.easyapi.core.export.ParameterBinding.Query })
+    }
+
+    fun testModelAttributeKeepsOnlyWritableProperties() = runTest {
+        val params = exportBindingParams("/binding/form")
+        assertEquals(
+            setOf("page", "rows", "name", "keyword", "filter.status"),
+            params.map { it.name }.toSet()
+        )
+        assertTrue(params.all { it.binding == com.itangcent.easyapi.core.export.ParameterBinding.Form })
+    }
+
+    fun testRequestBodyKeepsReadOnlyProperties() = runTest {
+        val endpoint = exportBindingEndpoint("/binding/body")
+        val body = endpoint.httpMetadata?.body as? com.itangcent.easyapi.core.psi.model.ObjectModel.Object
+        assertNotNull("body should be an Object model", body)
+        val fields = body!!.fields.keys
+        assertTrue("Jackson serializes getters: $fields", fields.containsAll(listOf("realPage", "token", "displayName")))
+    }
+
+    fun testQueryObjectKeepsConstructorParameters() = runTest {
+        assertEquals(
+            "Spring binds constructor arguments by name",
+            setOf("name"),
+            exportBindingParams("/binding/constructor").map { it.name }.toSet()
+        )
+    }
+
+    fun testQueryObjectKeepsRecordComponents() = runTest {
+        assertEquals(
+            setOf("name", "size"),
+            exportBindingParams("/binding/record").map { it.name }.toSet()
+        )
+    }
+
+    fun testQueryObjectKeepsLombokDataFields() = runTest {
+        assertEquals(
+            "@Data generates setters even when the IDE does not show them",
+            setOf("name", "size"),
+            exportBindingParams("/binding/lombok").map { it.name }.toSet()
+        )
+    }
+
+    private suspend fun exportBindingParams(path: String): List<com.itangcent.easyapi.core.export.ApiParameter> =
+        exportBindingEndpoint(path).httpMetadata?.parameters ?: emptyList()
+
+    private suspend fun exportBindingEndpoint(path: String): com.itangcent.easyapi.core.export.ApiEndpoint {
+        loadFile("lombok/Data.java")
+        loadFile("model/binding/QueryFilter.java")
+        loadFile("model/binding/PageParam.java")
+        loadFile("model/binding/PageQuery.java")
+        loadFile("model/binding/ConstructorQuery.java")
+        loadFile("model/binding/RecordQuery.java")
+        loadFile("model/binding/LombokQuery.java")
+        loadFile("api/binding/BindingCtrl.java")
+        val psiClass = waitForClass("com.itangcent.api.binding.BindingCtrl")
+        val endpoints = exporter.export(psiClass)
+        val endpoint = endpoints.find { it.httpMetadata?.path == path }
+        assertNotNull("Should find $path endpoint", endpoint)
+        return endpoint!!
+    }
+
     fun testMultipartFileDirectParamExportedAsFileParam() = runTest {
         loadFile("api/DirectFileUploadCtrl.java",
             """

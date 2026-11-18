@@ -97,6 +97,17 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             "java.math.BigDecimal"
         )
 
+        private const val LOMBOK_SETTER = "lombok.Setter"
+
+        /** Class-level Lombok annotations that generate setters or an all-fields constructor. */
+        private val LOMBOK_WRITE_ACCESS_CLASS_ANNOTATIONS = listOf(
+            "lombok.Data",
+            LOMBOK_SETTER,
+            "lombok.Value",
+            "lombok.AllArgsConstructor",
+            "lombok.Builder"
+        )
+
         fun getInstance(project: Project): DefaultPsiClassHelper =
             project.getService(DefaultPsiClassHelper::class.java)
     }
@@ -664,7 +675,61 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             LOG.warn("failed collect fields from setters. class: ${psiClass.name}", e)
         }
 
+        if (JsonOption.has(option, JsonOption.WRITABLE_ONLY)) {
+            val writableNames = collectWritablePropertyNames(psiClass)
+            val (writable, readOnly) = fields.partition { isWritable(it, writableNames) }
+            if (readOnly.isNotEmpty()) {
+                LOG.info(
+                    "skip read-only properties of ${psiClass.qualifiedName ?: psiClass.name}, " +
+                            "a request data binder cannot set them: ${readOnly.map { it.name }}"
+                )
+                return writable
+            }
+        }
+
         return fields
+    }
+
+    /**
+     * Names of the properties of [psiClass] that a data binder can write: setters (declared
+     * or inherited), plus constructor parameters and record components, which Spring binds
+     * by name when it constructs the object. All constructors are considered rather than
+     * only the one Spring would pick, so a property is never dropped for a constructor
+     * choice the plugin cannot see.
+     */
+    private fun collectWritablePropertyNames(psiClass: PsiClass): Set<String> {
+        val names = HashSet<String>()
+        for (method in psiClass.allMethods) {
+            if (isFromObject(method) || method.hasModifierProperty(PsiModifier.STATIC)) continue
+            if (isSetter(method)) names.add(BeanPropertyNames.fromAccessor(method.name))
+        }
+        for (constructor in psiClass.constructors) {
+            constructor.parameterList.parameters.mapNotNullTo(names) { it.name }
+        }
+        psiClass.recordComponents.mapNotNullTo(names) { it.name }
+        return names
+    }
+
+    private fun isWritable(field: AccessibleField, writableNames: Set<String>): Boolean {
+        if (field.name in writableNames) return true
+        val psiField = field.psi as? PsiField ?: return false
+        // A public mutable field is declared as writable from outside; keep it for binders
+        // configured with direct field access. A private field without a setter is not
+        // bound by Spring's default (bean property) access, so it is dropped.
+        if (psiField.hasModifierProperty(PsiModifier.PUBLIC) && !psiField.hasModifierProperty(PsiModifier.FINAL)) {
+            return true
+        }
+        return hasLombokWriteAccess(psiField)
+    }
+
+    /**
+     * Lombok generates setters and constructors that are only visible to the IDE through
+     * the Lombok plugin; without it, these annotations are the only sign of them.
+     */
+    private fun hasLombokWriteAccess(field: PsiField): Boolean {
+        if (field.hasAnnotation(LOMBOK_SETTER)) return true
+        val containingClass = field.containingClass ?: return false
+        return LOMBOK_WRITE_ACCESS_CLASS_ANNOTATIONS.any { containingClass.hasAnnotation(it) }
     }
 
     /**
