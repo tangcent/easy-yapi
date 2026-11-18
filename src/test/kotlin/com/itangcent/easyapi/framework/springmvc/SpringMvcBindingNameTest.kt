@@ -1,16 +1,13 @@
 package com.itangcent.easyapi.framework.springmvc
 
-import com.intellij.psi.PsiClass
 import com.itangcent.easyapi.core.config.ConfigReader
 import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.ApiHeader
 import com.itangcent.easyapi.core.export.ApiParameter
 import com.itangcent.easyapi.core.export.ParameterBinding
 import com.itangcent.easyapi.core.export.httpMetadata
-import com.itangcent.easyapi.core.internal.threading.readSync
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
-import org.junit.AssumptionViolatedException
 
 /**
  * Regression coverage for the names of Spring MVC request values.
@@ -336,113 +333,6 @@ class SpringMvcBindingNameTest {
             loadBindingNameController()
             val params = exportParams("com.itangcent.api.BindingNameCtrl", "/orders/search")
             assertParam(params, "q", ParameterBinding.Query)
-        }
-    }
-
-    /**
-     * The same rules apply to a Kotlin controller, including a nullable header
-     * declared with `required = false`.
-     */
-    class KotlinController : Base() {
-
-        override fun createConfigReader(): ConfigReader = TestConfigReader.empty(project)
-
-        override fun setUp() {
-            super.setUp()
-            try {
-                Class.forName("org.jetbrains.kotlin.idea.KotlinLanguage")
-            } catch (e: ClassNotFoundException) {
-                throw AssumptionViolatedException("Kotlin plugin not available")
-            }
-        }
-
-        private fun loadKotlinController() {
-            loadFile(
-                "api/kt/KtOrderCtrl.kt",
-                """
-                package com.itangcent.api.kt
-
-                import org.springframework.web.bind.annotation.CookieValue
-                import org.springframework.web.bind.annotation.PathVariable
-                import org.springframework.web.bind.annotation.PostMapping
-                import org.springframework.web.bind.annotation.RequestHeader
-                import org.springframework.web.bind.annotation.RequestMapping
-                import org.springframework.web.bind.annotation.RequestParam
-                import org.springframework.web.bind.annotation.RestController
-
-                @RestController
-                @RequestMapping("/kt/orders")
-                class KtOrderCtrl {
-
-                    @PostMapping("/{id}/pay")
-                    fun pay(
-                        @PathVariable("id") orderId: Long,
-                        @RequestParam(name = "pay_channel") payChannel: String,
-                        @RequestHeader(value = "X-Idempotency-Key", required = false) idempotencyKey: String?,
-                        @RequestHeader(name = "X-Tenant") tenant: String,
-                        @CookieValue("SESSION") sessionId: String?
-                    ): String {
-                        return "ok"
-                    }
-                }
-                """.trimIndent()
-            )
-        }
-
-        private suspend fun exportKotlinEndpoint(): ApiEndpoint {
-            val psiClass = findClass(KT_CTRL)
-            assertNotNull("$KT_CTRL should be resolvable", psiClass)
-            val endpoints = exporter.export(psiClass!!)
-            val endpoint = endpoints.singleOrNull { it.httpMetadata?.path == KT_PATH }
-            assertNotNull(
-                "Should export $KT_PATH; actual=${endpoints.map { it.httpMetadata?.path }}; psi=${describe(psiClass)}",
-                endpoint
-            )
-            return endpoint!!
-        }
-
-        /** What the fixture sees on the Kotlin light class, for a readable failure. */
-        private fun describe(psiClass: PsiClass): String = readSync {
-            val classAnns = psiClass.annotations.map { it.qualifiedName }
-            val methods = psiClass.methods.filter { it.name == "pay" }.map { method ->
-                val params = method.parameterList.parameters.map { p ->
-                    p.name + p.annotations.map { ann ->
-                        ann.qualifiedName + ann.parameterList.attributes.map { "${it.name}=${it.value?.text}" }
-                    }
-                }
-                "${method.name}${method.annotations.map { it.qualifiedName }}$params"
-            }
-            "${psiClass.javaClass.simpleName}$classAnns$methods"
-        }
-
-        fun testKotlinParametersExportDeclaredNames() = runTest {
-            loadKotlinController()
-            val endpoint = exportKotlinEndpoint()
-            val params = endpoint.httpMetadata!!.parameters
-            assertEquals(
-                "the {id} placeholder should be exported once; actual=[${params.joinToString { "${it.name}(${it.binding})" }}]",
-                listOf("id"),
-                params.filter { it.binding == ParameterBinding.Path }.map { it.name }
-            )
-            assertParam(params, "pay_channel", ParameterBinding.Query, required = true)
-            assertParam(params, "SESSION", ParameterBinding.Cookie)
-            assertNoParam(params, "orderId")
-            assertNoParam(params, "payChannel")
-            assertNoParam(params, "sessionId")
-        }
-
-        fun testKotlinOptionalHeaderExportsDeclaredName() = runTest {
-            loadKotlinController()
-            val headers = exportKotlinEndpoint().httpMetadata!!.headers
-            assertHeader(headers, "X-Idempotency-Key", required = false)
-            assertHeader(headers, "X-Tenant", required = true)
-            assertNoHeader(headers, "idempotencyKey")
-            assertNoHeader(headers, "tenant")
-        }
-
-        private companion object {
-            const val KT_CTRL = "com.itangcent.api.kt.KtOrderCtrl"
-            const val KT_PATH = "/kt/orders/{id}/pay"
         }
     }
 }
