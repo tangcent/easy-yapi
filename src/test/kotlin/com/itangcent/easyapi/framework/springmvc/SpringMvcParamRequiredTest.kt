@@ -197,7 +197,8 @@ class SpringMvcParamRequiredTest {
         fun testCookieValueIsRequired() = runTest {
             loadItemController()
             val params = exportParams("com.itangcent.api.ParamRequiredCtrl", "/items/detail/{id}")
-            assertRequired("@CookieValue is required", true, params, "sessionId")
+            // `@CookieValue("sid")` binds the `sid` cookie, so that is the exported name.
+            assertRequired("@CookieValue is required", true, params, "sid")
         }
 
         fun testRequestPartIsRequired() = runTest {

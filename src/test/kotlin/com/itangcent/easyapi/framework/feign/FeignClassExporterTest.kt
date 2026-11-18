@@ -83,6 +83,44 @@ class FeignClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("POST endpoint should have a request body", postEndpoint!!.httpMetadata!!.body)
     }
 
+    fun testSpringStyleParametersExportAnnotationNames() = runTest {
+        loadFile(
+            "api/feign/OrderClient.java",
+            """
+            package com.itangcent.springboot.demo.client;
+            import com.itangcent.model.Result;
+            import org.springframework.cloud.openfeign.FeignClient;
+            import org.springframework.web.bind.annotation.GetMapping;
+            import org.springframework.web.bind.annotation.PathVariable;
+            import org.springframework.web.bind.annotation.RequestMapping;
+            import org.springframework.web.bind.annotation.RequestParam;
+
+            @FeignClient("orders")
+            @RequestMapping(value = "/orders")
+            public interface OrderClient {
+
+                @GetMapping("/{id}")
+                Result<String> get(@PathVariable("id") Long orderId,
+                                   @RequestParam(name = "with_items", required = false) Boolean withItems);
+            }
+            """.trimIndent()
+        )
+        val psiClass = findClass("com.itangcent.springboot.demo.client.OrderClient")
+        assertNotNull(psiClass)
+
+        val endpoint = exporter.export(psiClass!!).singleOrNull { it.path.endsWith("/orders/{id}") }
+        assertNotNull("Should export /orders/{id}", endpoint)
+        val params = endpoint!!.httpMetadata!!.parameters
+        val dump = params.joinToString { "${it.name}(${it.binding})" }
+        assertEquals(
+            "the {id} placeholder should be exported once, under its own name; actual=[$dump]",
+            listOf("id"),
+            params.filter { it.binding == com.itangcent.easyapi.core.export.ParameterBinding.Path }.map { it.name }
+        )
+        assertTrue("with_items should be exported; actual=[$dump]", params.any { it.name == "with_items" })
+        assertFalse("withItems must not be exported; actual=[$dump]", params.any { it.name == "withItems" })
+    }
+
     fun testExportNonFeignClient() = runTest {
         val psiClass = findClass("com.itangcent.model.UserInfo")
         assertNotNull(psiClass)
