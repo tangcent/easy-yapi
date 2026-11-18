@@ -4,6 +4,7 @@ import com.itangcent.easyapi.core.config.ConfigReader
 import com.itangcent.easyapi.core.export.ApiParameter
 import com.itangcent.easyapi.core.export.ParameterBinding
 import com.itangcent.easyapi.core.export.httpMetadata
+import com.itangcent.easyapi.core.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
@@ -222,6 +223,208 @@ class SpringMvcParamRequiredTest {
             loadItemController()
             val params = exportParams("com.itangcent.api.ParamRequiredCtrl", "/items/list")
             assertRequired("param.required=false must win over the @RequestParam default", false, params, "keyword")
+        }
+    }
+
+    /**
+     * A bundled validation extension is active: its `param.required` rules only
+     * mark parameters carrying a constraint as required. Every other parameter
+     * gets no value from them and keeps the Spring default.
+     *
+     * `jakarta-validation` and `javax-validation` are enabled by default whenever
+     * their `NotNull` annotation is on the classpath, so this is the setup of most
+     * Spring Boot projects.
+     */
+    abstract class BundledValidationRules(
+        private val extensionCode: String,
+        private val constraintPackage: String
+    ) : Base() {
+
+        override fun createConfigReader(): ConfigReader {
+            val extension = ExtensionConfigRegistry.getExtension(extensionCode)
+            assertNotNull("the built-in $extensionCode extension must be on the test classpath", extension)
+            return TestConfigReader.fromConfigText(project, extension!!.content)
+        }
+
+        private fun loadValidatedController() {
+            loadFile("${constraintPackage.replace('.', '/')}/NotNull.java")
+            loadFile("spring/RequestHeader.java")
+            loadFile(
+                "api/ValidatedParamCtrl.java",
+                """
+                package com.itangcent.api;
+                import com.itangcent.model.Result;
+                import $constraintPackage.NotNull;
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.PathVariable;
+                import org.springframework.web.bind.annotation.RequestHeader;
+                import org.springframework.web.bind.annotation.RequestMapping;
+                import org.springframework.web.bind.annotation.RequestParam;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                @RequestMapping(value = "/validated")
+                public class ValidatedParamCtrl {
+
+                    @GetMapping(value = "/search")
+                    public Result<String> search(
+                            @RequestHeader String traceId,
+                            @RequestParam String keyword,
+                            @RequestParam(required = false) String tag,
+                            @RequestParam(required = false) @NotNull String owner,
+                            String plain) {
+                        return Result.success("ok");
+                    }
+
+                    @GetMapping(value = "/detail/{id}")
+                    public Result<String> detail(@PathVariable String id) {
+                        return Result.success("ok");
+                    }
+                }
+                """.trimIndent()
+            )
+        }
+
+        private suspend fun exportSearchParams(): List<ApiParameter> {
+            loadValidatedController()
+            return exportParams("com.itangcent.api.ValidatedParamCtrl", "/validated/search")
+        }
+
+        fun testPlainRequestParamStaysRequired() = runTest {
+            assertRequired(
+                "a @RequestParam without a constraint keeps the Spring default (required)",
+                true,
+                exportSearchParams(),
+                "keyword"
+            )
+        }
+
+        fun testRequestParamRequiredFalseStaysOptional() = runTest {
+            assertRequired("@RequestParam(required = false)", false, exportSearchParams(), "tag")
+        }
+
+        fun testNotNullMakesOptionalRequestParamRequired() = runTest {
+            assertRequired(
+                "@NotNull matches the param.required rule, which wins over required = false",
+                true,
+                exportSearchParams(),
+                "owner"
+            )
+        }
+
+        fun testUnannotatedParameterStaysOptional() = runTest {
+            assertRequired(
+                "an unannotated parameter keeps Spring's default resolution (required = false)",
+                false,
+                exportSearchParams(),
+                "plain"
+            )
+        }
+
+        fun testPlainPathVariableStaysRequired() = runTest {
+            loadValidatedController()
+            val params = exportParams("com.itangcent.api.ValidatedParamCtrl", "/validated/detail/{id}")
+            assertRequired(
+                "a @PathVariable without a constraint keeps the Spring default (required)",
+                true,
+                params,
+                "id"
+            )
+        }
+
+        fun testPlainRequestHeaderStaysRequired() = runTest {
+            loadValidatedController()
+            val psiClass = findClass("com.itangcent.api.ValidatedParamCtrl")
+            assertNotNull("ValidatedParamCtrl should be resolvable", psiClass)
+            val endpoint = exporter.export(psiClass!!).singleOrNull { it.httpMetadata?.path == "/validated/search" }
+            assertNotNull("Should export /validated/search", endpoint)
+            val headers = endpoint!!.httpMetadata!!.headers
+            val traceId = headers.singleOrNull { it.name == "traceId" }
+            assertNotNull(
+                "traceId should be exported as a header; actual=[${headers.joinToString { "${it.name}=${it.required}" }}]",
+                traceId
+            )
+            assertTrue(
+                "a @RequestHeader without a constraint keeps the Spring default (required)",
+                traceId!!.required
+            )
+        }
+    }
+
+    class WithBundledJakartaValidation : BundledValidationRules(
+        "jakarta-validation", "jakarta.validation.constraints"
+    )
+
+    class WithBundledJakartaValidationStrict : BundledValidationRules(
+        "jakarta-validation-strict", "jakarta.validation.constraints"
+    )
+
+    class WithBundledJavaxValidation : BundledValidationRules(
+        "javax-validation", "javax.validation.constraints"
+    )
+
+    class WithBundledJavaxValidationStrict : BundledValidationRules(
+        "javax-validation-strict", "javax.validation.constraints"
+    )
+
+    /**
+     * The bundled `swagger` extension reads `param.required` from
+     * `@ApiParam#required`. A parameter without `@ApiParam` has no such attribute,
+     * so the rule gives no value and the Spring default applies.
+     */
+    class WithBundledSwaggerRules : Base() {
+
+        override fun createConfigReader(): ConfigReader {
+            val extension = ExtensionConfigRegistry.getExtension("swagger")
+            assertNotNull("the built-in swagger extension must be on the test classpath", extension)
+            return TestConfigReader.fromConfigText(project, extension!!.content)
+        }
+
+        private suspend fun exportSearchParams(): List<ApiParameter> {
+            loadFile("io/swagger/annotations/ApiParam.java")
+            loadFile(
+                "api/SwaggerParamCtrl.java",
+                """
+                package com.itangcent.api;
+                import com.itangcent.model.Result;
+                import io.swagger.annotations.ApiParam;
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.RequestMapping;
+                import org.springframework.web.bind.annotation.RequestParam;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                @RequestMapping(value = "/swagger")
+                public class SwaggerParamCtrl {
+
+                    @GetMapping(value = "/search")
+                    public Result<String> search(
+                            @RequestParam String keyword,
+                            @RequestParam(required = false) @ApiParam(required = true) String owner) {
+                        return Result.success("ok");
+                    }
+                }
+                """.trimIndent()
+            )
+            return exportParams("com.itangcent.api.SwaggerParamCtrl", "/swagger/search")
+        }
+
+        fun testRequestParamWithoutApiParamStaysRequired() = runTest {
+            assertRequired(
+                "a @RequestParam without @ApiParam keeps the Spring default (required)",
+                true,
+                exportSearchParams(),
+                "keyword"
+            )
+        }
+
+        fun testApiParamRequiredWinsOverRequiredFalse() = runTest {
+            assertRequired(
+                "@ApiParam(required = true) wins over @RequestParam(required = false)",
+                true,
+                exportSearchParams(),
+                "owner"
+            )
         }
     }
 }

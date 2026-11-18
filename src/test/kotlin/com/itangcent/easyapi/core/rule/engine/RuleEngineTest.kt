@@ -235,6 +235,77 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     @Test
+    fun testEvaluateOrNullWhenFilterRejectsEveryRule() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "ignore[false]" to "true"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluateOrNull(RuleKey.boolean("ignore"), mockElement)
+        assertNull("evaluateOrNull must return null when no configured rule applies", result)
+    }
+
+    @Test
+    fun testEvaluateOrNullWhenRuleYieldsNoValue() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "ignore" to "groovy:return null"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluateOrNull(RuleKey.boolean("ignore"), mockElement)
+        assertNull("evaluateOrNull must return null when every applicable rule yields no value", result)
+    }
+
+    @Test
+    fun testEvaluateOrNullKeepsFalseFromApplicableRule() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "ignore[false]" to "true",
+                "ignore[true]" to "false"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluateOrNull(RuleKey.boolean("ignore"), mockElement)
+        assertEquals("an applicable rule's explicit false must be kept", false, result)
+    }
+
+    @Test
+    fun testEvaluateBooleanWhenFilterRejectsEveryRule() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "ignore[false]" to "true"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        assertFalse(
+            "evaluate keeps returning false when no configured rule applies",
+            ruleEngine.evaluate(RuleKey.boolean("ignore"), mockElement)
+        )
+    }
+
+    @Test
     fun testEvaluateIntWithValue() = runTest {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,

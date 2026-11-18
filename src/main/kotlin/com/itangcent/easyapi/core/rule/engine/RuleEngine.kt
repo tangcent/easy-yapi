@@ -129,15 +129,20 @@ class RuleEngine internal constructor(
     }
 
     /**
-     * Evaluates a boolean rule and returns `null` when no rule is configured
-     * for the key, letting the caller apply a framework-specific default.
+     * Evaluates a boolean rule and returns `null` when no rule gives a value
+     * for [element], letting the caller apply a framework-specific default.
+     * That is the case when no rule is configured for the key, when every
+     * rule's filter rejects the element, and when every applicable rule
+     * evaluates to `null`. An applicable rule's explicit `false` is kept.
      */
     suspend fun evaluateOrNull(
         key: RuleKey.BooleanKey,
         element: PsiElement,
         fieldContext: String? = null
     ): Boolean? {
-        return forEachApplicable(key) { RuleContext.from(project, element, fieldContext) }
+        return forEachApplicable(key, nullWithoutValue = true) {
+            RuleContext.from(project, element, fieldContext)
+        }
     }
 
     /**
@@ -275,8 +280,15 @@ class RuleEngine internal constructor(
         }
     }
 
+    /**
+     * Evaluates every rule of [key] that applies and aggregates the values with
+     * the key's mode. With [nullWithoutValue], the result is `null` when no
+     * rule produced a non-null value, instead of the mode's answer for no
+     * values (`false` for a boolean `ANY`).
+     */
     private suspend fun <T> forEachApplicable(
         key: RuleKey<T>,
+        nullWithoutValue: Boolean = false,
         ctx: () -> RuleContext
     ): T? {
         val rules = ruleProvider.getRules(key)
@@ -284,6 +296,7 @@ class RuleEngine internal constructor(
             return null
         }
         val ruleContext = ctx()
+        var producedValue = false
         val results = flow {
             for ((expression, filter) in rules) {
                 ruleContext.regexGroups = null
@@ -306,6 +319,9 @@ class RuleEngine internal constructor(
                     try {
                         val result = parse(expression, ruleContext, key)
                         key.emitCastValues(result) { value ->
+                            if (value != null) {
+                                producedValue = true
+                            }
                             @Suppress("UNCHECKED_CAST")
                             emit(RuleResult.success(value))
                         }
@@ -324,7 +340,10 @@ class RuleEngine internal constructor(
                 ruleContext.regexGroups = null
             }
         }
-        return key.mode.aggregate(results)
+        val aggregated = key.mode.aggregate(results)
+        // A mode may stop collecting early, but only after a value: when no
+        // value was produced, every rule has been evaluated.
+        return if (nullWithoutValue && !producedValue) null else aggregated
     }
 
     /**
