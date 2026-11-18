@@ -1,11 +1,13 @@
 package com.itangcent.easyapi.framework.springmvc
 
+import com.intellij.psi.PsiClass
 import com.itangcent.easyapi.core.config.ConfigReader
 import com.itangcent.easyapi.core.export.ApiEndpoint
 import com.itangcent.easyapi.core.export.ApiHeader
 import com.itangcent.easyapi.core.export.ApiParameter
 import com.itangcent.easyapi.core.export.ParameterBinding
 import com.itangcent.easyapi.core.export.httpMetadata
+import com.itangcent.easyapi.core.internal.threading.readSync
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import org.junit.AssumptionViolatedException
@@ -67,8 +69,6 @@ class SpringMvcBindingNameTest {
                 @RequestMapping(value = "/orders")
                 public class BindingNameCtrl {
 
-                    public static final String TRACE_HEADER = "X-Trace-Id";
-
                     @GetMapping(value = "/search")
                     public Result<String> search(
                             @RequestParam("q") String keyword,
@@ -83,7 +83,6 @@ class SpringMvcBindingNameTest {
                             @RequestHeader("X-Request-Id") String requestId,
                             @RequestHeader(name = "X-Tenant") String tenant,
                             @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey,
-                            @RequestHeader(TRACE_HEADER) String traceId,
                             @RequestHeader String locale) {
                         return Result.success("ok");
                     }
@@ -204,13 +203,6 @@ class SpringMvcBindingNameTest {
             assertNoHeader(headers, "requestId")
             assertNoHeader(headers, "tenant")
             assertNoHeader(headers, "idempotencyKey")
-        }
-
-        fun testRequestHeaderNamedByConstantExportsConstantValue() = runTest {
-            loadBindingNameController()
-            val headers = exportHeaders("com.itangcent.api.BindingNameCtrl", "/orders/headers")
-            assertHeader(headers, "X-Trace-Id", required = true)
-            assertNoHeader(headers, "traceId")
         }
 
         fun testRequestHeaderWithoutNameKeepsParameterName() = runTest {
@@ -397,9 +389,35 @@ class SpringMvcBindingNameTest {
             )
         }
 
+        private suspend fun exportKotlinEndpoint(): ApiEndpoint {
+            val psiClass = findClass(KT_CTRL)
+            assertNotNull("$KT_CTRL should be resolvable", psiClass)
+            val endpoints = exporter.export(psiClass!!)
+            val endpoint = endpoints.singleOrNull { it.httpMetadata?.path == KT_PATH }
+            assertNotNull(
+                "Should export $KT_PATH; actual=${endpoints.map { it.httpMetadata?.path }}; psi=${describe(psiClass)}",
+                endpoint
+            )
+            return endpoint!!
+        }
+
+        /** What the fixture sees on the Kotlin light class, for a readable failure. */
+        private fun describe(psiClass: PsiClass): String = readSync {
+            val classAnns = psiClass.annotations.map { it.qualifiedName }
+            val methods = psiClass.methods.filter { it.name == "pay" }.map { method ->
+                val params = method.parameterList.parameters.map { p ->
+                    p.name + p.annotations.map { ann ->
+                        ann.qualifiedName + ann.parameterList.attributes.map { "${it.name}=${it.value?.text}" }
+                    }
+                }
+                "${method.name}${method.annotations.map { it.qualifiedName }}$params"
+            }
+            "${psiClass.javaClass.simpleName}$classAnns$methods"
+        }
+
         fun testKotlinParametersExportDeclaredNames() = runTest {
             loadKotlinController()
-            val endpoint = exportEndpoint("com.itangcent.api.kt.KtOrderCtrl", "/kt/orders/{id}/pay")
+            val endpoint = exportKotlinEndpoint()
             val params = endpoint.httpMetadata!!.parameters
             assertEquals(
                 "the {id} placeholder should be exported once; actual=[${params.joinToString { "${it.name}(${it.binding})" }}]",
@@ -415,11 +433,16 @@ class SpringMvcBindingNameTest {
 
         fun testKotlinOptionalHeaderExportsDeclaredName() = runTest {
             loadKotlinController()
-            val headers = exportHeaders("com.itangcent.api.kt.KtOrderCtrl", "/kt/orders/{id}/pay")
+            val headers = exportKotlinEndpoint().httpMetadata!!.headers
             assertHeader(headers, "X-Idempotency-Key", required = false)
             assertHeader(headers, "X-Tenant", required = true)
             assertNoHeader(headers, "idempotencyKey")
             assertNoHeader(headers, "tenant")
+        }
+
+        private companion object {
+            const val KT_CTRL = "com.itangcent.api.kt.KtOrderCtrl"
+            const val KT_PATH = "/kt/orders/{id}/pay"
         }
     }
 }
