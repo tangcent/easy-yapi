@@ -309,7 +309,12 @@ class SpringMvcClassExporter(
         resolvedMethod: ResolvedMethod,
         index: Int
     ): ApiParameter {
-        val name = metadataResolver.resolveParamName(p, paramName)
+        // `param.name` wins when configured; otherwise the name Spring binds by:
+        // the annotation's `value`/`name`, then the parameter name.
+        val name = metadataResolver.resolveParamName(
+            p,
+            SpringParamName.resolve(p, binding, resolvedMethod, index) ?: paramName
+        )
         // `param.required` wins when configured; otherwise fall back to the value
         // declared on the Spring annotation, then to the Spring default.
         val required = metadataResolver.resolveParamRequired(p)
@@ -427,7 +432,12 @@ class SpringMvcClassExporter(
         for ((param, binding, index) in bindings) {
             if (binding != ParameterBinding.Header) continue
             val p = param.psiParameter
-            val name = metadataResolver.resolveParamName(p, param.name)
+            // `param.name` wins when configured; otherwise the header name declared
+            // on @RequestHeader, then the parameter name.
+            val name = metadataResolver.resolveParamName(
+                p,
+                SpringParamName.resolve(p, binding, resolvedMethod, index) ?: param.name
+            )
             val defaultValue = metadataResolver.resolveParamDefaultValue(p)
             val example = metadataResolver.resolveParamDemo(p)
             headers.add(
