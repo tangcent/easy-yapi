@@ -71,9 +71,9 @@ class SpringMvcRequestHeaderRequiredTest {
         }
 
         /**
-         * With an empty rule set the exported header name falls back to the Java
-         * parameter name, so the two `@RequestHeader` parameters surface as
-         * `userId` and `timezoneId`.
+         * The exported header name is the one Spring reads — the name declared on
+         * `@RequestHeader` — so the two parameters surface as `x-user-id` and
+         * `x-timezone-id`, not as the Java parameter names.
          */
         protected suspend fun exportHeaders(): List<com.itangcent.easyapi.core.export.ApiHeader> {
             loadHeaderController()
@@ -92,15 +92,15 @@ class SpringMvcRequestHeaderRequiredTest {
             headers: List<com.itangcent.easyapi.core.export.ApiHeader>
         ) {
             val dump = headers.joinToString { "${it.name}(required=${it.required})" }
-            val userId = headers.singleOrNull { it.name == "userId" }
-            assertNotNull("userId should be exported as a header; actual headers=[$dump]", userId)
+            val userId = headers.singleOrNull { it.name == "x-user-id" }
+            assertNotNull("x-user-id should be exported as a header; actual headers=[$dump]", userId)
             assertTrue(
                 "@RequestHeader without required=false is required, so the header must be marked required",
                 userId!!.required
             )
 
-            val timezoneId = headers.singleOrNull { it.name == "timezoneId" }
-            assertNotNull("timezoneId should be exported as a header; actual headers=[$dump]", timezoneId)
+            val timezoneId = headers.singleOrNull { it.name == "x-timezone-id" }
+            assertNotNull("x-timezone-id should be exported as a header; actual headers=[$dump]", timezoneId)
             assertFalse(
                 "@RequestHeader(required = false) must be exported as an optional header",
                 timezoneId!!.required

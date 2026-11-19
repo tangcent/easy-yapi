@@ -13,6 +13,7 @@ import com.itangcent.easyapi.core.export.aspect.ApiParseAspects
 import com.itangcent.easyapi.core.export.aspect.EndpointParseContext
 import com.itangcent.easyapi.core.export.aspect.MethodParseContext
 import com.itangcent.easyapi.framework.springmvc.RequestMappingResolver
+import com.itangcent.easyapi.framework.springmvc.SpringParamName
 import com.itangcent.easyapi.framework.springmvc.SpringParamRequired
 import com.itangcent.easyapi.framework.springmvc.SpringParameterBindingResolver
 import com.itangcent.easyapi.core.logging.IdeaLog
@@ -307,7 +308,9 @@ class FeignClassExporter(
             val paramName = p.name ?: "param"
             LOG.info("before parse param:$paramName")
 
-            val name = metadataResolver.resolveParamName(p, paramName)
+            // `param.name` wins when configured; otherwise the name declared on the
+            // Spring annotation, then the parameter name.
+            val name = metadataResolver.resolveParamName(p, SpringParamName.resolve(p, binding) ?: paramName)
             // `param.required` wins when configured; otherwise fall back to the Spring
             // annotation value, then to the Spring default.
             val required = metadataResolver.resolveParamRequired(p)

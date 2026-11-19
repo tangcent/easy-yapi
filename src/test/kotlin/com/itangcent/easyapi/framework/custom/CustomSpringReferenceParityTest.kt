@@ -117,9 +117,9 @@ class CustomSpringReferenceParityTest : EasyApiLightCodeInsightFixtureTestCase()
             val customEp = customByMethodPath[key]
             assertNotNull("Custom+ruleset missing endpoint for $key", customEp)
 
-            // Compare binding types only — the two exporters use different
-            // name-resolution mechanisms for header/cookie params (Spring uses
-            // the Java parameter name; Custom+ruleset uses the annotation value).
+            // Compare binding types only — the two exporters resolve names through
+            // different mechanisms (Spring reads the binding annotation in code;
+            // Custom+ruleset reads it through the `custom.param.*` rules).
             val springBindings = springEp.httpMetadata!!.parameters
                 .map { it.binding }.toSet()
             val customBindings = customEp!!.httpMetadata!!.parameters
