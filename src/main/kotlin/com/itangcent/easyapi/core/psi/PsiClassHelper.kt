@@ -12,6 +12,7 @@ import com.itangcent.easyapi.core.psi.type.ResolvedType
  * - READ_COMMENT - Include field comments
  * - READ_GETTER - Include properties from getter methods
  * - READ_SETTER - Include properties from setter methods
+ * - WRITABLE_ONLY - Keep only properties a request data binder can write (not part of [ALL])
  */
 object JsonOption {
     const val NONE = 0b0000
@@ -20,6 +21,22 @@ object JsonOption {
     const val READ_SETTER = 0b0100
     const val READ_GETTER_OR_SETTER = READ_GETTER or READ_SETTER
     const val ALL = READ_GETTER_OR_SETTER or READ_COMMENT
+
+    /**
+     * Keep only properties that a request data binder (Spring's `WebDataBinder` with its
+     * default bean-property access) can write when it fills an object from request
+     * parameters. Used for objects expanded into query/form parameters; a JSON body is
+     * read by Jackson and keeps every serialized property, so body models never set it.
+     *
+     * A property is writable when it has a setter (declared or inherited), when it is a
+     * constructor parameter or record component (constructor binding), or when it is a
+     * public non-final field. Lombok `@Data` / `@Setter` / `@Value` /
+     * `@AllArgsConstructor` / `@Builder` also count, for when the IDE does not see the
+     * members Lombok generates. Read-only properties (a getter without a setter, a
+     * private field without a setter, a Kotlin `val` outside the primary constructor)
+     * are dropped.
+     */
+    const val WRITABLE_ONLY = 0b1000
 
     fun has(option: Int, flag: Int): Boolean = (option and flag) != 0
 }

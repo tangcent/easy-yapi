@@ -1529,4 +1529,32 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
             assertFalse("field '$name' in plain class should not be generic", field.generic)
         }
     }
+
+    fun testWritableOnlyKeepsKotlinVarsAndConstructorParameters() = runTest {
+        loadFile("model/binding/KotlinPageQuery.kt")
+        val psiClass = waitForClass("com.itangcent.model.binding.KotlinPageQuery")
+
+        val result = helper.buildObjectModel(psiClass, JsonOption.ALL or JsonOption.WRITABLE_ONLY)
+
+        assertTrue("expected an object model, got $result", result is ObjectModel.Object)
+        assertEquals(
+            "inherited vars, a constructor val and a var stay; realPage, createdBy and summary are read-only",
+            setOf("page", "rows", "keyword", "name"),
+            (result as ObjectModel.Object).fields.keys
+        )
+    }
+
+    fun testAllOptionKeepsKotlinReadOnlyProperties() = runTest {
+        loadFile("model/binding/KotlinPageQuery.kt")
+        val psiClass = waitForClass("com.itangcent.model.binding.KotlinPageQuery")
+
+        val result = helper.buildObjectModel(psiClass, JsonOption.ALL)
+
+        assertTrue("expected an object model, got $result", result is ObjectModel.Object)
+        val fields = (result as ObjectModel.Object).fields.keys
+        assertTrue(
+            "a body model keeps every serialized property: $fields",
+            fields.containsAll(listOf("page", "rows", "keyword", "name", "realPage", "createdBy", "summary"))
+        )
+    }
 }

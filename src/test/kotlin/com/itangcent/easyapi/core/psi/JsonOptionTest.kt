@@ -21,6 +21,11 @@ class JsonOptionTest : TestCase() {
         assertEquals(0b0100, JsonOption.READ_SETTER)
     }
 
+    fun testWritableOnlyIsOptIn() {
+        assertEquals(0b1000, JsonOption.WRITABLE_ONLY)
+        assertFalse(JsonOption.has(JsonOption.ALL, JsonOption.WRITABLE_ONLY))
+    }
+
     fun testAllOption() {
         assertEquals(JsonOption.READ_COMMENT or JsonOption.READ_GETTER or JsonOption.READ_SETTER, JsonOption.ALL)
     }

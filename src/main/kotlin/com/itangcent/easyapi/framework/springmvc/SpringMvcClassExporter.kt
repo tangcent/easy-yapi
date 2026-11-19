@@ -15,6 +15,7 @@ import com.itangcent.easyapi.core.export.aspect.ApiParseAspects
 import com.itangcent.easyapi.core.export.aspect.EndpointParseContext
 import com.itangcent.easyapi.core.export.aspect.MethodParseContext
 import com.itangcent.easyapi.core.logging.IdeaLog
+import com.itangcent.easyapi.core.psi.JsonOption
 import com.itangcent.easyapi.core.psi.PsiClassHelper
 import com.itangcent.easyapi.core.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.core.psi.helper.UnifiedAnnotationHelper
@@ -363,7 +364,12 @@ class SpringMvcClassExporter(
         if (isCollectionType(classType.psiClass)) return emptyList()
 
         val helper = PsiClassHelper.getInstance(project)
-        val objectModel = helper.buildObjectModel(resolvedParamType) ?: return emptyList()
+        // Spring's data binder fills this object from request parameters through writable
+        // properties only, so read-only ones (e.g. a computed getter) are not parameters.
+        val objectModel = helper.buildObjectModel(
+            resolvedParamType,
+            JsonOption.ALL or JsonOption.WRITABLE_ONLY
+        ) ?: return emptyList()
 
         val objectData = objectModel.asObject() ?: return emptyList()
         val result = ArrayList<ApiParameter>()
